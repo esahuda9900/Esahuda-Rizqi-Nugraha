@@ -10,6 +10,8 @@
   --sdlg-text-muted: #5a6675;
   --sdlg-primary: #1e4ed8;
   --sdlg-primary-hover: #153fa3;
+  --sdlg-primary-bg: #eff6ff;
+  --sdlg-primary-border: #bfdbfe;
 
   /* Status Colors */
   --sdlg-success: #0d7a3f;

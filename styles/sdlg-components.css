@@ -296,6 +296,12 @@
   border-color: var(--sdlg-neutral-border);
 }
 
+.sdlg-badge--primary {
+  background-color: var(--sdlg-primary-bg);
+  color: var(--sdlg-primary);
+  border-color: var(--sdlg-primary-border);
+}
+
 /* ==========================================
    EMPTY STATES
    ========================================== */
@@ -331,4 +337,25 @@
   font-size: var(--sdlg-font-size-xs);
   font-weight: var(--sdlg-font-weight-medium);
   color: var(--sdlg-text-muted);
+}
+
+/* ==========================================
+   CLAIMS SEARCHBAR LAYOUT RESET
+   ========================================== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: var(--sdlg-spacing-2) !important;
+  align-items: center !important;
+  background-color: var(--sdlg-surface) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
+  flex: 1 1 240px !important;
+  grid-column: auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn {
+  width: auto !important;
+  flex: 0 0 auto !important;
 }

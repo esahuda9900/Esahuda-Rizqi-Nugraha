@@ -3345,6 +3345,7 @@ html[data-theme="dark"] .sdlg-theme-switcher {
 
 
 
+
 <!-- SDLG_RESPONSIVE_UI_V10 --><style data-sdlg-responsive-v10>/* SDLG_RESPONSIVE_UI_V11 + V12 — mobile layout hardening
    Runtime authority: modules/mobile-layout-fix.js (V13 injects last).
    This file remains for early paint / non-JS fallback. */
@@ -5257,13 +5258,22 @@ const renderSourceProvenance = (provenance) => {
                 React.createElement(Pill, { color: v.provenance === "source_mapped" ? "#16a34a" : v.provenance === "source_blank" ? "#64748b" : (v.provenance === "inferred_from_dates" || v.provenance === "inferred") ? "#d97706" : "#94a3b8" }, v.provenance)
             ))));
 };
-const Pill = ({ color, children, size }) => (React.createElement("span", { className: "sdlg-badge", style: {
-        display: "inline-block", padding: size === "lg" ? "4px 12px" : "2px 8px",
-        borderRadius: 4, fontSize: size === "lg" ? 13 : 11, fontWeight: 500,
-        background: color + "15", color, border: `1px solid ${color}33`,
-        fontFamily: "var(--sdlg-font-family)", textTransform: "uppercase", letterSpacing: "0.3px",
-        textShadow: "none"
-    } }, children));
+const Pill = ({ color, children, size }) => {
+    let variant = "neutral";
+    const cStr = String(color || "").toLowerCase();
+    if (cStr.includes("success") || cStr === "#16a34a" || cStr === "#059669" || cStr === "#0d7a3f" || cStr === "#166534" || cStr === "#22c55e" || cStr === "approved" || cStr === "completed" || cStr === "green" || cStr === "on target" || cStr === "pass" || cStr === "ready") {
+        variant = "success";
+    } else if (cStr.includes("warning") || cStr === "#d97706" || cStr === "#b86e00" || cStr === "on hold" || cStr === "review" || cStr === "loading" || cStr === "warn") {
+        variant = "warning";
+    } else if (cStr.includes("danger") || cStr === "#dc2626" || cStr === "#b3261e" || cStr === "rejected" || cStr === "error" || cStr === "not verified" || cStr === "no source proof") {
+        variant = "danger";
+    } else if (cStr.includes("primary") || cStr === "#1e40af" || cStr === "#1e4ed8" || cStr === "#2563eb" || cStr === "#3b82f6" || cStr === "submitted to sdlg" || cStr === "claimed to sdlg" || cStr === "current" || cStr === "db verified") {
+        variant = "primary";
+    }
+    const className = "sdlg-badge sdlg-badge--" + variant;
+    const style = size === "lg" ? { fontSize: 13, padding: "4px 12px" } : undefined;
+    return React.createElement("span", { className, style }, children);
+};
 // ─── EXPORT TO EXCEL (compatible dengan workbook SDLG_Warranty_Claim_By_Year) ──
 async function exportToExcel(claims) {
     try {
@@ -5722,7 +5732,14 @@ const PolicyDecisionCard = ({ claim }) => {
         return () => { alive = false; };
     }, [claim?.claim_id]);
     const color = (kind) => kind === "PASS" ? "#166534" : kind === "WARN" ? "#b45309" : kind === "FAIL" ? "#b91c1c" : "#64748b";
-    const badge = (kind, text) => React.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: 999, background: `${color(kind)}14`, color: color(kind), fontSize: 10, fontWeight: 800 } }, text);
+    const badge = (kind, text) => {
+        let variant = "neutral";
+        const k = String(kind || "").toUpperCase();
+        if (k === "PASS" || k === "OK" || k === "READY" || k === "SUCCESS") variant = "success";
+        else if (k === "WARN" || k === "WARNING" || k === "DEGRADED") variant = "warning";
+        else if (k === "FAIL" || k === "ERROR") variant = "danger";
+        return React.createElement("span", { className: `sdlg-badge sdlg-badge--${variant}` }, text);
+    };
     const evidence = Array.isArray(claim?.photo_labels) ? claim.photo_labels : (Array.isArray(claim?.evidence_items) ? claim.evidence_items : []);
     const captionText = evidence.join(" ").toLowerCase();
     const engineFault = /engine/.test(String(claim?.fault_description || "").toLowerCase());
