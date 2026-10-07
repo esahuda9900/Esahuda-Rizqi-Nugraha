@@ -1,0 +1,111 @@
+/* SDLG Container Queries per Card — V15
+   Source stylesheet. Runtime inject: modules/navigation-state.js
+   Visual only. */
+
+:root {
+  --sdlg-space-1: 4px;
+  --sdlg-space-2: 8px;
+  --sdlg-space-3: 12px;
+  --sdlg-space-4: 16px;
+  --sdlg-space-5: 20px;
+  --sdlg-radius-card: 16px;
+  --sdlg-col-min: 140px;
+  --sdlg-page-max: 1280px;
+  --sdlg-page-x: 24px;
+  --sdlg-page-b: 64px;
+  --sdlg-theme-clearance: 0px;
+}
+
+/* Containment contexts */
+.page {
+  container-type: inline-size;
+  container-name: sdlg-page;
+}
+
+.metric-grid {
+  container-type: inline-size;
+  container-name: sdlg-metrics;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sdlg-col-min), 1fr));
+  gap: var(--sdlg-space-3);
+}
+
+.card,
+.card-pad,
+.metric-card,
+.claims-filter-bar,
+.detail-grid {
+  container-type: inline-size;
+  container-name: sdlg-card;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--sdlg-radius-card);
+}
+
+/* Metric density by container */
+@container sdlg-metrics (max-width: 520px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container sdlg-metrics (max-width: 340px) {
+  .metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container sdlg-metrics (min-width: 900px) {
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Per-card type scale */
+@container sdlg-card (max-width: 280px) {
+  .metric-value { font-size: 20px; }
+  .metric-label, .section-sub { font-size: 10px; }
+}
+
+@container sdlg-card (min-width: 281px) and (max-width: 420px) {
+  .metric-value { font-size: 24px; }
+}
+
+@container sdlg-card (min-width: 421px) {
+  .metric-value { font-size: 28px; }
+}
+
+@container sdlg-card (max-width: 560px) {
+  .claims-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@container sdlg-card (max-width: 720px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Page-level form grids */
+@container sdlg-page (max-width: 900px) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container sdlg-page (max-width: 560px) {
+  .page [style*="repeat(4,minmax(0,1fr))"],
+  .page [style*="repeat(3,minmax(0,1fr))"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container sdlg-page (max-width: 400px) {
+  .page [style*="repeat(4,minmax(0,1fr))"],
+  .page [style*="repeat(3,minmax(0,1fr))"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

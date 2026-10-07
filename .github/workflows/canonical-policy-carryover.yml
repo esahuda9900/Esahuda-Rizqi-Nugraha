@@ -1,0 +1,70 @@
+name: Canonical Policy Carry-Over Torture Test
+
+on:
+  pull_request:
+    paths:
+      - 'modules/canonical-warranty-helper.js'
+      - 'scripts/browser-e2e-policy-carryover.js'
+      - 'package.json'
+      - '.github/workflows/canonical-policy-carryover.yml'
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'modules/canonical-warranty-helper.js'
+      - 'scripts/browser-e2e-policy-carryover.js'
+      - 'package.json'
+      - '.github/workflows/canonical-policy-carryover.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-policy-carryover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Enable pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global pnpm@10.11.1 --no-audit --no-fund
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production canonical policy torture test
+        env:
+          BASE_URL: https://sdlg-warranty-backup.esahuda9900.workers.dev/
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        shell: bash
+        run: |
+          set -u
+          if [ -z "${E2E_TEST_EMAIL:-}" ] || [ -z "${E2E_TEST_PASSWORD:-}" ]; then
+            echo 'SKIP: E2E_TEST_EMAIL / E2E_TEST_PASSWORD not configured. Production badge torture test was not executed.'
+            exit 0
+          fi
+          npm run test:browser-policy-carryover
+
+      - name: Upload carry-over evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-policy-carryover-${{ github.run_number }}
+          path: production-verify/canonical-policy-carryover.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,159 @@
+/* SDLG Modern Layout Grid V14
+   Source of truth for design tokens + fluid grids.
+   Runtime inject lives in modules/navigation-state.js until Phase 2 extraction.
+   Visual only — no business logic. */
+
+:root {
+  --sdlg-space-1: 4px;
+  --sdlg-space-2: 8px;
+  --sdlg-space-3: 12px;
+  --sdlg-space-4: 16px;
+  --sdlg-space-5: 20px;
+  --sdlg-space-6: 24px;
+  --sdlg-space-8: 32px;
+  --sdlg-radius-card: 16px;
+  --sdlg-radius-sm: 11px;
+  --sdlg-col-min: 140px;
+  --sdlg-col-min-lg: 200px;
+  --sdlg-page-max: 1280px;
+  --sdlg-page-x: 24px;
+  --sdlg-page-b: 64px;
+  --sdlg-theme-clearance: 0px;
+}
+
+/* Page shell */
+.app-shell:not(:has(.login-screen)) .page {
+  max-width: var(--sdlg-page-max);
+  margin-inline: auto;
+  padding-left: var(--sdlg-page-x);
+  padding-right: var(--sdlg-page-x);
+  padding-bottom: calc(var(--sdlg-page-b) + var(--sdlg-theme-clearance));
+  box-sizing: border-box;
+}
+
+/* Metric — fluid auto-fit */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sdlg-col-min), 1fr));
+  gap: var(--sdlg-space-3);
+  margin-bottom: var(--sdlg-space-5);
+  width: 100%;
+}
+
+.metric-card {
+  min-width: 0;
+  min-height: 100px;
+  border-radius: var(--sdlg-radius-card);
+  overflow: hidden;
+}
+
+.metric-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Detail split */
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.7fr);
+  gap: var(--sdlg-space-4);
+  align-items: start;
+}
+
+/* Cards */
+.card,
+.card-pad {
+  border-radius: var(--sdlg-radius-card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sdlg-space-2);
+  margin-bottom: var(--sdlg-space-3);
+}
+
+.claims-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sdlg-space-2);
+  border-radius: var(--sdlg-radius-card);
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  :root {
+    --sdlg-page-x: 16px;
+    --sdlg-col-min: 160px;
+  }
+
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sdlg-space-3);
+  }
+}
+
+/* Phone */
+@media (max-width: 760px) {
+  :root {
+    --sdlg-page-x: 12px;
+    --sdlg-page-b: 28px;
+    --sdlg-theme-clearance: calc(72px + env(safe-area-inset-bottom, 0px));
+    --sdlg-col-min: 130px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sdlg-space-2);
+  }
+
+  .claims-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nav-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .nav-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .sdlg-theme-switcher {
+    left: 50%;
+    right: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 40;
+  }
+}
+
+/* Narrow */
+@media (max-width: 480px) {
+  :root {
+    --sdlg-page-x: 10px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+}
+
+/* Wide desktop */
+@media (min-width: 1200px) {
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

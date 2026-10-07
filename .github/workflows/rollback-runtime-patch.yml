@@ -1,0 +1,24 @@
+name: Rollback broken runtime patch
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - name: Restore stable app source
+        run: |
+          git checkout 08e50a5c9a0a75c3d5be11751de992fbfdbbe8f5 -- index.html
+          python scripts/fix-export-format.py
+          python scripts/harden-export-format.py
+      - name: Commit stable runtime
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'fix: restore stable runtime and export' || exit 0
+          git push

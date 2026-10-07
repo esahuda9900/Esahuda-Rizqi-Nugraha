@@ -1,0 +1,98 @@
+name: Restore index.html from production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-index-from-production.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: restore-index-html
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Download live production index
+        run: |
+          set -euo pipefail
+          for url in \
+            'https://sdlg-warranty-backup.esahuda9900.workers.dev/' \
+            'https://sdlg-warranty-backup.esahuda9900.workers.dev/index.html'
+          do
+            echo "TRY $url"
+            if curl -fsSL --retry 5 --max-time 120 -A 'Mozilla/5.0' "$url" -o index.html; then
+              size=$(wc -c < index.html)
+              echo "size=$size"
+              if [ "$size" -gt 1000000 ] && head -c 15 index.html | grep -q '<!DOCTYPE'; then
+                if ! grep -qE '^(PLACEHOLDER|/tmp/sdlg)' index.html; then
+                  echo "OK from $url"
+                  exit 0
+                fi
+              fi
+            fi
+          done
+          echo 'ERROR: could not download healthy index from production'
+          ls -la index.html || true
+          head -c 200 index.html || true
+          exit 1
+
+      - name: Apply SOURCE LOCK patches
+        run: |
+          set -euo pipefail
+          node scripts/apply-master-model-source-lock.js || true
+          node <<'NODE'
+          const fs = require('fs');
+          let s = fs.readFileSync('index.html', 'utf8');
+          console.log('size', s.length);
+          console.log('woCleared', s.includes('woClearedForCollision'));
+          console.log('hasSourceLock', s.includes('SOURCE LOCK'));
+          if (!s.includes('SOURCE LOCK') || s.length < 1000000) {
+            console.error('index looks invalid after download');
+            process.exit(1);
+          }
+          NODE
+
+      - name: Push restored index to branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          BRANCH="restore/index-html-$(date +%Y%m%d%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No index.html change'
+            exit 0
+          fi
+          git commit -m 'fix: restore index.html from production + SOURCE LOCK patches'
+          git push -u origin "$BRANCH"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: Open PR into main
+        if: env.BRANCH != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh pr create --base main --head "$BRANCH" \
+            --title 'fix: restore index.html from production' \
+            --body 'Automated restore of index.html (was corrupted by oversized push failure). Includes SOURCE LOCK WO patches from apply-master-model-source-lock.js. Please merge immediately to prevent broken Cloudflare deploys.' \
+            --repo "${{ github.repository }}" || true

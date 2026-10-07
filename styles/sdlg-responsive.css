@@ -1,0 +1,199 @@
+/* SDLG_RESPONSIVE_UI_V11 + V12 — mobile layout hardening
+   Runtime authority: modules/mobile-layout-fix.js (V13 injects last).
+   This file remains for early paint / non-JS fallback. */
+@media(max-width:760px){
+html,body,#root,body>div{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
+body{font-size:14px!important;overflow-x:hidden!important;background:var(--sdlg-page,#f6f8fb)!important}
+header{position:relative!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:none!important;min-width:0!important;overflow:visible!important;white-space:normal!important}
+header>*{max-width:100%!important;min-width:0!important}
+main,[role="main"]{width:100%!important;max-width:none!important;min-width:0!important;padding:16px!important;margin:0!important;box-sizing:border-box!important}
+input,select,textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+button{max-width:100%!important;box-sizing:border-box!important}
+button,input,select{min-height:42px!important}
+input[type="checkbox"],input[type="radio"]{
+  display:inline-block!important;width:20px!important;min-width:20px!important;max-width:20px!important;
+  height:20px!important;min-height:20px!important;max-height:20px!important;padding:0!important;margin:0!important;
+}
+
+/* Nav: swipeable, no clipped labels */
+.nav-scroll,
+.app-shell:not(:has(.login-screen)) .nav-scroll{
+  display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+}
+.nav-scroll::-webkit-scrollbar{display:none!important}
+.nav-btn{flex:0 0 auto!important;white-space:nowrap!important;max-width:none!important}
+
+/* Metric cards: solid 2-col, clear of theme switcher */
+.metric-grid,
+.app-shell:not(:has(.login-screen)) .metric-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;margin-bottom:20px!important;width:100%!important;max-width:100%!important;min-width:0!important;
+}
+.metric-card,
+.app-shell:not(:has(.login-screen)) .metric-card{
+  min-width:0!important;width:100%!important;max-width:100%!important;overflow:hidden!important;
+}
+.metric-value{overflow-wrap:anywhere!important;word-break:break-word!important;font-size:22px!important}
+
+/* Page clearance for fixed theme switcher */
+.page,
+.app-shell:not(:has(.login-screen)) .page{
+  padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))!important;
+}
+
+/* Claims filter stack */
+.claims-filter-bar{
+  display:flex!important;flex-direction:column!important;gap:8px!important;
+}
+}
+@media(min-width:761px){.sdlg-mobile-only{display:none!important}}
+
+
+/* SDLG MOBILE FINAL V12 — fix actual production surfaces and sticky-header geometry */
+@media(max-width:760px){
+  /* The desktop UX layer gives .topbar a fixed height while its nav becomes a
+     second row. On phones that makes the nav visually escape the header and
+     overlap page content. Make the header geometry explicit. */
+  .app-shell:not(:has(.login-screen)) .topbar{
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+  }
+  .app-shell:not(:has(.login-screen)) .topbar-inner{
+    height:auto!important;
+    min-height:0!important;
+    width:100%!important;
+    max-width:none!important;
+    flex-wrap:wrap!important;
+    align-content:center!important;
+    gap:8px!important;
+    padding:10px 12px!important;
+    box-sizing:border-box!important;
+  }
+  .app-shell:not(:has(.login-screen)) .brand{
+    min-width:0!important;
+    flex:1 1 auto!important;
+  }
+  .app-shell:not(:has(.login-screen)) .nav-scroll{
+    order:3!important;
+    flex:0 0 100%!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    box-sizing:border-box!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    scrollbar-width:none!important;
+  }
+  .app-shell:not(:has(.login-screen)) .nav-scroll::-webkit-scrollbar{display:none!important}
+  .app-shell:not(:has(.login-screen)) .nav-btn{
+    flex:0 0 auto!important;
+    white-space:nowrap!important;
+    max-width:none!important;
+  }
+
+  /* Native checkbox/radio rules must come AFTER the generic input min-height
+     rule. The previous ordering allowed the 42px form-control height to win. */
+  input[type="checkbox"],input[type="radio"],
+  .claims-filter-bar input[type="checkbox"],
+  .page:has(.claims-searchbar) input[type="checkbox"]{
+    appearance:auto!important;
+    -webkit-appearance:auto!important;
+    display:inline-block!important;
+    width:20px!important;
+    min-width:20px!important;
+    max-width:20px!important;
+    height:20px!important;
+    min-height:20px!important;
+    max-height:20px!important;
+    padding:0!important;
+    margin:0!important;
+    flex:0 0 20px!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Claims has a desktop-only column guide followed by real responsive cards. */
+  .page:has(.claims-searchbar) .claims-table-head,
+  .page:has(.claims-searchbar) .claims-table-head[role="row"]{
+    display:none!important;
+    visibility:hidden!important;
+    width:0!important;
+    height:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+  .page:has(.claims-searchbar) .claims-list{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    gap:10px!important;
+  }
+  .page:has(.claims-searchbar) .claims-list .claim-row{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    transform:none!important;
+  }
+
+  /* SDLG Input Helper: its actual grids are anonymous inline-style DIVs, not
+     .card elements. Collapse them explicitly and keep Copy controls stable. */
+  .page[data-sdlg-input-helper] [style*="grid-template-columns"],
+  .page[data-sdlg-input-helper] [style*="gridTemplateColumns"]{
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  .page[data-sdlg-input-helper] [style*="grid-template-columns"] > *,
+  .page[data-sdlg-input-helper] [style*="gridTemplateColumns"] > *{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  .page[data-sdlg-input-helper] [data-sdlg-field] input,
+  .page[data-sdlg-input-helper] [data-sdlg-field] textarea{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  .page[data-sdlg-input-helper] [data-sdlg-copy]{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:auto!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+  }
+  .page[data-sdlg-input-helper] [data-sdlg-copy] + *{min-width:0!important;}
+  .page[data-sdlg-input-helper] label[for]{
+    min-width:0!important;
+    flex:1 1 auto!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+  }
+
+  /* Enough bottom clearance so the fixed Terang/Gelap switcher cannot cover
+     the final action row on long pages. */
+  .app-shell:not(:has(.login-screen)) .page{
+    padding-bottom:150px!important;
+  }
+}
+
+/* V13 note: final authority is modules/mobile-layout-fix.js (injected last).
+   It adds claim-row card hierarchy, claim-detail single-column, stronger
+   overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */

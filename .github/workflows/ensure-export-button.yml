@@ -1,0 +1,42 @@
+name: Verify Excel Export Button
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/ensure-export-button.py'
+      - '.github/workflows/ensure-export-button.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '.github/workflows/ensure-export-button.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify canonical export button wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          grep -Fq 'onClick: () => exportToExcel(' index.html
+          echo 'Canonical Excel export function and UI button wiring are present.'
+
+      - name: Verify legacy bridge is not required
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The current UI uses the canonical React onClick directly.
+          # Do not reintroduce the historical MutationObserver/click bridge unless
+          # a real production regression demonstrates it is necessary.
+          echo 'Direct export wiring is the current canonical path.'

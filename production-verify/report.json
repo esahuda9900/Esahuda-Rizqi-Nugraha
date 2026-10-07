@@ -1,0 +1,1887 @@
+{
+  "timestamp": "2026-09-22T01:31:08.049Z",
+  "url": "https://sdlg-warranty-backup.esahuda9900.workers.dev/",
+  "github": {
+    "repository": "esahuda9900/sdlg-warranty-backup",
+    "sourceCommit": "b7b544cb36e615369a4e10260fbc97ab980e4d9f",
+    "runId": "35676020922",
+    "runNumber": "41",
+    "workflow": "Production Live Verifier"
+  },
+  "liveReachable": true,
+  "httpStatus": 200,
+  "responseHeaders": {
+    "alt-svc": "h3=\":443\"; ma=86400",
+    "cache-control": "public, max-age=0, must-revalidate",
+    "cf-cache-status": "MISS",
+    "cf-ray": "a3ed8c622ddd629c-SEA",
+    "content-encoding": "zstd",
+    "content-type": "text/html",
+    "date": "Tue, 22 Sep 2026 01:31:08 GMT",
+    "nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+    "report-to": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=kPyzg0oW8qw36oq%2BecmkGog3mNSyzILZOPtHMvXJDaCprAus12ewNCO74B2vdtzlb7NzJpD1IypzB5rhp6nspFBwTufWVKPRi1a43AF%2B9q75H2UtSePjUSp05%2BdIVI3fm1xVVjIvhNmhasf07FmwFynEAMDjWbH17mMu%2BePWlw%3D%3D\"}]}",
+    "server": "cloudflare"
+  },
+  "documentTitle": "SDLG Warranty Claim — PT. Indo Traktor Utama — V2.35.9 DQ Severity Fixed",
+  "versionMarker": {
+    "first": "V2.35.9",
+    "last": "V2.30.4",
+    "all": [
+      "V2.35.9",
+      "V2.28",
+      "V2.29.0",
+      "V2.31.1",
+      "V2.25.0",
+      "V2.26.0",
+      "V2.27.0",
+      "V2.35",
+      "V2.30.4"
+    ]
+  },
+  "indexHtmlSha256": "b142b06b6c32d8b16f374c37dcf73382a33ed77481a0a2bc915175a8191e90eb",
+  "repositoryIndexHtmlSha256": "b142b06b6c32d8b16f374c37dcf73382a33ed77481a0a2bc915175a8191e90eb",
+  "liveMatchesRepositoryIndex": true,
+  "indexHtmlByteLength": 3099676,
+  "repositoryIndexHtmlByteLength": 3099676,
+  "stringChecks": {
+    "fallbackTextFound": false,
+    "placeholderTextFound": false,
+    "aaf0afaeFound": false,
+    "parent55e7dc8fFound": false,
+    "panelFallbackTextFound": false,
+    "panelFallbackPhraseFound": false
+  },
+  "fallbackTextFound": false,
+  "targetClaimId": "0211-2026-SDLG-PFR",
+  "targetWorkOrder": "WO26043064",
+  "verifierContract": {
+    "complaintClaim": "0211-2026-SDLG-PFR",
+    "complaintWorkOrder": "WO26043064",
+    "databaseExpectedWorkOrderNote": "Verifier records both values because current DB linkage may differ from the reported WO."
+  },
+  "targetClaimDb": {
+    "model": "E6210F",
+    "claim_id": "0211-2026-SDLG-PFR",
+    "customer": "CV. MAJU MAPAN",
+    "serial_no": "VLGE621FKS0611371",
+    "failure_hm": 349,
+    "model_scope": "20 t <= T < 65 t",
+    "policy_code": "SDLG_SERVICE_POLICY_2026",
+    "failure_date": "2026-06-10",
+    "component_rule": null,
+    "machine_reason": "Unit is within at least one applicable warranty policy category.",
+    "machine_status": "IN_WARRANTY",
+    "overall_reason": "Machine is assessable, but the failed component still needs a warranty-category resolution.",
+    "overall_status": "REVIEW_REQUIRED",
+    "product_family": "Excavator",
+    "warranty_hours": null,
+    "warranty_months": null,
+    "component_reason": "Failure component could not yet be resolved to a warranty category",
+    "component_status": "UNKNOWN",
+    "evidence_summary": {
+      "evidence_text": "Injector | Engine Low Power | Check Voltage Battery (Good). Check Fuel Line (Good). Check Camshaft Sensor Resistance = 4.25 kOhm (Std. 3600 Ohm). Check Crankshaft Sensor Resistance = 1.069 kOhm (Std. 900 Ohm). Check Opening Pressure Injector No.1-6 = 290 Bar (No Spray). After Inspection Is Found The All Injectors Damage. | Replace With New Injector | Injector | Sensor Camshaft | Sensor Crankshaft",
+      "resolution_hierarchy": [
+        "CLAIM_POLICY_FIELD",
+        "MACHINE_MASTER",
+        "HISTORICAL_CONFIRMED_CLAIMS",
+        "EXACT_PARTS_MASTER",
+        "CONTROLLED_TAXONOMY",
+        "UNKNOWN"
+      ]
+    },
+    "machine_policies": [
+      {
+        "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+        "status": "IN_WARRANTY",
+        "date_check": true,
+        "failure_hm": 349,
+        "hour_check": true,
+        "failure_date": "2026-06-10",
+        "contract_hours": 8000,
+        "standard_hours": 6000,
+        "warranty_hours": 8000,
+        "contract_months": 36,
+        "standard_months": 30,
+        "warranty_months": 36,
+        "component_category": "Chinese-brand main pump/valve",
+        "is_claim_component": false,
+        "warranty_tier_used": "Contract Customer",
+        "bill_of_lading_date": "2025-11-28",
+        "effective_expiry_date": "2028-05-28",
+        "after_sales_expiry_date": "2029-04-07",
+        "bill_of_lading_cap_months": 30,
+        "after_departure_expiry_date": "2028-05-28"
+      },
+      {
+        "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+        "status": "IN_WARRANTY",
+        "date_check": true,
+        "failure_hm": 349,
+        "hour_check": true,
+        "failure_date": "2026-06-10",
+        "contract_hours": 6000,
+        "standard_hours": 5000,
+        "warranty_hours": 6000,
+        "contract_months": 36,
+        "standard_months": 24,
+        "warranty_months": 36,
+        "component_category": "Key components",
+        "is_claim_component": false,
+        "warranty_tier_used": "Contract Customer",
+        "bill_of_lading_date": "2025-11-28",
+        "effective_expiry_date": "2028-05-28",
+        "after_sales_expiry_date": "2029-04-07",
+        "bill_of_lading_cap_months": 30,
+        "after_departure_expiry_date": "2028-05-28"
+      },
+      {
+        "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+        "status": "IN_WARRANTY",
+        "date_check": true,
+        "failure_hm": 349,
+        "hour_check": true,
+        "failure_date": "2026-06-10",
+        "contract_hours": 4000,
+        "standard_hours": 3000,
+        "warranty_hours": 4000,
+        "contract_months": 24,
+        "standard_months": 18,
+        "warranty_months": 24,
+        "component_category": "Other parts",
+        "is_claim_component": false,
+        "warranty_tier_used": "Contract Customer",
+        "bill_of_lading_date": "2025-11-28",
+        "effective_expiry_date": "2027-11-28",
+        "after_sales_expiry_date": "2028-04-07",
+        "bill_of_lading_cap_months": 24,
+        "after_departure_expiry_date": "2027-11-28"
+      }
+    ],
+    "commencement_date": "2026-04-07",
+    "commencement_basis": "SALE_DATE",
+    "component_category": null,
+    "component_identity": "Injector",
+    "warranty_tier_used": "Contract Customer",
+    "bill_of_lading_date": "2025-11-28",
+    "effective_expiry_date": null,
+    "after_sales_expiry_date": null,
+    "component_category_source": "UNRESOLVED",
+    "component_identity_source": "EXACT_PARTS_MASTER",
+    "contract_resolution_source": "B/L_CONTINUITY_RULE",
+    "after_departure_expiry_date": null,
+    "contract_customer_effective": true,
+    "component_category_confidence": "LOW",
+    "component_identity_confidence": "HIGH"
+  },
+  "policyRuleTextMatches": [],
+  "policyAllRules": {
+    "data": [
+      {
+        "rule_code": "CLAIM_SUBMIT_TARGET_10D",
+        "section": "2.3.3",
+        "topic": "Warranty claim documentation submission",
+        "rule_type": "SLA",
+        "applies_to": "All 2026 overseas warranty repair claims",
+        "rule_text": "Dealers must upload warranty documentation to OLDP within 10 days post-repair.",
+        "calculation": {
+          "formula": "repair_end_date + 10 days"
+        }
+      },
+      {
+        "rule_code": "CLAIM_SUBMIT_MAX_90D",
+        "section": "2.3.3",
+        "topic": "Warranty claim submission cutoff",
+        "rule_type": "POLICY_CUTOFF",
+        "applies_to": "All 2026 overseas warranty repair claims",
+        "rule_text": "Claims not submitted within 90 days post-repair will generally not be honored unless approved by SDLG.",
+        "calculation": {
+          "formula": "repair_end_date + 90 days"
+        }
+      },
+      {
+        "rule_code": "SDLG_REVIEW_22_25",
+        "section": "2.3.3",
+        "topic": "SDLG monthly review",
+        "rule_type": "SLA",
+        "applies_to": "Dealer-submitted claims",
+        "rule_text": "Claims submitted before the 22nd of each month are reviewed by SDLG by the 25th of that month.",
+        "calculation": {
+          "formula": "submission_date <= monthly day 22 => review by day 25"
+        }
+      },
+      {
+        "rule_code": "PHYSICAL_INSPECTION_12M",
+        "section": "2.3.3",
+        "topic": "Physical inspection window",
+        "rule_type": "SLA",
+        "applies_to": "Claims requiring physical inspection",
+        "rule_text": "Physical inspections must be conducted within 12 months following photo review.",
+        "calculation": {
+          "formula": "photo_review_date + 12 months"
+        }
+      },
+      {
+        "rule_code": "PHYSICAL_CONCLUSION_30D",
+        "section": "2.3.3",
+        "topic": "Physical inspection conclusion",
+        "rule_type": "SLA",
+        "applies_to": "Claims requiring physical inspection",
+        "rule_text": "Conclusions must be issued within 30 days of the physical inspection.",
+        "calculation": {
+          "formula": "physical_inspection_date + 30 days"
+        }
+      },
+      {
+        "rule_code": "SERVICE_INFO_7D",
+        "section": "1.2.2",
+        "topic": "Timeliness of service information submission",
+        "rule_type": "PERFORMANCE_TARGET",
+        "applies_to": "Repairs, inspections, etc.",
+        "rule_text": "Timeliness of service information submission (repairs, inspections, etc.) is measured against a 7-day target, with 90% target compliance for scoring.",
+        "calculation": {
+          "formula": "timely uploads / total uploads >= 90%"
+        }
+      },
+      {
+        "rule_code": "MANDATORY_MAINTENANCE_10BD",
+        "section": "2.5",
+        "topic": "Mandatory maintenance submission",
+        "rule_type": "SLA",
+        "applies_to": "2026 overseas machines under maintenance subsidy",
+        "rule_text": "Mandatory maintenance documentation must be submitted to OLDP within 10 business days post-service.",
+        "calculation": {
+          "formula": "service_date + 10 business days"
+        }
+      },
+      {
+        "rule_code": "FAILURE_DATE_WARRANTY_BASIS",
+        "section": "2.1.8",
+        "topic": "Warranty coverage determination",
+        "rule_type": "RULE",
+        "applies_to": "All warranty claims",
+        "rule_text": "Warranty coverage of the entire unit is determined based on the date the malfunction occurred.",
+        "calculation": {
+          "basis": "failure_date"
+        }
+      },
+      {
+        "rule_code": "GENUINE_PARTS_REQUIRED",
+        "section": "3.1.2",
+        "topic": "Genuine SDLG parts",
+        "rule_type": "RULE",
+        "applies_to": "Indonesia region 2026",
+        "rule_text": "Dealers and customers must use genuine SDLG parts for repairs and maintenance; non-genuine parts void warranty coverage for that part and related system components.",
+        "calculation": {
+          "requirement": "genuine SDLG parts"
+        }
+      },
+      {
+        "rule_code": "FAULTY_PART_STORAGE_6M",
+        "section": "2.3.1",
+        "topic": "Defective part retention",
+        "rule_type": "RETENTION",
+        "applies_to": "Warranty replaced parts",
+        "rule_text": "Faulty parts replaced under warranty must be stored for no less than 6 months unless otherwise instructed.",
+        "calculation": {
+          "minimum_months": 6
+        }
+      },
+      {
+        "rule_code": "SETTLEMENT_6M",
+        "section": "2.4",
+        "topic": "Settlement timing",
+        "rule_type": "RULE",
+        "applies_to": "Approved claims",
+        "rule_text": "Approved machine repair claims are settled every 6 months using the exchange rate prevailing on settlement date.",
+        "calculation": {
+          "cycle_months": 6
+        }
+      },
+      {
+        "rule_code": "COUNTRY_COEFF_ID_0_7",
+        "section": "Annex I",
+        "topic": "Indonesia country coefficient",
+        "rule_type": "REFERENCE",
+        "applies_to": "Indonesia",
+        "rule_text": "Indonesia (Indonesia / 印尼) has country coefficient 0.7.",
+        "calculation": {
+          "coefficient": 0.7
+        }
+      },
+      {
+        "rule_code": "LABOR_RATE_EXCAVATOR_USD35",
+        "section": "2.4",
+        "topic": "Excavator warranty claim labor rate",
+        "rule_type": "REFERENCE",
+        "applies_to": "Excavator claims",
+        "rule_text": "Hourly labor rate for excavator warranty claims is $35/hour.",
+        "calculation": {
+          "usd_per_hour": 35
+        }
+      },
+      {
+        "rule_code": "LABOR_RATE_LOADER_ROAD_USD25",
+        "section": "2.4",
+        "topic": "Loader and road machinery warranty claim labor rate",
+        "rule_type": "REFERENCE",
+        "applies_to": "Loader and road machinery claims",
+        "rule_text": "Hourly labor rate for loaders and road machinery warranty claims is $25/hour.",
+        "calculation": {
+          "usd_per_hour": 25
+        }
+      },
+      {
+        "rule_code": "REPAIR_PARTS_MULTIPLIER_140",
+        "section": "2.4",
+        "topic": "Repair parts cost standard",
+        "rule_type": "REFERENCE",
+        "applies_to": "Machine repair claims",
+        "rule_text": "Repair parts cost formula uses damaged parts FOB price × 140% × CAF coefficient.",
+        "calculation": {
+          "multiplier": 1.4
+        }
+      },
+      {
+        "rule_code": "MILEAGE_MAX_170",
+        "section": "2.4",
+        "topic": "Warranty claim mileage subsidy ceiling",
+        "rule_type": "REFERENCE",
+        "applies_to": "Machine repair claims",
+        "rule_text": "Mileage subsidy is segmented by round-trip distance; the maximum subsidy per repair order is $170 USD for the standard warranty claim mileage schedule.",
+        "calculation": {
+          "max_usd": 170
+        }
+      },
+      {
+        "rule_code": "COMMUNICATION_USD2",
+        "section": "2.4",
+        "topic": "Communication subsidy",
+        "rule_type": "REFERENCE",
+        "applies_to": "Machine repair claims",
+        "rule_text": "Communication expense subsidy standard is $2/session.",
+        "calculation": {
+          "usd_per_session": 2
+        }
+      },
+      {
+        "rule_code": "MAINTENANCE_LABOR_USD15",
+        "section": "2.5",
+        "topic": "Mandatory maintenance labor rate",
+        "rule_type": "REFERENCE",
+        "applies_to": "2026 overseas machine mandatory maintenance",
+        "rule_text": "Mandatory maintenance hourly wage subsidy is $15/hour for dealers using SDLG-specific oil.",
+        "calculation": {
+          "usd_per_hour": 15
+        }
+      },
+      {
+        "rule_code": "MAINTENANCE_MILEAGE_MAX_110",
+        "section": "2.5",
+        "topic": "Mandatory maintenance mileage ceiling",
+        "rule_type": "REFERENCE",
+        "applies_to": "2026 overseas machine mandatory maintenance",
+        "rule_text": "Mandatory maintenance mileage subsidy has a maximum of $110 USD per repair order under the stated round-trip schedule.",
+        "calculation": {
+          "max_usd": 110
+        }
+      },
+      {
+        "rule_code": "SERVICE_TEAM_SUBSIDY",
+        "section": "1.3",
+        "topic": "Service team subsidy",
+        "rule_type": "SUBSIDY",
+        "applies_to": "Service team",
+        "rule_text": "$1,500 per eligible person per year; one year service and TCL3/TCL4 required; maximum eligible people depends on 5-year installed base.",
+        "calculation": {
+          "eligibility": {
+            "competency": [
+              "TCL3",
+              "TCL4"
+            ],
+            "min_service_years": 1
+          },
+          "usd_per_person_year": 1500
+        }
+      },
+      {
+        "rule_code": "INVENTORY_OVER3M",
+        "section": "2.3.1",
+        "topic": "Inventory machine maintenance",
+        "rule_type": "RULE",
+        "applies_to": "Inventory machines",
+        "rule_text": "Inventory exceeding 3 months requires monthly inspection and maintenance.",
+        "calculation": {
+          "frequency": "monthly",
+          "inventory_months_gt": 3
+        }
+      },
+      {
+        "rule_code": "PDI_BEFORE_SALE",
+        "section": "2.3.1",
+        "topic": "PDI before sale",
+        "rule_type": "RULE",
+        "applies_to": "All machines before sale",
+        "rule_text": "Before machine sale, dealer must conduct Pre-Delivery Inspection.",
+        "calculation": {
+          "required": true
+        }
+      },
+      {
+        "rule_code": "PDI_SUBMIT_OLDP",
+        "section": "2.3.1",
+        "topic": "PDI reporting",
+        "rule_type": "RULE",
+        "applies_to": "Inventory maintenance/PDI",
+        "rule_text": "After inventory maintenance or PDI, dealer must promptly enter information into OLDP; missing submission removes subsidy eligibility and voids machine warranty rights.",
+        "calculation": {
+          "system": "OLDP"
+        }
+      },
+      {
+        "rule_code": "FAULTY_PARTS_RETENTION_6M",
+        "section": "2.3.1",
+        "topic": "Faulty part retention",
+        "rule_type": "RETENTION",
+        "applies_to": "Warranty replaced parts",
+        "rule_text": "Faulty parts replaced under warranty must be stored at dealer service center for no less than 6 months unless otherwise instructed.",
+        "calculation": {
+          "months": 6
+        }
+      },
+      {
+        "rule_code": "ENGINE_NAMEPLATE_PHOTO",
+        "section": "2.3.3",
+        "topic": "Engine claim evidence",
+        "rule_type": "DOCUMENTATION",
+        "applies_to": "Engine fault claims",
+        "rule_text": "Engine fault claims require engine nameplate and faulty component nameplate photos, except special circumstances.",
+        "calculation": {
+          "engine_nameplate": true,
+          "component_nameplate": true
+        }
+      },
+      {
+        "rule_code": "PHOTO_REVIEW",
+        "section": "2.3.3",
+        "topic": "Photo review",
+        "rule_type": "REVIEW",
+        "applies_to": "Warranty claims",
+        "rule_text": "Cases determinable from warranty information and photos are Photo Review cases.",
+        "calculation": {
+          "review_type": "photo"
+        }
+      },
+      {
+        "rule_code": "PHYSICAL_REVIEW",
+        "section": "2.3.3",
+        "topic": "Physical inspection",
+        "rule_type": "REVIEW",
+        "applies_to": "Warranty claims",
+        "rule_text": "Cases not determinable through Photo Review and requiring physical item/personnel inspection are Physical Inspection cases.",
+        "calculation": {
+          "review_type": "physical"
+        }
+      },
+      {
+        "rule_code": "PHOTO_PENDING",
+        "section": "2.3.3",
+        "topic": "Photo review inconclusive",
+        "rule_type": "STATUS_RULE",
+        "applies_to": "Warranty claims",
+        "rule_text": "Inconclusive Photo Review cases become pending and temporarily denied until Physical Review outcome.",
+        "calculation": {
+          "interim_status": "pending_temporarily_denied"
+        }
+      },
+      {
+        "rule_code": "PHYSICAL_FAIL_NO_COMP",
+        "section": "2.3.3",
+        "topic": "Review failure",
+        "rule_type": "PENALTY",
+        "applies_to": "Warranty claims",
+        "rule_text": "Claims failing either photo or physical inspection will not be compensated.",
+        "calculation": {
+          "compensation": false
+        }
+      },
+      {
+        "rule_code": "MARKET_IMPROVEMENT_1_1",
+        "section": "2.4",
+        "topic": "Market improvement reimbursement uplift",
+        "rule_type": "CALCULATION",
+        "applies_to": "Product improvement claims",
+        "rule_text": "Labor, transportation, repair materials and communication for SDLG-initiated market product improvements use 1.1 times standard rates.",
+        "calculation": {
+          "multiplier": 1.1
+        }
+      },
+      {
+        "rule_code": "REMAN_PART_HALF",
+        "section": "2.4",
+        "topic": "Remanufactured part reimbursement",
+        "rule_type": "CALCULATION",
+        "applies_to": "Warranty repairs",
+        "rule_text": "Repairs using remanufactured parts are reimbursed at half of remanufactured part FOB price.",
+        "calculation": {
+          "multiplier": 0.5
+        }
+      },
+      {
+        "rule_code": "PARTS_QUALITY_180",
+        "section": "2.4",
+        "topic": "Parts quality claim reimbursement",
+        "rule_type": "CALCULATION",
+        "applies_to": "Parts quality claims",
+        "rule_text": "Parts quality claims reimbursed at 180% of SDLG FOB price; no other expenses covered.",
+        "calculation": {
+          "multiplier": 1.8,
+          "other_expenses": false
+        }
+      },
+      {
+        "rule_code": "MANDATORY_MAINT_3X",
+        "section": "2.5",
+        "topic": "Mandatory maintenance cycles",
+        "rule_type": "RULE",
+        "applies_to": "2026 overseas machines",
+        "rule_text": "SDLG provides three maintenance subsidies during warranty period at 1000h/2000h/3000h intervals.",
+        "calculation": {
+          "intervals_hours": [
+            1000,
+            2000,
+            3000
+          ]
+        }
+      },
+      {
+        "rule_code": "MANDATORY_NO_CUSTOMER_LABOR",
+        "section": "2.5",
+        "topic": "No customer labor charge",
+        "rule_type": "RULE",
+        "applies_to": "Mandatory maintenance",
+        "rule_text": "Dealers shall not charge customers labor or mileage fees for the three subsidized maintenance sessions; only material costs may be collected.",
+        "calculation": {
+          "customer_labor_fee": 0,
+          "customer_mileage_fee": 0
+        }
+      },
+      {
+        "rule_code": "VISIT_CORE_KEY_3PY",
+        "section": "2.6",
+        "topic": "Core/key customer visit frequency",
+        "rule_type": "LIMIT",
+        "applies_to": "Core/key customers",
+        "rule_text": "Core/key customers eligible for no more than one visit per month and three visits per year.",
+        "calculation": {
+          "max_per_year": 3,
+          "max_per_month": 1
+        }
+      },
+      {
+        "rule_code": "PARTS_INDUSTRY_CHANNEL",
+        "section": "3.1.1",
+        "topic": "Indonesia parts procurement channel",
+        "rule_type": "RULE",
+        "applies_to": "Indonesia dealers",
+        "rule_text": "Indonesia dealers procure parts through PTSDLG warehouse and submit monthly inventory/retail sales reports.",
+        "calculation": {
+          "warehouse": "PTSDLG",
+          "report_frequency": "monthly"
+        }
+      },
+      {
+        "rule_code": "DEAD_PARTS_AUDIT_DOUBLE",
+        "section": "3.3.5",
+        "topic": "Dead parts audit discrepancy",
+        "rule_type": "PENALTY",
+        "applies_to": "Dead parts subsidy",
+        "rule_text": "Discrepancies found in dead-parts subsidy audits result in double recovery of compensation payments.",
+        "calculation": {
+          "recovery_multiplier": 2
+        }
+      },
+      {
+        "rule_code": "CANCELLATION_EXEMPTIONS",
+        "section": "3.5.3",
+        "topic": "Parts cancellation exemptions",
+        "rule_type": "EXEMPTION",
+        "applies_to": "Parts order cancellation",
+        "rule_text": "Cancellation loss fee exemptions include system malfunction, customer procurement cycle >90 days, and SDLG Aftermarket stock shortage/excessive procurement cycle.",
+        "calculation": {
+          "examples": [
+            "system_malfunction",
+            "customer_cycle_gt_90_days",
+            "aftermarket_stock_shortage"
+          ]
+        }
+      },
+      {
+        "rule_code": "POLICY_FINAL_INTERPRETATION",
+        "section": "4.1",
+        "topic": "Final policy interpretation",
+        "rule_type": "GOVERNANCE",
+        "applies_to": "All policy",
+        "rule_text": "Shandong Lingong has final authority to interpret this policy.",
+        "calculation": {
+          "authority": "Shandong Lingong"
+        }
+      },
+      {
+        "rule_code": "dealer_level_current",
+        "section": "1.2",
+        "topic": "Service Station Performance",
+        "rule_type": "configuration",
+        "applies_to": "Dealer / current profile",
+        "rule_text": "Current dealer service level supplied by user: B.",
+        "calculation": {
+          "country": "Indonesia",
+          "service_level": "B"
+        }
+      }
+    ],
+    "error": null,
+    "meta": {
+      "payloadShape": "object",
+      "rowCount": 40,
+      "matchedRuleCodes": [
+        "CLAIM_SUBMIT_TARGET_10D",
+        "CLAIM_SUBMIT_MAX_90D",
+        "SDLG_REVIEW_22_25",
+        "PHYSICAL_INSPECTION_12M",
+        "PHYSICAL_CONCLUSION_30D",
+        "SERVICE_INFO_7D",
+        "MANDATORY_MAINTENANCE_10BD",
+        "FAILURE_DATE_WARRANTY_BASIS",
+        "GENUINE_PARTS_REQUIRED",
+        "FAULTY_PART_STORAGE_6M",
+        "SETTLEMENT_6M",
+        "COUNTRY_COEFF_ID_0_7",
+        "LABOR_RATE_EXCAVATOR_USD35",
+        "LABOR_RATE_LOADER_ROAD_USD25",
+        "REPAIR_PARTS_MULTIPLIER_140",
+        "MILEAGE_MAX_170",
+        "COMMUNICATION_USD2",
+        "MAINTENANCE_LABOR_USD15",
+        "MAINTENANCE_MILEAGE_MAX_110",
+        "SERVICE_TEAM_SUBSIDY",
+        "INVENTORY_OVER3M",
+        "PDI_BEFORE_SALE",
+        "PDI_SUBMIT_OLDP",
+        "FAULTY_PARTS_RETENTION_6M",
+        "ENGINE_NAMEPLATE_PHOTO",
+        "PHOTO_REVIEW",
+        "PHYSICAL_REVIEW",
+        "PHOTO_PENDING",
+        "PHYSICAL_FAIL_NO_COMP",
+        "MARKET_IMPROVEMENT_1_1",
+        "REMAN_PART_HALF",
+        "PARTS_QUALITY_180",
+        "MANDATORY_MAINT_3X",
+        "MANDATORY_NO_CUSTOMER_LABOR",
+        "VISIT_CORE_KEY_3PY",
+        "PARTS_INDUSTRY_CHANNEL",
+        "DEAD_PARTS_AUDIT_DOUBLE",
+        "CANCELLATION_EXEMPTIONS",
+        "POLICY_FINAL_INTERPRETATION",
+        "dealer_level_current"
+      ]
+    }
+  },
+  "policyQueryRaw": {
+    "data": [],
+    "error": null,
+    "deferred": true
+  },
+  "policyQueryDiagnostic": {
+    "query": {
+      "data": [
+        {
+          "rule_code": "CLAIM_SUBMIT_TARGET_10D",
+          "target_days": 10,
+          "threshold_days": null,
+          "deadline_days": 10,
+          "calculation": {
+            "formula": "repair_end_date + 10 days"
+          },
+          "rule_text": "Dealers must upload warranty documentation to OLDP within 10 days post-repair."
+        },
+        {
+          "rule_code": "CLAIM_SUBMIT_MAX_90D",
+          "target_days": null,
+          "threshold_days": 90,
+          "deadline_days": 90,
+          "calculation": {
+            "formula": "repair_end_date + 90 days"
+          },
+          "rule_text": "Claims not submitted within 90 days post-repair will generally not be honored unless approved by SDLG."
+        },
+        {
+          "rule_code": "PHYSICAL_CONCLUSION_30D",
+          "target_days": 30,
+          "threshold_days": null,
+          "deadline_days": 30,
+          "calculation": {
+            "formula": "physical_inspection_date + 30 days"
+          },
+          "rule_text": "Conclusions must be issued within 30 days of the physical inspection."
+        },
+        {
+          "rule_code": "MANDATORY_MAINTENANCE_10BD",
+          "target_days": 10,
+          "threshold_days": null,
+          "deadline_days": 10,
+          "calculation": {
+            "formula": "service_date + 10 business days"
+          },
+          "rule_text": "Mandatory maintenance documentation must be submitted to OLDP within 10 business days post-service."
+        },
+        {
+          "rule_code": "SETTLEMENT_6M",
+          "target_days": null,
+          "threshold_days": null,
+          "deadline_days": 183,
+          "calculation": {
+            "cycle_months": 6
+          },
+          "rule_text": "Approved machine repair claims are settled every 6 months using the exchange rate prevailing on settlement date."
+        }
+      ],
+      "error": null,
+      "meta": {
+        "payloadShape": "object",
+        "rowCount": 40,
+        "matchedRuleCodes": [
+          "CLAIM_SUBMIT_TARGET_10D",
+          "CLAIM_SUBMIT_MAX_90D",
+          "PHYSICAL_CONCLUSION_30D",
+          "MANDATORY_MAINTENANCE_10BD",
+          "SETTLEMENT_6M"
+        ]
+      }
+    },
+    "allRules": {
+      "data": [
+        {
+          "rule_code": "CLAIM_SUBMIT_TARGET_10D",
+          "section": "2.3.3",
+          "topic": "Warranty claim documentation submission",
+          "rule_type": "SLA",
+          "applies_to": "All 2026 overseas warranty repair claims",
+          "rule_text": "Dealers must upload warranty documentation to OLDP within 10 days post-repair.",
+          "calculation": {
+            "formula": "repair_end_date + 10 days"
+          }
+        },
+        {
+          "rule_code": "CLAIM_SUBMIT_MAX_90D",
+          "section": "2.3.3",
+          "topic": "Warranty claim submission cutoff",
+          "rule_type": "POLICY_CUTOFF",
+          "applies_to": "All 2026 overseas warranty repair claims",
+          "rule_text": "Claims not submitted within 90 days post-repair will generally not be honored unless approved by SDLG.",
+          "calculation": {
+            "formula": "repair_end_date + 90 days"
+          }
+        },
+        {
+          "rule_code": "SDLG_REVIEW_22_25",
+          "section": "2.3.3",
+          "topic": "SDLG monthly review",
+          "rule_type": "SLA",
+          "applies_to": "Dealer-submitted claims",
+          "rule_text": "Claims submitted before the 22nd of each month are reviewed by SDLG by the 25th of that month.",
+          "calculation": {
+            "formula": "submission_date <= monthly day 22 => review by day 25"
+          }
+        },
+        {
+          "rule_code": "PHYSICAL_INSPECTION_12M",
+          "section": "2.3.3",
+          "topic": "Physical inspection window",
+          "rule_type": "SLA",
+          "applies_to": "Claims requiring physical inspection",
+          "rule_text": "Physical inspections must be conducted within 12 months following photo review.",
+          "calculation": {
+            "formula": "photo_review_date + 12 months"
+          }
+        },
+        {
+          "rule_code": "PHYSICAL_CONCLUSION_30D",
+          "section": "2.3.3",
+          "topic": "Physical inspection conclusion",
+          "rule_type": "SLA",
+          "applies_to": "Claims requiring physical inspection",
+          "rule_text": "Conclusions must be issued within 30 days of the physical inspection.",
+          "calculation": {
+            "formula": "physical_inspection_date + 30 days"
+          }
+        },
+        {
+          "rule_code": "SERVICE_INFO_7D",
+          "section": "1.2.2",
+          "topic": "Timeliness of service information submission",
+          "rule_type": "PERFORMANCE_TARGET",
+          "applies_to": "Repairs, inspections, etc.",
+          "rule_text": "Timeliness of service information submission (repairs, inspections, etc.) is measured against a 7-day target, with 90% target compliance for scoring.",
+          "calculation": {
+            "formula": "timely uploads / total uploads >= 90%"
+          }
+        },
+        {
+          "rule_code": "MANDATORY_MAINTENANCE_10BD",
+          "section": "2.5",
+          "topic": "Mandatory maintenance submission",
+          "rule_type": "SLA",
+          "applies_to": "2026 overseas machines under maintenance subsidy",
+          "rule_text": "Mandatory maintenance documentation must be submitted to OLDP within 10 business days post-service.",
+          "calculation": {
+            "formula": "service_date + 10 business days"
+          }
+        },
+        {
+          "rule_code": "FAILURE_DATE_WARRANTY_BASIS",
+          "section": "2.1.8",
+          "topic": "Warranty coverage determination",
+          "rule_type": "RULE",
+          "applies_to": "All warranty claims",
+          "rule_text": "Warranty coverage of the entire unit is determined based on the date the malfunction occurred.",
+          "calculation": {
+            "basis": "failure_date"
+          }
+        },
+        {
+          "rule_code": "GENUINE_PARTS_REQUIRED",
+          "section": "3.1.2",
+          "topic": "Genuine SDLG parts",
+          "rule_type": "RULE",
+          "applies_to": "Indonesia region 2026",
+          "rule_text": "Dealers and customers must use genuine SDLG parts for repairs and maintenance; non-genuine parts void warranty coverage for that part and related system components.",
+          "calculation": {
+            "requirement": "genuine SDLG parts"
+          }
+        },
+        {
+          "rule_code": "FAULTY_PART_STORAGE_6M",
+          "section": "2.3.1",
+          "topic": "Defective part retention",
+          "rule_type": "RETENTION",
+          "applies_to": "Warranty replaced parts",
+          "rule_text": "Faulty parts replaced under warranty must be stored for no less than 6 months unless otherwise instructed.",
+          "calculation": {
+            "minimum_months": 6
+          }
+        },
+        {
+          "rule_code": "SETTLEMENT_6M",
+          "section": "2.4",
+          "topic": "Settlement timing",
+          "rule_type": "RULE",
+          "applies_to": "Approved claims",
+          "rule_text": "Approved machine repair claims are settled every 6 months using the exchange rate prevailing on settlement date.",
+          "calculation": {
+            "cycle_months": 6
+          }
+        },
+        {
+          "rule_code": "COUNTRY_COEFF_ID_0_7",
+          "section": "Annex I",
+          "topic": "Indonesia country coefficient",
+          "rule_type": "REFERENCE",
+          "applies_to": "Indonesia",
+          "rule_text": "Indonesia (Indonesia / 印尼) has country coefficient 0.7.",
+          "calculation": {
+            "coefficient": 0.7
+          }
+        },
+        {
+          "rule_code": "LABOR_RATE_EXCAVATOR_USD35",
+          "section": "2.4",
+          "topic": "Excavator warranty claim labor rate",
+          "rule_type": "REFERENCE",
+          "applies_to": "Excavator claims",
+          "rule_text": "Hourly labor rate for excavator warranty claims is $35/hour.",
+          "calculation": {
+            "usd_per_hour": 35
+          }
+        },
+        {
+          "rule_code": "LABOR_RATE_LOADER_ROAD_USD25",
+          "section": "2.4",
+          "topic": "Loader and road machinery warranty claim labor rate",
+          "rule_type": "REFERENCE",
+          "applies_to": "Loader and road machinery claims",
+          "rule_text": "Hourly labor rate for loaders and road machinery warranty claims is $25/hour.",
+          "calculation": {
+            "usd_per_hour": 25
+          }
+        },
+        {
+          "rule_code": "REPAIR_PARTS_MULTIPLIER_140",
+          "section": "2.4",
+          "topic": "Repair parts cost standard",
+          "rule_type": "REFERENCE",
+          "applies_to": "Machine repair claims",
+          "rule_text": "Repair parts cost formula uses damaged parts FOB price × 140% × CAF coefficient.",
+          "calculation": {
+            "multiplier": 1.4
+          }
+        },
+        {
+          "rule_code": "MILEAGE_MAX_170",
+          "section": "2.4",
+          "topic": "Warranty claim mileage subsidy ceiling",
+          "rule_type": "REFERENCE",
+          "applies_to": "Machine repair claims",
+          "rule_text": "Mileage subsidy is segmented by round-trip distance; the maximum subsidy per repair order is $170 USD for the standard warranty claim mileage schedule.",
+          "calculation": {
+            "max_usd": 170
+          }
+        },
+        {
+          "rule_code": "COMMUNICATION_USD2",
+          "section": "2.4",
+          "topic": "Communication subsidy",
+          "rule_type": "REFERENCE",
+          "applies_to": "Machine repair claims",
+          "rule_text": "Communication expense subsidy standard is $2/session.",
+          "calculation": {
+            "usd_per_session": 2
+          }
+        },
+        {
+          "rule_code": "MAINTENANCE_LABOR_USD15",
+          "section": "2.5",
+          "topic": "Mandatory maintenance labor rate",
+          "rule_type": "REFERENCE",
+          "applies_to": "2026 overseas machine mandatory maintenance",
+          "rule_text": "Mandatory maintenance hourly wage subsidy is $15/hour for dealers using SDLG-specific oil.",
+          "calculation": {
+            "usd_per_hour": 15
+          }
+        },
+        {
+          "rule_code": "MAINTENANCE_MILEAGE_MAX_110",
+          "section": "2.5",
+          "topic": "Mandatory maintenance mileage ceiling",
+          "rule_type": "REFERENCE",
+          "applies_to": "2026 overseas machine mandatory maintenance",
+          "rule_text": "Mandatory maintenance mileage subsidy has a maximum of $110 USD per repair order under the stated round-trip schedule.",
+          "calculation": {
+            "max_usd": 110
+          }
+        },
+        {
+          "rule_code": "SERVICE_TEAM_SUBSIDY",
+          "section": "1.3",
+          "topic": "Service team subsidy",
+          "rule_type": "SUBSIDY",
+          "applies_to": "Service team",
+          "rule_text": "$1,500 per eligible person per year; one year service and TCL3/TCL4 required; maximum eligible people depends on 5-year installed base.",
+          "calculation": {
+            "eligibility": {
+              "competency": [
+                "TCL3",
+                "TCL4"
+              ],
+              "min_service_years": 1
+            },
+            "usd_per_person_year": 1500
+          }
+        },
+        {
+          "rule_code": "INVENTORY_OVER3M",
+          "section": "2.3.1",
+          "topic": "Inventory machine maintenance",
+          "rule_type": "RULE",
+          "applies_to": "Inventory machines",
+          "rule_text": "Inventory exceeding 3 months requires monthly inspection and maintenance.",
+          "calculation": {
+            "frequency": "monthly",
+            "inventory_months_gt": 3
+          }
+        },
+        {
+          "rule_code": "PDI_BEFORE_SALE",
+          "section": "2.3.1",
+          "topic": "PDI before sale",
+          "rule_type": "RULE",
+          "applies_to": "All machines before sale",
+          "rule_text": "Before machine sale, dealer must conduct Pre-Delivery Inspection.",
+          "calculation": {
+            "required": true
+          }
+        },
+        {
+          "rule_code": "PDI_SUBMIT_OLDP",
+          "section": "2.3.1",
+          "topic": "PDI reporting",
+          "rule_type": "RULE",
+          "applies_to": "Inventory maintenance/PDI",
+          "rule_text": "After inventory maintenance or PDI, dealer must promptly enter information into OLDP; missing submission removes subsidy eligibility and voids machine warranty rights.",
+          "calculation": {
+            "system": "OLDP"
+          }
+        },
+        {
+          "rule_code": "FAULTY_PARTS_RETENTION_6M",
+          "section": "2.3.1",
+          "topic": "Faulty part retention",
+          "rule_type": "RETENTION",
+          "applies_to": "Warranty replaced parts",
+          "rule_text": "Faulty parts replaced under warranty must be stored at dealer service center for no less than 6 months unless otherwise instructed.",
+          "calculation": {
+            "months": 6
+          }
+        },
+        {
+          "rule_code": "ENGINE_NAMEPLATE_PHOTO",
+          "section": "2.3.3",
+          "topic": "Engine claim evidence",
+          "rule_type": "DOCUMENTATION",
+          "applies_to": "Engine fault claims",
+          "rule_text": "Engine fault claims require engine nameplate and faulty component nameplate photos, except special circumstances.",
+          "calculation": {
+            "engine_nameplate": true,
+            "component_nameplate": true
+          }
+        },
+        {
+          "rule_code": "PHOTO_REVIEW",
+          "section": "2.3.3",
+          "topic": "Photo review",
+          "rule_type": "REVIEW",
+          "applies_to": "Warranty claims",
+          "rule_text": "Cases determinable from warranty information and photos are Photo Review cases.",
+          "calculation": {
+            "review_type": "photo"
+          }
+        },
+        {
+          "rule_code": "PHYSICAL_REVIEW",
+          "section": "2.3.3",
+          "topic": "Physical inspection",
+          "rule_type": "REVIEW",
+          "applies_to": "Warranty claims",
+          "rule_text": "Cases not determinable through Photo Review and requiring physical item/personnel inspection are Physical Inspection cases.",
+          "calculation": {
+            "review_type": "physical"
+          }
+        },
+        {
+          "rule_code": "PHOTO_PENDING",
+          "section": "2.3.3",
+          "topic": "Photo review inconclusive",
+          "rule_type": "STATUS_RULE",
+          "applies_to": "Warranty claims",
+          "rule_text": "Inconclusive Photo Review cases become pending and temporarily denied until Physical Review outcome.",
+          "calculation": {
+            "interim_status": "pending_temporarily_denied"
+          }
+        },
+        {
+          "rule_code": "PHYSICAL_FAIL_NO_COMP",
+          "section": "2.3.3",
+          "topic": "Review failure",
+          "rule_type": "PENALTY",
+          "applies_to": "Warranty claims",
+          "rule_text": "Claims failing either photo or physical inspection will not be compensated.",
+          "calculation": {
+            "compensation": false
+          }
+        },
+        {
+          "rule_code": "MARKET_IMPROVEMENT_1_1",
+          "section": "2.4",
+          "topic": "Market improvement reimbursement uplift",
+          "rule_type": "CALCULATION",
+          "applies_to": "Product improvement claims",
+          "rule_text": "Labor, transportation, repair materials and communication for SDLG-initiated market product improvements use 1.1 times standard rates.",
+          "calculation": {
+            "multiplier": 1.1
+          }
+        },
+        {
+          "rule_code": "REMAN_PART_HALF",
+          "section": "2.4",
+          "topic": "Remanufactured part reimbursement",
+          "rule_type": "CALCULATION",
+          "applies_to": "Warranty repairs",
+          "rule_text": "Repairs using remanufactured parts are reimbursed at half of remanufactured part FOB price.",
+          "calculation": {
+            "multiplier": 0.5
+          }
+        },
+        {
+          "rule_code": "PARTS_QUALITY_180",
+          "section": "2.4",
+          "topic": "Parts quality claim reimbursement",
+          "rule_type": "CALCULATION",
+          "applies_to": "Parts quality claims",
+          "rule_text": "Parts quality claims reimbursed at 180% of SDLG FOB price; no other expenses covered.",
+          "calculation": {
+            "multiplier": 1.8,
+            "other_expenses": false
+          }
+        },
+        {
+          "rule_code": "MANDATORY_MAINT_3X",
+          "section": "2.5",
+          "topic": "Mandatory maintenance cycles",
+          "rule_type": "RULE",
+          "applies_to": "2026 overseas machines",
+          "rule_text": "SDLG provides three maintenance subsidies during warranty period at 1000h/2000h/3000h intervals.",
+          "calculation": {
+            "intervals_hours": [
+              1000,
+              2000,
+              3000
+            ]
+          }
+        },
+        {
+          "rule_code": "MANDATORY_NO_CUSTOMER_LABOR",
+          "section": "2.5",
+          "topic": "No customer labor charge",
+          "rule_type": "RULE",
+          "applies_to": "Mandatory maintenance",
+          "rule_text": "Dealers shall not charge customers labor or mileage fees for the three subsidized maintenance sessions; only material costs may be collected.",
+          "calculation": {
+            "customer_labor_fee": 0,
+            "customer_mileage_fee": 0
+          }
+        },
+        {
+          "rule_code": "VISIT_CORE_KEY_3PY",
+          "section": "2.6",
+          "topic": "Core/key customer visit frequency",
+          "rule_type": "LIMIT",
+          "applies_to": "Core/key customers",
+          "rule_text": "Core/key customers eligible for no more than one visit per month and three visits per year.",
+          "calculation": {
+            "max_per_year": 3,
+            "max_per_month": 1
+          }
+        },
+        {
+          "rule_code": "PARTS_INDUSTRY_CHANNEL",
+          "section": "3.1.1",
+          "topic": "Indonesia parts procurement channel",
+          "rule_type": "RULE",
+          "applies_to": "Indonesia dealers",
+          "rule_text": "Indonesia dealers procure parts through PTSDLG warehouse and submit monthly inventory/retail sales reports.",
+          "calculation": {
+            "warehouse": "PTSDLG",
+            "report_frequency": "monthly"
+          }
+        },
+        {
+          "rule_code": "DEAD_PARTS_AUDIT_DOUBLE",
+          "section": "3.3.5",
+          "topic": "Dead parts audit discrepancy",
+          "rule_type": "PENALTY",
+          "applies_to": "Dead parts subsidy",
+          "rule_text": "Discrepancies found in dead-parts subsidy audits result in double recovery of compensation payments.",
+          "calculation": {
+            "recovery_multiplier": 2
+          }
+        },
+        {
+          "rule_code": "CANCELLATION_EXEMPTIONS",
+          "section": "3.5.3",
+          "topic": "Parts cancellation exemptions",
+          "rule_type": "EXEMPTION",
+          "applies_to": "Parts order cancellation",
+          "rule_text": "Cancellation loss fee exemptions include system malfunction, customer procurement cycle >90 days, and SDLG Aftermarket stock shortage/excessive procurement cycle.",
+          "calculation": {
+            "examples": [
+              "system_malfunction",
+              "customer_cycle_gt_90_days",
+              "aftermarket_stock_shortage"
+            ]
+          }
+        },
+        {
+          "rule_code": "POLICY_FINAL_INTERPRETATION",
+          "section": "4.1",
+          "topic": "Final policy interpretation",
+          "rule_type": "GOVERNANCE",
+          "applies_to": "All policy",
+          "rule_text": "Shandong Lingong has final authority to interpret this policy.",
+          "calculation": {
+            "authority": "Shandong Lingong"
+          }
+        },
+        {
+          "rule_code": "dealer_level_current",
+          "section": "1.2",
+          "topic": "Service Station Performance",
+          "rule_type": "configuration",
+          "applies_to": "Dealer / current profile",
+          "rule_text": "Current dealer service level supplied by user: B.",
+          "calculation": {
+            "country": "Indonesia",
+            "service_level": "B"
+          }
+        }
+      ],
+      "error": null,
+      "meta": {
+        "payloadShape": "object",
+        "rowCount": 40,
+        "matchedRuleCodes": [
+          "CLAIM_SUBMIT_TARGET_10D",
+          "CLAIM_SUBMIT_MAX_90D",
+          "SDLG_REVIEW_22_25",
+          "PHYSICAL_INSPECTION_12M",
+          "PHYSICAL_CONCLUSION_30D",
+          "SERVICE_INFO_7D",
+          "MANDATORY_MAINTENANCE_10BD",
+          "FAILURE_DATE_WARRANTY_BASIS",
+          "GENUINE_PARTS_REQUIRED",
+          "FAULTY_PART_STORAGE_6M",
+          "SETTLEMENT_6M",
+          "COUNTRY_COEFF_ID_0_7",
+          "LABOR_RATE_EXCAVATOR_USD35",
+          "LABOR_RATE_LOADER_ROAD_USD25",
+          "REPAIR_PARTS_MULTIPLIER_140",
+          "MILEAGE_MAX_170",
+          "COMMUNICATION_USD2",
+          "MAINTENANCE_LABOR_USD15",
+          "MAINTENANCE_MILEAGE_MAX_110",
+          "SERVICE_TEAM_SUBSIDY",
+          "INVENTORY_OVER3M",
+          "PDI_BEFORE_SALE",
+          "PDI_SUBMIT_OLDP",
+          "FAULTY_PARTS_RETENTION_6M",
+          "ENGINE_NAMEPLATE_PHOTO",
+          "PHOTO_REVIEW",
+          "PHYSICAL_REVIEW",
+          "PHOTO_PENDING",
+          "PHYSICAL_FAIL_NO_COMP",
+          "MARKET_IMPROVEMENT_1_1",
+          "REMAN_PART_HALF",
+          "PARTS_QUALITY_180",
+          "MANDATORY_MAINT_3X",
+          "MANDATORY_NO_CUSTOMER_LABOR",
+          "VISIT_CORE_KEY_3PY",
+          "PARTS_INDUSTRY_CHANNEL",
+          "DEAD_PARTS_AUDIT_DOUBLE",
+          "CANCELLATION_EXEMPTIONS",
+          "POLICY_FINAL_INTERPRETATION",
+          "dealer_level_current"
+        ]
+      }
+    },
+    "claimResolver": {
+      "model": "E6210F",
+      "claim_id": "0211-2026-SDLG-PFR",
+      "customer": "CV. MAJU MAPAN",
+      "serial_no": "VLGE621FKS0611371",
+      "failure_hm": 349,
+      "model_scope": "20 t <= T < 65 t",
+      "policy_code": "SDLG_SERVICE_POLICY_2026",
+      "failure_date": "2026-06-10",
+      "component_rule": null,
+      "machine_reason": "Unit is within at least one applicable warranty policy category.",
+      "machine_status": "IN_WARRANTY",
+      "overall_reason": "Machine is assessable, but the failed component still needs a warranty-category resolution.",
+      "overall_status": "REVIEW_REQUIRED",
+      "product_family": "Excavator",
+      "warranty_hours": null,
+      "warranty_months": null,
+      "component_reason": "Failure component could not yet be resolved to a warranty category",
+      "component_status": "UNKNOWN",
+      "evidence_summary": {
+        "evidence_text": "Injector | Engine Low Power | Check Voltage Battery (Good). Check Fuel Line (Good). Check Camshaft Sensor Resistance = 4.25 kOhm (Std. 3600 Ohm). Check Crankshaft Sensor Resistance = 1.069 kOhm (Std. 900 Ohm). Check Opening Pressure Injector No.1-6 = 290 Bar (No Spray). After Inspection Is Found The All Injectors Damage. | Replace With New Injector | Injector | Sensor Camshaft | Sensor Crankshaft",
+        "resolution_hierarchy": [
+          "CLAIM_POLICY_FIELD",
+          "MACHINE_MASTER",
+          "HISTORICAL_CONFIRMED_CLAIMS",
+          "EXACT_PARTS_MASTER",
+          "CONTROLLED_TAXONOMY",
+          "UNKNOWN"
+        ]
+      },
+      "machine_policies": [
+        {
+          "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+          "status": "IN_WARRANTY",
+          "date_check": true,
+          "failure_hm": 349,
+          "hour_check": true,
+          "failure_date": "2026-06-10",
+          "contract_hours": 8000,
+          "standard_hours": 6000,
+          "warranty_hours": 8000,
+          "contract_months": 36,
+          "standard_months": 30,
+          "warranty_months": 36,
+          "component_category": "Chinese-brand main pump/valve",
+          "is_claim_component": false,
+          "warranty_tier_used": "Contract Customer",
+          "bill_of_lading_date": "2025-11-28",
+          "effective_expiry_date": "2028-05-28",
+          "after_sales_expiry_date": "2029-04-07",
+          "bill_of_lading_cap_months": 30,
+          "after_departure_expiry_date": "2028-05-28"
+        },
+        {
+          "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+          "status": "IN_WARRANTY",
+          "date_check": true,
+          "failure_hm": 349,
+          "hour_check": true,
+          "failure_date": "2026-06-10",
+          "contract_hours": 6000,
+          "standard_hours": 5000,
+          "warranty_hours": 6000,
+          "contract_months": 36,
+          "standard_months": 24,
+          "warranty_months": 36,
+          "component_category": "Key components",
+          "is_claim_component": false,
+          "warranty_tier_used": "Contract Customer",
+          "bill_of_lading_date": "2025-11-28",
+          "effective_expiry_date": "2028-05-28",
+          "after_sales_expiry_date": "2029-04-07",
+          "bill_of_lading_cap_months": 30,
+          "after_departure_expiry_date": "2028-05-28"
+        },
+        {
+          "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+          "status": "IN_WARRANTY",
+          "date_check": true,
+          "failure_hm": 349,
+          "hour_check": true,
+          "failure_date": "2026-06-10",
+          "contract_hours": 4000,
+          "standard_hours": 3000,
+          "warranty_hours": 4000,
+          "contract_months": 24,
+          "standard_months": 18,
+          "warranty_months": 24,
+          "component_category": "Other parts",
+          "is_claim_component": false,
+          "warranty_tier_used": "Contract Customer",
+          "bill_of_lading_date": "2025-11-28",
+          "effective_expiry_date": "2027-11-28",
+          "after_sales_expiry_date": "2028-04-07",
+          "bill_of_lading_cap_months": 24,
+          "after_departure_expiry_date": "2027-11-28"
+        }
+      ],
+      "commencement_date": "2026-04-07",
+      "commencement_basis": "SALE_DATE",
+      "component_category": null,
+      "component_identity": "Injector",
+      "warranty_tier_used": "Contract Customer",
+      "bill_of_lading_date": "2025-11-28",
+      "effective_expiry_date": null,
+      "after_sales_expiry_date": null,
+      "component_category_source": "UNRESOLVED",
+      "component_identity_source": "EXACT_PARTS_MASTER",
+      "contract_resolution_source": "B/L_CONTINUITY_RULE",
+      "after_departure_expiry_date": null,
+      "contract_customer_effective": true,
+      "component_category_confidence": "LOW",
+      "component_identity_confidence": "HIGH"
+    },
+    "ruleTextMatches": [],
+    "error": null
+  },
+  "policyRulesCount": 40,
+  "panelInnerText": "Policy Decision\nRule engine read-only · keputusan tidak menimpa data source atau claim.\nDB VERIFIED\nSUBMISSION SLA\n63 hari\nLATE / MONITORING\nBasis: 2026-06-11 → 2026-08-13 · target 10D · cutoff 90D\nWARRANTY COVERAGE\nSDLG_SERVICE_POLICY_2026\n20 t <= T < 65 t\nComponent scope: Other parts\nENGINE EVIDENCE\nEvidence incomplete\nCHECK\nEngine nameplate: no · Component nameplate: no\nPARTS COMPLIANCE\nNot verified\nNO SOURCE PROOF\nRule: genuine SDLG parts required; claim source belum membuktikan compliance.\n10D due: 2026-06-21 · 90D cutoff: 2026-09-09 · Policy risk: RED",
+  "prime": {
+    "claimId": "0003-2026-SDLG-PFR",
+    "navigation": {
+      "claimId": "0003-2026-SDLG-PFR",
+      "found": true,
+      "clicked": true,
+      "reached": true,
+      "method": "exact Claim ID after search",
+      "error": null,
+      "bodyText": "S\nSDLG Warranty\nPT. Indo Traktor Utama · Policy: DB Verified\nMaster Dashboard\nClaims · 526\nNew Claim\nSDLG Input\nMaster Data\nUnit 360\nData Quality\ntes123@gmail.com\nWarranty Admin\n⚙\n↪ Logout\n← Kembali\n0003-2026-SDLG-PFR\nPaid\nWarranty Claim\n✏️ Edit\n🖥️ SDLG Input\n🗑️\nClaim Status\nPindahkan claim ke tahap berikutnya dan simpan reason di history.\nPaid\nUpdate Status:\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nClaimed to SDLG\nSDLG Audit\nApproved\nRejected\nBilling\nPaid\nCompleted\nOn Hold\nStatus terakhir: Paid\nTanggal status: 2026-09-02\n⏱️ Repair → Claim: 10 hari\nCatatan: SDLG settlement evidence imported from tableConvert.com_t4xepc.md; source confirms paid status. Actual payment date is not present in source, so payment_date remains NULL.\nSTATUS HISTORY\nSnapshot awal dari data existing. Update berikutnya akan tersimpan sebagai history permanen di database.\n—\nPaid\nSDLG settlement evidence imported from tableConvert.com_t4xepc.md; source confirms paid status. Actual payment date is not present in source, so payment_date remains NULL.\nCURRENT\n—\nClaimed to SDLG\nInitial history migrated from existing claim\n—\nSDLG Audit\nOtomatis: claim masuk antrean audit SDLG.\n—\nClaimed to SDLG\nOtomatis: submission tercatat.\n—\nSubmitted to SDLG\nOtomatis: submission ke SDLG.\n—\nReady to Claim\nOtomatis: Final report Technical Support siap diklaim.\nL956HE\nSN: VLGL956HCR0620670 · L056HW2115A29E0\n\"Counterweight Crack\"\nCNY 8459.00\nTotal Claimed\nClaim Lifecycle\nStatus utama claim dari draft sampai payment.\nCurrent: Paid\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nSDLG Audit\nApproved\nPaid\nPolicy Decision\nRule engine read-only · keputusan tidak menimpa data source atau claim.\nDB VERIFIED\nSUBMISSION SLA\n10 hari\nON TARGET\nBasis: 2026-01-02 → 2026-01-12 · target 10D · cutoff 90D\nWARRANTY COVERAGE\nSDLG_SERVICE_POLICY_2026\n5 t < T <= 6 t\nComponent scope: Other parts\nPARTS COMPLIANCE\nNot verified\nNO SOURCE PROOF\nRule: genuine SDLG parts required; claim source belum membuktikan compliance.\n10D due: 2026-01-12 · 90D cutoff: 2026-04-02 · Policy risk: GREEN\nINFO\nCustomer\nPT. KARYA BETON SUDHIRA\nDistributor\nPT. Indo Traktor Utama\nDealer Name\nPT. Indo Traktor Utama\nDealer Code\n138660\nWO/SO\nWO25037263\nBranch\nJAKARTA\nApp. Code\nUnknown\nModel\nL956HE\nSerial No.\nVLGL956HCR0620670\nSales Date\n2025-02-21\nFailure Date\n2025-09-01\nHM Failure\n571 hr\nRepair Date\n2026-01-02\nCompletion Date\n2026-01-02\nRepair Status\nRepair Completed\nDistributor No.\n0003-2026-SDLG-PFR\nDealer Claim No.\nORF-260112-0008\nClaim Date\n2026-01-12\nIndent No.\nL056HW2115A29E0\nEstimated Current HM\nEstimasi operasional — selalu memiliki angka, tetapi bukan direct meter reading.\nMedium confidence\nESTIMATED CURRENT HM\n2,393 hr\n≈ 2,392.8 hr\nBASIS\nModel Historical + Downtime Excluded\nAnchor HM 571 hr @ 2025-09-01; 263 hari operasi dipakai untuk estimasi (downtime 123 hari tidak dihitung).\nUSAGE / EVIDENCE\n6.927 HM/day\nOper. days: 263 · downtime: 123 d\nREFERENCE\nLast known HM: 571 hr\nDate: 2025-09-01\nB/L: 2024-11-15 (OSF Departure)\nRange: 2,393–2,393 hr\nKERUSAKAN & PERBAIKAN\nFault Description\nCounterweight Crack\nCause Analyze\nAfter Inspection Is Found The Counterweight Damage.\nCausing Part No.\nSLG-29281007531\nPart Description\nCounterweight\nRepair Method\nReplace With New Counterweight\nTechnician\nUnknown\nComment\nUnknown\nPART REPLACEMENT (1)\nFAILURE PART\tREPLACE PART\tDESCRIPTION\tQTY\tUNIT PRICE\tAMOUNT\nSLG-29281007531\tSLG-29281007531\tCounterweight\t1\t8459\t8459.00\nParts\nCNY 8459.00\nLabour\nCNY 0.00\nMileage\nCNY 0.00\nOther\nCNY 0.00\nTOTAL\nCNY 8459.00\nTerang\nGelap"
+    },
+    "policy": {
+      "found": true,
+      "panelInnerText": "Policy Decision\nRule engine read-only · keputusan tidak menimpa data source atau claim.\nDB VERIFIED\nSUBMISSION SLA\n10 hari\nON TARGET\nBasis: 2026-01-02 → 2026-01-12 · target 10D · cutoff 90D\nWARRANTY COVERAGE\nSDLG_SERVICE_POLICY_2026\n5 t < T <= 6 t\nComponent scope: Other parts\nPARTS COMPLIANCE\nNot verified\nNO SOURCE PROOF\nRule: genuine SDLG parts required; claim source belum membuktikan compliance.\n10D due: 2026-01-12 · 90D cutoff: 2026-04-02 · Policy risk: GREEN",
+      "renderedScope": "5 t < T <= 6 t",
+      "screenshot": "prime-policy-decision-panel.png"
+    },
+    "react": {
+      "found": true,
+      "componentName": "PolicyDecisionCard",
+      "props": {
+        "claim": {
+          "claim_id": "0003-2026-SDLG-PFR",
+          "dealer_wo_so": "WO25037263",
+          "model": "L956HE",
+          "serial_no": "VLGL956HCR0620670",
+          "policy_model_scope": null,
+          "policy_component_category": null,
+          "fault_description": "Counterweight Crack"
+        }
+      },
+      "hooks": [
+        {
+          "index": 0,
+          "memoizedState": {
+            "claim_id": "0003-2026-SDLG-PFR",
+            "product_family": "Loader",
+            "model_scope": "5 t < T <= 6 t",
+            "component_category": "Other parts",
+            "assessment_data_status": "READY_FOR_ASSESSMENT",
+            "warranty_assessment": {
+              "reason": null,
+              "status": null,
+              "failure_hm": 571,
+              "resolution": {
+                "model": "L956HE",
+                "claim_id": "0003-2026-SDLG-PFR",
+                "customer": "PT. KARYA BETON SUDHIRA",
+                "serial_no": "VLGL956HCR0620670",
+                "failure_hm": 571,
+                "model_scope": "5 t < T <= 6 t",
+                "policy_code": "SDLG_SERVICE_POLICY_2026",
+                "failure_date": "2025-09-01",
+                "component_rule": null,
+                "machine_reason": "Unit is within at least one applicable warranty policy category.",
+                "machine_status": "IN_WARRANTY",
+                "overall_reason": "Machine is assessable, but the failed component still needs a warranty-category resolution.",
+                "overall_status": "REVIEW_REQUIRED",
+                "product_family": "Loader",
+                "warranty_hours": null,
+                "warranty_months": null,
+                "component_reason": "Failure component could not yet be resolved to a warranty category",
+                "component_status": "UNKNOWN",
+                "evidence_summary": {
+                  "evidence_text": "Counterweight | Counterweight Crack | After Inspection Is Found The Counterweight Damage. | Replace With New Counterweight | Unknown | Counterweight",
+                  "resolution_hierarchy": [
+                    "CLAIM_POLICY_FIELD",
+                    "MACHINE_MASTER",
+                    "HISTORICAL_CONFIRMED_CLAIMS",
+                    "EXACT_PARTS_MASTER",
+                    "CONTROLLED_TAXONOMY",
+                    "UNKNOWN"
+                  ]
+                },
+                "machine_policies": [
+                  {
+                    "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+                    "status": "IN_WARRANTY",
+                    "date_check": true,
+                    "failure_hm": 571,
+                    "hour_check": true,
+                    "failure_date": "2025-09-01",
+                    "contract_hours": 6000,
+                    "standard_hours": 5000,
+                    "warranty_hours": 6000,
+                    "contract_months": 24,
+                    "standard_months": 24,
+                    "warranty_months": 24,
+                    "component_category": "Key components",
+                    "is_claim_component": false,
+                    "warranty_tier_used": "Contract Customer",
+                    "bill_of_lading_date": "2024-11-15",
+                    "effective_expiry_date": "2027-02-21",
+                    "after_sales_expiry_date": "2027-02-21",
+                    "bill_of_lading_cap_months": 30,
+                    "after_departure_expiry_date": "2027-05-15"
+                  },
+                  {
+                    "reason": "Failure is within policy calendar and hour limits, including the B/L maximum ceiling",
+                    "status": "IN_WARRANTY",
+                    "date_check": true,
+                    "failure_hm": 571,
+                    "hour_check": true,
+                    "failure_date": "2025-09-01",
+                    "contract_hours": 2000,
+                    "standard_hours": 2000,
+                    "warranty_hours": 2000,
+                    "contract_months": 18,
+                    "standard_months": 18,
+                    "warranty_months": 18,
+                    "component_category": "Other parts",
+                    "is_claim_component": false,
+                    "warranty_tier_used": "Contract Customer",
+                    "bill_of_lading_date": "2024-11-15",
+                    "effective_expiry_date": "2026-08-21",
+                    "after_sales_expiry_date": "2026-08-21",
+                    "bill_of_lading_cap_months": 24,
+                    "after_departure_expiry_date": "2026-11-15"
+                  }
+                ],
+                "commencement_date": "2025-02-21",
+                "commencement_basis": "SALE_DATE",
+                "component_category": null,
+                "component_identity": "Counterweight",
+                "warranty_tier_used": "Contract Customer",
+                "bill_of_lading_date": "2024-11-15",
+                "effective_expiry_date": null,
+                "after_sales_expiry_date": null,
+                "component_category_source": "UNRESOLVED",
+                "component_identity_source": "EXACT_PARTS_MASTER",
+                "contract_resolution_source": "B/L_CONTINUITY_RULE",
+                "after_departure_expiry_date": null,
+                "contract_customer_effective": true,
+                "component_category_confidence": "LOW",
+                "component_identity_confidence": "HIGH"
+              },
+              "policy_code": "SDLG_SERVICE_POLICY_2026",
+              "failure_date": "2025-09-01",
+              "warranty_hours": null,
+              "calendar_expiry": null,
+              "warranty_months": null,
+              "warranty_tier_used": "Contract Customer",
+              "bill_of_lading_date": "2024-11-15",
+              "standard_or_contract": true
+            },
+            "sale_date": "2025-02-21",
+            "operation_start_date": null,
+            "bill_of_lading_date": "2024-11-15",
+            "contract_customer": true
+          }
+        },
+        {
+          "index": 1,
+          "memoizedState": {
+            "claim_id": "0003-2026-SDLG-PFR",
+            "repair_end_date": "2026-01-02",
+            "repair_to_claim_days": 10,
+            "completion_to_claim_days": 10,
+            "policy_10d_due_date": "2026-01-12",
+            "days_past_10d_target": 0,
+            "policy_90d_due_date": "2026-04-02",
+            "days_past_90d_cutoff": 0,
+            "policy_submission_status": "SUBMITTED_ON_TIME",
+            "policy_risk": "GREEN",
+            "policy_review_due_date": "2026-01-25"
+          }
+        },
+        {
+          "index": 2,
+          "memoizedState": {
+            "CLAIM_SUBMIT_TARGET_10D": {
+              "rule_code": "CLAIM_SUBMIT_TARGET_10D",
+              "target_days": 10,
+              "threshold_days": null,
+              "deadline_days": 10,
+              "calculation": {
+                "formula": "repair_end_date + 10 days"
+              },
+              "rule_text": "Dealers must upload warranty documentation to OLDP within 10 days post-repair."
+            },
+            "CLAIM_SUBMIT_MAX_90D": {
+              "rule_code": "CLAIM_SUBMIT_MAX_90D",
+              "target_days": null,
+              "threshold_days": 90,
+              "deadline_days": 90,
+              "calculation": {
+                "formula": "repair_end_date + 90 days"
+              },
+              "rule_text": "Claims not submitted within 90 days post-repair will generally not be honored unless approved by SDLG."
+            },
+            "PHYSICAL_INSPECTION_12M": {
+              "rule_code": "PHYSICAL_INSPECTION_12M",
+              "target_days": 365,
+              "threshold_days": null,
+              "deadline_days": 365,
+              "calculation": {
+                "formula": "photo_review_date + 12 months"
+              },
+              "rule_text": "Physical inspections must be conducted within 12 months following photo review."
+            },
+            "PHYSICAL_CONCLUSION_30D": {
+              "rule_code": "PHYSICAL_CONCLUSION_30D",
+              "target_days": 30,
+              "threshold_days": null,
+              "deadline_days": 30,
+              "calculation": {
+                "formula": "physical_inspection_date + 30 days"
+              },
+              "rule_text": "Conclusions must be issued within 30 days of the physical inspection."
+            },
+            "SERVICE_INFO_7D": {
+              "rule_code": "SERVICE_INFO_7D",
+              "target_days": 7,
+              "threshold_days": null,
+              "deadline_days": 7,
+              "calculation": {
+                "formula": "timely uploads / total uploads >= 90%"
+              },
+              "rule_text": "Timeliness of service information submission (repairs, inspections, etc.) is measured against a 7-day target, with 90% target compliance for scoring."
+            },
+            "GENUINE_PARTS_REQUIRED": {
+              "rule_code": "GENUINE_PARTS_REQUIRED",
+              "target_days": null,
+              "threshold_days": null,
+              "deadline_days": null,
+              "calculation": {
+                "requirement": "genuine SDLG parts"
+              },
+              "rule_text": "Dealers and customers must use genuine SDLG parts for repairs and maintenance; non-genuine parts void warranty coverage for that part and related system components."
+            },
+            "SETTLEMENT_6M": {
+              "rule_code": "SETTLEMENT_6M",
+              "target_days": null,
+              "threshold_days": null,
+              "deadline_days": 183,
+              "calculation": {
+                "cycle_months": 6
+              },
+              "rule_text": "Approved machine repair claims are settled every 6 months using the exchange rate prevailing on settlement date."
+            },
+            "ENGINE_NAMEPLATE_PHOTO": {
+              "rule_code": "ENGINE_NAMEPLATE_PHOTO",
+              "target_days": null,
+              "threshold_days": null,
+              "deadline_days": null,
+              "calculation": {
+                "engine_nameplate": true,
+                "component_nameplate": true
+              },
+              "rule_text": "Engine fault claims require engine nameplate and faulty component nameplate photos, except special circumstances."
+            }
+          }
+        },
+        {
+          "index": 3,
+          "memoizedState": "ready"
+        },
+        {
+          "index": 4,
+          "memoizedState": {
+            "tag": 8,
+            "create": "[Function]",
+            "destroy": "[Function]",
+            "deps": [
+              "0003-2026-SDLG-PFR"
+            ],
+            "next": "[Circular]"
+          }
+        }
+      ]
+    }
+  },
+  "target": {
+    "claimId": "0211-2026-SDLG-PFR",
+    "navigation": {
+      "claimId": "0211-2026-SDLG-PFR",
+      "found": true,
+      "clicked": true,
+      "reached": true,
+      "method": "exact Claim ID after search",
+      "error": null,
+      "bodyText": "S\nSDLG Warranty\nPT. Indo Traktor Utama · Policy: DB Verified\nMaster Dashboard\nClaims · 526\nNew Claim\nSDLG Input\nMaster Data\nUnit 360\nData Quality\ntes123@gmail.com\nWarranty Admin\n⚙\n↪ Logout\n← Kembali\n0211-2026-SDLG-PFR\nSDLG Audit\nWarranty Claim\n✏️ Edit\n🖥️ SDLG Input\n🗑️\nClaim Status\nPindahkan claim ke tahap berikutnya dan simpan reason di history.\nSDLG Audit\nUpdate Status:\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nClaimed to SDLG\nSDLG Audit\nApproved\nRejected\nBilling\nPaid\nCompleted\nOn Hold\nStatus terakhir: SDLG Audit\nTanggal status: 2026-08-13\n⏳ Status Aging: 40 hari\n⏱️ Repair → Claim: 63 hari\nCatatan: Repair selesai; claim sudah diajukan ke principal SDLG.\nSTATUS HISTORY\nSnapshot awal dari data existing. Update berikutnya akan tersimpan sebagai history permanen di database.\n—\nPaid\nSDLG settlement evidence imported from tableConvert.com_t4xepc.md; source confirms paid status. Actual payment date is not present in source, so payment_date remains NULL.\nCURRENT\n—\nClaimed to SDLG\nInitial history migrated from existing claim\n—\nSDLG Audit\nOtomatis: claim masuk antrean audit SDLG.\n—\nClaimed to SDLG\nOtomatis: submission tercatat.\n—\nSubmitted to SDLG\nOtomatis: submission ke SDLG.\n—\nReady to Claim\nOtomatis: Final report Technical Support siap diklaim.\nE6210F\nSN: VLGE621FKS0611371 · E210FL3484A09A0\n\"Engine Low Power\"\nUSD 2309.94\nTotal Claimed\nClaim Lifecycle\nStatus utama claim dari draft sampai payment.\nCurrent: SDLG Audit\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nSDLG Audit\nApproved\nPaid\nPolicy Decision\nMemuat keputusan policy dari database…\nINFO\nCustomer\nCV. MAJU MAPAN\nDistributor\nPT. Indo Traktor Utama\nDealer Name\nPT. Indo Traktor Utama\nDealer Code\n138660\nWO/SO\nWO26043537\nBranch\nJAKARTA\nApp. Code\nUnknown\nModel\nE6210F\nSerial No.\nVLGE621FKS0611371\nSales Date\n2026-04-07\nFailure Date\n2026-06-10\nHM Failure\n349 hr\nRepair Date\n2026-06-11\nCompletion Date\n2026-06-11\nRepair Status\nRepair Completed\nHM Completion\n359 hr\nDistributor No.\n0211-2026-SDLG-PFR\nDealer Claim No.\nYNFW2608130006\nClaim Date\n2026-08-13\nIndent No.\nE210FL3484A09A0\nCurrent HM (GPS)\nSnapshot GPS menjadi sumber Current HM untuk serial ini.\nGPS direct\nCURRENT HM (GPS)\n1,439 hr\nCaptured 2026-09-07 15:06:49\nBASIS\nGPS Current HM\nDirect dari snapshot GPS terakhir untuk serial ini; tidak diekstrapolasi.\nUSAGE / EVIDENCE\nGPS Current\nModel GPS: E6210F\nGPS EVIDENCE\nGPS HM: 1,439 hr\nDate: 2026-09-07\nCaptured: 2026-09-07 15:06:49\nKERUSAKAN & PERBAIKAN\nFault Description\nEngine Low Power\nCause Analyze\nCheck Voltage Battery (Good). Check Fuel Line (Good). Check Camshaft Sensor Resistance = 4.25 kOhm (Std. 3600 Ohm). Check Crankshaft Sensor Resistance = 1.069 kOhm (Std. 900 Ohm). Check Opening Pressure Injector No.1-6 = 290 Bar (No Spray). After Inspection Is Found The All Injectors Damage.\nCausing Part No.\nSLG-4110002196003\nPart Description\nInjector\nRepair Method\nReplace With New Injector\nTechnician\nSEPTIAN DWI\nPART REPLACEMENT (3)\nFAILURE PART\tREPLACE PART\tDESCRIPTION\tQTY\tUNIT PRICE\tAMOUNT\nSLG-4110002196003\tSLG-4110002196003\tInjector\t6\t344.4\t2066.40\nSLG-4110003380090\tSLG-4110003380090\tSensor Camshaft\t1\t130.38\t130.38\nSLG-4110004069036\tSLG-4110004069036\tSensor Crankshaft\t1\t113.16\t113.16\nParts\nUSD 2309.94\nLabour\nUSD 0.00\nMileage\nUSD 0.00\nOther\nUSD 0.00\nTOTAL\nUSD 2309.94\nTerang\nGelap"
+    },
+    "policy": {
+      "found": true,
+      "panelInnerText": "Policy Decision\nMemuat keputusan policy dari database…",
+      "renderedScope": null,
+      "screenshot": "target-policy-decision-panel.png"
+    },
+    "settledPolicy": {
+      "found": true,
+      "panelInnerText": "Policy Decision\nRule engine read-only · keputusan tidak menimpa data source atau claim.\nDB VERIFIED\nSUBMISSION SLA\n63 hari\nLATE / MONITORING\nBasis: 2026-06-11 → 2026-08-13 · target 10D · cutoff 90D\nWARRANTY COVERAGE\nSDLG_SERVICE_POLICY_2026\n20 t <= T < 65 t\nComponent scope: Other parts\nENGINE EVIDENCE\nEvidence incomplete\nCHECK\nEngine nameplate: no · Component nameplate: no\nPARTS COMPLIANCE\nNot verified\nNO SOURCE PROOF\nRule: genuine SDLG parts required; claim source belum membuktikan compliance.\n10D due: 2026-06-21 · 90D cutoff: 2026-09-09 · Policy risk: RED",
+      "renderedScope": "20 t <= T < 65 t",
+      "screenshot": "target-policy-decision-panel-settled.png"
+    },
+    "react": {
+      "found": true,
+      "componentName": "PolicyDecisionCard",
+      "props": {
+        "claim": {
+          "claim_id": "0211-2026-SDLG-PFR",
+          "dealer_wo_so": "WO26043537",
+          "model": "E6210F",
+          "serial_no": "VLGE621FKS0611371",
+          "policy_model_scope": null,
+          "policy_component_category": null,
+          "fault_description": "Engine Low Power"
+        }
+      },
+      "hooks": [
+        {
+          "index": 0,
+          "memoizedState": null
+        },
+        {
+          "index": 1,
+          "memoizedState": null
+        },
+        {
+          "index": 2,
+          "memoizedState": {}
+        },
+        {
+          "index": 3,
+          "memoizedState": "loading"
+        },
+        {
+          "index": 4,
+          "memoizedState": {
+            "tag": 9,
+            "create": "[Function]",
+            "destroy": "[Function]",
+            "deps": [
+              "0211-2026-SDLG-PFR"
+            ],
+            "next": "[Circular]"
+          }
+        }
+      ]
+    }
+  },
+  "carryOverDetected": false,
+  "carryOverReason": "Carry-over could not be evaluated because PRIME scope, TARGET scope, or DB model_scope was unavailable.",
+  "deployTrigger": "NOT_VERIFIED: no Cloudflare deploy workflow exists in this repository; account-level Cloudflare integration is external to the connected GitHub evidence.",
+  "deployCommit": null,
+  "deployCommitMatchType": null,
+  "liveSha": "b142b06b6c32d8b16f374c37dcf73382a33ed77481a0a2bc915175a8191e90eb",
+  "repoMainSha": "b142b06b6c32d8b16f374c37dcf73382a33ed77481a0a2bc915175a8191e90eb",
+  "diff": {
+    "same": true,
+    "sameLength": true,
+    "repoByteLength": 3099676,
+    "liveByteLength": 3099676,
+    "differenceCount": 0,
+    "firstDifference": null,
+    "lastDifference": null,
+    "likelyLineEndingOnly": false,
+    "repoContext": null,
+    "liveContext": null
+  },
+  "cfCacheStatus": "MISS",
+  "cacheAge": null,
+  "dbUiConsistency": {
+    "claimFound": true,
+    "databaseDealerWo": null,
+    "expectedDealerWo": "WO26043064",
+    "dealerWoMatches": false,
+    "databaseModel": "E6210F",
+    "databaseProductFamily": "Excavator",
+    "databaseModelScope": "20 t <= T < 65 t",
+    "databaseComponentCategory": null,
+    "resolverReasonOccurrences": 3,
+    "resolverUsesComplaintPhrase": true,
+    "panelShowsComplaintPhrase": false,
+    "panelShowsExpectedDbModelScope": null,
+    "panelShowsSuspiciousSixTonScope": false,
+    "primeUiScope": "5 t < T <= 6 t",
+    "targetUiScope": null,
+    "targetSettledUiScope": "20 t <= T < 65 t",
+    "targetUiMatchesDbScope": null,
+    "primeUiMatchesDbScope": false
+  },
+  "computedStyles": {
+    "page": {
+      "found": true,
+      "selector": ".page",
+      "padding": "28px 12px 180px",
+      "borderRadius": "0px",
+      "fontSize": "16px",
+      "height": "5620.11px",
+      "rectHeight": 5620.109375,
+      "rectWidth": 1440,
+      "display": "block"
+    },
+    "cardPad": {
+      "found": false,
+      "selector": ".card-pad"
+    },
+    "card": {
+      "found": false,
+      "selector": ".card"
+    },
+    "topbar": {
+      "found": true,
+      "selector": ".topbar",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "fontSize": "16px",
+      "height": "68px",
+      "rectHeight": 68,
+      "rectWidth": 1440,
+      "display": "block"
+    },
+    "body": {
+      "found": true,
+      "selector": "body",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "fontSize": "16px",
+      "height": "5688.11px",
+      "rectHeight": 5688.109375,
+      "rectWidth": 1440,
+      "display": "block"
+    },
+    "root": {
+      "found": true,
+      "selector": "#root",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "fontSize": "16px",
+      "height": "5688.11px",
+      "rectHeight": 5688.109375,
+      "rectWidth": 1440,
+      "display": "block"
+    }
+  },
+  "authSucceeded": true,
+  "auth": {
+    "credentialsConfigured": true,
+    "attempted": true,
+    "succeeded": true,
+    "reason": "Authenticated UI shell reached successfully.",
+    "storageSignals": {
+      "cookieCount": 0,
+      "cookieNames": []
+    }
+  },
+  "claimDetail": {
+    "attempted": true,
+    "navClicked": true,
+    "searchUsed": true,
+    "exactClaimMatched": true,
+    "exactWoMatched": false,
+    "rowClicked": true,
+    "reached": true,
+    "method": "Claims navigation + PRIME exact Claim ID + return to Claims + TARGET exact Claim ID (same page)",
+    "visibleTextSnippet": "S\nSDLG Warranty\nPT. Indo Traktor Utama · Policy: DB Verified\nMaster Dashboard\nClaims · 526\nNew Claim\nSDLG Input\nMaster Data\nUnit 360\nData Quality\ntes123@gmail.com\nWarranty Admin\n⚙\n↪ Logout\n← Kembali\n0211-2026-SDLG-PFR\nSDLG Audit\nWarranty Claim\n✏️ Edit\n🖥️ SDLG Input\n🗑️\nClaim Status\nPindahkan claim ke tahap berikutnya dan simpan reason di history.\nSDLG Audit\nUpdate Status:\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nClaimed to SDLG\nSDLG Audit\nApproved\nRejected\nBilling\nPaid\nCompleted\nOn Hold\nStatus terakhir: SDLG Audit\nTanggal status: 2026-08-13\n⏳ Status Aging: 40 hari\n⏱️ Repair → Claim: 63 hari\nCatatan: Repair selesai; claim sudah diajukan ke principal SDLG.\nSTATUS HISTORY\nSnapshot awal dari data existing. Update berikutnya akan tersimpan sebagai history permanen di database.\n—\nPaid\nSDLG settlement evidence imported from tableConvert.com_t4xepc.md; source confirms paid status. Actual payment date is not present in source, so payment_date remains NULL.\nCURRENT\n—\nClaimed to SDLG\nInitial history migrated from existing claim\n—\nSDLG Audit\nOtomatis: claim masuk antrean audit SDLG.\n—\nClaimed to SDLG\nOtomatis: submission tercatat.\n—\nSubmitted to SDLG\nOtomatis: submission ke SDLG.\n—\nReady to Claim\nOtomatis: Final report Technical Support siap diklaim.\nE6210F\nSN: VLGE621FKS0611371 · E210FL3484A09A0\n\"Engine Low Power\"\nUSD 2309.94\nTotal Claimed\nClaim Lifecycle\nStatus utama claim dari draft sampai payment.\nCurrent: SDLG Audit\nDraft\nSubmitted to Warranty Admin\nSubmitted to SDLG\nSDLG Audit\nApproved\nPaid\nPolicy Decision\nMemuat keputusan policy dari database…\nINFO\nCustomer\nCV. MAJU MAPAN\nDistributor\nPT. Indo Traktor Utama\nDealer Name\nPT. Indo Traktor Utama\nDealer Code\n138660\nWO/SO\nWO26043537\nBranch\nJAKARTA\nApp. Code\nUnknown\nModel\nE6210F\nSerial No.\nVLGE621FKS0611371\nSales Date\n2026-04-07\nFailure Date\n2026-06-10\nHM Failure\n349 hr\nRepair Date\n2026-06-11\nCompletion Date\n2026-06-11\nRepair Status\nRepair Completed\nHM Completion\n359 hr\nDistributor No.\n0211-2026-SDLG-PFR\nDealer Claim No.\nYNFW2608130006\nClaim Date\n2026-08-13\nIndent No.\nE210FL3484A09A0\nCurrent HM (GPS)\nSnapshot GPS menjadi sumber Current HM untuk serial ini.\nGPS direct\nCURRENT HM (GPS)\n1,439 hr\nCaptured 2026-09-07 15:06:49\nBASIS\nGPS Current HM\nDirect dari snapshot GPS terakhir untuk serial ini; tidak diekstrapolasi.\nUSAGE / EVIDENCE\nGPS Current\nModel GPS: E6210F\nGPS EVIDENCE\nGPS HM: 1,439 hr\nDate: 2026-09-07\nCaptured: 2026-09-07 15:06:49\nKERUSAKAN & PERBAIKAN\nFault Description\nEngine Low Power\nCause Analyze\nCheck Voltage Battery (Good). Check Fuel Line (Good). Check Camshaft Sensor Resistance = 4.25 kOhm (Std. 3600 Ohm). Check Crankshaft Sensor Resistance = 1.069 kOhm (Std. 900 Ohm). Check Opening Pressure Injector No.1-6 = 290 Bar (No Spray). After Inspection Is Found The All Injectors Damage.\nCausing Part No.\nSLG-4110002196003\nPart Description\nInjector\nRepair Method\nReplace With New Injector\nTechnician\nSEPTIAN DWI\nPART REPLACEMENT (3)\nFAILURE PART\tREPLACE PART\tDESCRIPTION\tQTY\tUNIT PRICE\tAMOUNT\nSLG-4110002196003\tSLG-4110002196003\tInjector\t6\t344.4\t2066.40\nSLG-4110003380090\tSLG-4110003380090\tSensor Camshaft\t1\t130.38\t130.38\nSLG-4110004069036\tSLG-4110004069036\tSensor Crankshaft\t1\t113.16\t113.16\nParts\nUSD 2309.94\nLabour\nUSD 0.00\nMileage\nUSD 0.00\nOther\nUSD 0.00\nTOTAL\nUSD 2309.94\nTerang\nGelap",
+    "error": null,
+    "targetClaimId": "0211-2026-SDLG-PFR",
+    "targetWo": "WO26043064"
+  },
+  "screenshots": [
+    "full-page-anonymous.png",
+    "full-page-authenticated.png",
+    "prime-policy-decision-panel.png",
+    "target-policy-decision-panel.png",
+    "target-policy-decision-panel-settled.png",
+    "claim-detail.png",
+    "policy-decision-panel.png"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 ()",
+    "Failed to load resource: the server responded with a status of 401 ()",
+    "Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "browserRuntime": {
+    "react": true,
+    "reactVersion": "18.3.1",
+    "reactDom": true,
+    "policyBridge": true,
+    "supabaseClient": true,
+    "href": "https://sdlg-warranty-backup.esahuda9900.workers.dev/",
+    "pathname": "/"
+  },
+  "panel": {
+    "clickedPolicyToggle": false,
+    "found": true,
+    "panelInnerText": "Policy Decision\nRule engine read-only · keputusan tidak menimpa data source atau claim.\nDB VERIFIED\nSUBMISSION SLA\n63 hari\nLATE / MONITORING\nBasis: 2026-06-11 → 2026-08-13 · target 10D · cutoff 90D\nWARRANTY COVERAGE\nSDLG_SERVICE_POLICY_2026\n20 t <= T < 65 t\nComponent scope: Other parts\nENGINE EVIDENCE\nEvidence incomplete\nCHECK\nEngine nameplate: no · Component nameplate: no\nPARTS COMPLIANCE\nNot verified\nNO SOURCE PROOF\nRule: genuine SDLG parts required; claim source belum membuktikan compliance.\n10D due: 2026-06-21 · 90D cutoff: 2026-09-09 · Policy risk: RED",
+    "screenshot": "policy-decision-panel.png"
+  },
+  "classification": "NO_LITERAL_FALLBACK_MISMATCH_IN_CAPTURED_SURFACE",
+  "fatalError": null
+}

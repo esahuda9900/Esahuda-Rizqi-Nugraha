@@ -1,0 +1,48 @@
+name: Verify Export Logic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'modules/export-table-helper.js'
+      - 'scripts/fix-export-format.py'
+      - '.github/workflows/verify-export-logic.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/fix-export-format.py'
+      - '.github/workflows/verify-export-logic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify canonical exporter implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'ExcelJS' index.html
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          test -s modules/export-table-helper.js
+          grep -Fq 'SDLGExportTableHelper' modules/export-table-helper.js
+          grep -Fq 'addTable' modules/export-table-helper.js
+          grep -Eq 'columns:[[:space:]]*Array\.from' modules/export-table-helper.js
+          grep -Eq 'rows:[[:space:]]*Array\.from' modules/export-table-helper.js
+
+      - name: Verify exporter patch script is deterministic and isolated
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'old = ' scripts/fix-export-format.py
+          grep -Fq 'new = ' scripts/fix-export-format.py
+          grep -Fq 'rows:Array.from' scripts/fix-export-format.py
+          grep -Fq 'replace(old,new,1)' scripts/fix-export-format.py
+          echo 'Export implementation and deterministic patch contract verified.'

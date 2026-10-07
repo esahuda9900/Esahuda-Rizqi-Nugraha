@@ -1,0 +1,40 @@
+name: Verify Boss Analytics Integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply-boss-analytics-dashboard.js'
+      - 'modules/boss-analytics-dashboard.js'
+      - 'modules/payment-evidence.js'
+      - 'modules/rebalancing-evidence.js'
+      - 'scripts/build-production.js'
+      - '.github/workflows/bake-boss-analytics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Verify analytics modules are in the canonical production build chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s scripts/apply-boss-analytics-dashboard.js
+          test -s modules/boss-analytics-dashboard.js
+          test -s modules/payment-evidence.js
+          test -s modules/rebalancing-evidence.js
+          grep -Fq "'apply-boss-analytics-dashboard.js'" scripts/build-production.js
+          grep -Fq "'apply-modern-refresh.js'" scripts/build-production.js
+          grep -Fq 'Claim Trend' modules/boss-analytics-dashboard.js
+          ! grep -Fq "target.style.display='none'" modules/boss-analytics-dashboard.js
+          echo 'Boss analytics, payment, and rebalancing modules are verified in the canonical build chain. No workflow-side mutation is performed.'

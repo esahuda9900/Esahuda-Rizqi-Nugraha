@@ -1,0 +1,41 @@
+name: Verify UI Redesign Assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'styles/sdlg-ui-redesign.css'
+      - 'styles/sdlg-responsive.css'
+      - 'scripts/apply-ui-redesign.js'
+      - 'scripts/apply-responsive-ui.js'
+      - '.github/workflows/apply-ui-redesign.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'styles/sdlg-ui-redesign.css'
+      - 'styles/sdlg-responsive.css'
+      - 'scripts/apply-ui-redesign.js'
+      - 'scripts/apply-responsive-ui.js'
+      - '.github/workflows/apply-ui-redesign.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify responsive assets are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s styles/sdlg-ui-redesign.css
+          test -s styles/sdlg-responsive.css
+          test -s scripts/apply-ui-redesign.js
+          test -s scripts/apply-responsive-ui.js
+          grep -Fq 'SDLG' index.html
+          echo 'UI redesign assets and generated application source are present.'

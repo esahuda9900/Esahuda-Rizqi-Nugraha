@@ -1,0 +1,279 @@
+/* SDLG_SAAS_DARK_V3 — full dark surface map (final cascade, wins all light hardcodes) */
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --sdlg-bg: #0b1120;
+  --sdlg-surface: #111827;
+  --sdlg-surface-muted: #1a2332;
+  --sdlg-border: #243044;
+  --sdlg-border-strong: #334155;
+  --sdlg-text: #e2e8f0;
+  --sdlg-muted: #94a3b8;
+  --sdlg-faint: #64748b;
+  --sdlg-primary: #818cf8;
+  --sdlg-primary-strong: #a5b4fc;
+  --sdlg-primary-soft: #1e293b;
+  --sdlg-success: #34d399;
+  --sdlg-success-soft: rgba(52, 211, 153, 0.12);
+  --sdlg-warning: #fbbf24;
+  --sdlg-warning-soft: rgba(251, 191, 36, 0.12);
+  --sdlg-danger: #f87171;
+  --sdlg-danger-soft: rgba(248, 113, 113, 0.12);
+  --cc-bg: #0b1120;
+  --cc-surface: #111827;
+  --cc-surface-2: #1a2332;
+  --cc-surface-3: #1e293b;
+  --cc-border: #243044;
+  --cc-border-strong: #334155;
+  --cc-text: #e2e8f0;
+  --cc-text-2: #cbd5e1;
+  --cc-muted: #94a3b8;
+  --cc-faint: #64748b;
+  --cc-primary: #818cf8;
+  --cc-primary-dark: #a5b4fc;
+  --cc-primary-soft: #1e293b;
+  --cc-success: #34d399;
+  --cc-success-soft: rgba(52, 211, 153, 0.12);
+  --cc-warning: #fbbf24;
+  --cc-warning-soft: rgba(251, 191, 36, 0.12);
+  --cc-danger: #f87171;
+  --cc-danger-soft: rgba(248, 113, 113, 0.12);
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: var(--sdlg-bg) !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Chrome */
+html[data-theme="dark"] header,
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar {
+  background: rgba(17, 24, 39, 0.96) !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .app-status-strip {
+  background: var(--sdlg-surface) !important;
+  border-bottom-color: var(--sdlg-border) !important;
+  color: var(--sdlg-muted) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-scroll {
+  background: var(--sdlg-surface-muted) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .nav-btn {
+  color: var(--sdlg-muted) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .nav-btn.active {
+  background: var(--sdlg-surface) !important;
+  color: var(--sdlg-primary-strong) !important;
+}
+
+/* Surfaces */
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .card,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-card,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .loading-card,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .empty-card,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="card"],
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="Card"],
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="panel"],
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="Panel"],
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .table-wrap,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-table-shell,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-filter-bar,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-searchbar,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .connection-pill {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+  color: var(--sdlg-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page-title,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .section-title,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-value,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h1,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h2,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h3,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) label,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) td,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) th {
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page-sub,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .section-sub,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-label,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .brand-sub {
+  color: var(--sdlg-muted) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) thead th,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) th,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-table-head {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-muted) !important;
+  border-bottom-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) tbody tr:hover td,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list .claim-row:hover,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.table-wrap) table tbody tr:hover {
+  background: #1a2332 !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-list .claim-row {
+  border-bottom-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) input,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) select,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) textarea,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input:focus {
+  background: var(--sdlg-surface-muted) !important;
+  border-color: var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) input:focus,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) select:focus,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) textarea:focus {
+  border-color: var(--sdlg-primary) !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .secondary-btn,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .icon-btn {
+  background: var(--sdlg-surface-muted) !important;
+  border-color: var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .secondary-btn:hover,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .icon-btn:hover {
+  background: #243044 !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .primary-btn,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) button[class*="primary"] {
+  background: var(--sdlg-primary) !important;
+  color: #0b1120 !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .danger-btn,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) button[class*="danger"] {
+  background: rgba(220, 38, 38, 0.15) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .skeleton {
+  background: linear-gradient(90deg, #1a2332, #243044, #1a2332) !important;
+  background-size: 200% 100% !important;
+}
+
+html[data-theme="dark"] .sdlg-theme-switcher {
+  background: rgba(17, 24, 39, 0.96) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .sdlg-theme-switcher button {
+  color: var(--sdlg-muted) !important;
+}
+
+html[data-theme="dark"] .sdlg-theme-switcher button[aria-pressed="true"] {
+  background: var(--sdlg-primary) !important;
+  color: #0b1120 !important;
+}
+
+/* Login */
+html[data-theme="dark"] .login-screen {
+  background: var(--sdlg-bg) !important;
+}
+
+html[data-theme="dark"] .login-card {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .login-intro h1,
+html[data-theme="dark"] .login-card h2,
+html[data-theme="dark"] .login-brand-name,
+html[data-theme="dark"] .login-field label {
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .login-intro > p,
+html[data-theme="dark"] .login-card-head p,
+html[data-theme="dark"] .login-help,
+html[data-theme="dark"] .login-brand-company,
+html[data-theme="dark"] .login-meta {
+  color: var(--sdlg-muted) !important;
+}
+
+html[data-theme="dark"] .login-field input {
+  background: var(--sdlg-surface-muted) !important;
+  border-color: var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .login-trust-list {
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .dialog,
+html[data-theme="dark"] [role="dialog"] {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Claim/search/table leftovers from command-center */
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell th,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.detail-grid) table th,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.table-wrap) thead th {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-muted) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell {
+  background: var(--sdlg-surface) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) input[type],
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) select {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-text) !important;
+  border-color: var(--sdlg-border-strong) !important;
+}
+
+@media (max-width: 760px) {
+  html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-btn {
+    background: var(--sdlg-surface-muted) !important;
+  }
+  html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-btn.active {
+    background: var(--sdlg-primary-soft) !important;
+    color: var(--sdlg-primary-strong) !important;
+  }
+}

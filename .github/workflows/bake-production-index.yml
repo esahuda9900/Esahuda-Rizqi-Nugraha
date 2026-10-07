@@ -1,0 +1,84 @@
+name: Bake Production Index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'styles/**'
+      - 'scripts/**'
+      - 'modules/**'
+      - 'canonical-warranty-helper.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/bake-production-index.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bake-production-index
+  cancel-in-progress: false
+
+jobs:
+  bake:
+    # Permanently disabled: Cloudflare Workers Builds is the sole build/deploy authority.
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Bake and publish deterministic production index
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3 4 5; do
+            echo "=== production bake attempt $attempt ==="
+
+            # Always rebuild from the latest main. This prevents a queued bake job
+            # from publishing an index generated from an older checkout.
+            git fetch origin main
+            git reset --hard origin/main
+
+            npm run build
+
+            if git diff --quiet -- index.html; then
+              echo "Production index already matches current source."
+              exit 0
+            fi
+
+            git add index.html
+            git commit -m "chore: bake production index [skip ci]"
+
+            if git push origin HEAD:main; then
+              echo "Production index published successfully."
+              exit 0
+            fi
+
+            echo "Push raced with another main update; retrying from latest origin/main."
+            git fetch origin main
+            git reset --hard origin/main
+          done
+
+          echo "ERROR: unable to publish generated production index after 5 attempts."
+          exit 1

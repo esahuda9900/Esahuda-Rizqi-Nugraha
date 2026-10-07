@@ -1,0 +1,70 @@
+name: Browser Auth E2E
+
+# Authenticated journey against Cloudflare production.
+# Requires secrets: E2E_TEST_EMAIL, E2E_TEST_PASSWORD
+# Recommended account: tes123@gmail.com (role warranty_admin)
+
+on:
+  workflow_dispatch:
+  # Optional: uncomment to run after production-smoke success
+  # workflow_run:
+  #   workflows: ["Production Smoke Check"]
+  #   types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-e2e-auth
+  cancel-in-progress: true
+
+jobs:
+  browser-e2e-auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --ignore-scripts
+
+      - name: Verify Chrome runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          google-chrome --version
+
+      - name: Preflight secrets
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${E2E_TEST_EMAIL:-}" ] || [ -z "${E2E_TEST_PASSWORD:-}" ]; then
+            echo 'Missing secrets E2E_TEST_EMAIL / E2E_TEST_PASSWORD.'
+            echo 'Add them in GitHub → Settings → Secrets and variables → Actions.'
+            echo 'Recommended: E2E_TEST_EMAIL=tes123@gmail.com (warranty_admin).'
+            exit 1
+          fi
+          echo "E2E email configured: ${E2E_TEST_EMAIL}"
+
+      - name: Run authenticated browser E2E (Cloudflare production)
+        env:
+          BASE_URL: https://sdlg-warranty-backup.esahuda9900.workers.dev/
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          PLAYWRIGHT_CHANNEL: chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run browser:e2e-auth

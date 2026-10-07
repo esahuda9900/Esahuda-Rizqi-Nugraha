@@ -1,0 +1,50 @@
+name: Production Root Canonical Helper Race
+
+on:
+  pull_request:
+    paths:
+      - 'canonical-warranty-helper.js'
+      - 'scripts/browser-e2e-root-helper-race.js'
+      - '.github/workflows/canonical-root-helper-race.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canonical-root-helper-race:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Enable pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global pnpm@10.11.1 --no-audit --no-fund
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production root helper race test
+        run: node scripts/browser-e2e-root-helper-race.js
+
+      - name: Upload root helper race evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-root-helper-race-${{ github.run_number }}
+          path: production-verify/canonical-root-helper-race.json
+          if-no-files-found: error
+          retention-days: 14

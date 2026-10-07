@@ -1,0 +1,55 @@
+name: Cloudflare Deployment Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/cloudflare-deployment-audit.js'
+      - '.github/workflows/cloudflare-deploy-audit.yml'
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-deployment-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Read-only evidence collection. Cloudflare mutation APIs are intentionally not called.
+      - name: Run read-only Cloudflare deployment audit
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_SCRIPT_NAME: sdlg-warranty-backup
+          LIVE_URL: https://sdlg-warranty-backup.esahuda9900.workers.dev/
+        run: node scripts/cloudflare-deployment-audit.js
+
+      - name: Show Cloudflare audit
+        run: |
+          set -euo pipefail
+          test -s production-verify/cloudflare-audit.json
+          cat production-verify/cloudflare-audit.json
+
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-deployment-audit-${{ github.run_number }}
+          path: production-verify/cloudflare-audit.json
+          if-no-files-found: error
+          retention-days: 14

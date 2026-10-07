@@ -1,0 +1,34 @@
+name: Verify Excel Export Format
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'modules/export-table-helper.js'
+      - 'scripts/fix-export-format.py'
+      - '.github/workflows/fix-export-format.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify canonical ExcelJS exporter
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'ExcelJS' index.html
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          test -s modules/export-table-helper.js
+          grep -Fq 'SDLGExportTableHelper' modules/export-table-helper.js
+          grep -Fq 'addTable' modules/export-table-helper.js
+          grep -Eq 'columns:[[:space:]]*Array\.from' modules/export-table-helper.js
+          grep -Eq 'rows:[[:space:]]*Array\.from' modules/export-table-helper.js
+          echo 'Canonical ExcelJS exporter signatures are present.'

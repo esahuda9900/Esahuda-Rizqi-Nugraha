@@ -1,0 +1,33 @@
+name: Verify Export Currency Scope
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/fix-effective-currency-scope.js'
+      - '.github/workflows/fix-currency-export.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify currency scope marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'effectiveClaimCurrency' index.html
+          grep -Fq 'CNY' index.html
+          echo 'Effective claim currency remains present in the production bundle.'

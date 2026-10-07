@@ -1,0 +1,5 @@
+{
+  "name": "SDLG Warranty Claim",
+  "description": "Internal web application for monitoring and managing SDLG warranty claims.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

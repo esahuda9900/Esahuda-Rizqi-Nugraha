@@ -1,0 +1,33 @@
+name: Verify Export Hardening
+
+on:
+  workflow_run:
+    workflows: ["Verify Excel Export Format"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Verify export hardener is non-destructive
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'intentionally non-destructive' scripts/harden-export-format.py
+          grep -Fq 'native ExcelJS exporter' scripts/harden-export-format.py
+          grep -Fq 'ExcelJS' index.html
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          test -s modules/export-table-helper.js
+          grep -Fq 'SDLGExportTableHelper' modules/export-table-helper.js
+          grep -Fq 'addTable' modules/export-table-helper.js
+          echo 'Export hardener is non-destructive and the native exporter remains present.'

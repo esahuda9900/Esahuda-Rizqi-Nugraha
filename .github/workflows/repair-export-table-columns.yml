@@ -1,0 +1,36 @@
+name: Verify ExcelJS Table Columns
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'modules/export-table-helper.js'
+      - 'scripts/repair-export-table-columns.py'
+      - '.github/workflows/repair-export-table-columns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Verify table column definitions
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'ExcelJS' index.html
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          test -s modules/export-table-helper.js
+          grep -Fq 'SDLGExportTableHelper' modules/export-table-helper.js
+          grep -Fq 'addTable' modules/export-table-helper.js
+          grep -Eq 'columns:[[:space:]]*Array\.from' modules/export-table-helper.js
+          grep -Eq 'rows:[[:space:]]*Array\.from' modules/export-table-helper.js
+          echo 'ExcelJS table columns and rows are present in the canonical exporter.'

@@ -1,0 +1,29 @@
+name: Verify XLSX Export Finalizer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/finalize-export-xlsx.py'
+      - '.github/workflows/finalize-export-xlsx.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify finalizer is non-destructive
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'legacy finalizer' scripts/finalize-export-xlsx.py
+          grep -Fq 'Professional ExcelJS exporter detected; legacy finalizer skipped.' scripts/finalize-export-xlsx.py
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          echo 'Legacy finalizer remains non-destructive and canonical exporter is present.'

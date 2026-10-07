@@ -1,0 +1,114 @@
+name: Production Live Verifier
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-verifier
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Install dependencies
+        run: |
+          npm install --global pnpm@10.11.1 --no-audit --no-fund
+          pnpm install --no-frozen-lockfile
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify live Cloudflare production
+        id: verify
+        continue-on-error: true
+        env:
+          BASE_URL: https://sdlg-warranty-backup.esahuda9900.workers.dev/
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_SCRIPT_NAME: sdlg-warranty-backup
+        run: node scripts/verify-production-live.js
+
+      - name: Show verification report
+        if: always()
+        run: |
+          set -u
+          echo '=== production-verify/report.json ==='
+          if [ -f production-verify/report.json ]; then
+            cat production-verify/report.json
+          else
+            echo 'REPORT MISSING'
+          fi
+
+      - name: Upload verification artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-verifier-${{ github.run_number }}
+          path: production-verify/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Enforce semantic Cloudflare deployment gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s production-verify/report.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("production-verify/report.json").read_text())
+          build = report.get("buildVerification") or {}
+          env = report.get("cloudflareBuildEnvironment") or {}
+          expected = report.get("github", {}).get("sourceCommit") or "${{ github.sha }}"
+
+          print("liveReachable:", report.get("liveReachable"))
+          print("liveMatchesBuildOutput (diagnostic):", report.get("liveMatchesBuildOutput"))
+          print("Cloudflare build commit:", build.get("cloudflareBuildCommitSha"))
+          print("Expected GitHub commit:", expected)
+          print("Cloudflare build environment:", env)
+
+          if report.get("liveReachable") is not True:
+              raise SystemExit("FAIL: production HTML is not reachable")
+          if build.get("cloudflareBuildCommitSha") != expected:
+              raise SystemExit("FAIL: Cloudflare build commit does not match GitHub commit: " + str(build.get("cloudflareBuildCommitSha")) + " != " + str(expected))
+          if env.get("matches") is not True:
+              raise SystemExit("FAIL: Cloudflare build environment is not pinned to NODE_VERSION=22 and PNPM_VERSION=10.11.1")
+
+          if report.get("liveMatchesBuildOutput") is not True:
+              print("WARN: exact byte reproduction differs from live HTML; treating as diagnostic only.")
+          else:
+              print("PASS: live HTML exactly matches the reproduced Cloudflare build.")
+
+          print("PASS: semantic Cloudflare deployment gate.")
+          PY
+
+      - name: Mark verifier result
+        if: always()
+        run: |
+          echo "Verifier step outcome: ${{ steps.verify.outcome }}"
+          if [ "${{ steps.verify.outcome }}" = "failure" ]; then
+            echo 'The verifier produced a report but the verification script encountered a fatal failure.'
+            exit 1
+          fi

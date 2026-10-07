@@ -1,0 +1,334 @@
+/* styles/sdlg-components.css */
+/* Reusable Industrial ERP Component Library styled with design tokens */
+
+/* ==========================================
+   BUTTONS
+   ========================================== */
+.sdlg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 var(--sdlg-spacing-3);
+  border-radius: var(--sdlg-radius-btn);
+  font-family: var(--sdlg-font-family);
+  font-size: var(--sdlg-font-size-sm);
+  font-weight: var(--sdlg-font-weight-medium);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  background-color: transparent;
+  color: var(--sdlg-text-main);
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+/* Primary Button */
+.sdlg-btn--primary {
+  background-color: var(--sdlg-primary);
+  color: var(--sdlg-surface);
+}
+.sdlg-btn--primary:hover:not(:disabled) {
+  background-color: var(--sdlg-primary-hover);
+}
+
+/* Secondary Button */
+.sdlg-btn--secondary {
+  background-color: var(--sdlg-surface);
+  border-color: var(--sdlg-border);
+  color: var(--sdlg-text-main);
+}
+.sdlg-btn--secondary:hover:not(:disabled) {
+  background-color: var(--sdlg-bg);
+  border-color: var(--sdlg-border);
+}
+
+/* Danger Button */
+.sdlg-btn--danger {
+  background-color: var(--sdlg-danger);
+  color: var(--sdlg-surface);
+}
+.sdlg-btn--danger:hover:not(:disabled) {
+  background-color: #991b1b; /* 8% darker red for hover state */
+}
+
+/* Ghost Button */
+.sdlg-btn--ghost {
+  color: var(--sdlg-primary);
+  background-color: transparent;
+  border: none;
+}
+.sdlg-btn--ghost:hover:not(:disabled) {
+  background-color: var(--sdlg-bg);
+}
+
+/* State controls */
+.sdlg-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Normal height modifier (36px) */
+.sdlg-btn--normal {
+  height: 36px;
+  padding: 0 var(--sdlg-spacing-4);
+}
+
+/* Compact size modifier (26px) for tags/badges inside lists */
+.sdlg-btn--compact {
+  height: 26px;
+  padding: 0 var(--sdlg-spacing-2);
+  font-size: var(--sdlg-font-size-xs);
+}
+
+/* Success Button */
+.sdlg-btn--success {
+  background-color: var(--sdlg-success);
+  color: var(--sdlg-surface);
+}
+.sdlg-btn--success:hover:not(:disabled) {
+  background-color: #0a5c30; /* 8% darker success green */
+}
+
+
+/* ==========================================
+   INPUTS & SELECTION
+   ========================================== */
+.sdlg-input,
+.sdlg-select {
+  display: block;
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--sdlg-spacing-2);
+  border-radius: var(--sdlg-radius-input);
+  font-family: var(--sdlg-font-family);
+  font-size: var(--sdlg-font-size-sm);
+  color: var(--sdlg-text-main);
+  background-color: var(--sdlg-surface);
+  border: 1px solid var(--sdlg-border);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.12s ease;
+}
+
+.sdlg-input:focus,
+.sdlg-select:focus {
+  border-color: var(--sdlg-primary);
+  box-shadow: none; /* ERP strictly avoids glow/shadow */
+}
+
+.sdlg-input--error,
+.sdlg-select--error {
+  border-color: var(--sdlg-danger);
+}
+
+.sdlg-input:disabled,
+.sdlg-select:disabled {
+  background-color: var(--sdlg-bg);
+  color: var(--sdlg-text-muted);
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   TABLES
+   ========================================== */
+.sdlg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sdlg-font-family);
+}
+
+.sdlg-table thead th {
+  background-color: var(--sdlg-bg);
+  font-size: var(--sdlg-font-size-xs);
+  font-weight: var(--sdlg-font-weight-medium);
+  color: var(--sdlg-text-muted);
+  text-align: left;
+  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
+  border-bottom: 1px solid var(--sdlg-border);
+  white-space: nowrap;
+}
+
+.sdlg-table tbody td {
+  font-size: var(--sdlg-font-size-sm);
+  color: var(--sdlg-text-main);
+  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
+  border-bottom: 1px solid var(--sdlg-border);
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.sdlg-table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.sdlg-table tbody tr:hover {
+  background-color: #fafbfc; /* Subtle row highlight */
+}
+
+/* ==========================================
+   CARDS
+   ========================================== */
+/* Inherits .sdlg-card from base but locks rules */
+.sdlg-card {
+  background-color: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-card) !important;
+  padding: var(--sdlg-spacing-3) var(--sdlg-spacing-4) !important;
+  margin-bottom: var(--sdlg-spacing-2) !important;
+  box-shadow: none !important; /* No shadow */
+}
+
+/* ==========================================
+   MODALS
+   ========================================== */
+.sdlg-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(26, 35, 50, 0.4); /* Solid backdrop - matches design specifications */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: none !important; /* Strictly no blur */
+}
+
+.sdlg-modal {
+  background-color: var(--sdlg-surface);
+  border: 1px solid var(--sdlg-border);
+  border-radius: var(--sdlg-radius-modal);
+  padding: var(--sdlg-spacing-5);
+  box-shadow: var(--sdlg-shadow-modal);
+  max-width: 600px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sdlg-spacing-4);
+  font-family: var(--sdlg-font-family);
+}
+
+.sdlg-modal-header {
+  font-size: var(--sdlg-font-size-lg);
+  font-weight: var(--sdlg-font-weight-semibold);
+  color: var(--sdlg-text-main);
+  border-bottom: 1px solid var(--sdlg-border);
+  padding-bottom: var(--sdlg-spacing-3);
+  margin-bottom: var(--sdlg-spacing-2);
+}
+
+.sdlg-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sdlg-spacing-2);
+  border-top: 1px solid var(--sdlg-border);
+  padding-top: var(--sdlg-spacing-3);
+  margin-top: var(--sdlg-spacing-2);
+}
+
+/* ==========================================
+   TOASTS
+   ========================================== */
+.sdlg-toast {
+  position: fixed;
+  bottom: var(--sdlg-spacing-6);
+  right: var(--sdlg-spacing-6);
+  background-color: var(--sdlg-text-main); /* Uses tokens main text solid slate dark */
+  color: var(--sdlg-surface);
+  padding: var(--sdlg-spacing-3) var(--sdlg-spacing-4);
+  border-radius: var(--sdlg-radius-input);
+  font-family: var(--sdlg-font-family);
+  font-size: var(--sdlg-font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sdlg-spacing-3);
+  box-shadow: var(--sdlg-shadow-modal);
+  z-index: 2000;
+}
+
+.sdlg-toast--success {
+  border-left: 3px solid var(--sdlg-success);
+}
+
+.sdlg-toast--error {
+  border-left: 3px solid var(--sdlg-danger);
+}
+
+/* ==========================================
+   BADGES
+   ========================================== */
+.sdlg-badge {
+  display: inline-block;
+  padding: 2px var(--sdlg-spacing-2);
+  border-radius: 4px;
+  font-family: var(--sdlg-font-family);
+  font-size: 11px;
+  font-weight: var(--sdlg-font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.sdlg-badge--success {
+  background-color: var(--sdlg-success-bg);
+  color: var(--sdlg-success);
+  border-color: var(--sdlg-success-border);
+}
+
+.sdlg-badge--warning {
+  background-color: var(--sdlg-warning-bg);
+  color: var(--sdlg-warning);
+  border-color: var(--sdlg-warning-border);
+}
+
+.sdlg-badge--danger {
+  background-color: var(--sdlg-danger-bg);
+  color: var(--sdlg-danger);
+  border-color: var(--sdlg-danger-border);
+}
+
+.sdlg-badge--neutral {
+  background-color: var(--sdlg-neutral-bg);
+  color: var(--sdlg-neutral);
+  border-color: var(--sdlg-neutral-border);
+}
+
+/* ==========================================
+   EMPTY STATES
+   ========================================== */
+.sdlg-empty {
+  text-align: center;
+  padding: var(--sdlg-spacing-8) var(--sdlg-spacing-6);
+  color: var(--sdlg-text-muted);
+  font-family: var(--sdlg-font-family);
+}
+
+.sdlg-empty-title {
+  font-size: var(--sdlg-font-size-md);
+  font-weight: var(--sdlg-font-weight-medium);
+  color: var(--sdlg-text-main);
+  margin-bottom: var(--sdlg-spacing-1);
+}
+
+.sdlg-empty-desc {
+  font-size: var(--sdlg-font-size-sm);
+  color: var(--sdlg-text-muted);
+}
+
+/* ==========================================
+   TABLE HEAD GRIDS
+   ========================================== */
+.sdlg-table-head {
+  display: grid;
+  grid-template-columns: 130px 1fr 130px 120px 60px;
+  gap: var(--sdlg-spacing-3);
+  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
+  background-color: var(--sdlg-bg);
+  border-bottom: 1px solid var(--sdlg-border);
+  font-size: var(--sdlg-font-size-xs);
+  font-weight: var(--sdlg-font-weight-medium);
+  color: var(--sdlg-text-muted);
+}

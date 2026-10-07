@@ -1,0 +1,77 @@
+name: Free Tier Budget Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 2 * * 1'
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: free-tier-budget
+  cancel-in-progress: true
+
+jobs:
+  budget:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - name: Check GitHub Actions usage window
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          since="$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ)"
+          page=1
+          total_seconds=0
+          runs=0
+
+          while :; do
+            payload="$(curl -fsSL \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              "https://api.github.com/repos/$repo/actions/runs?per_page=100&page=$page")"
+
+            count="$(printf '%s' "$payload" | jq '.workflow_runs | length')"
+            [ "$count" -gt 0 ] || break
+
+            while IFS=$'\t' read -r created started completed; do
+              [ -n "$created" ] || continue
+              if [[ "$created" < "$since" ]]; then
+                continue
+              fi
+              [ "$started" != "null" ] || continue
+              [ "$completed" != "null" ] || continue
+              start_epoch="$(date -u -d "$started" +%s)"
+              end_epoch="$(date -u -d "$completed" +%s)"
+              if [ "$end_epoch" -ge "$start_epoch" ]; then
+                total_seconds=$((total_seconds + end_epoch - start_epoch))
+                runs=$((runs + 1))
+              fi
+            done < <(printf '%s' "$payload" | jq -r '.workflow_runs[] | [.created_at, .run_started_at, .updated_at] | @tsv')
+
+            if [ "$count" -lt 100 ]; then
+              break
+            fi
+            page=$((page + 1))
+            [ "$page" -le 10 ] || break
+          done
+
+          minutes=$(( (total_seconds + 59) / 60 ))
+          echo "Runs in last 30 days: $runs"
+          echo "Approx runner time in last 30 days: ${minutes} minutes"
+          echo "GitHub Free allowance: 2,000 minutes/month"
+          echo "Guardrail target: 1,200 minutes/month"
+
+          if [ "$minutes" -ge 1200 ]; then
+            echo 'WARNING: Actions usage is at or above the internal 1,200-minute guardrail.'
+          elif [ "$minutes" -ge 1000 ]; then
+            echo 'NOTICE: Actions usage is above 1,000 minutes; review workflow frequency.'
+          else
+            echo 'OK: Actions usage is below the internal guardrail.'
+          fi

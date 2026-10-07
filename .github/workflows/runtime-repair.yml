@@ -1,0 +1,29 @@
+name: Verify Runtime Repair Inputs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/fix-policy-object-render.js'
+      - 'scripts/ensure-export-button.py'
+      - '.github/workflows/runtime-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify repair scripts and runtime markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s scripts/fix-policy-object-render.js
+          test -s scripts/ensure-export-button.py
+          grep -Fq 'exportToExcel' index.html
+          grep -Fq 'ExcelJS' index.html
+          echo 'Runtime repair inputs are present; CI will not mutate main automatically.'

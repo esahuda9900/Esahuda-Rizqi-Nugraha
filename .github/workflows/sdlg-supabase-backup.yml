@@ -1,0 +1,76 @@
+name: SDLG Supabase Free Backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 1 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdlg-supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pinned Supabase CLI
+        run: npm install -g supabase@2.117.0 --ignore-scripts
+
+      - name: Prepare backup directory
+        run: mkdir -p backup
+
+      - name: Backup schema
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db dump --db-url "$DB_URL" --schema public -f backup/public_schema.sql
+
+      - name: Backup public data
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db dump --db-url "$DB_URL" --schema public --data-only --use-copy -f backup/public_data.sql
+
+      - name: Backup custom roles
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db dump --db-url "$DB_URL" --role-only -f backup/roles.sql
+
+      - name: Verify backup files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s backup/public_schema.sql
+          test -s backup/public_data.sql
+          test -s backup/roles.sql
+
+      - name: Create manifest and checksums
+        env:
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          printf 'project_ref=%s\ncreated_utc=%s\n' "$PROJECT_REF" "$(date -u +%FT%TZ)" > backup/manifest.txt
+          sha256sum backup/public_schema.sql backup/public_data.sql backup/roles.sql > backup/SHA256SUMS.txt
+
+      - name: Compress backup artifact
+        run: tar -czf sdlg-supabase-backup.tar.gz backup/
+
+      - name: Verify compressed artifact
+        run: test -s sdlg-supabase-backup.tar.gz
+
+      - name: Upload compressed backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdlg-supabase-backup-${{ github.run_number }}
+          path: sdlg-supabase-backup.tar.gz
+          retention-days: 7

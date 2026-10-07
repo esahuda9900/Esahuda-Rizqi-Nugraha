@@ -1,0 +1,37 @@
+name: Verify Stable Runtime Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'modules/export-table-helper.js'
+      - 'scripts/fix-export-format.py'
+      - 'scripts/harden-export-format.py'
+      - '.github/workflows/restore-stable-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Verify stable runtime signals
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          grep -Fq 'ExcelJS' index.html
+          grep -Fq 'async function exportToExcel(claims)' index.html
+          test -s modules/export-table-helper.js
+          grep -Fq 'SDLGExportTableHelper' modules/export-table-helper.js
+          grep -Fq 'addTable' modules/export-table-helper.js
+          grep -Eq 'columns:[[:space:]]*Array\.from' modules/export-table-helper.js
+          grep -Eq 'rows:[[:space:]]*Array\.from' modules/export-table-helper.js
+          grep -Fq 'canonical-warranty-helper.js' index.html
+          echo 'Stable runtime signals are present. Emergency rollback remains available only through the reviewed rollback workflow.'

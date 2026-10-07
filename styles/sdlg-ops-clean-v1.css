@@ -1,0 +1,697 @@
+/* SDLG_OPS_CLEAN_V1
+   Final visual layer — modern, smooth, clean.
+   Aligns with DESIGN.md: industrial ops tool, not AI SaaS.
+   Visual only. Wins cascade when injected last. */
+
+:root {
+  --sdlg-bg: #f5f7fa;
+  --sdlg-surface: #ffffff;
+  --sdlg-surface-muted: #f1f4f8;
+  --sdlg-border: #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
+  --sdlg-text: #0f172a;
+  --sdlg-muted: #64748b;
+  --sdlg-faint: #94a3b8;
+  --sdlg-primary: #1e4ed8;
+  --sdlg-primary-strong: #1a3fb0;
+  --sdlg-primary-soft: #eff4ff;
+  --sdlg-success: #059669;
+  --sdlg-success-soft: #ecfdf5;
+  --sdlg-warning: #b45309;
+  --sdlg-warning-soft: #fffbeb;
+  --sdlg-danger: #dc2626;
+  --sdlg-danger-soft: #fef2f2;
+  --sdlg-radius: 8px;
+  --sdlg-radius-sm: 6px;
+  --sdlg-radius-lg: 10px;
+  --sdlg-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --sdlg-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --sdlg-ring: 0 0 0 3px rgba(30, 78, 216, 0.14);
+}
+
+/* Foundation — solid, no decorative gradients */
+html,
+body {
+  background: var(--sdlg-bg) !important;
+  color: var(--sdlg-text) !important;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5 !important;
+  letter-spacing: -0.011em !important;
+}
+
+h1,
+.page-title {
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.2 !important;
+}
+
+h2 {
+  font-weight: 650 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h3,
+.section-title {
+  font-weight: 650 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.page-sub,
+.section-sub,
+.brand-sub,
+.metric-label {
+  color: var(--sdlg-muted) !important;
+}
+
+/* Kill decorative motion / glass theater */
+button,
+[role="button"],
+a,
+.nav-btn,
+.icon-btn,
+.card,
+[class*="card"],
+[class*="Card"],
+.metric-card,
+input,
+select,
+textarea,
+.claim-row,
+tbody tr {
+  transition:
+    background-color 0.15s var(--sdlg-ease),
+    border-color 0.15s var(--sdlg-ease),
+    color 0.15s var(--sdlg-ease),
+    box-shadow 0.15s var(--sdlg-ease) !important;
+  transform: none !important;
+}
+
+button:hover,
+[role="button"]:hover,
+.card:hover,
+[class*="card"]:hover,
+[class*="Card"]:hover,
+.metric-card:hover,
+.icon-btn:hover,
+.nav-btn:hover {
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Header — calm, no heavy blur chrome */
+.app-shell:not(:has(.login-screen)) header,
+.app-shell:not(:has(.login-screen)) .topbar {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .nav-scroll {
+  gap: 2px !important;
+  padding: 3px !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-sm) !important;
+  background: var(--sdlg-surface-muted) !important;
+}
+
+.nav-btn {
+  border-radius: 5px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  padding: 7px 12px !important;
+  color: var(--sdlg-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: var(--sdlg-text) !important;
+}
+
+.nav-btn.active {
+  background: var(--sdlg-surface) !important;
+  color: var(--sdlg-primary-strong) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  font-weight: 650 !important;
+}
+
+.brand-mark {
+  border-radius: 8px !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+}
+
+/* Layout density */
+.app-shell:not(:has(.login-screen)) .page {
+  max-width: 1280px !important;
+  padding: 24px 20px 48px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page-title {
+  font-size: clamp(22px, 2.2vw, 28px) !important;
+  margin-bottom: 4px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page-sub {
+  margin-top: 4px !important;
+  margin-bottom: 18px !important;
+  font-size: 13px !important;
+}
+
+/* Cards — tight radius, light border, minimal shadow */
+.app-shell:not(:has(.login-screen)) .card,
+.app-shell:not(:has(.login-screen)) .metric-card,
+.app-shell:not(:has(.login-screen)) .loading-card,
+.app-shell:not(:has(.login-screen)) .empty-card,
+.app-shell:not(:has(.login-screen)) [class*="card"],
+.app-shell:not(:has(.login-screen)) [class*="Card"],
+.app-shell:not(:has(.login-screen)) [class*="panel"],
+.app-shell:not(:has(.login-screen)) [class*="Panel"] {
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  background: var(--sdlg-surface) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .card:hover,
+.app-shell:not(:has(.login-screen)) [class*="card"]:hover,
+.app-shell:not(:has(.login-screen)) [class*="Card"]:hover {
+  border-color: var(--sdlg-border-strong) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .card-pad {
+  padding: 14px 16px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .metric-grid {
+  display: grid !important;
+  gap: 10px !important;
+  margin-bottom: 18px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .metric-card {
+  background: var(--sdlg-surface) !important;
+  padding: 12px 14px !important;
+  min-height: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .metric-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .metric-value {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.15 !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Buttons — restrained */
+.app-shell:not(:has(.login-screen)) button,
+.app-shell:not(:has(.login-screen)) [role="button"],
+.app-shell:not(:has(.login-screen)) .primary-btn,
+.app-shell:not(:has(.login-screen)) .secondary-btn,
+.app-shell:not(:has(.login-screen)) .danger-btn {
+  border-radius: var(--sdlg-radius-sm) !important;
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .primary-btn,
+.app-shell:not(:has(.login-screen)) button[class*="primary"] {
+  background: var(--sdlg-primary) !important;
+  color: #fff !important;
+  border: 0 !important;
+  box-shadow: 0 1px 2px rgba(30, 78, 216, 0.2) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .primary-btn:hover,
+.app-shell:not(:has(.login-screen)) button[class*="primary"]:hover {
+  background: var(--sdlg-primary-strong) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .secondary-btn {
+  background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+  box-shadow: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .secondary-btn:hover {
+  background: var(--sdlg-surface-muted) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .danger-btn,
+.app-shell:not(:has(.login-screen)) button[class*="danger"] {
+  background: var(--sdlg-danger-soft) !important;
+  color: var(--sdlg-danger) !important;
+  border: 1px solid #fecaca !important;
+  box-shadow: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .icon-btn {
+  border-radius: 6px !important;
+  border: 1px solid var(--sdlg-border) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: none !important;
+  min-height: 34px !important;
+  min-width: 34px !important;
+}
+
+/* Inputs */
+.app-shell:not(:has(.login-screen)) input,
+.app-shell:not(:has(.login-screen)) select,
+.app-shell:not(:has(.login-screen)) textarea {
+  border: 1px solid var(--sdlg-border-strong) !important;
+  border-radius: var(--sdlg-radius-sm) !important;
+  min-height: 34px !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  background: var(--sdlg-surface) !important;
+  color: var(--sdlg-text) !important;
+}
+
+.app-shell:not(:has(.login-screen)) input:focus,
+.app-shell:not(:has(.login-screen)) select:focus,
+.app-shell:not(:has(.login-screen)) textarea:focus {
+  border-color: var(--sdlg-primary) !important;
+  box-shadow: var(--sdlg-ring) !important;
+  outline: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Tables — scannable ops density */
+.app-shell:not(:has(.login-screen)) .table-wrap,
+.app-shell:not(:has(.login-screen)) .claims-table-shell {
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  overflow: hidden !important;
+  background: var(--sdlg-surface) !important;
+}
+
+.app-shell:not(:has(.login-screen)) thead th,
+.app-shell:not(:has(.login-screen)) th,
+.app-shell:not(:has(.login-screen)) .claims-table-head {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-muted) !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  padding-top: 9px !important;
+  padding-bottom: 9px !important;
+}
+
+.app-shell:not(:has(.login-screen)) tbody tr:hover td {
+  background: #f8fafc !important;
+}
+
+.app-shell:not(:has(.login-screen)) .claims-list .claim-row {
+  border-bottom: 1px solid var(--sdlg-border) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
+  background: #f8fafc !important;
+  box-shadow: inset 3px 0 0 var(--sdlg-primary) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .claims-list .claim-row:last-child {
+  border-bottom: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .claims-filter-bar,
+.app-shell:not(:has(.login-screen)) .claims-searchbar {
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  padding: 10px 12px !important;
+  margin-bottom: 12px !important;
+  gap: 8px !important;
+}
+
+/* Badges */
+.app-shell:not(:has(.login-screen)) .status-badge,
+.app-shell:not(:has(.login-screen)) .badge,
+.app-shell:not(:has(.login-screen)) [class*="badge"],
+.app-shell:not(:has(.login-screen)) [class*="Badge"],
+.app-shell:not(:has(.login-screen)) [class*="pill"],
+.app-shell:not(:has(.login-screen)) [class*="Pill"] {
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.01em !important;
+  padding: 2px 8px !important;
+  line-height: 1.35 !important;
+}
+
+/* Banners */
+.app-shell:not(:has(.login-screen)) .ui-banner,
+.app-shell:not(:has(.login-screen)) .ui-inline-error,
+.app-shell:not(:has(.login-screen)) [class*="alert"] {
+  border-radius: var(--sdlg-radius-sm) !important;
+  font-size: 12.5px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .ui-banner.warn {
+  background: var(--sdlg-warning-soft) !important;
+  border-color: #fde68a !important;
+  color: var(--sdlg-warning) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .ui-banner.danger,
+.app-shell:not(:has(.login-screen)) .ui-inline-error {
+  background: var(--sdlg-danger-soft) !important;
+  border-color: #fecaca !important;
+  color: var(--sdlg-danger) !important;
+}
+
+/* Claim detail — denser, clearer hierarchy */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page {
+  max-width: 1400px !important;
+  padding-top: 16px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="card"],
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="panel"] {
+  box-shadow: none !important;
+  border-color: var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
+  padding: 12px 14px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-title {
+  font-size: 12.5px !important;
+  font-weight: 650 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-sub {
+  font-size: 11.5px !important;
+  color: var(--sdlg-muted) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-head {
+  margin-bottom: 8px !important;
+}
+
+/* Modals */
+.app-shell:not(:has(.login-screen)) .modal,
+.app-shell:not(:has(.login-screen)) .dialog,
+.app-shell:not(:has(.login-screen)) [role="dialog"] {
+  border-radius: var(--sdlg-radius-lg) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  box-shadow: var(--sdlg-shadow-md) !important;
+}
+
+/* Theme switcher */
+.sdlg-theme-switcher {
+  border: 1px solid var(--sdlg-border) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-radius: 999px !important;
+  backdrop-filter: none !important;
+}
+
+.sdlg-theme-switcher button[aria-pressed="true"] {
+  background: var(--sdlg-primary) !important;
+  color: #fff !important;
+}
+
+/* Login — keep calm, tighter radius, no gradient body theater */
+.login-screen {
+  background: var(--sdlg-bg) !important;
+}
+
+.login-card {
+  border-radius: var(--sdlg-radius-lg) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  box-shadow: var(--sdlg-shadow-md) !important;
+  background: var(--sdlg-surface) !important;
+}
+
+.login-brand-mark {
+  border-radius: 10px !important;
+}
+
+.login-submit {
+  border-radius: var(--sdlg-radius-sm) !important;
+  background: var(--sdlg-primary) !important;
+  box-shadow: 0 1px 3px rgba(30, 78, 216, 0.22) !important;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: var(--sdlg-primary-strong) !important;
+  transform: none !important;
+}
+
+.login-field input {
+  border-radius: var(--sdlg-radius-sm) !important;
+  min-height: 42px !important;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --sdlg-bg: #0b1120;
+  --sdlg-surface: #111827;
+  --sdlg-surface-muted: #1a2332;
+  --sdlg-border: #243044;
+  --sdlg-border-strong: #334155;
+  --sdlg-text: #e2e8f0;
+  --sdlg-muted: #94a3b8;
+  --sdlg-faint: #64748b;
+  --sdlg-primary: #818cf8;
+  --sdlg-primary-strong: #a5b4fc;
+  --sdlg-primary-soft: #1e293b;
+  --sdlg-success: #34d399;
+  --sdlg-success-soft: rgba(52, 211, 153, 0.12);
+  --sdlg-warning: #fbbf24;
+  --sdlg-warning-soft: rgba(251, 191, 36, 0.12);
+  --sdlg-danger: #f87171;
+  --sdlg-danger-soft: rgba(248, 113, 113, 0.12);
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: var(--sdlg-bg) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar {
+  background: rgba(17, 24, 39, 0.98) !important;
+  border-bottom-color: var(--sdlg-border) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-theme="dark"] .login-screen {
+  background: var(--sdlg-bg) !important;
+}
+
+html[data-theme="dark"] .login-card {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .sdlg-theme-switcher {
+  background: rgba(17, 24, 39, 0.96) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+/* Mobile density */
+@media (max-width: 760px) {
+  .app-shell:not(:has(.login-screen)) .page {
+    padding: 60px 12px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page-title {
+    font-size: 22px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .metric-grid {
+    gap: 8px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .metric-value {
+    font-size: 20px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .nav-scroll {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .nav-btn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    background: var(--sdlg-surface-muted) !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .nav-btn.active {
+    background: var(--sdlg-primary-soft) !important;
+    box-shadow: none !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .claims-filter-bar {
+    padding: 10px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
+    padding-top: 10px !important;
+  }
+}
+
+/* Decision-first claim UX — make the route and next action scannable. */
+.app-shell:not(:has(.login-screen)) [data-sdlg-warranty-routing] {
+  border-color: var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+}
+
+.sdlg-route-summary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 32%) !important;
+  gap: 16px !important;
+  align-items: center !important;
+  margin: 14px 0 !important;
+  padding: 14px 16px !important;
+  border: 1px solid var(--sdlg-border-strong) !important;
+  border-left: 4px solid var(--sdlg-primary) !important;
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.sdlg-route-summary__kicker {
+  color: var(--sdlg-muted) !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: .08em !important;
+  line-height: 1.2 !important;
+}
+
+.sdlg-route-summary__title {
+  margin-top: 3px !important;
+  color: var(--sdlg-text) !important;
+  font-size: 17px !important;
+  font-weight: 750 !important;
+  letter-spacing: -.02em !important;
+  line-height: 1.25 !important;
+}
+
+.sdlg-route-summary__reason {
+  max-width: 760px !important;
+  margin-top: 5px !important;
+  color: var(--sdlg-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.sdlg-route-summary__next {
+  padding-left: 16px !important;
+  border-left: 1px solid var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.sdlg-route-summary__next span {
+  display: block !important;
+  margin-bottom: 3px !important;
+  color: var(--sdlg-muted) !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+.sdlg-route-summary__next strong { font-weight: 700 !important; }
+.sdlg-route-sdlg { border-left-color: var(--sdlg-success) !important; background: var(--sdlg-success-soft) !important; }
+.sdlg-route-sdlg .sdlg-route-summary__title { color: #056b49 !important; }
+.sdlg-route-marketing { border-left-color: var(--sdlg-primary) !important; background: var(--sdlg-primary-soft) !important; }
+.sdlg-route-marketing .sdlg-route-summary__title { color: var(--sdlg-primary-strong) !important; }
+.sdlg-route-review { border-left-color: var(--sdlg-warning) !important; background: var(--sdlg-warning-soft) !important; }
+.sdlg-route-review .sdlg-route-summary__title { color: #92400e !important; }
+.sdlg-route-non-warranty { border-left-color: var(--sdlg-muted) !important; background: var(--sdlg-surface-muted) !important; }
+
+/* Remove legacy visual noise that conflicts with the ops-clean system. */
+.app-shell:not(:has(.login-screen)) .page:has(.status-track) .status-track {
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.claim-decision-summary {
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .claims-table-shell,
+.app-shell:not(:has(.login-screen)) .table-wrap {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.app-shell:not(:has(.login-screen)) button:focus-visible,
+.app-shell:not(:has(.login-screen)) a:focus-visible,
+.app-shell:not(:has(.login-screen)) input:focus-visible,
+.app-shell:not(:has(.login-screen)) select:focus-visible,
+.app-shell:not(:has(.login-screen)) textarea:focus-visible {
+  outline: 3px solid rgba(30, 78, 216, .28) !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 760px) {
+  .sdlg-route-summary {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 13px 14px !important;
+  }
+  .sdlg-route-summary__next {
+    padding: 9px 0 0 !important;
+    border-top: 1px solid var(--sdlg-border-strong) !important;
+    border-left: 0 !important;
+  }
+  .sdlg-route-summary__title { font-size: 16px !important; }
+  .sdlg-route-summary__reason { font-size: 12px !important; }
+}

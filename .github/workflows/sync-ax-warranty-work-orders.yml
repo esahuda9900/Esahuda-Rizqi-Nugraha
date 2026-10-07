@@ -1,0 +1,37 @@
+name: Sync Dynamics AX Warranty Work Orders
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/seed/ax_warranty_work_orders.json'
+      - 'scripts/sync-ax-warranty-work-orders.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-ax-warranty-work-orders
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s supabase/seed/ax_warranty_work_orders.json
+          node -e "const s=require('./supabase/seed/ax_warranty_work_orders.json'); if(s.record_count!==s.records.length) throw new Error('record_count mismatch'); if(!s.records.length) throw new Error('empty seed'); console.log('AX seed validated:', s.records.length, 'records')"
+
+      - name: Sync AX work orders
+        run: node scripts/sync-ax-warranty-work-orders.mjs

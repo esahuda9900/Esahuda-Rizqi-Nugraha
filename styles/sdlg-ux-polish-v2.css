@@ -1,0 +1,187 @@
+/* SDLG_UX_POLISH_V2 — page-specific authenticated UX polish. Login intentionally excluded. */
+.app-shell:not(:has(.login-screen)){
+  --ux-bg:#f5f7fb;--ux-surface:#fff;--ux-soft:#f8faff;--ux-line:#e5eaf2;--ux-line-strong:#d4dce8;
+  --ux-text:#142033;--ux-muted:#6b778c;--ux-primary:#3267e8;--ux-primary-dark:#2758ca;
+  --ux-success:#11805f;--ux-warning:#a56a16;--ux-danger:#b94752;
+  --ux-r:16px;--ux-r-sm:11px;--ux-shadow:0 1px 2px rgba(20,32,51,.03),0 10px 26px rgba(20,32,51,.045);
+  --ux-shadow-hover:0 14px 34px rgba(20,32,51,.08);
+}
+
+/* ---------- Shared page rhythm ---------- */
+.app-shell:not(:has(.login-screen)) .page > *{min-width:0}
+.app-shell:not(:has(.login-screen)) .section-head{gap:16px}
+.app-shell:not(:has(.login-screen)) .section-title{line-height:1.25}
+.app-shell:not(:has(.login-screen)) .section-sub{line-height:1.5}
+.app-shell:not(:has(.login-screen)) .card,
+.app-shell:not(:has(.login-screen)) .metric-card,
+.app-shell:not(:has(.login-screen)) .claims-filter-bar,
+.app-shell:not(:has(.login-screen)) .claims-table-shell{
+  overflow:hidden;
+}
+.app-shell:not(:has(.login-screen)) .primary-btn,
+.app-shell:not(:has(.login-screen)) .secondary-btn,
+.app-shell:not(:has(.login-screen)) .danger-btn{
+  min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+}
+
+/* ---------- Master Dashboard ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid){
+  position:relative;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-grid{
+  align-items:stretch;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card{
+  min-height:120px;
+  padding:19px 19px 18px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-label{
+  text-transform:uppercase;letter-spacing:.06em;font-size:9.5px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-value{
+  margin-top:7px;font-size:31px;font-variant-numeric:tabular-nums;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card::before{
+  content:"";position:absolute;left:0;top:0;width:4px;height:100%;background:linear-gradient(180deg,#4b7df0,#3267e8);opacity:.9;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .status-track{
+  padding:3px;border-radius:14px;background:#fafbfe;border:1px solid #edf1f6;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .status-step{
+  min-height:70px;display:flex;flex-direction:column;justify-content:center;
+}
+
+/* ---------- Claims operations ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{
+  display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:9px;align-items:center;
+  padding:10px;border:1px solid var(--ux-line);border-radius:14px;background:rgba(255,255,255,.94);
+  box-shadow:var(--ux-shadow);margin-bottom:14px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{min-width:0}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input{
+  min-height:44px;border-color:#d7deea;background:#fbfcfe;padding-left:40px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:focus{background:#fff}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell{
+  border-radius:16px;box-shadow:var(--ux-shadow);background:#fff;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list .claim-row{
+  min-height:82px;padding:14px 16px;border-bottom:1px solid #edf1f6!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-open-action{
+  border:1px solid #d5ddea!important;background:#fff!important;color:#34445e!important;border-radius:10px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-open-action:hover{
+  background:#f7f9fd!important;border-color:#bdc9da!important;
+}
+
+/* ---------- Claim detail ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid{
+  grid-template-columns:minmax(0,1.55fr) minmax(300px,.7fr);gap:18px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid > .card,
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid > div > .card{
+  border-radius:18px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .sticky-side{
+  top:86px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .sticky-side .card:first-child{
+  background:linear-gradient(145deg,#fbfdff,#f7faff)!important;
+  border-color:#dce5f5!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .status-track{
+  overflow:auto;padding-bottom:3px;scrollbar-width:none;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .status-step{min-width:96px}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) table tbody tr:hover td{background:#f8faff!important}
+
+/* ---------- New Claim / Paste workflow ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) > div{
+  max-width:980px!important;margin:0 auto!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) .card{
+  border-radius:20px!important;box-shadow:var(--ux-shadow)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea{
+  min-height:260px!important;background:#fbfcfe!important;border:1px solid #d7deea!important;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;font-size:12px!important;line-height:1.65!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea:focus{
+  background:#fff!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) input[type="file"]{
+  border:1px dashed #b9c7dd!important;background:#f8faff!important;border-radius:13px!important;
+}
+
+/* ---------- SDLG Input Helper ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari Claim ID / Serial / Model / Customer"]) > div{
+  max-width:920px!important;margin:0 auto!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari Claim ID / Serial / Model / Customer"]) .card{
+  border-radius:20px!important;box-shadow:var(--ux-shadow)!important;background:linear-gradient(180deg,#fff,#fbfcff)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari Claim ID / Serial / Model / Customer"]) .card > input{
+  min-height:46px!important;margin-top:5px;border-radius:12px!important;background:#fbfcfe!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari Claim ID / Serial / Model / Customer"]) .card > select{
+  min-height:46px!important;margin-top:4px;border-radius:12px!important;background:#fff!important;
+}
+
+/* ---------- Master Data ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari "][value=""]) > div[style*="max-width: 1100px"]{
+  max-width:1160px!important;margin:0 auto!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari "][value=""]) table{
+  font-variant-numeric:tabular-nums;
+}
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari "][value=""]) table th:first-child,
+.app-shell:not(:has(.login-screen)) .page:has(input[placeholder*="Cari "][value=""]) table td:first-child{
+  padding-left:16px!important;
+}
+
+/* ---------- Data Quality ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.ui-inline-error) > div[style*="max-width: 1180px"],
+.app-shell:not(:has(.login-screen)) .page:has(.ui-banner) > div[style*="max-width: 1180px"]{
+  max-width:1200px!important;margin:0 auto!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.ui-inline-error) .ui-inline-error,
+.app-shell:not(:has(.login-screen)) .page:has(.ui-banner) .ui-banner{
+  box-shadow:0 1px 2px rgba(20,32,51,.025);line-height:1.5;
+}
+
+/* ---------- Dense tables: readable without feeling spreadsheet-like ---------- */
+.app-shell:not(:has(.login-screen)) table{
+  font-variant-numeric:tabular-nums;
+}
+.app-shell:not(:has(.login-screen)) table td:first-child{
+  color:#273750;font-weight:600;
+}
+.app-shell:not(:has(.login-screen)) table th{
+  white-space:nowrap;
+}
+
+/* ---------- Responsive refinement ---------- */
+@media(max-width:1000px){
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{grid-template-columns:1fr 1fr}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{grid-column:1/-1}
+  .app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid{grid-template-columns:1fr}
+  .app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .sticky-side{position:static}
+}
+@media(max-width:760px){
+  .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card{min-height:100px;padding:14px}
+  .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-value{font-size:24px}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{grid-template-columns:1fr 1fr;gap:8px}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{grid-column:1/-1}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar button{width:100%;font-size:10.5px}
+  .app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid{gap:11px}
+  .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea{min-height:210px}
+}
+@media(max-width:480px){
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{grid-template-columns:1fr}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{grid-column:auto}
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .app-shell:not(:has(.login-screen)) *, .app-shell:not(:has(.login-screen)) *::before, .app-shell:not(:has(.login-screen)) *::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
+}

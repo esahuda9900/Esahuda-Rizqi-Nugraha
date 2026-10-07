@@ -1,0 +1,53 @@
+name: Build Determinism Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'scripts/**'
+      - 'modules/**'
+      - 'styles/**'
+      - 'canonical-warranty-helper.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+      - '.nvmrc'
+      - 'wrangler.jsonc'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-determinism-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  compare-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout PR source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Install pinned pnpm
+        run: |
+          set -euo pipefail
+          npm install --global pnpm@10.11.1 --no-audit --no-fund
+          pnpm --version
+
+      - name: Run npm-vs-pnpm build comparison
+        run: node scripts/verify-build-determinism.js
+
+      - name: Reproduce historical Cloudflare build
+        run: node scripts/verify-cloudflare-build-reproduction.js

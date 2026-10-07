@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sdlg-warranty-backup",
+  "compatibility_date": "2026-09-16",
+  "assets": {
+    "directory": ".",
+    "include": [
+      "index.html",
+      "canonical-warranty-helper.js",
+      "modules/**",
+      "styles/**"
+    ],
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,49 @@
+name: Verifier Negative Contract
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'scripts/verify-production-live.js'
+      - 'scripts/verify-verifier-negative.js'
+      - 'scripts/test-production-verifier-mock.cjs'
+      - 'package.json'
+      - '.github/workflows/verifier-negative.yml'
+  pull_request:
+    paths:
+      - 'scripts/verify-production-live.js'
+      - 'scripts/verify-verifier-negative.js'
+      - 'scripts/test-production-verifier-mock.cjs'
+      - 'package.json'
+      - '.github/workflows/verifier-negative.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  negative-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+
+      - name: Enable pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global pnpm@10.11.1 --no-audit --no-fund
+          pnpm --version
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run verifier negative contract
+        run: npm run test:verifier-negative

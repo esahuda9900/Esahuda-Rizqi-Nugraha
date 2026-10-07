@@ -1,0 +1,249 @@
+/* SDLG ALIVE RECOLOR V1
+   Visual-only token + surface refresh.
+   Goal: less flat / monotone, more depth & life — still professional for ops.
+   Cascade: injected last so it wins over modern-refresh / ops-clean / polish.
+   No business logic. Respects prefers-reduced-motion. */
+
+:root {
+  /* Foundation — soft warm slate (not pure cold gray-blue) */
+  --sdlg-bg: #eef1f7;
+  --sdlg-surface: #ffffff;
+  --sdlg-surface-muted: #f5f7fb;
+  --sdlg-border: #e2e8f2;
+  --sdlg-border-strong: #cfd8e6;
+  --sdlg-text: #0c1526;
+  --sdlg-muted: #5a6578;
+
+  /* Brand — richer indigo with a hint of teal energy */
+  --sdlg-primary: #2f5bff;
+  --sdlg-primary-strong: #1e45d6;
+  --sdlg-primary-soft: #eaf0ff;
+
+  /* Status — slightly more saturated for scanability */
+  --sdlg-success: #0d9f6e;
+  --sdlg-success-soft: #e6f8f1;
+  --sdlg-warning: #c47a0a;
+  --sdlg-warning-soft: #fff6e4;
+  --sdlg-danger: #e03e4a;
+  --sdlg-danger-soft: #fff0f1;
+
+  /* Accent — warm amber for highlights / focus (breaks blue monotony) */
+  --sdlg-accent: #f59e0b;
+  --sdlg-accent-soft: #fff8eb;
+
+  --sdlg-radius: 16px;
+  --sdlg-radius-sm: 12px;
+  --sdlg-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --sdlg-shadow-xs: 0 1px 2px rgba(12, 21, 38, 0.05);
+  --sdlg-shadow-sm: 0 2px 6px rgba(12, 21, 38, 0.06), 0 1px 2px rgba(12, 21, 38, 0.04);
+  --sdlg-shadow-md: 0 8px 24px rgba(12, 21, 38, 0.08), 0 2px 8px rgba(12, 21, 38, 0.04);
+  --sdlg-shadow-lg: 0 20px 48px rgba(12, 21, 38, 0.12), 0 8px 16px rgba(12, 21, 38, 0.06);
+  --sdlg-ring: 0 0 0 4px rgba(47, 91, 255, 0.16);
+
+  /* Polish layer aliases */
+  --ux-ink: #0c1526;
+  --ux-muted: #5a6578;
+  --ux-line: #e2e8f2;
+  --ux-brand: #2f5bff;
+  --ux-brand-soft: #eaf0ff;
+  --ux-surface: #ffffff;
+}
+
+/* Page atmosphere — subtle dual glow (indigo + warm amber) */
+html,
+body {
+  background:
+    radial-gradient(1100px 560px at 88% -10%, rgba(47, 91, 255, 0.09), transparent 58%),
+    radial-gradient(900px 480px at 0% 0%, rgba(245, 158, 11, 0.06), transparent 52%),
+    radial-gradient(700px 400px at 50% 100%, rgba(13, 159, 110, 0.04), transparent 50%),
+    var(--sdlg-bg) !important;
+  background-attachment: fixed !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Top bar — clearer separation from content */
+header,
+.topbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 24px rgba(12, 21, 38, 0.04) !important;
+  backdrop-filter: blur(12px) saturate(1.2) !important;
+}
+
+/* Brand mark — richer gradient */
+.brand-mark,
+.login-loading-mark,
+[class*="brand-mark"] {
+  background: linear-gradient(135deg, #0c1526 0%, #2f5bff 55%, #0d9f6e 120%) !important;
+  box-shadow: 0 8px 20px rgba(47, 91, 255, 0.25) !important;
+}
+
+/* Nav — active state more vivid, idle calmer */
+.nav-btn {
+  color: var(--sdlg-muted) !important;
+  border-radius: 10px !important;
+}
+.nav-btn:hover {
+  background: var(--sdlg-primary-soft) !important;
+  color: var(--sdlg-primary-strong) !important;
+}
+.nav-btn.active,
+.nav-btn[aria-current="page"],
+.nav-btn.is-active {
+  background: linear-gradient(135deg, #2f5bff, #3b6bff) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(47, 91, 255, 0.28) !important;
+}
+
+/* Cards & surfaces — depth without noise */
+.card,
+[class*="card"],
+.metric-card,
+.claims-table-shell,
+.sdlg-tracking-panel,
+.sdlg-claim-command {
+  border-color: var(--sdlg-border) !important;
+  background: var(--sdlg-surface) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+}
+.card:hover,
+.metric-card:hover {
+  box-shadow: var(--sdlg-shadow-md) !important;
+  border-color: var(--sdlg-border-strong) !important;
+}
+
+/* Primary buttons */
+button.primary,
+.btn-primary,
+.btn.primary,
+[class*="btn-primary"],
+button[class*="primary"]:not(.ghost):not(.secondary) {
+  background: linear-gradient(135deg, #2f5bff, #3d6aff) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(47, 91, 255, 0.28) !important;
+}
+button.primary:hover,
+.btn-primary:hover {
+  filter: brightness(1.05) !important;
+  box-shadow: 0 6px 18px rgba(47, 91, 255, 0.34) !important;
+}
+
+/* Status badges — punchier */
+.status-badge,
+[class*="status-badge"],
+[class*="badge"] {
+  font-weight: 750 !important;
+}
+.status-badge.is-ok,
+[class*="badge"][class*="success"],
+[class*="IN WARRANTY"] {
+  background: var(--sdlg-success-soft) !important;
+  color: var(--sdlg-success) !important;
+  border-color: #a7e8cd !important;
+}
+
+/* Tracking panel — primary decision surface gets a soft brand edge */
+.sdlg-tracking-panel {
+  border: 1px solid #d4e0ff !important;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 48%) !important;
+  box-shadow: var(--sdlg-shadow-md) !important;
+  border-radius: var(--sdlg-radius) !important;
+}
+.sdlg-tracking-panel__value--next {
+  color: var(--sdlg-primary) !important;
+  font-weight: 800 !important;
+}
+.sdlg-tracking-panel__value--blocked {
+  color: var(--sdlg-danger) !important;
+}
+.sdlg-tracking-panel__value--owner {
+  color: #1a3a8a !important;
+}
+
+/* Command bar identity */
+.sdlg-claim-command {
+  border: 1px solid var(--sdlg-border) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f7ff 100%) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+  border-radius: var(--sdlg-radius) !important;
+}
+.sdlg-claim-command__title {
+  color: var(--sdlg-text) !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.02em !important;
+}
+.sdlg-claim-command__eyebrow {
+  color: var(--sdlg-primary) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Route summary demoted but not dead */
+.sdlg-tracking-active .sdlg-route-summary {
+  opacity: 0.92 !important;
+  border-color: var(--sdlg-border) !important;
+  background: var(--sdlg-surface-muted) !important;
+}
+
+/* Tables — zebra + hover for less flat reading */
+tbody tr:nth-child(even) {
+  background: rgba(247, 249, 252, 0.85) !important;
+}
+tbody tr:hover {
+  background: var(--sdlg-primary-soft) !important;
+}
+
+/* Metric cards — slight top accent line */
+.metric-card {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.metric-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2f5bff, #0d9f6e 70%, #f59e0b);
+  opacity: 0.85;
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  border-color: var(--sdlg-border-strong) !important;
+  background: #fff !important;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--sdlg-primary) !important;
+  box-shadow: var(--sdlg-ring) !important;
+  outline: none !important;
+}
+
+/* Role pill (Warranty Admin) — warmer success */
+.nav-tools [class*="role"],
+.nav-tools .badge,
+.nav-tools span[style] {
+  border-radius: 999px !important;
+}
+
+/* Login loading */
+.login-loading {
+  background:
+    radial-gradient(circle at 18% 0%, #eaf0ff 0%, transparent 42%),
+    radial-gradient(circle at 90% 10%, rgba(245, 158, 11, 0.08), transparent 40%),
+    #f0f3f9 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    background-attachment: scroll !important;
+  }
+}

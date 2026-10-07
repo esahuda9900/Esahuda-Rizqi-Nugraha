@@ -1,0 +1,328 @@
+/* SDLG_COMMAND_CENTER_V2
+   Visual-only UI/UX refinement layer.
+   Loaded by the existing final visual injector; no business logic changes. */
+
+:root{
+  --cc-bg:#f5f7fb;
+  --cc-surface:#ffffff;
+  --cc-surface-2:#f8fafc;
+  --cc-surface-3:#f1f5f9;
+  --cc-border:#e6ebf2;
+  --cc-border-strong:#d7deea;
+  --cc-text:#111827;
+  --cc-text-2:#334155;
+  --cc-muted:#64748b;
+  --cc-faint:#94a3b8;
+  --cc-primary:#315de7;
+  --cc-primary-dark:#2447b8;
+  --cc-primary-soft:#edf3ff;
+  --cc-success:#12946a;
+  --cc-success-soft:#ebfaf3;
+  --cc-warning:#b66a11;
+  --cc-warning-soft:#fff7e9;
+  --cc-danger:#c43c49;
+  --cc-danger-soft:#fff1f2;
+  --cc-radius:14px;
+  --cc-radius-sm:10px;
+  --cc-shadow:0 1px 2px rgba(15,23,42,.035),0 8px 28px rgba(15,23,42,.045);
+  --cc-shadow-hover:0 12px 34px rgba(15,23,42,.075);
+  --cc-ease:cubic-bezier(.22,1,.36,1);
+}
+
+.app-shell:not(:has(.login-screen)),
+.app-shell:not(:has(.login-screen)) body{ color:var(--cc-text)!important; }
+
+/* ---------- Overall chrome ---------- */
+.app-shell:not(:has(.login-screen)) .page{
+  max-width:1280px!important;
+  padding:28px 22px 56px!important;
+}
+.app-shell:not(:has(.login-screen)) .page > *{ min-width:0; }
+.app-shell:not(:has(.login-screen)) .page-title{
+  font-size:clamp(27px,2.6vw,34px)!important;
+  line-height:1.08!important;
+  letter-spacing:-.045em!important;
+}
+.app-shell:not(:has(.login-screen)) .page-sub{
+  margin-top:7px!important;
+  color:var(--cc-muted)!important;
+  font-size:13px!important;
+}
+
+/* Keep the header airy, but stop it from feeling like a floating app shell. */
+.app-shell:not(:has(.login-screen)) .topbar{
+  height:68px!important;
+  box-shadow:0 1px 0 rgba(15,23,42,.035),0 8px 22px rgba(15,23,42,.035)!important;
+}
+.app-shell:not(:has(.login-screen)) .topbar-inner{
+  max-width:1280px!important;
+  padding:0 18px!important;
+  gap:16px!important;
+}
+.app-shell:not(:has(.login-screen)) .brand{ min-width:238px!important; }
+.app-shell:not(:has(.login-screen)) .brand-title{ font-size:13px!important; }
+.app-shell:not(:has(.login-screen)) .brand-sub{ font-size:10px!important; }
+.app-shell:not(:has(.login-screen)) .nav-scroll{
+  gap:2px!important;
+  padding:3px!important;
+  border:1px solid rgba(220,227,238,.85)!important;
+  border-radius:12px!important;
+  background:rgba(248,250,252,.88)!important;
+}
+.app-shell:not(:has(.login-screen)) .nav-btn{
+  padding:8px 12px!important;
+  border-radius:9px!important;
+  font-size:11.5px!important;
+  letter-spacing:-.005em!important;
+}
+.app-shell:not(:has(.login-screen)) .nav-btn.active{
+  background:#fff!important;
+  color:var(--cc-primary-dark)!important;
+  box-shadow:0 1px 3px rgba(15,23,42,.08),inset 0 0 0 1px rgba(49,93,231,.12)!important;
+}
+.app-shell:not(:has(.login-screen)) .nav-tools{ gap:7px!important; }
+.app-shell:not(:has(.login-screen)) .connection-pill{
+  border:1px solid var(--cc-border)!important;
+  background:#fff!important;
+  border-radius:999px!important;
+  min-height:36px!important;
+  padding:0 10px!important;
+}
+
+/* ---------- Shared surface language ---------- */
+.app-shell:not(:has(.login-screen)) .card,
+.app-shell:not(:has(.login-screen)) .metric-card,
+.app-shell:not(:has(.login-screen)) [class*="panel"],
+.app-shell:not(:has(.login-screen)) [class*="Panel"],
+.app-shell:not(:has(.login-screen)) .claims-searchbar,
+.app-shell:not(:has(.login-screen)) .claims-table-shell,
+.app-shell:not(:has(.login-screen)) .table-wrap{
+  border-color:var(--cc-border)!important;
+  border-radius:var(--cc-radius)!important;
+  box-shadow:var(--cc-shadow)!important;
+}
+.app-shell:not(:has(.login-screen)) .card:hover,
+.app-shell:not(:has(.login-screen)) .metric-card:hover{
+  transform:translateY(-1px)!important;
+  border-color:var(--cc-border-strong)!important;
+  box-shadow:var(--cc-shadow-hover)!important;
+}
+.app-shell:not(:has(.login-screen)) button,
+.app-shell:not(:has(.login-screen)) input,
+.app-shell:not(:has(.login-screen)) select,
+.app-shell:not(:has(.login-screen)) textarea,
+.app-shell:not(:has(.login-screen)) .card,
+.app-shell:not(:has(.login-screen)) .metric-card,
+.app-shell:not(:has(.login-screen)) .claim-row,
+.app-shell:not(:has(.login-screen)) .nav-btn{
+  transition:transform .22s var(--cc-ease),background-color .22s var(--cc-ease),border-color .22s var(--cc-ease),box-shadow .26s var(--cc-ease),color .22s var(--cc-ease)!important;
+}
+.app-shell:not(:has(.login-screen)) button:hover:not(:disabled){ transform:translateY(-1px); }
+.app-shell:not(:has(.login-screen)) button:active:not(:disabled){ transform:translateY(0)!important; }
+.app-shell:not(:has(.login-screen)) input:focus,
+.app-shell:not(:has(.login-screen)) select:focus,
+.app-shell:not(:has(.login-screen)) textarea:focus{
+  outline:none!important;
+  border-color:#7b99ef!important;
+  box-shadow:0 0 0 4px rgba(49,93,231,.12)!important;
+}
+
+/* ---------- Dashboard: command-center hierarchy ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid){
+  padding-top:34px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-grid{
+  gap:12px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card{
+  min-height:126px!important;
+  position:relative!important;
+  overflow:hidden!important;
+  padding:20px!important;
+  background:linear-gradient(180deg,#fff 0%,#fbfcff 100%)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card::after{
+  content:"";
+  position:absolute;
+  width:92px;height:92px;
+  right:-24px;bottom:-30px;
+  border-radius:50%;
+  background:rgba(49,93,231,.045);
+  pointer-events:none;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-label{
+  color:#7c899d!important;
+  font-size:10px!important;
+  letter-spacing:.09em!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-value{
+  margin-top:10px!important;
+  font-size:30px!important;
+  line-height:1.02!important;
+  font-weight:850!important;
+  letter-spacing:-.045em!important;
+  font-variant-numeric:tabular-nums;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card:first-child{
+  background:linear-gradient(145deg,#ffffff 0%,#f8fbff 100%)!important;
+}
+
+/* Action center */
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card.card-pad{
+  padding:18px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card[style*="My Action Today"]{ box-shadow:none!important; }
+.app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card[style*="linear-gradient"]{
+  border:1px solid #dce6f7!important;
+  background:linear-gradient(145deg,#ffffff 0%,#f8fbff 100%)!important;
+}
+
+/* ---------- Claims: compact filter system ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{
+  grid-template-columns:minmax(0,1fr) auto auto!important;
+  min-height:64px!important;
+  padding:8px!important;
+  gap:8px!important;
+  background:rgba(255,255,255,.92)!important;
+  backdrop-filter:blur(10px);
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input{
+  min-height:44px!important;
+  background:#f8fafc!important;
+  border-color:#dce3ee!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input:focus{ background:#fff!important; }
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .secondary-btn,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) button{
+  min-height:44px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell{
+  overflow:hidden!important;
+  background:#fff!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list .claim-row{
+  min-height:76px!important;
+  padding:12px 16px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list .claim-row:hover{
+  background:#f8fbff!important;
+  box-shadow:inset 3px 0 var(--cc-primary)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell thead th,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell th{
+  position:sticky;top:0;z-index:2;
+  background:#f8fafc!important;
+}
+
+/* Year tabs: turn them into a quiet segmented control. */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .page > div:nth-of-type(2){
+  display:flex!important;gap:4px!important;padding:3px!important;
+  width:max-content!important;border:1px solid var(--cc-border)!important;
+  background:#eef2f7!important;border-radius:11px!important;
+}
+
+/* ---------- New Claim: calmer input canvas ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]){
+  padding-top:34px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea{
+  min-height:285px!important;
+  border:1px solid #d9e1ed!important;
+  background:#fbfcfe!important;
+  border-radius:14px!important;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.02)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea:hover{
+  border-color:#c6d0df!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) input[type="file"]{
+  min-height:58px!important;
+  padding:14px!important;
+  border-style:dashed!important;
+  background:#f8fbff!important;
+}
+
+/* ---------- SDLG Input helper ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid){
+  padding-top:26px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .sticky-side .card{
+  box-shadow:0 3px 18px rgba(15,23,42,.055)!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) .detail-grid{
+  gap:14px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) table th{
+  background:#f8fafc!important;
+  font-size:10px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.detail-grid) table td{
+  font-size:12px!important;
+}
+
+/* ---------- Master Data: denser, more useful table ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.table-wrap) table tbody tr:hover td{
+  background:#f8fbff!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.table-wrap) thead th{
+  position:sticky;top:0;z-index:2;background:#f8fafc!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.table-wrap) tbody tr{
+  min-height:62px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.table-wrap) td,
+.app-shell:not(:has(.login-screen)) .page:has(.table-wrap) th{
+  padding-top:14px!important;padding-bottom:14px!important;
+}
+
+/* ---------- Data Quality: severity-first visual language ---------- */
+.app-shell:not(:has(.login-screen)) .page:has(.ui-banner) .ui-banner,
+.app-shell:not(:has(.login-screen)) .page:has(.ui-inline-error) .ui-inline-error{
+  border-radius:14px!important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.ui-banner) [style*="ACTION REQUIRED"]{
+  letter-spacing:-.02em;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.ui-banner) .card,
+.app-shell:not(:has(.login-screen)) .page:has(.ui-inline-error) .card{
+  box-shadow:var(--cc-shadow)!important;
+}
+
+/* ---------- Scrollbars / accessibility ---------- */
+.app-shell:not(:has(.login-screen)) ::-webkit-scrollbar{ width:8px;height:8px; }
+.app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-track{ background:transparent; }
+.app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-thumb{ background:#cdd6e4;border-radius:999px; }
+.app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-thumb:hover{ background:#b9c5d6; }
+.app-shell:not(:has(.login-screen)) button:focus-visible,
+.app-shell:not(:has(.login-screen)) input:focus-visible,
+.app-shell:not(:has(.login-screen)) select:focus-visible,
+.app-shell:not(:has(.login-screen)) textarea:focus-visible{
+  outline:3px solid rgba(49,93,231,.2)!important;
+  outline-offset:1px!important;
+}
+
+@media(max-width:900px){
+  .app-shell:not(:has(.login-screen)) .topbar{ height:auto!important; }
+  .app-shell:not(:has(.login-screen)) .topbar-inner{ padding:10px 12px!important; }
+  .app-shell:not(:has(.login-screen)) .nav-scroll{ order:3;flex-basis:100%; }
+}
+@media(max-width:760px){
+  .app-shell:not(:has(.login-screen)) .page{ padding:20px 12px 36px!important; }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{ grid-template-columns:1fr 1fr!important; }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{ grid-column:1/-1; }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar button{ width:100%; }
+}
+@media(max-width:480px){
+  .app-shell:not(:has(.login-screen)) .brand{ min-width:0!important; }
+  .app-shell:not(:has(.login-screen)) .brand-sub{ max-width:160px!important; }
+  .app-shell:not(:has(.login-screen)) .page-title{ font-size:25px!important; }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar{ grid-template-columns:1fr!important; }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box{ grid-column:auto; }
+}
+@media(prefers-reduced-motion:reduce){
+  .app-shell:not(:has(.login-screen)) *,
+  .app-shell:not(:has(.login-screen)) *::before,
+  .app-shell:not(:has(.login-screen)) *::after{
+    transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}

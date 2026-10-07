@@ -1,0 +1,77 @@
+name: Architecture Guard
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'netlify.toml'
+      - 'supabase/**'
+      - 'scripts/**'
+      - 'docs/audits/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Guard automatic workflow repository mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          allowed='.github/workflows/bake-boss-analytics.yml'
+          allowed_production_bake='.github/workflows/bake-production-index.yml'
+          for f in .github/workflows/*.{yml,yaml}; do
+            [ -f "$f" ] || continue
+            [ "$f" = '.github/workflows/architecture-guard.yml' ] && continue
+            if [ "$f" = "$allowed" ] || [ "$f" = "$allowed_production_bake" ]; then
+              echo "Reviewed repository-mutating workflow allowed: $f"
+              continue
+            fi
+            # Ordinary push-triggered workflows must not mutate the repository.
+            if grep -Eq '^on:|^  on:' "$f" && grep -Eq '^  push:|^push:' "$f"; then
+              if grep -Eq 'contents:[[:space:]]*write' "$f" && grep -Eq 'git[[:space:]]+(push|commit)' "$f"; then
+                echo "Forbidden automatic repository mutation workflow: $f"
+                failed=1
+              fi
+            fi
+          done
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi
+          echo 'Automatic GitHub Actions repository mutation guard passed.'
+
+      - name: Guard deployment ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(find .github/workflows -maxdepth 1 -type f ! -name 'architecture-guard.yml' -print)
+          if [ -n "$files" ] && grep -InE 'netlify[[:space:]]+deploy|vercel[[:space:]]+deploy|supabase[[:space:]]+db[[:space:]]+(push|reset)' $files; then
+            echo 'Direct infrastructure mutation from CI is forbidden. Keep deploy authority in the platform integration.'
+            exit 1
+          fi
+
+      - name: Guard frontend CI isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/workflows/frontend-ci.yml
+          ! grep -Fq "'.github/workflows/**'" .github/workflows/frontend-ci.yml
+
+      - name: Validate workflow YAML structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; Dir[".github/workflows/*.{yml,yaml}"].each { |f| YAML.load_file(f); puts "Validated #{f}" }'
