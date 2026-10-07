@@ -7,17 +7,9 @@
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com https://frqvelcreczmnofldrga.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com; connect-src 'self' https://frqvelcreczmnofldrga.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; object-src 'none'; base-uri 'none'; form-action 'self'" />
   <title>SDLG Warranty — PT. Indo Traktor Utama</title>
-  <meta name="description" content="Internal web application for monitoring and managing SDLG warranty claims." />
-  <meta property="og:title" content="SDLG Warranty — PT. Indo Traktor Utama" />
-  <meta property="og:description" content="Internal web application for monitoring and managing SDLG warranty claims." />
   <link rel="stylesheet" href="styles/sdlg-modern-refresh.css" />
   <link rel="stylesheet" href="styles/sdlg-responsive.css" />
-<link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
-
   <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
-  <link rel="stylesheet" href="styles/sdlg-design-tokens.css" />
-  <link rel="stylesheet" href="styles/sdlg-base.css" />
-  <link rel="stylesheet" href="styles/sdlg-components.css" />
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
   <script>
     window.SDLGLoadDependencyFallback = function(el, fallbackUrl, detail) {
@@ -33,23 +25,10 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
           onerror="window.SDLGLoadDependencyFallback(this,'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js','ReactDOM runtime failed on both CDNs')"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"}))"></script>
-  <script>
-window.SDLG_LOAD_XLSX = function () {
-  if (window.XLSX) return Promise.resolve(window.XLSX);
-  if (window.__sdlgXlsxLoading) return window.__sdlgXlsxLoading;
-  window.__sdlgXlsxLoading = new Promise(function (resolve, reject) {
-    var s = document.createElement('script');
-    s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
-    s.async = true;
-    s.onload = function () { resolve(window.XLSX); };
-    s.onerror = function () { reject(new Error('Failed to load SheetJS')); };
-    document.head.appendChild(s);
-  });
-  return window.__sdlgXlsxLoading;
-};
-</script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"}))"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; }
     button { font-family: inherit; }
     textarea, input, select { font-family: inherit; }
     table { border-collapse: collapse; }
@@ -57,6 +36,7 @@ window.SDLG_LOAD_XLSX = function () {
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
     :root { --navy:#0f172a; --blue:#2563eb; --blue-soft:#eff6ff; --line:#e2e8f0; --muted:#64748b; --bg:#f5f7fb; --success:#059669; --warning:#d97706; --danger:#dc2626; }
+    body { background: var(--bg); }
     .app-shell { min-height:100vh; background:var(--bg); }
     .topbar { position:sticky; top:0; z-index:200; height:64px; background:rgba(255,255,255,.96); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); box-shadow:0 2px 12px rgba(15,23,42,.04); }
     .topbar-inner { max-width:1220px; height:100%; margin:0 auto; padding:0 18px; display:flex; align-items:center; gap:18px; }
@@ -92,10 +72,8 @@ window.SDLG_LOAD_XLSX = function () {
     .status-step.rejected { background:#fff1f2; border-color:#fecdd3; }
     .status-step.rejected .dot { background:#dc2626; }
     .status-step-label { font-size:10px; font-weight:800; color:#475569; line-height:1.2; }
-    /* SDLG_REDESIGN_STEP3: commented untuk Claim List pilot — 2026-10-07
     .claim-row { transition:.15s ease; }
     .claim-row:hover { transform:translateY(-1px); box-shadow:0 8px 22px rgba(15,23,42,.06); border-color:#cbd5e1 !important; }
-    END SDLG_REDESIGN_STEP3 */
     .search-wrap { display:flex; gap:8px; align-items:center; }
     .search-box { flex:1; position:relative; }
     .search-box input { width:100%; padding:11px 14px 11px 38px; border:1px solid var(--line); background:#fff; border-radius:10px; font-size:13px; outline:none; }
@@ -614,7 +592,7 @@ button,input,select{min-height:42px!important}
 <script src="/modules/payment-evidence.js"></script>
 <script src="/modules/rebalancing-evidence.js"></script>
 <script src="/modules/sdlg-core.js"></script>
-<script src="/modules/navigation-state.js?v=20261001-restore2"></script>
+<script src="/modules/navigation-state.js"></script>
 <script src="/modules/claim-list-sort.js"></script>
 <script>
 /* SDLG_FB_PERSON_HELPER */
@@ -622,8 +600,8 @@ function sdlgFeedbackPerson(claim){
   try {
     var n = String((claim && claim.technical_personnel) || "").trim();
     if (!n || /^unknown$/i.test(n)) return "";
-    n = n.replace(/^technician\s*[—–-]\s*/i, "").trim();
-    return n;
+    if (/^technician\s*[—–-]\s*/i.test(n)) return n;
+    return "Technician — " + n;
   } catch (e) { return ""; }
 }
 
@@ -673,14 +651,12 @@ window.SDLGPolicyRulesQuery = async function(client, selectColumns, ruleCodes) {
   }
 </script>
 <script src="/modules/claim-parser-helpers.js"></script>
-<script src="/modules/wo-collision-modal.js"></script>
-<script src="/modules/wo-claim-policy.js"></script>
 <script src="/modules/master-resolution-ux.js"></script>
 <script src="/modules/export-table-helper.js"></script>
 
 
 
-<!-- SDLG_MODERN_REFRESH_V11 -->
+<!-- SDLG_MODERN_REFRESH_V4 -->
 <style data-sdlg-modern-refresh>
 /* SDLG_MODERN_REFRESH_V1
    Final visual layer: modern, smooth, clean.
@@ -1807,1452 +1783,6 @@ html[data-theme="dark"],html[data-theme="dark"] body{
   }
 }
 
-
-/* SDLG_SAAS_SHELL_V2
-   Popular-SaaS visual system — full ops surface polish.
-   Linear / Stripe Dashboard inspired. Visual only.
-   Loaded last in modern-refresh cascade (wins). */
-
-:root {
-  --sdlg-bg: #f4f6fa;
-  --sdlg-surface: #ffffff;
-  --sdlg-surface-muted: #f7f8fb;
-  --sdlg-border: #e8ecf2;
-  --sdlg-border-strong: #d5dbe6;
-  --sdlg-text: #0f172a;
-  --sdlg-muted: #64748b;
-  --sdlg-faint: #94a3b8;
-  --sdlg-primary: #3b5bdb;
-  --sdlg-primary-strong: #2f4ac0;
-  --sdlg-primary-soft: #eef2ff;
-  --sdlg-success: #0f9f6e;
-  --sdlg-success-soft: #ecfdf5;
-  --sdlg-warning: #b45309;
-  --sdlg-warning-soft: #fffbeb;
-  --sdlg-danger: #dc2626;
-  --sdlg-danger-soft: #fef2f2;
-  --sdlg-radius: 12px;
-  --sdlg-radius-sm: 8px;
-  --sdlg-radius-lg: 16px;
-  --sdlg-ease: cubic-bezier(.16, 1, .3, 1);
-  --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, .04);
-  --sdlg-shadow-sm: 0 1px 2px rgba(15, 23, 42, .05), 0 1px 3px rgba(15, 23, 42, .04);
-  --sdlg-shadow-md: 0 4px 16px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .04);
-  --sdlg-shadow-lg: 0 12px 40px rgba(15, 23, 42, .08), 0 4px 12px rgba(15, 23, 42, .04);
-  --sdlg-ring: 0 0 0 3px rgba(59, 91, 219, .16);
-}
-
-html, body {
-  background: var(--sdlg-bg) !important;
-  color: var(--sdlg-text) !important;
-}
-body {
-  line-height: 1.5 !important;
-  letter-spacing: -0.01em !important;
-  -webkit-font-smoothing: antialiased;
-}
-
-h1, .page-title {
-  font-size: clamp(22px, 2.2vw, 28px) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.2 !important;
-  color: var(--sdlg-text) !important;
-}
-h2 {
-  font-size: 15px !important;
-  font-weight: 650 !important;
-  letter-spacing: -0.02em !important;
-}
-h3, .section-title {
-  font-size: 13px !important;
-  font-weight: 650 !important;
-  letter-spacing: -0.01em !important;
-  color: var(--sdlg-text) !important;
-}
-.page-sub, .section-sub, .brand-sub, .eyebrow, .metric-label {
-  color: var(--sdlg-muted) !important;
-  font-size: 12.5px !important;
-  font-weight: 500 !important;
-}
-.eyebrow, .login-kicker, .login-card-eyebrow {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.06em !important;
-  text-transform: uppercase !important;
-  color: var(--sdlg-primary) !important;
-}
-
-.app-shell:not(:has(.login-screen)) header,
-.app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-}
-.app-shell:not(:has(.login-screen)) .topbar-inner {
-  max-width: 1280px !important;
-  gap: 14px !important;
-}
-.app-shell:not(:has(.login-screen)) .brand-title {
-  font-size: 13px !important;
-  font-weight: 700 !important;
-}
-.app-shell:not(:has(.login-screen)) .brand-sub {
-  font-size: 10.5px !important;
-  color: var(--sdlg-muted) !important;
-}
-.brand-mark {
-  border-radius: 10px !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .nav-scroll {
-  gap: 2px !important;
-  padding: 3px !important;
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: 10px !important;
-  background: var(--sdlg-surface-muted) !important;
-}
-.nav-btn {
-  border-radius: 7px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  padding: 7px 12px !important;
-  color: var(--sdlg-muted) !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.7) !important;
-  color: var(--sdlg-text) !important;
-  transform: none !important;
-}
-.nav-btn.active {
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-primary-strong) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  font-weight: 650 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .app-status-strip {
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-muted) !important;
-  font-size: 11.5px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page {
-  max-width: 1280px !important;
-  padding: 28px 24px 56px !important;
-}
-.app-shell:not(:has(.login-screen)) .page-title { margin-bottom: 4px !important; }
-.app-shell:not(:has(.login-screen)) .page-sub {
-  margin-top: 4px !important;
-  margin-bottom: 20px !important;
-  font-size: 13px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .card,
-.app-shell:not(:has(.login-screen)) .metric-card,
-.app-shell:not(:has(.login-screen)) .loading-card,
-.app-shell:not(:has(.login-screen)) .empty-card,
-.app-shell:not(:has(.login-screen)) [class*="card"],
-.app-shell:not(:has(.login-screen)) [class*="Card"],
-.app-shell:not(:has(.login-screen)) [class*="panel"],
-.app-shell:not(:has(.login-screen)) [class*="Panel"] {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  background: var(--sdlg-surface) !important;
-}
-.app-shell:not(:has(.login-screen)) .card:hover,
-.app-shell:not(:has(.login-screen)) [class*="card"]:hover,
-.app-shell:not(:has(.login-screen)) [class*="Card"]:hover {
-  transform: none !important;
-  border-color: var(--sdlg-border-strong) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-}
-.app-shell:not(:has(.login-screen)) .card-pad { padding: 16px 18px !important; }
-.app-shell:not(:has(.login-screen)) .section-head {
-  margin-bottom: 12px !important;
-  gap: 4px !important;
-  align-items: flex-start !important;
-}
-
-.app-shell:not(:has(.login-screen)) .empty-card,
-.app-shell:not(:has(.login-screen)) .loading-card {
-  padding: 28px 20px !important;
-  text-align: center !important;
-  color: var(--sdlg-muted) !important;
-}
-.app-shell:not(:has(.login-screen)) .skeleton {
-  background: linear-gradient(90deg, var(--sdlg-surface-muted), #eef1f6, var(--sdlg-surface-muted)) !important;
-  background-size: 200% 100% !important;
-  border-radius: 6px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .metric-grid {
-  display: grid !important;
-  gap: 12px !important;
-  margin-bottom: 20px !important;
-}
-.app-shell:not(:has(.login-screen)) .metric-card {
-  background: var(--sdlg-surface) !important;
-  padding: 14px 16px !important;
-  min-height: 0 !important;
-}
-.app-shell:not(:has(.login-screen)) .metric-card:hover {
-  transform: none !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-}
-.app-shell:not(:has(.login-screen)) .metric-label {
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  margin-bottom: 6px !important;
-}
-.app-shell:not(:has(.login-screen)) .metric-value {
-  font-size: 24px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.15 !important;
-  color: var(--sdlg-text) !important;
-}
-
-.app-shell:not(:has(.login-screen)) button,
-.app-shell:not(:has(.login-screen)) [role="button"],
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) .secondary-btn,
-.app-shell:not(:has(.login-screen)) .danger-btn {
-  border-radius: var(--sdlg-radius-sm) !important;
-  font-weight: 600 !important;
-  font-size: 12.5px !important;
-  min-height: 36px !important;
-  padding: 0 12px !important;
-  transform: none !important;
-}
-.app-shell:not(:has(.login-screen)) button:hover,
-.app-shell:not(:has(.login-screen)) [role="button"]:hover { transform: none !important; }
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) button[class*="primary"] {
-  background: var(--sdlg-primary) !important;
-  color: #fff !important;
-  border: 0 !important;
-  box-shadow: 0 1px 2px rgba(59, 91, 219, 0.22) !important;
-}
-.app-shell:not(:has(.login-screen)) .primary-btn:hover,
-.app-shell:not(:has(.login-screen)) button[class*="primary"]:hover {
-  background: var(--sdlg-primary-strong) !important;
-}
-.app-shell:not(:has(.login-screen)) .secondary-btn {
-  background: var(--sdlg-surface) !important;
-  border: 1px solid var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-  box-shadow: none !important;
-}
-.app-shell:not(:has(.login-screen)) .secondary-btn:hover {
-  background: var(--sdlg-surface-muted) !important;
-}
-.app-shell:not(:has(.login-screen)) .danger-btn,
-.app-shell:not(:has(.login-screen)) button[class*="danger"] {
-  background: var(--sdlg-danger-soft) !important;
-  color: var(--sdlg-danger) !important;
-  border: 1px solid #fecaca !important;
-  box-shadow: none !important;
-}
-.app-shell:not(:has(.login-screen)) .icon-btn {
-  border-radius: 8px !important;
-  border: 1px solid var(--sdlg-border) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: none !important;
-  transform: none !important;
-  min-height: 36px !important;
-  min-width: 36px !important;
-}
-
-.app-shell:not(:has(.login-screen)) input,
-.app-shell:not(:has(.login-screen)) select,
-.app-shell:not(:has(.login-screen)) textarea {
-  border: 1px solid var(--sdlg-border-strong) !important;
-  border-radius: var(--sdlg-radius-sm) !important;
-  min-height: 36px !important;
-  font-size: 13px !important;
-  box-shadow: none !important;
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-text) !important;
-}
-.app-shell:not(:has(.login-screen)) input:focus,
-.app-shell:not(:has(.login-screen)) select:focus,
-.app-shell:not(:has(.login-screen)) textarea:focus {
-  border-color: var(--sdlg-primary) !important;
-  box-shadow: var(--sdlg-ring) !important;
-  outline: none !important;
-}
-.app-shell:not(:has(.login-screen)) label {
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: var(--sdlg-text) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .table-wrap,
-.app-shell:not(:has(.login-screen)) .claims-table-shell {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  overflow: hidden !important;
-  background: var(--sdlg-surface) !important;
-}
-.app-shell:not(:has(.login-screen)) thead th,
-.app-shell:not(:has(.login-screen)) th,
-.app-shell:not(:has(.login-screen)) .claims-table-head {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-muted) !important;
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
-}
-.app-shell:not(:has(.login-screen)) tbody tr:hover td { background: #f8faff !important; }
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row {
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  transition: background-color .15s var(--sdlg-ease) !important;
-}
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
-  background: #f8faff !important;
-  box-shadow: inset 3px 0 0 var(--sdlg-primary) !important;
-  transform: none !important;
-}
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row:last-child { border-bottom: 0 !important; }
-.app-shell:not(:has(.login-screen)) .claims-filter-bar,
-.app-shell:not(:has(.login-screen)) .claims-searchbar {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  padding: 12px 14px !important;
-  margin-bottom: 14px !important;
-  gap: 10px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .status-badge,
-.app-shell:not(:has(.login-screen)) .badge,
-.app-shell:not(:has(.login-screen)) [class*="badge"],
-.app-shell:not(:has(.login-screen)) [class*="Badge"],
-.app-shell:not(:has(.login-screen)) [class*="pill"],
-.app-shell:not(:has(.login-screen)) [class*="Pill"] {
-  border-radius: 999px !important;
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.01em !important;
-  padding: 3px 9px !important;
-  line-height: 1.3 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .ui-banner,
-.app-shell:not(:has(.login-screen)) .ui-inline-error,
-.app-shell:not(:has(.login-screen)) [class*="alert"] {
-  border-radius: 10px !important;
-  font-size: 12.5px !important;
-}
-.app-shell:not(:has(.login-screen)) .ui-banner.warn {
-  background: var(--sdlg-warning-soft) !important;
-  border-color: #fde68a !important;
-  color: var(--sdlg-warning) !important;
-}
-.app-shell:not(:has(.login-screen)) .ui-banner.danger,
-.app-shell:not(:has(.login-screen)) .ui-inline-error {
-  background: var(--sdlg-danger-soft) !important;
-  border-color: #fecaca !important;
-  color: var(--sdlg-danger) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page {
-  max-width: 1400px !important;
-  padding-top: 20px !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="card"],
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="panel"] {
-  box-shadow: none !important;
-  border-color: var(--sdlg-border) !important;
-  border-radius: 10px !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-title {
-  font-size: 12.5px !important;
-  font-weight: 650 !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-sub {
-  font-size: 11.5px !important;
-  color: var(--sdlg-muted) !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-head {
-  margin-bottom: 10px !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
-  padding: 14px 16px !important;
-}
-.app-shell:not(:has(.login-screen)) .status-track { gap: 8px !important; }
-.app-shell:not(:has(.login-screen)) .status-step-label {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  color: var(--sdlg-muted) !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .primary-btn,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .secondary-btn {
-  min-height: 34px !important;
-  font-size: 12px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page-title {
-  font-size: clamp(22px, 2.2vw, 28px) !important;
-  letter-spacing: -0.03em !important;
-}
-
-.app-shell:not(:has(.login-screen)) .modal,
-.app-shell:not(:has(.login-screen)) .dialog,
-.app-shell:not(:has(.login-screen)) [role="dialog"] {
-  border-radius: var(--sdlg-radius-lg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-lg) !important;
-}
-
-.sdlg-theme-switcher {
-  border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  background: rgba(255, 255, 255, 0.94) !important;
-  border-radius: 999px !important;
-}
-.sdlg-theme-switcher button[aria-pressed="true"] {
-  background: var(--sdlg-primary) !important;
-  color: #fff !important;
-}
-
-[data-theme="dark"] {
-  --sdlg-bg: #0b1120;
-  --sdlg-surface: #111827;
-  --sdlg-surface-muted: #1a2332;
-  --sdlg-border: #243044;
-  --sdlg-border-strong: #334155;
-  --sdlg-text: #e2e8f0;
-  --sdlg-muted: #94a3b8;
-  --sdlg-faint: #64748b;
-  --sdlg-primary: #818cf8;
-  --sdlg-primary-strong: #a5b4fc;
-  --sdlg-primary-soft: #1e293b;
-}
-
-@media (max-width: 760px) {
-  .app-shell:not(:has(.login-screen)) .page {
-    padding: 64px 14px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-  .app-shell:not(:has(.login-screen)) .page-title { font-size: 22px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-grid { gap: 8px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-value { font-size: 20px !important; }
-  .app-shell:not(:has(.login-screen)) .nav-scroll {
-    background: transparent !important;
-    border: 0 !important;
-    padding: 0 !important;
-  }
-  .app-shell:not(:has(.login-screen)) .nav-btn {
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    background: var(--sdlg-surface-muted) !important;
-  }
-  .app-shell:not(:has(.login-screen)) .nav-btn.active {
-    background: var(--sdlg-primary-soft) !important;
-    box-shadow: none !important;
-  }
-  .app-shell:not(:has(.login-screen)) .claims-filter-bar { padding: 10px !important; }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page { padding-top: 12px !important; }
-}
-
-/* Login layout owned by sdlg-modern-refresh.css — dark overrides in sdlg-saas-dark-v1.css */
-
-
-/* SDLG_SAAS_DARK_V3 — full dark surface map (final cascade, wins all light hardcodes) */
-
-html[data-theme="dark"] {
-  color-scheme: dark;
-  --sdlg-bg: #0b1120;
-  --sdlg-surface: #111827;
-  --sdlg-surface-muted: #1a2332;
-  --sdlg-border: #243044;
-  --sdlg-border-strong: #334155;
-  --sdlg-text: #e2e8f0;
-  --sdlg-muted: #94a3b8;
-  --sdlg-faint: #64748b;
-  --sdlg-primary: #818cf8;
-  --sdlg-primary-strong: #a5b4fc;
-  --sdlg-primary-soft: #1e293b;
-  --sdlg-success: #34d399;
-  --sdlg-success-soft: rgba(52, 211, 153, 0.12);
-  --sdlg-warning: #fbbf24;
-  --sdlg-warning-soft: rgba(251, 191, 36, 0.12);
-  --sdlg-danger: #f87171;
-  --sdlg-danger-soft: rgba(248, 113, 113, 0.12);
-  --cc-bg: #0b1120;
-  --cc-surface: #111827;
-  --cc-surface-2: #1a2332;
-  --cc-surface-3: #1e293b;
-  --cc-border: #243044;
-  --cc-border-strong: #334155;
-  --cc-text: #e2e8f0;
-  --cc-text-2: #cbd5e1;
-  --cc-muted: #94a3b8;
-  --cc-faint: #64748b;
-  --cc-primary: #818cf8;
-  --cc-primary-dark: #a5b4fc;
-  --cc-primary-soft: #1e293b;
-  --cc-success: #34d399;
-  --cc-success-soft: rgba(52, 211, 153, 0.12);
-  --cc-warning: #fbbf24;
-  --cc-warning-soft: rgba(251, 191, 36, 0.12);
-  --cc-danger: #f87171;
-  --cc-danger-soft: rgba(248, 113, 113, 0.12);
-}
-
-html[data-theme="dark"],
-html[data-theme="dark"] body {
-  background: var(--sdlg-bg) !important;
-  color: var(--sdlg-text) !important;
-}
-
-/* Chrome */
-html[data-theme="dark"] header,
-html[data-theme="dark"] .topbar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(17, 24, 39, 0.96) !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .app-status-strip {
-  background: var(--sdlg-surface) !important;
-  border-bottom-color: var(--sdlg-border) !important;
-  color: var(--sdlg-muted) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-scroll {
-  background: var(--sdlg-surface-muted) !important;
-  border-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .nav-btn {
-  color: var(--sdlg-muted) !important;
-  background: transparent !important;
-}
-
-html[data-theme="dark"] .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .nav-btn.active {
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-primary-strong) !important;
-}
-
-/* Surfaces */
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .loading-card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .empty-card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="card"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="Card"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="panel"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="Panel"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .table-wrap,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-table-shell,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-filter-bar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-searchbar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .connection-pill {
-  background: var(--sdlg-surface) !important;
-  border-color: var(--sdlg-border) !important;
-  color: var(--sdlg-text) !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page-title,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .section-title,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-value,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h1,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h2,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) h3,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) label,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) td,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) th {
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page-sub,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .section-sub,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-label,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .brand-sub {
-  color: var(--sdlg-muted) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) thead th,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) th,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-table-head {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-muted) !important;
-  border-bottom-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) tbody tr:hover td,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list .claim-row:hover,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.table-wrap) table tbody tr:hover {
-  background: #1a2332 !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-list .claim-row {
-  border-bottom-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) input,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) select,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) textarea,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input:focus {
-  background: var(--sdlg-surface-muted) !important;
-  border-color: var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) input:focus,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) select:focus,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) textarea:focus {
-  border-color: var(--sdlg-primary) !important;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .secondary-btn,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .icon-btn {
-  background: var(--sdlg-surface-muted) !important;
-  border-color: var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .secondary-btn:hover,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .icon-btn:hover {
-  background: #243044 !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .primary-btn,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) button[class*="primary"] {
-  background: var(--sdlg-primary) !important;
-  color: #0b1120 !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .danger-btn,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) button[class*="danger"] {
-  background: rgba(220, 38, 38, 0.15) !important;
-  color: #fca5a5 !important;
-  border-color: rgba(220, 38, 38, 0.35) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .skeleton {
-  background: linear-gradient(90deg, #1a2332, #243044, #1a2332) !important;
-  background-size: 200% 100% !important;
-}
-
-html[data-theme="dark"] .sdlg-theme-switcher {
-  background: rgba(17, 24, 39, 0.96) !important;
-  border-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .sdlg-theme-switcher button {
-  color: var(--sdlg-muted) !important;
-}
-
-html[data-theme="dark"] .sdlg-theme-switcher button[aria-pressed="true"] {
-  background: var(--sdlg-primary) !important;
-  color: #0b1120 !important;
-}
-
-/* Login */
-html[data-theme="dark"] .login-screen {
-  background: var(--sdlg-bg) !important;
-}
-
-html[data-theme="dark"] .login-card {
-  background: var(--sdlg-surface) !important;
-  border-color: var(--sdlg-border) !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="dark"] .login-intro h1,
-html[data-theme="dark"] .login-card h2,
-html[data-theme="dark"] .login-brand-name,
-html[data-theme="dark"] .login-field label {
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .login-intro > p,
-html[data-theme="dark"] .login-card-head p,
-html[data-theme="dark"] .login-help,
-html[data-theme="dark"] .login-brand-company,
-html[data-theme="dark"] .login-meta {
-  color: var(--sdlg-muted) !important;
-}
-
-html[data-theme="dark"] .login-field input {
-  background: var(--sdlg-surface-muted) !important;
-  border-color: var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .login-trust-list {
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .modal,
-html[data-theme="dark"] .dialog,
-html[data-theme="dark"] [role="dialog"] {
-  background: var(--sdlg-surface) !important;
-  border-color: var(--sdlg-border) !important;
-  color: var(--sdlg-text) !important;
-}
-
-/* Claim/search/table leftovers from command-center */
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell th,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.detail-grid) table th,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.table-wrap) thead th {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-muted) !important;
-  border-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell {
-  background: var(--sdlg-surface) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) input[type],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) textarea,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .page:has(textarea[placeholder*="Paste isi form warranty claim"]) select {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-text) !important;
-  border-color: var(--sdlg-border-strong) !important;
-}
-
-@media (max-width: 760px) {
-  html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-btn {
-    background: var(--sdlg-surface-muted) !important;
-  }
-  html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .nav-btn.active {
-    background: var(--sdlg-primary-soft) !important;
-    color: var(--sdlg-primary-strong) !important;
-  }
-}
-
-
-/* SDLG_OPS_CLEAN_V1
-   Final visual layer — modern, smooth, clean.
-   Aligns with DESIGN.md: industrial ops tool, not AI SaaS.
-   Visual only. Wins cascade when injected last. */
-
-:root {
-  --sdlg-bg: #f5f7fa;
-  --sdlg-surface: #ffffff;
-  --sdlg-surface-muted: #f1f4f8;
-  --sdlg-border: #e2e8f0;
-  --sdlg-border-strong: #cbd5e1;
-  --sdlg-text: #0f172a;
-  --sdlg-muted: #64748b;
-  --sdlg-faint: #94a3b8;
-  --sdlg-primary: #1e4ed8;
-  --sdlg-primary-strong: #1a3fb0;
-  --sdlg-primary-soft: #eff4ff;
-  --sdlg-success: #059669;
-  --sdlg-success-soft: #ecfdf5;
-  --sdlg-warning: #b45309;
-  --sdlg-warning-soft: #fffbeb;
-  --sdlg-danger: #dc2626;
-  --sdlg-danger-soft: #fef2f2;
-  --sdlg-radius: 8px;
-  --sdlg-radius-sm: 6px;
-  --sdlg-radius-lg: 10px;
-  --sdlg-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-  --sdlg-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
-  --sdlg-ring: 0 0 0 3px rgba(30, 78, 216, 0.14);
-}
-
-/* Foundation — solid, no decorative gradients */
-html,
-body {
-  background: var(--sdlg-bg) !important;
-  color: var(--sdlg-text) !important;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5 !important;
-  letter-spacing: -0.011em !important;
-}
-
-h1,
-.page-title {
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.2 !important;
-}
-
-h2 {
-  font-weight: 650 !important;
-  letter-spacing: -0.02em !important;
-}
-
-h3,
-.section-title {
-  font-weight: 650 !important;
-  letter-spacing: -0.01em !important;
-}
-
-.page-sub,
-.section-sub,
-.brand-sub,
-.metric-label {
-  color: var(--sdlg-muted) !important;
-}
-
-/* Kill decorative motion / glass theater */
-button,
-[role="button"],
-a,
-.nav-btn,
-.icon-btn,
-.card,
-[class*="card"],
-[class*="Card"],
-.metric-card,
-input,
-select,
-textarea,
-.claim-row,
-tbody tr {
-  transition:
-    background-color 0.15s var(--sdlg-ease),
-    border-color 0.15s var(--sdlg-ease),
-    color 0.15s var(--sdlg-ease),
-    box-shadow 0.15s var(--sdlg-ease) !important;
-  transform: none !important;
-}
-
-button:hover,
-[role="button"]:hover,
-.card:hover,
-[class*="card"]:hover,
-[class*="Card"]:hover,
-.metric-card:hover,
-.icon-btn:hover,
-.nav-btn:hover {
-  transform: none !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-  }
-}
-
-/* Header — calm, no heavy blur chrome */
-.app-shell:not(:has(.login-screen)) header,
-.app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(255, 255, 255, 0.97) !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .nav-scroll {
-  gap: 2px !important;
-  padding: 3px !important;
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-sm) !important;
-  background: var(--sdlg-surface-muted) !important;
-}
-
-.nav-btn {
-  border-radius: 5px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  padding: 7px 12px !important;
-  color: var(--sdlg-muted) !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.85) !important;
-  color: var(--sdlg-text) !important;
-}
-
-.nav-btn.active {
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-primary-strong) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  font-weight: 650 !important;
-}
-
-.brand-mark {
-  border-radius: 8px !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-
-/* Layout density */
-.app-shell:not(:has(.login-screen)) .page {
-  max-width: 1280px !important;
-  padding: 24px 20px 48px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page-title {
-  font-size: clamp(22px, 2.2vw, 28px) !important;
-  margin-bottom: 4px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page-sub {
-  margin-top: 4px !important;
-  margin-bottom: 18px !important;
-  font-size: 13px !important;
-}
-
-/* Cards — tight radius, light border, minimal shadow */
-.app-shell:not(:has(.login-screen)) .card,
-.app-shell:not(:has(.login-screen)) .metric-card,
-.app-shell:not(:has(.login-screen)) .loading-card,
-.app-shell:not(:has(.login-screen)) .empty-card,
-.app-shell:not(:has(.login-screen)) [class*="card"],
-.app-shell:not(:has(.login-screen)) [class*="Card"],
-.app-shell:not(:has(.login-screen)) [class*="panel"],
-.app-shell:not(:has(.login-screen)) [class*="Panel"] {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  background: var(--sdlg-surface) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .card:hover,
-.app-shell:not(:has(.login-screen)) [class*="card"]:hover,
-.app-shell:not(:has(.login-screen)) [class*="Card"]:hover {
-  border-color: var(--sdlg-border-strong) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .card-pad {
-  padding: 14px 16px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .metric-grid {
-  display: grid !important;
-  gap: 10px !important;
-  margin-bottom: 18px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .metric-card {
-  background: var(--sdlg-surface) !important;
-  padding: 12px 14px !important;
-  min-height: 0 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .metric-label {
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  margin-bottom: 4px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .metric-value {
-  font-size: 22px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.15 !important;
-  color: var(--sdlg-text) !important;
-}
-
-/* Buttons — restrained */
-.app-shell:not(:has(.login-screen)) button,
-.app-shell:not(:has(.login-screen)) [role="button"],
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) .secondary-btn,
-.app-shell:not(:has(.login-screen)) .danger-btn {
-  border-radius: var(--sdlg-radius-sm) !important;
-  font-weight: 600 !important;
-  font-size: 12.5px !important;
-  min-height: 34px !important;
-  padding: 0 12px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) button[class*="primary"] {
-  background: var(--sdlg-primary) !important;
-  color: #fff !important;
-  border: 0 !important;
-  box-shadow: 0 1px 2px rgba(30, 78, 216, 0.2) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .primary-btn:hover,
-.app-shell:not(:has(.login-screen)) button[class*="primary"]:hover {
-  background: var(--sdlg-primary-strong) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .secondary-btn {
-  background: var(--sdlg-surface) !important;
-  border: 1px solid var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-  box-shadow: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .secondary-btn:hover {
-  background: var(--sdlg-surface-muted) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .danger-btn,
-.app-shell:not(:has(.login-screen)) button[class*="danger"] {
-  background: var(--sdlg-danger-soft) !important;
-  color: var(--sdlg-danger) !important;
-  border: 1px solid #fecaca !important;
-  box-shadow: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .icon-btn {
-  border-radius: 6px !important;
-  border: 1px solid var(--sdlg-border) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: none !important;
-  min-height: 34px !important;
-  min-width: 34px !important;
-}
-
-/* Inputs */
-.app-shell:not(:has(.login-screen)) input,
-.app-shell:not(:has(.login-screen)) select,
-.app-shell:not(:has(.login-screen)) textarea {
-  border: 1px solid var(--sdlg-border-strong) !important;
-  border-radius: var(--sdlg-radius-sm) !important;
-  min-height: 34px !important;
-  font-size: 13px !important;
-  box-shadow: none !important;
-  background: var(--sdlg-surface) !important;
-  color: var(--sdlg-text) !important;
-}
-
-.app-shell:not(:has(.login-screen)) input:focus,
-.app-shell:not(:has(.login-screen)) select:focus,
-.app-shell:not(:has(.login-screen)) textarea:focus {
-  border-color: var(--sdlg-primary) !important;
-  box-shadow: var(--sdlg-ring) !important;
-  outline: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) label {
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: var(--sdlg-text) !important;
-}
-
-/* Tables — scannable ops density */
-.app-shell:not(:has(.login-screen)) .table-wrap,
-.app-shell:not(:has(.login-screen)) .claims-table-shell {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  overflow: hidden !important;
-  background: var(--sdlg-surface) !important;
-}
-
-.app-shell:not(:has(.login-screen)) thead th,
-.app-shell:not(:has(.login-screen)) th,
-.app-shell:not(:has(.login-screen)) .claims-table-head {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-muted) !important;
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
-  padding-top: 9px !important;
-  padding-bottom: 9px !important;
-}
-
-.app-shell:not(:has(.login-screen)) tbody tr:hover td {
-  background: #f8fafc !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row {
-  border-bottom: 1px solid var(--sdlg-border) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
-  background: #f8fafc !important;
-  box-shadow: inset 3px 0 0 var(--sdlg-primary) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row:last-child {
-  border-bottom: 0 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-filter-bar,
-.app-shell:not(:has(.login-screen)) .claims-searchbar {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  padding: 10px 12px !important;
-  margin-bottom: 12px !important;
-  gap: 8px !important;
-}
-
-/* Badges */
-.app-shell:not(:has(.login-screen)) .status-badge,
-.app-shell:not(:has(.login-screen)) .badge,
-.app-shell:not(:has(.login-screen)) [class*="badge"],
-.app-shell:not(:has(.login-screen)) [class*="Badge"],
-.app-shell:not(:has(.login-screen)) [class*="pill"],
-.app-shell:not(:has(.login-screen)) [class*="Pill"] {
-  border-radius: 999px !important;
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.01em !important;
-  padding: 2px 8px !important;
-  line-height: 1.35 !important;
-}
-
-/* Banners */
-.app-shell:not(:has(.login-screen)) .ui-banner,
-.app-shell:not(:has(.login-screen)) .ui-inline-error,
-.app-shell:not(:has(.login-screen)) [class*="alert"] {
-  border-radius: var(--sdlg-radius-sm) !important;
-  font-size: 12.5px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .ui-banner.warn {
-  background: var(--sdlg-warning-soft) !important;
-  border-color: #fde68a !important;
-  color: var(--sdlg-warning) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .ui-banner.danger,
-.app-shell:not(:has(.login-screen)) .ui-inline-error {
-  background: var(--sdlg-danger-soft) !important;
-  border-color: #fecaca !important;
-  color: var(--sdlg-danger) !important;
-}
-
-/* Claim detail — denser, clearer hierarchy */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page {
-  max-width: 1400px !important;
-  padding-top: 16px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="card"],
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="panel"] {
-  box-shadow: none !important;
-  border-color: var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
-  padding: 12px 14px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-title {
-  font-size: 12.5px !important;
-  font-weight: 650 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-sub {
-  font-size: 11.5px !important;
-  color: var(--sdlg-muted) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-head {
-  margin-bottom: 8px !important;
-}
-
-/* Modals */
-.app-shell:not(:has(.login-screen)) .modal,
-.app-shell:not(:has(.login-screen)) .dialog,
-.app-shell:not(:has(.login-screen)) [role="dialog"] {
-  border-radius: var(--sdlg-radius-lg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-md) !important;
-}
-
-/* Theme switcher */
-.sdlg-theme-switcher {
-  border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  background: rgba(255, 255, 255, 0.96) !important;
-  border-radius: 999px !important;
-  backdrop-filter: none !important;
-}
-
-.sdlg-theme-switcher button[aria-pressed="true"] {
-  background: var(--sdlg-primary) !important;
-  color: #fff !important;
-}
-
-/* Login — keep calm, tighter radius, no gradient body theater */
-.login-screen {
-  background: var(--sdlg-bg) !important;
-}
-
-.login-card {
-  border-radius: var(--sdlg-radius-lg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-md) !important;
-  background: var(--sdlg-surface) !important;
-}
-
-.login-brand-mark {
-  border-radius: 10px !important;
-}
-
-.login-submit {
-  border-radius: var(--sdlg-radius-sm) !important;
-  background: var(--sdlg-primary) !important;
-  box-shadow: 0 1px 3px rgba(30, 78, 216, 0.22) !important;
-}
-
-.login-submit:hover:not(:disabled) {
-  background: var(--sdlg-primary-strong) !important;
-  transform: none !important;
-}
-
-.login-field input {
-  border-radius: var(--sdlg-radius-sm) !important;
-  min-height: 42px !important;
-}
-
-/* Dark theme */
-[data-theme="dark"] {
-  --sdlg-bg: #0b1120;
-  --sdlg-surface: #111827;
-  --sdlg-surface-muted: #1a2332;
-  --sdlg-border: #243044;
-  --sdlg-border-strong: #334155;
-  --sdlg-text: #e2e8f0;
-  --sdlg-muted: #94a3b8;
-  --sdlg-faint: #64748b;
-  --sdlg-primary: #818cf8;
-  --sdlg-primary-strong: #a5b4fc;
-  --sdlg-primary-soft: #1e293b;
-  --sdlg-success: #34d399;
-  --sdlg-success-soft: rgba(52, 211, 153, 0.12);
-  --sdlg-warning: #fbbf24;
-  --sdlg-warning-soft: rgba(251, 191, 36, 0.12);
-  --sdlg-danger: #f87171;
-  --sdlg-danger-soft: rgba(248, 113, 113, 0.12);
-}
-
-html[data-theme="dark"],
-html[data-theme="dark"] body {
-  background: var(--sdlg-bg) !important;
-  color: var(--sdlg-text) !important;
-}
-
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(17, 24, 39, 0.98) !important;
-  border-bottom-color: var(--sdlg-border) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-html[data-theme="dark"] .login-screen {
-  background: var(--sdlg-bg) !important;
-}
-
-html[data-theme="dark"] .login-card {
-  background: var(--sdlg-surface) !important;
-  border-color: var(--sdlg-border) !important;
-}
-
-html[data-theme="dark"] .sdlg-theme-switcher {
-  background: rgba(17, 24, 39, 0.96) !important;
-  border-color: var(--sdlg-border) !important;
-}
-
-/* Mobile density */
-@media (max-width: 760px) {
-  .app-shell:not(:has(.login-screen)) .page {
-    padding: 60px 12px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .page-title {
-    font-size: 22px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .metric-grid {
-    gap: 8px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .metric-value {
-    font-size: 20px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .nav-scroll {
-    background: transparent !important;
-    border: 0 !important;
-    padding: 0 !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .nav-btn {
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-    background: var(--sdlg-surface-muted) !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .nav-btn.active {
-    background: var(--sdlg-primary-soft) !important;
-    box-shadow: none !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .claims-filter-bar {
-    padding: 10px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
-    padding-top: 10px !important;
-  }
-}
-
-/* Decision-first claim UX — make the route and next action scannable. */
-.app-shell:not(:has(.login-screen)) [data-sdlg-warranty-routing] {
-  border-color: var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-
-.sdlg-route-summary {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 32%) !important;
-  gap: 16px !important;
-  align-items: center !important;
-  margin: 14px 0 !important;
-  padding: 14px 16px !important;
-  border: 1px solid var(--sdlg-border-strong) !important;
-  border-left: 4px solid var(--sdlg-primary) !important;
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface-muted) !important;
-  box-shadow: none !important;
-}
-
-.sdlg-route-summary__kicker {
-  color: var(--sdlg-muted) !important;
-  font-size: 10px !important;
-  font-weight: 800 !important;
-  letter-spacing: .08em !important;
-  line-height: 1.2 !important;
-}
-
-.sdlg-route-summary__title {
-  margin-top: 3px !important;
-  color: var(--sdlg-text) !important;
-  font-size: 17px !important;
-  font-weight: 750 !important;
-  letter-spacing: -.02em !important;
-  line-height: 1.25 !important;
-}
-
-.sdlg-route-summary__reason {
-  max-width: 760px !important;
-  margin-top: 5px !important;
-  color: var(--sdlg-muted) !important;
-  font-size: 12px !important;
-  line-height: 1.45 !important;
-}
-
-.sdlg-route-summary__next {
-  padding-left: 16px !important;
-  border-left: 1px solid var(--sdlg-border-strong) !important;
-  color: var(--sdlg-text) !important;
-  font-size: 12px !important;
-  line-height: 1.4 !important;
-}
-
-.sdlg-route-summary__next span {
-  display: block !important;
-  margin-bottom: 3px !important;
-  color: var(--sdlg-muted) !important;
-  font-size: 10px !important;
-  font-weight: 750 !important;
-  letter-spacing: .06em !important;
-  text-transform: uppercase !important;
-}
-
-.sdlg-route-summary__next strong { font-weight: 700 !important; }
-.sdlg-route-sdlg { border-left-color: var(--sdlg-success) !important; background: var(--sdlg-success-soft) !important; }
-.sdlg-route-sdlg .sdlg-route-summary__title { color: #056b49 !important; }
-.sdlg-route-marketing { border-left-color: var(--sdlg-primary) !important; background: var(--sdlg-primary-soft) !important; }
-.sdlg-route-marketing .sdlg-route-summary__title { color: var(--sdlg-primary-strong) !important; }
-.sdlg-route-review { border-left-color: var(--sdlg-warning) !important; background: var(--sdlg-warning-soft) !important; }
-.sdlg-route-review .sdlg-route-summary__title { color: #92400e !important; }
-.sdlg-route-non-warranty { border-left-color: var(--sdlg-muted) !important; background: var(--sdlg-surface-muted) !important; }
-
-/* Remove legacy visual noise that conflicts with the ops-clean system. */
-.app-shell:not(:has(.login-screen)) .page:has(.status-track) .status-track {
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.claim-decision-summary {
-  border-radius: var(--sdlg-radius) !important;
-  background: var(--sdlg-surface) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-table-shell,
-.app-shell:not(:has(.login-screen)) .table-wrap {
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-.app-shell:not(:has(.login-screen)) button:focus-visible,
-.app-shell:not(:has(.login-screen)) a:focus-visible,
-.app-shell:not(:has(.login-screen)) input:focus-visible,
-.app-shell:not(:has(.login-screen)) select:focus-visible,
-.app-shell:not(:has(.login-screen)) textarea:focus-visible {
-  outline: 3px solid rgba(30, 78, 216, .28) !important;
-  outline-offset: 2px !important;
-}
-
-@media (max-width: 760px) {
-  .sdlg-route-summary {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-    padding: 13px 14px !important;
-  }
-  .sdlg-route-summary__next {
-    padding: 9px 0 0 !important;
-    border-top: 1px solid var(--sdlg-border-strong) !important;
-    border-left: 0 !important;
-  }
-  .sdlg-route-summary__title { font-size: 16px !important; }
-  .sdlg-route-summary__reason { font-size: 12px !important; }
-}
-
 </style>
 
 
@@ -3328,26 +1858,7 @@ html[data-theme="dark"] .sdlg-theme-switcher {
 
 
 
-
-
-<script src="/modules/perf-runtime.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- SDLG_RESPONSIVE_UI_V10 --><style data-sdlg-responsive-v10>/* SDLG_RESPONSIVE_UI_V11 + V12 — mobile layout hardening
-   Runtime authority: modules/mobile-layout-fix.js (V13 injects last).
-   This file remains for early paint / non-JS fallback. */
+<!-- SDLG_RESPONSIVE_UI_V10 --><style data-sdlg-responsive-v10>/* SDLG_RESPONSIVE_UI_V11 — mobile layout hardening */
 @media(max-width:760px){
 html,body,#root,body>div{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important}
 body{font-size:14px!important;overflow-x:hidden!important;background:var(--sdlg-page,#f6f8fb)!important}
@@ -3540,10 +2051,6 @@ input[type="checkbox"],input[type="radio"]{
     padding-bottom:150px!important;
   }
 }
-
-/* V13 note: final authority is modules/mobile-layout-fix.js (injected last).
-   It adds claim-row card hierarchy, claim-detail single-column, stronger
-   overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
 </head>
 <body>
@@ -3552,28 +2059,17 @@ input[type="checkbox"],input[type="radio"]{
     <button type="button" data-sdlg-theme="light" aria-pressed="true">Terang</button>
     <button type="button" data-sdlg-theme="dark" aria-pressed="false">Gelap</button>
   </div>
-  <script data-sdlg-theme-boot>
+  <script>
     (function(){
-      var KEY='sdlg-theme';
       var root=document.documentElement;
       var buttons=document.querySelectorAll('[data-sdlg-theme]');
       function setTheme(theme){
-        theme = theme === 'dark' ? 'dark' : 'light';
-        root.dataset.theme = theme;
-        try { localStorage.setItem(KEY, theme); } catch (e) {}
-        buttons.forEach(function(button){
-          button.setAttribute('aria-pressed', String(button.dataset.sdlgTheme === theme));
-        });
+        var dark=theme==='dark';
+        root.dataset.theme=dark?'dark':'light';
+        buttons.forEach(function(button){button.setAttribute('aria-pressed',String(button.dataset.sdlgTheme===theme));});
       }
-      buttons.forEach(function(button){
-        button.addEventListener('click', function(){ setTheme(button.dataset.sdlgTheme); });
-      });
-      var saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (e) {}
-      if (saved !== 'dark' && saved !== 'light') {
-        saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-      }
-      setTheme(saved);
+      buttons.forEach(function(button){button.addEventListener('click',function(){setTheme(button.dataset.sdlgTheme);});});
+      setTheme('light');
     })();
   </script>
   <div id="sdlg-boot-error" style="display:none;max-width:920px;margin:24px auto;padding:16px;border:1px solid #fecaca;background:#fff1f2;color:#991b1b;border-radius:12px;font-family:Arial,sans-serif">
@@ -4595,14 +3091,10 @@ const validateSourceLockStrict = (p, rawText) => {
 const extractSourceFinancialDetails = (rawText) => {
     const lines = String(rawText || "").split(/\r?\n/);
     const out = {};
-    /* SDLG_MONEY_HARDEN_V1 */
     const parseCellMoney = (v) => {
-        const H = window.SDLGClaimParserHelpers;
-        if (H && typeof H.parseCellMoney === "function") return H.parseCellMoney(v);
         const x = cleanSourceCell(v);
         if (!x) return null;
-        if (/^(?:(?:USD|CNY|IDR|RP|RMB)\s*)?(?:[¥￥$])?\s*[-–—]+$/i.test(x) || /^[-–—]+$/.test(x)) return 0;
-        if (/\bSN\.?\s*\d+/i.test(x) || /[A-Za-z]/.test(x)) return null;
+        if (/^(?:USD\s*)?\$?\s*[-–—]+$/i.test(x)) return 0;
         return parseSourceNumber(x);
     };
     const parseColumnTableRow = (cells, expectedHeaders, targetKeys) => {
@@ -4738,8 +3230,6 @@ const extractSourceFinancialDetails = (rawText) => {
         if (/PARTS\s+TOTAL/i.test(line)) {
             // Parts total is a source control total; it must agree with the row sum before save.
             for (let r = i; r < Math.min(lines.length, i + 3); r++) {
-                if (window.SDLGClaimParserHelpers && window.SDLGClaimParserHelpers.isPartsTotalSectionStop(lines[r])) break;
-                if (/Dealer\s+Distributor\s+Labour|Labour\s+Hrs\s+Rate|TOTAL\s+AMOUNT\s+CLAIMED/i.test(lines[r] || "")) break;
                 for (const v of lines[r].split("\t")) {
                     const x = cleanSourceCell(v);
                     if (!x || /PARTS\s+TOTAL/i.test(x)) continue;
@@ -4756,7 +3246,8 @@ const extractSourceFinancialDetails = (rawText) => {
                     const x = cleanSourceCell(v);
                     if (!x) continue;
                     if (/^(?:USD\s*)?\$?\s*[-–—]+$/i.test(x) || /^[-–—]+$/i.test(x)) { out.totalAmount = 0; break; }
-                    const n = (window.SDLGClaimParserHelpers && window.SDLGClaimParserHelpers.parseCellMoney) ? window.SDLGClaimParserHelpers.parseCellMoney(x) : parseSourceNumber(x); if (n != null) { out.totalAmount = n; break; }
+                    const n = parseSourceNumber(x);
+                    if (n != null) { out.totalAmount = n; break; }
                 }
                 if (out.totalAmount != null) break;
             }
@@ -4920,7 +3411,8 @@ const extractHandlingResultDetails = (rawText) => {
                 const x = cleanSourceCell(v);
                 if (!x) continue;
                 if (/^(?:USD\s*)?\$?\s*[-–—]+$/i.test(x) || /^(?:USD\s*)?\$?\s*[-–—]+$/.test(x)) { result.totalAmount = 0; break; }
-                const n = (window.SDLGClaimParserHelpers && window.SDLGClaimParserHelpers.parseCellMoney) ? window.SDLGClaimParserHelpers.parseCellMoney(x) : parseSourceNumber(x); if (n != null) { result.totalAmount = n; break; }
+                const n = parseSourceNumber(x);
+                if (n != null) { result.totalAmount = n; break; }
             }
             if (result.totalAmount != null) break;
         }
@@ -5257,12 +3749,10 @@ const renderSourceProvenance = (provenance) => {
                 React.createElement(Pill, { color: v.provenance === "source_mapped" ? "#16a34a" : v.provenance === "source_blank" ? "#64748b" : (v.provenance === "inferred_from_dates" || v.provenance === "inferred") ? "#d97706" : "#94a3b8" }, v.provenance)
             ))));
 };
-const Pill = ({ color, children, size }) => (React.createElement("span", { className: "sdlg-badge", style: {
-        display: "inline-block", padding: size === "lg" ? "4px 12px" : "2px 8px",
-        borderRadius: 4, fontSize: size === "lg" ? 13 : 11, fontWeight: 500,
-        background: color + "15", color, border: `1px solid ${color}33`,
-        fontFamily: "var(--sdlg-font-family)", textTransform: "uppercase", letterSpacing: "0.3px",
-        textShadow: "none"
+const Pill = ({ color, children, size }) => (React.createElement("span", { style: {
+        display: "inline-block", padding: size === "lg" ? "4px 12px" : "2px 9px",
+        borderRadius: 99, fontSize: size === "lg" ? 13 : 11, fontWeight: 700,
+        background: color + "22", color, border: `1px solid ${color}44`,
     } }, children));
 // ─── EXPORT TO EXCEL (compatible dengan workbook SDLG_Warranty_Claim_By_Year) ──
 async function exportToExcel(claims) {
@@ -5978,7 +4468,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><label for="${id}" style="font-size:11px;font-weight:800;color:#334155">${esc(label)}${requiredMark}</label><button type="button" data-sdlg-copy data-target="#${id}" style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">Copy</button></div>${control}</div>`;
     };
 
-    const defaultFeedbackPerson = sdlgFeedbackPerson(selectedClaim);
+    const defaultFeedbackPerson = "${sdlgFeedbackPerson(selectedClaim)}";
     const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "xxx";
     const wo = selectedClaim.dealer_wo_so || selectedClaim.wo_so || "";
     const branch = selectedClaim.branch || "";
@@ -6355,7 +4845,7 @@ function App() {
     // Infrastructure / Repository: one stable contract around Supabase I/O.
     const SDLG_REPOSITORY = {
         async listClaims() {
-            const PAGE_SIZE = 100;
+            const PAGE_SIZE = 500;
             const all = [];
             for (let page = 0;; page++) {
                 const from = page * PAGE_SIZE;
@@ -6441,7 +4931,7 @@ function App() {
     // timeout, dedupe, pagination or error classification.
     const SDLG_FOUNDATION = Object.freeze({
         VERSION: "2.25.0",
-        LIMITS: Object.freeze({ PAGE_SIZE: 100, MAX_PAGES: 10000, MAX_RETRIES: 3, MAX_BACKOFF_MS: 4000, MAX_INPUT_TEXT: 20000 }),
+        LIMITS: Object.freeze({ PAGE_SIZE: 500, MAX_PAGES: 10000, MAX_RETRIES: 3, MAX_BACKOFF_MS: 4000, MAX_INPUT_TEXT: 20000 }),
         transient(error) {
             const code = String(error?.code || error?.status || "").toUpperCase();
             const msg = String(error?.message || error || "").toLowerCase();
@@ -6503,19 +4993,7 @@ function App() {
         }
     });
     // Patch read path: bounded pagination + retry + deterministic canonical output.
-    
-    SDLG_REPOSITORY.listClaimsPage = async function (page) {
-        const from = (page || 0) * SDLG_FOUNDATION.LIMITS.PAGE_SIZE;
-        const result = await SDLG_FOUNDATION.retry(async () => {
-            const r = await runSupabaseRead(() => sdlgSupabase.from("claims").select("*").order("claim_id", { ascending: false }).range(from, from + SDLG_FOUNDATION.LIMITS.PAGE_SIZE - 1));
-            if (r?.error) throw r.error;
-            return r;
-        });
-        const rows = result?.data || [];
-        const normalized = SDLG_DATA_MODEL.normalizeClaimCollection(rows);
-        return normalized.rows;
-    };
-SDLG_REPOSITORY.listClaims = async function () {
+    SDLG_REPOSITORY.listClaims = async function () {
         const all = [];
         const seenPages = new Set();
         for (let page = 0; page < SDLG_FOUNDATION.LIMITS.MAX_PAGES; page++) {
@@ -6792,10 +5270,7 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [draftRecovery, setDraftRecovery] = useState(false);
     const parseRunRef = useRef(0);
     const createIdempotencyRef = useRef(null);
-    const [detailId, setDetailId] = useState(() => (typeof window !== "undefined" && window.SDLGNavState && typeof window.SDLGNavState.restoreDetailId === "function" ? window.SDLGNavState.restoreDetailId() : null));
-    useEffect(() => {
-        try { window.SDLGNavState?.persist(tab, null, detailId); } catch (_) {}
-    }, [tab, detailId]);
+    const [detailId, setDetailId] = useState(null);
     const [search, setSearch] = useState("");
     const [yearFilter, setYearFilter] = useState("all"); // default semua tahun agar data historis langsung terlihat
     const [editing, setEditing] = useState(false);
@@ -7208,14 +5683,6 @@ SDLG_REPOSITORY.listClaims = async function () {
         setLoading(true);
         setClaimsLoadError(null);
         try {
-            /* PERF: first page for fast interactive list; full hydrate in background */
-            const firstPage = typeof SDLG_REPOSITORY.listClaimsPage === "function"
-                ? await SDLG_REPOSITORY.listClaimsPage(0)
-                : null;
-            if (firstPage && firstPage.length) {
-                setClaims(firstPage);
-                setLoading(false);
-            }
             const [all, actionRows] = await Promise.all([
                 SDLG_REPOSITORY.listClaims(),
                 runSupabaseRead(async () => {
@@ -8207,17 +6674,11 @@ SDLG_REPOSITORY.listClaims = async function () {
         const numeric = raw.replace(/[^0-9]/g, "");
         return numeric.length >= 6 ? numeric.slice(-6) : serialTail6(raw);
     };
-    /* SDLG_WO_ONE_CLAIM_V3 */
     const matchedClaim = parsed
-        ? (window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.findMatchedClaim === "function"
-            ? window.SDLGWoClaimPolicy.findMatchedClaim(claims, parsed, serialEquivalent)
-            : claims.find((c) => !c.archived_at && ((parsed.distributorNo && String(c.claim_id || "").trim() === String(parsed.distributorNo).trim()) ||
-                (!parsed.distributorNo && parsed.dealerWoSo && parsed.serialNo &&
-                    c.dealer_wo_so === parsed.dealerWoSo && serialEquivalent(c.serial_no, parsed.serialNo)))))
+        ? claims.find((c) => !c.archived_at && ((parsed.distributorNo && String(c.claim_id || "").trim() === String(parsed.distributorNo).trim()) ||
+            (!parsed.distributorNo && parsed.dealerWoSo && parsed.serialNo &&
+                c.dealer_wo_so === parsed.dealerWoSo && serialEquivalent(c.serial_no, parsed.serialNo))))
         : null;
-    const strictWoMatch = matchedClaim && window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.isStrictWoMatch === "function"
-        ? window.SDLGWoClaimPolicy.isStrictWoMatch(parsed, matchedClaim)
-        : false
     const baseCustomerName = (v) => { let x = cleanText(v).toUpperCase(); x = x.replace(/^(PT|CV|MR|MRS|MS|HJ|HAJI|H)[.\s-]+/i, ""); return x.replace(/[^A-Z0-9]/g, ""); };
     const customerDisplayBase = (v) => cleanText(v).toUpperCase().replace(/^(PT|CV|MR|MRS|MS|HJ|HAJI|H)[.\s-]+/i, "").replace(/\s+/g, " ").trim();
     const similarityScore = (a, b) => { const A = normalizeCompact(a), B = normalizeCompact(b); if (!A || !B)
@@ -8450,7 +6911,32 @@ SDLG_REPOSITORY.listClaims = async function () {
                     if (ranked[0] && (!ranked[1] || ranked[0].count > ranked[1].count)) {
                         m.branch = { candidates: [ranked[0].branch], confidence: "exact", reason: `Branch dari histori unit yang sama (${ranked[0].count} claim).` };
                     }
-                    
+                    else {
+                        const customerKey = (v) => normalizeCompact(String(v || "").toUpperCase().replace(/^PT\.?\s*/, "").replace(/,\s*PT\.?\s*$/, ""));
+                        const targetIndent = normalizeCompact(mu.indent_no || p.indentNo || "");
+                        const targetModel = canonicalModel(mu.model_name || p.model || "");
+                        const targetCustomer = customerKey(mu.customer_name_master || p.customer || "");
+                        const identityHistory = hist.filter(x => !x.archived_at && x.branch_id &&
+                            targetIndent && normalizeCompact(x.indent_no) === targetIndent &&
+                            targetCustomer && customerKey(x.customer) === targetCustomer &&
+                            targetModel && window.SDLGModelsEquivalent(x.model || "", targetModel));
+                        const identityGrouped = new Map();
+                        identityHistory.forEach(x => {
+                            const br = branchesActive.find(b => b.id === x.branch_id);
+                            if (!br) return;
+                            const serialKey = normalizeCompact(x.serial_no || x.source_serial_no || x.sourceSerialNo || x.id || "claim:" + x.claim_id);
+                            const prior = identityGrouped.get(br.id) || { branch: br, serials: new Set(), latest: "" };
+                            prior.serials.add(serialKey);
+                            prior.latest = String(x.last_updated || "") > prior.latest ? String(x.last_updated || "") : prior.latest;
+                            identityGrouped.set(br.id, prior);
+                        });
+                        const identityRanked = [...identityGrouped.values()]
+                            .map(x => ({ ...x, count: x.serials.size }))
+                            .sort((a, b) => b.count - a.count || String(b.latest).localeCompare(String(a.latest)));
+                        if (identityRanked[0] && identityRanked[0].count >= 2 && (!identityRanked[1] || identityRanked[0].count > identityRanked[1].count)) {
+                            m.branch = { candidates: [identityRanked[0].branch], confidence: "inferred", reason: `Branch diinfer dari histori indent + model + customer (${identityRanked[0].count} unit berbeda); bukan branch master authoritative.` };
+                        }
+                    }
                 }
                 if (mu.dealer_id) {
                     const dl = dealersActive.find(x => x.id === mu.dealer_id);
@@ -10031,11 +8517,11 @@ SDLG_REPOSITORY.listClaims = async function () {
                             background: "#fff", color: "#64748b", cursor: "pointer", fontSize: 13,
                         } }, "\u2715 Batal"),
                     matchedClaim ? (React.createElement(React.Fragment, null,
-                        React.createElement("button", { onClick: () => { (async () => { if (window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.confirmAndPrepareNewSave === "function" && matchedClaim && parsed) { const ok = await window.SDLGWoClaimPolicy.confirmAndPrepareNewSave(parsed, matchedClaim); if (!ok) return; } proceedSaveAfterReview("new"); })(); }, disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
+                        React.createElement("button", { onClick: () => proceedSaveAfterReview("new"), disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
                                 padding: "9px 16px", borderRadius: 8, border: "1px solid #e2e8f0",
                                 background: "#fff", color: "#475569", cursor: "pointer", fontWeight: 600, fontSize: 13,
                             } }, "\uD83D\uDCBE Simpan sebagai Baru"),
-                        React.createElement("button", { onClick: () => { (async () => { if (window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.confirmUpdateSave === "function" && matchedClaim && parsed) { const ok = await window.SDLGWoClaimPolicy.confirmUpdateSave(parsed, matchedClaim); if (!ok) return; } proceedSaveAfterReview("update", matchedClaim); })(); }, disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
+                        React.createElement("button", { onClick: () => proceedSaveAfterReview("update", matchedClaim), disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
                                 padding: "9px 22px", borderRadius: 8, border: "none",
                                 background: "linear-gradient(135deg,#b45309,#f59e0b)",
                                 color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13,
@@ -10358,7 +8844,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 8 } }, "Data lama memang belum memiliki App Code karena kebijakan baru. Jangan dianggap typo dan jangan dipaksa diisi."),
                     React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: "#64748b" } }, qualitySummary.appCodeUnknown),
                     React.createElement("div", { style: { fontSize: 10, color: "#64748b" } }, "claim historical tanpa App Code"),
-                    React.createElement("div", { style: { marginTop: 9, padding: 9, background: "var(--sdlg-bg)", borderRadius: 8, fontSize: 10, color: "var(--sdlg-text-muted)" } }, "Untuk claim baru, App Code wajib berasal dari form/source terbaru; bukan hasil tebakan.")),
+                    React.createElement("div", { style: { marginTop: 9, padding: 9, background: "#f8fafc", borderRadius: 8, fontSize: 10, color: "#475569" } }, "Untuk claim baru, App Code wajib berasal dari form/source terbaru; bukan hasil tebakan.")),
             )),
         ))),
         tab === "list" && !detailId && (React.createElement("div", { className: "page" },
@@ -10367,106 +8853,120 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("div", { className: "eyebrow" }, "Claim operations"),
                     React.createElement("div", { className: "page-title" }, "Warranty Claims"),
                     React.createElement("div", { className: "page-sub" }, "Cari, filter, buka detail, lalu update status tanpa kehilangan konteks.")),
-                isAdmin && (React.createElement("button", { className: "sdlg-btn sdlg-btn--primary", onClick: () => setTab("paste") }, "+ New Claim"))),
+                isAdmin && (React.createElement("button", { className: "primary-btn", onClick: () => setTab("paste") }, "+ New Claim"))),
             React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" } },
-                React.createElement("button", { onClick: () => setYearFilter("all"), className: "sdlg-btn " + (yearFilter === "all" ? "sdlg-btn--primary" : "sdlg-btn--secondary") }, "Semua"),
-                years.map(y => (React.createElement("button", { key: y, onClick: () => setYearFilter(y), className: "sdlg-btn " + (yearFilter === y ? "sdlg-btn--primary" : "sdlg-btn--secondary") }, y)))),
-            React.createElement("div", { className: "claims-filter-bar", style: { display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center", background: "var(--sdlg-surface)", border: "1px solid var(--sdlg-border)", borderRadius: "var(--sdlg-radius-card)", padding: 10 } },
-                React.createElement("select", { value: branchFilter, onChange: e => setBranchFilter(e.target.value), className: "sdlg-select", style: { width: "auto" } },
+                React.createElement("button", { onClick: () => setYearFilter("all"), style: {
+                        padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
+                        background: yearFilter === "all" ? "#0f172a" : "#e2e8f0",
+                        color: yearFilter === "all" ? "#fff" : "#475569",
+                    } }, "Semua"),
+                years.map(y => (React.createElement("button", { key: y, onClick: () => setYearFilter(y), style: {
+                        padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13,
+                        background: yearFilter === y ? "#1e40af" : "#e2e8f0",
+                        color: yearFilter === y ? "#fff" : "#475569",
+                    } }, y)))),
+            React.createElement("div", { className: "claims-filter-bar", style: { display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 10 } },
+                React.createElement("select", { value: branchFilter, onChange: e => setBranchFilter(e.target.value), style: { padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12, background: "#fff" } },
                     React.createElement("option", { value: "all" }, "Semua Branch"),
                     branches.map(b => React.createElement("option", { key: b, value: b }, b))),
-                React.createElement("select", { value: statusFilter, onChange: e => setStatusFilter(e.target.value), className: "sdlg-select", style: { width: "auto" } },
+                React.createElement("select", { value: statusFilter, onChange: e => setStatusFilter(e.target.value), style: { padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12, background: "#fff" } },
                     React.createElement("option", { value: "all" }, "Semua Status"),
                     statuses.map(st => React.createElement("option", { key: st, value: st }, st))),
-                isAdmin && React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--sdlg-text-muted)", border: "1px solid var(--sdlg-border)", borderRadius: "var(--sdlg-radius-input)", background: "var(--sdlg-surface)", padding: "0 var(--sdlg-spacing-3)", height: 32, boxSizing: "border-box" } },
+                isAdmin && React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569", padding: "7px 9px", border: "1px solid #e2e8f0", borderRadius: 8, background: "#fff" } },
                     React.createElement("input", { type: "checkbox", checked: showArchived, onChange: e => setShowArchived(e.target.checked) }),
                     " Tampilkan arsip"),
-                (branchFilter !== "all" || statusFilter !== "all" || yearFilter !== "all") && React.createElement("button", { onClick: () => { setBranchFilter("all"); setStatusFilter("all"); setYearFilter("all"); }, className: "sdlg-btn sdlg-btn--secondary", style: { color: "var(--sdlg-danger)" } }, "Reset Filter"),
-                React.createElement("span", { style: { marginLeft: "auto", fontSize: 12, color: "var(--sdlg-text-muted)" } },
+                (branchFilter !== "all" || statusFilter !== "all" || yearFilter !== "all") && React.createElement("button", { onClick: () => { setBranchFilter("all"); setStatusFilter("all"); setYearFilter("all"); }, style: { padding: "8px 10px", border: "1px solid #fecaca", background: "#fff5f5", color: "#b91c1c", borderRadius: 8, fontSize: 12, cursor: "pointer" } }, "Reset Filter"),
+                React.createElement("span", { style: { marginLeft: "auto", fontSize: 12, color: "#64748b" } },
                     filtered.length,
                     " hasil")),
             React.createElement("div", { style: {
                     display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10,
                     marginBottom: 14,
                 } }, [
-                ["Klaim", summary.count, "var(--sdlg-primary)"],
-                ["USD", `USD ${summary.usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "var(--sdlg-success)"],
-                ["CNY", `CNY ${summary.cny.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "var(--sdlg-warning)"],
-                ["Total IDR", `Rp ${summary.idrEquivalent.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, "var(--sdlg-primary)"],
-                ["Draft", summary.draft, "var(--sdlg-neutral)"],
-                ["Submitted to SDLG", summary.submittedToSDLG, "var(--sdlg-primary)"],
-                ["Rejected", summary.rejected, "var(--sdlg-danger)"],
-                ["Claimed to SDLG", summary.claimed, "var(--sdlg-primary)"],
-            ].map(([label, val, color]) => (React.createElement("div", { key: label, className: "sdlg-card", style: {
-                    margin: 0, padding: "12px 14px"
+                ["Klaim", summary.count, "#1e40af"],
+                ["USD", `USD ${summary.usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "#059669"],
+                ["CNY", `CNY ${summary.cny.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "#0891b2"],
+                ["Total IDR", `Rp ${summary.idrEquivalent.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, "#7c3aed"],
+                ["Draft", summary.draft, "#f59e0b"],
+                ["Submitted to SDLG", summary.submittedToSDLG, "#2563eb"],
+                ["Rejected", summary.rejected, "#dc2626"],
+                ["Claimed to SDLG", summary.claimed, "#3b82f6"],
+            ].map(([label, val, color]) => (React.createElement("div", { key: label, style: {
+                    background: "#fff", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0",
                 } },
-                React.createElement("div", { style: { fontSize: 11, color: "var(--sdlg-text-muted)", fontWeight: 600 } }, label),
-                React.createElement("div", { style: { fontSize: 18, fontWeight: 600, color, marginTop: 2 } }, val))))),
-            summary.unknownCurrencyClaims > 0 && React.createElement("div", { style: { gridColumn: "1 / -1", padding: "8px 10px", background: "var(--sdlg-warning-bg)", border: "1px solid var(--sdlg-warning-border)", borderRadius: "var(--sdlg-radius-input)", fontSize: 11, color: "var(--sdlg-warning)" } }, "Warning: ", summary.unknownCurrencyClaims, " claim belum punya currency/route yang dikenali."),
+                React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600 } }, label),
+                React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color, marginTop: 2 } }, val))))),
+            summary.unknownCurrencyClaims > 0 && React.createElement("div", { style: { gridColumn: "1 / -1", padding: "8px 10px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, fontSize: 11, color: "#92400e" } }, "⚠️ ", summary.unknownCurrencyClaims, " claim belum punya currency/route yang dikenali."),
             React.createElement("div", { className: "search-wrap claims-searchbar", style: { marginBottom: 16 } },
                 React.createElement("div", { className: "search-box" },
                     React.createElement("span", { className: "search-icon" }, "\u2315"),
-                    React.createElement("input", { className: "sdlg-input", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Cari claim, serial, customer, WO/SO..." })),
-                isAdmin && (React.createElement("button", { onClick: () => setTab("paste"), className: "sdlg-btn sdlg-btn--secondary" }, "+ Input Baru")),
-                React.createElement("button", { onClick: () => exportToExcel(yearFilter === "all" ? claims : filtered), className: "sdlg-btn sdlg-btn--primary" }, "Export"),
-                React.createElement("button", { onClick: loadClaims, className: "sdlg-btn sdlg-btn--secondary" }, "\u21BB")),
-            isAdmin && selectedIds.length > 0 && (React.createElement("div", { className: "sdlg-card", style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12, padding: "8px 12px" } },
-                React.createElement("b", { style: { fontSize: 12, color: "var(--sdlg-text-main)" } },
+                    React.createElement("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Cari claim, serial, customer, WO/SO..." })),
+                isAdmin && (React.createElement("button", { onClick: () => setTab("paste"), className: "secondary-btn", style: { whiteSpace: "nowrap" } }, "+ Input Baru")),
+                React.createElement("button", { onClick: () => exportToExcel(yearFilter === "all" ? claims : filtered), style: {
+                        padding: "10px 14px", borderRadius: 9, border: "none",
+                        background: "#059669", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap",
+                    } }, "\uD83D\uDCE5 Export"),
+                React.createElement("button", { onClick: loadClaims, style: {
+                        padding: "10px 12px", borderRadius: 9, border: "1px solid #e2e8f0",
+                        background: "#fff", cursor: "pointer", fontSize: 13,
+                    } }, "\u21BB")),
+            isAdmin && selectedIds.length > 0 && (React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: 10, marginBottom: 12 } },
+                React.createElement("b", { style: { fontSize: 12, color: "#1e3a8a" } },
                     selectedIds.length,
                     " klaim dipilih"),
-                statuses.map(st => React.createElement("button", { key: st, onClick: () => handleBulkStatus(st), className: "sdlg-btn sdlg-btn--compact", style: { color: statusColor(st) } }, st)),
-                React.createElement("button", { onClick: () => setSelectedIds([]), className: "sdlg-btn sdlg-btn--secondary sdlg-btn--compact", style: { marginLeft: "auto" } }, "Batal Pilih"))),
-            isAdmin && filtered.length > 0 && (React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 11, color: "var(--sdlg-text-muted)" } },
+                statuses.map(st => React.createElement("button", { key: st, onClick: () => handleBulkStatus(st), style: { padding: "6px 9px", border: "none", borderRadius: 7, background: statusColor(st) + "22", color: statusColor(st), fontSize: 11, fontWeight: 700, cursor: "pointer" } }, st)),
+                React.createElement("button", { onClick: () => setSelectedIds([]), style: { marginLeft: "auto", padding: "6px 9px", border: "1px solid #dbeafe", background: "#fff", borderRadius: 7, fontSize: 11, cursor: "pointer" } }, "Batal Pilih"))),
+            isAdmin && filtered.length > 0 && (React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 11, color: "#64748b" } },
                 React.createElement("input", { type: "checkbox", checked: pagedFiltered.filter(c => !c.archived_at).length > 0 && pagedFiltered.filter(c => !c.archived_at).every(c => selectedIds.includes(c.claim_id)), onChange: () => { const ids = pagedFiltered.filter(c => !c.archived_at).map(c => c.claim_id); const all = ids.every(id => selectedIds.includes(id)); setSelectedIds(prev => all ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); } }),
                 "Pilih semua di halaman ini")),
-            React.createElement("div", { className: "claims-table-head sdlg-table-head", role: "row" },
+            React.createElement("div", { className: "claims-table-head", role: "row" },
                 React.createElement("span", null, "Claim"), React.createElement("span", null, "Asset / customer"),
                 React.createElement("span", null, "Status"), React.createElement("span", null, "Amount"), React.createElement("span", null, "Open")),
             loading ? (React.createElement("div", { className: "loading-card", "aria-live": "polite" },
-                React.createElement("div", { style: { display: "grid", gap: 10 } }, [1, 2, 3, 4, 5].map(i => React.createElement("div", { key: i, style: { padding: "10px 6px", borderBottom: "1px solid var(--sdlg-border)" } },
+                React.createElement("div", { style: { display: "grid", gap: 10 } }, [1, 2, 3, 4, 5].map(i => React.createElement("div", { key: i, style: { padding: "10px 6px", borderBottom: "1px solid #f1f5f9" } },
                     React.createElement("div", { className: "skeleton", style: { width: i === 1 ? "34%" : "27%" } }),
                     React.createElement("div", { className: "skeleton", style: { width: "62%", marginTop: 8 } })))),
-                loadingSlow && React.createElement("div", { className: "slow-load" }, "[Koneksi Lambat] Data masih dimuat. Koneksi lambat atau Supabase merespons lebih lama dari biasanya."))) : filtered.length === 0 ? (React.createElement("div", { className: "empty-card" },
-                React.createElement("div", { style: { fontWeight: 500, color: "var(--sdlg-text-main)" } }, "Belum ada data yang cocok"),
-                React.createElement("div", { style: { fontSize: 12, color: "var(--sdlg-text-muted)", marginTop: 5 } }, "Coba ubah pencarian atau filter."))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 6 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row sdlg-card", key: c.claim_id, onClick: () => setDetailId(c.claim_id), style: {
-                    border: selectedIds.includes(c.claim_id) ? "1px solid var(--sdlg-primary)" : "1px solid var(--sdlg-border)",
-                    cursor: "pointer", display: "flex",
+                loadingSlow && React.createElement("div", { className: "slow-load" }, "\u23F3 Data masih dimuat. Koneksi lambat atau Supabase merespons lebih lama dari biasanya."))) : filtered.length === 0 ? (React.createElement("div", { className: "empty-card" },
+                React.createElement("div", { style: { fontSize: 40, marginBottom: 10 } }, "\uD83D\uDCED"),
+                React.createElement("div", { style: { fontWeight: 700, color: "#334155" } }, "Belum ada data yang cocok"),
+                React.createElement("div", { style: { fontSize: 12, color: "#94a3b8", marginTop: 5 } }, "Coba ubah pencarian atau filter."))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 6 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, onClick: () => setDetailId(c.claim_id), style: {
+                    background: "#fff", borderRadius: 10, padding: "12px 14px",
+                    border: selectedIds.includes(c.claim_id) ? "1px solid #60a5fa" : "1px solid #e2e8f0", cursor: "pointer", display: "flex",
                     alignItems: "center", gap: 12,
-                    background: "var(--sdlg-surface)",
-                    borderRadius: "var(--sdlg-radius-card)",
-                    padding: "12px var(--sdlg-spacing-4)",
-                    boxShadow: "none"
                 } },
                 isAdmin && !c.archived_at && (React.createElement("input", { type: "checkbox", checked: selectedIds.includes(c.claim_id), onChange: (e) => { e.stopPropagation(); toggleSelected(c.claim_id); }, onClick: e => e.stopPropagation(), style: { flexShrink: 0 } })),
                 React.createElement("div", { style: {
-                        width: 36, height: 36, borderRadius: "var(--sdlg-radius-input)", background: "var(--sdlg-bg)",
-                        flexShrink: 0,
-                    } }),
+                        width: 38, height: 38, borderRadius: 8, background: "#f1f5f9",
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0,
+                    } }, "\uD83D\uDE9C"),
                 React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                     React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" } },
-                        React.createElement("span", { style: { fontWeight: 600, fontSize: 12, fontFamily: "monospace" } }, c.claim_id),
+                        React.createElement("span", { style: { fontWeight: 700, fontSize: 12, fontFamily: "monospace" } }, c.claim_id),
                         React.createElement(Pill, { color: statusColor(c.claim_status) }, c.claim_status),
                         React.createElement(Pill, { color: claimTypeMeta(c).color }, claimTypeMeta(c).label),
-                        claimAging(c)?.repairToSubmitOrToday != null && React.createElement(Pill, { color: claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimGeneralWindowDays ? "#b3261e" : claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimSubmitDays ? "#b86e00" : "#6b7280" },
-                            claimAging(c).repairToSubmitOrToday + " hari \u00B7 " + (claimAging(c).submit ? "Repair \u2192 Claim" : "Repair \u2192 Today")),
-                        c.archived_at && React.createElement(Pill, { color: "#6b7280" }, "ARCHIVED")),
+                        claimAging(c)?.repairToSubmitOrToday != null && React.createElement(Pill, { color: claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimGeneralWindowDays ? "#dc2626" : claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimSubmitDays ? "#d97706" : "#64748b" },
+                            "\u23F3 ",
+                            claimAging(c).repairToSubmitOrToday,
+                            " hari · ",
+                            claimAging(c).submit ? "Repair \u2192 Claim" : "Repair \u2192 Today"),
+                        c.archived_at && React.createElement(Pill, { color: "#64748b" }, "ARCHIVED")),
                     React.createElement("div", { style: { fontSize: 13, fontWeight: 500 } },
                         c.model,
                         " \u00B7 SN ",
                         c.serial_no),
-                    React.createElement("div", { style: { fontSize: 12, color: "var(--sdlg-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                    React.createElement("div", { style: { fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
                         c.customer,
                         " \u2014 ",
                         (c.fault_description || "").slice(0, 60))),
                 React.createElement("div", { style: { textAlign: "right", flexShrink: 0 } },
-                    React.createElement("div", { style: { fontWeight: 600, fontSize: 13, color: "var(--sdlg-primary)" } },
+                    React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#1e40af" } },
                         c.currency,
                         " ",
                         fmt2(c.total_amount)),
-                    React.createElement("div", { style: { fontSize: 11, color: "var(--sdlg-text-muted)" } }, c.dealer_claim_date || c.input_date))))))),
+                    React.createElement("div", { style: { fontSize: 11, color: "#94a3b8" } }, c.dealer_claim_date || c.input_date))))))),
             !loading && filtered.length > PAGE_SIZE && (React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 16 } },
-                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === 1, onClick: () => setPage(Math.max(1, safePage - 1)) }, "\u2190 Prev"),
-                React.createElement("span", { style: { fontSize: 12, color: "var(--sdlg-text-muted)" } },
+                React.createElement("button", { disabled: safePage === 1, onClick: () => setPage(Math.max(1, safePage - 1)) }, "\u2190 Prev"),
+                React.createElement("span", { style: { fontSize: 12, color: "#64748b" } },
                     "Page ",
                     safePage,
                     " / ",
@@ -10474,7 +8974,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     " \u00B7 ",
                     filtered.length,
                     " records"),
-                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === totalPages, onClick: () => setPage(Math.min(totalPages, safePage + 1)) }, "Next \u2192"))))),
+                React.createElement("button", { disabled: safePage === totalPages, onClick: () => setPage(Math.min(totalPages, safePage + 1)) }, "Next \u2192"))))),
         tab === "dashboard" && (() => {
             /* __SDLG_ANALYTICS_FILTER_V1__ */
             const scopeClaims = (window.SDLGBossAnalytics && window.SDLGBossAnalytics.filterByPeriod)
@@ -11195,107 +9695,11 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   };
 })();
 </script>
-<script src="/canonical-warranty-helper.js?v=20261006-mirror155"></script>
+<script src="/canonical-warranty-helper.js?v=20260923-1530"></script>
 
 
 
 
 
-<script>
-/* SDLG_INLINE_CLAIM_RESTORE_V1 */
-(function () {
-  'use strict';
-  if (window.__SDLG_INLINE_CLAIM_RESTORE__) return;
-  window.__SDLG_INLINE_CLAIM_RESTORE__ = true;
-  var CLAIM_KEY = 'sdlg-warranty:last-claim:v1';
-  var SKIP_KEY = 'sdlg-warranty:skip-claim-restore:v1';
-  var restoring = false, lastSaved = '', searchFilledFor = '', tries = 0;
-  function read(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
-  function write(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
-  function remove(k) { try { localStorage.removeItem(k); } catch (_) {} }
-  function claimIdFromText(text) {
-    var m = String(text || '').match(/\b(\d{4}-\d{4}-SDLG-PFR)\b/i);
-    return m ? m[1] : '';
-  }
-  function fromHash() {
-    try {
-      var h = String(location.hash || '').replace(/^#/, '');
-      var m = h.match(/^claim\/([^/?#]+)/i);
-      if (m) { var id = decodeURIComponent(m[1]); if (/^\d{4}-\d{4}-SDLG-PFR$/i.test(id)) return id; }
-    } catch (_) {}
-    return '';
-  }
-  function readStored() {
-    var h = fromHash(); if (h) return h;
-    var s = read(CLAIM_KEY) || '';
-    return /^\d{4}-\d{4}-SDLG-PFR$/i.test(s) ? s : '';
-  }
-  function writeStored(id) {
-    if (!id) return; write(CLAIM_KEY, id); remove(SKIP_KEY); lastSaved = id;
-    try { var next = '#claim/' + encodeURIComponent(id); if (String(location.hash || '') !== next) history.replaceState(null, '', next); } catch (_) {}
-  }
-  function markSkip() {
-    write(SKIP_KEY, '1');
-    try { if (location.hash && /claim\//i.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
-  }
-  function shouldSkip() { return read(SKIP_KEY) === '1'; }
-  function isDetail() { return !!document.querySelector('.page.claim-detail-page, [data-sdlg-claim-detail="1"]'); }
-  function detailId() { var root = document.querySelector('.page.claim-detail-page, [data-sdlg-claim-detail="1"]'); return root ? claimIdFromText(root.innerText || '') : ''; }
-  function findRow(id) {
-    var nodes = document.querySelectorAll('.claim-row, .claims-table-shell tbody tr, table tbody tr');
-    for (var i = 0; i < nodes.length; i++) { if ((nodes[i].textContent || '').indexOf(id) >= 0) return nodes[i]; }
-    return null;
-  }
-  function fillSearch(id) {
-    if (searchFilledFor === id) return;
-    var inputs = document.querySelectorAll('input[placeholder], input[type="search"], input[type="text"]');
-    var target = null;
-    for (var i = 0; i < inputs.length; i++) {
-      var ph = String(inputs[i].getAttribute('placeholder') || '').toLowerCase();
-      if (/cari|search|claim|serial|customer/.test(ph)) { target = inputs[i]; break; }
-    }
-    if (!target) return;
-    try {
-      var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-      if (desc && desc.set) desc.set.call(target, id); else target.value = id;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-      target.dispatchEvent(new Event('change', { bubbles: true }));
-      searchFilledFor = id;
-    } catch (_) {}
-  }
-  function tryRestore() {
-    if (restoring || isDetail() || shouldSkip()) return;
-    var id = readStored(); if (!id) return;
-    var row = findRow(id);
-    if (!row) { fillSearch(id); row = findRow(id); }
-    if (!row) return;
-    restoring = true;
-    try { row.click(); } catch (_) {}
-    setTimeout(function () { restoring = false; }, 1200);
-  }
-  function onTick() {
-    if (isDetail()) { var id = detailId(); if (id && id !== lastSaved) writeStored(id); return; }
-    tryRestore();
-  }
-  document.addEventListener('click', function (e) {
-    if (!e.target) return;
-    var btn = e.target.closest('button,a,.nav-btn');
-    var label = btn ? String(btn.textContent || '') : '';
-    if (/kembali|back to list|semua klaim/i.test(label) && isDetail()) markSkip();
-    var row = e.target.closest('.claim-row, tr');
-    if (row && !isDetail()) { var cid = claimIdFromText(row.textContent || ''); if (cid) { remove(SKIP_KEY); writeStored(cid); } }
-  }, true);
-  var timer = null;
-  function schedule() { clearTimeout(timer); timer = setTimeout(onTick, 80); }
-  if (typeof MutationObserver !== 'undefined') {
-    new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
-  }
-  (function boot() {
-    onTick();
-    if (!isDetail() && readStored() && !shouldSkip() && tries < 80) { tries += 1; setTimeout(boot, 150); }
-  })();
-  window.SDLGNavClaimRestore = { version: 'inline-v1', get: readStored, save: writeStored, clear: markSkip, restore: tryRestore };
-})();
-</script>
 </body>
 </html>
