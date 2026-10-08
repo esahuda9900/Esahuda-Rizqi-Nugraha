@@ -1,25 +1,25 @@
 /**
- * SDLG Portal UX v2 — hierarchy only (sticky bar, collapse IoV, hide empty, top portal, copy-on-hover).
- * Depends on sdlg-portal-copy-helper for format/copy when present.
+ * SDLG Portal UX v2.1 — hierarchy + polish (sticky labels, mid-link hide, note banner, report wrap).
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_PORTAL_UX_V2__) return;
+  if (root.__SDLG_PORTAL_UX_V21__) return;
+  root.__SDLG_PORTAL_UX_V21__ = true;
   root.__SDLG_PORTAL_UX_V2__ = true;
 
   function ensureCss() {
-    if (document.querySelector('link[data-sdlg-portal-helper-css]')) return;
-    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261008-v2'];
+    if (document.querySelector('link[data-sdlg-portal-helper-css="v21"]')) return;
+    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261008-v2.1'];
     try {
       if (/github\.io/i.test(location.host)) {
-        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261008-v2');
+        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261008-v2.1');
       }
     } catch (_) {}
     hrefs.forEach(function (href, i) {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
-      link.setAttribute('data-sdlg-portal-helper-css', String(i));
+      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v21' : String(i));
       (document.head || document.documentElement).appendChild(link);
     });
   }
@@ -76,40 +76,23 @@
     if (!iov || iov.getAttribute('data-sdlg-collapsed-wired') === '1') return;
     iov.setAttribute('data-sdlg-collapsed-wired', '1');
     iov.classList.add('sdlg-collapsible');
-
     var rest = [];
     var titleNodes = [];
     Array.prototype.forEach.call(iov.children, function (child, i) {
       var t = (child.className || '') + ' ' + (child.textContent || '').slice(0, 48);
       if (i < 3 && (/eyebrow|page-title|page-sub|Dealer Portal|IoV/i.test(t) || child.classList.contains('eyebrow') || child.classList.contains('page-title') || child.classList.contains('page-sub'))) {
         titleNodes.push(child);
-      } else {
-        rest.push(child);
-      }
+      } else rest.push(child);
     });
-
     var body = document.createElement('div');
     body.className = 'sdlg-collapse-body';
     body.hidden = true;
     rest.forEach(function (c) { body.appendChild(c); });
-
-    var fields = body.querySelectorAll('[data-sdlg-field], .sdlg-portal-field');
-    if (fields.length > 4 && !body.querySelector('.sdlg-portal-iov-grid')) {
-      var fieldParent = document.createElement('div');
-      fieldParent.className = 'sdlg-portal-iov-grid';
-      Array.prototype.forEach.call(fields, function (f) {
-        var wrap = f.closest('.sdlg-portal-field') || f.parentElement || f;
-        if (wrap && wrap.parentNode === body) fieldParent.appendChild(wrap);
-      });
-      if (fieldParent.children.length) body.insertBefore(fieldParent, body.firstChild);
-    }
-
     var toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'sdlg-collapse-toggle secondary-btn';
     toggle.setAttribute('aria-expanded', 'false');
     toggle.textContent = 'Show';
-
     var copyIov = document.createElement('button');
     copyIov.type = 'button';
     copyIov.className = 'secondary-btn';
@@ -118,14 +101,10 @@
       e.stopPropagation();
       var lines = [];
       iov.querySelectorAll('[data-sdlg-field]').forEach(function (el) {
-        var label = el.getAttribute('data-label') || '';
-        var val = el.value || '';
-        var fmt = (root.SDLGFormatForPortal || function (v) { return v; })(val, /Time|Date/i.test(label) ? 'datetime' : 'text');
-        lines.push(label + ': ' + fmt);
+        lines.push((el.getAttribute('data-label') || '') + ': ' + (el.value || ''));
       });
       try { await navigator.clipboard.writeText(lines.join('\n')); } catch (_) {}
     });
-
     var headerRow = document.createElement('div');
     headerRow.className = 'sdlg-section-head-row';
     titleNodes.forEach(function (n) { headerRow.appendChild(n); });
@@ -134,16 +113,13 @@
     actions.appendChild(toggle);
     actions.appendChild(copyIov);
     headerRow.appendChild(actions);
-
     iov.insertBefore(headerRow, iov.firstChild);
     iov.appendChild(body);
-
     toggle.addEventListener('click', function () {
       var open = body.hidden;
       body.hidden = !open;
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       toggle.textContent = open ? 'Hide' : 'Show';
-      iov.classList.toggle('is-open', open);
     });
   }
 
@@ -153,20 +129,15 @@
     var names = att.querySelectorAll('[data-sdlg-attach-name]');
     var text = att.innerText || '';
     var empty = !names.length && /Tidak ada attachment|no attachment|kosong/i.test(text);
-    if (empty) {
-      att.setAttribute('hidden', '');
-      att.classList.add('sdlg-section-hidden');
-    } else {
-      att.removeAttribute('hidden');
-      att.classList.remove('sdlg-section-hidden');
-    }
+    if (empty) { att.setAttribute('hidden', ''); att.classList.add('sdlg-section-hidden'); }
+    else { att.removeAttribute('hidden'); att.classList.remove('sdlg-section-hidden'); }
   }
 
   function promotePortalLink(page) {
     if (page.querySelector('[data-sdlg-portal-top]')) return;
     var bottom = null;
     page.querySelectorAll('a').forEach(function (a) {
-      if (/Buka Dealer Portal|Dealer Portal/i.test(a.textContent || '')) bottom = a;
+      if (/Buka Dealer Portal|Buka Portal|Buka SDLG Portal/i.test(a.textContent || '')) bottom = a;
     });
     var bar = document.createElement('div');
     bar.className = 'sdlg-portal-top-actions';
@@ -183,6 +154,15 @@
     else page.insertBefore(bar, page.firstChild);
   }
 
+  function hideMidPortalLinks(page) {
+    page.querySelectorAll('a').forEach(function (a) {
+      if (!/Buka Dealer Portal|Buka Portal|Buka SDLG Portal/i.test(a.textContent || '')) return;
+      if (a.closest('[data-sdlg-portal-top]') || a.closest('#sdlg-portal-sticky-bar')) return;
+      a.classList.add('sdlg-portal-bottom-link');
+      a.setAttribute('data-sdlg-portal-mid', '1');
+    });
+  }
+
   function styleFieldCopyButtons(page) {
     page.querySelectorAll('[data-sdlg-copy]').forEach(function (btn) {
       if (btn.hasAttribute('data-sdlg-copy-all') || btn.closest('.sdlg-section-head-actions') || btn.closest('#sdlg-portal-sticky-bar')) return;
@@ -190,9 +170,37 @@
       var wrap = btn.closest('div');
       if (wrap) wrap.classList.add('sdlg-field-wrap');
     });
-    page.querySelectorAll('[data-sdlg-field]').forEach(function (field) {
-      var wrap = field.parentElement;
-      if (wrap) wrap.classList.add('sdlg-field-wrap');
+  }
+
+  function upgradeNoteBanner(page) {
+    var nodes = page.querySelectorAll('div');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.querySelector('div')) continue;
+      var t = el.textContent || '';
+      if (!/Catatan/i.test(t) || !/copy\/paste|Dealer Portal SDLG/i.test(t)) continue;
+      if (el.classList.contains('sdlg-portal-note-banner')) return;
+      el.classList.add('sdlg-portal-note-banner');
+      var html = el.innerHTML;
+      el.innerHTML = '<span class="sdlg-portal-note-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span class="sdlg-portal-note-text">' + html + '</span>';
+      return;
+    }
+  }
+
+  function ensureReportNameFull(page) {
+    var cards = page.querySelectorAll('.card, [class*="card"]');
+    cards.forEach(function (card) {
+      if (!/Report Naming|Nama Report/i.test(card.innerText || '')) return;
+      card.classList.add('sdlg-section-report');
+      var divs = card.querySelectorAll('div');
+      for (var i = 0; i < divs.length; i++) {
+        var tx = (divs[i].textContent || '').trim();
+        if (/^SDLG\s+/i.test(tx) && tx.length > 20) {
+          divs[i].classList.add('sdlg-report-name-text');
+          divs[i].setAttribute('title', tx);
+          break;
+        }
+      }
     });
   }
 
@@ -202,11 +210,19 @@
   }
 
   function ensureStickyBar(page) {
-    if (document.getElementById('sdlg-portal-sticky-bar')) return;
+    var existing = document.getElementById('sdlg-portal-sticky-bar');
+    if (existing) {
+      // upgrade labels if old
+      existing.querySelectorAll('button, a').forEach(function (el) {
+        if (el.textContent === 'Copy All') el.textContent = 'Copy Home Fields';
+        if (el.textContent === 'Copy Parts') el.textContent = 'Copy Replacement';
+        if (el.textContent === 'Buka Portal') el.textContent = 'Buka SDLG Portal';
+      });
+      return;
+    }
     var bar = document.createElement('div');
     bar.id = 'sdlg-portal-sticky-bar';
     bar.className = 'sdlg-portal-sticky-bar';
-
     function mk(label, cls, fn) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -215,9 +231,8 @@
       b.addEventListener('click', fn);
       return b;
     }
-
-    bar.appendChild(mk('Copy All', 'primary-btn', clickCopyAll));
-    bar.appendChild(mk('Copy Parts', 'secondary-btn', function () {
+    bar.appendChild(mk('Copy Home Fields', 'primary-btn', clickCopyAll));
+    bar.appendChild(mk('Copy Replacement', 'secondary-btn', function () {
       var rows = document.querySelectorAll('[data-sdlg-part]');
       var lines = [['Failure Part', 'Replace Part', 'Description', 'Qty', 'Unit Price', 'Amount'].join('\t')];
       rows.forEach(function (el) { lines.push(el.getAttribute('data-sdlg-part') || el.getAttribute('data-value') || ''); });
@@ -228,15 +243,13 @@
       var btn = iov && iov.querySelector('.sdlg-section-head-actions .secondary-btn:last-child');
       if (btn) btn.click();
     }));
-
     var open = document.createElement('a');
     open.href = portalUrl();
     open.target = '_blank';
     open.rel = 'noreferrer';
     open.className = 'primary-btn';
-    open.textContent = 'Buka Portal';
+    open.textContent = 'Buka SDLG Portal';
     bar.appendChild(open);
-
     document.body.appendChild(bar);
     document.documentElement.classList.add('sdlg-has-portal-sticky');
   }
@@ -251,20 +264,20 @@
   function enhance() {
     ensureCss();
     var page = findPage();
-    if (!page) {
-      removeStickyIfLeft();
-      return;
-    }
+    if (!page) { removeStickyIfLeft(); return; }
     try {
       page.classList.add('sdlg-input-helper-page');
       markSections(page);
       collapseIov(page);
       hideEmptyAttachments(page);
       promotePortalLink(page);
+      hideMidPortalLinks(page);
       styleFieldCopyButtons(page);
+      upgradeNoteBanner(page);
+      ensureReportNameFull(page);
       ensureStickyBar(page);
     } catch (err) {
-      console.warn('[SDLG portal-ux v2]', err);
+      console.warn('[SDLG portal-ux v2.1]', err);
     }
   }
 
@@ -272,10 +285,7 @@
     enhance();
     if (typeof MutationObserver !== 'undefined' && document.body) {
       var t = null;
-      new MutationObserver(function () {
-        clearTimeout(t);
-        t = setTimeout(enhance, 350);
-      }).observe(document.body, { childList: true, subtree: true });
+      new MutationObserver(function () { clearTimeout(t); t = setTimeout(enhance, 350); }).observe(document.body, { childList: true, subtree: true });
     }
     setInterval(enhance, 2500);
   }
@@ -283,5 +293,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPortalUXv2 = { version: '2.0.0', enhance: enhance };
+  root.SDLGPortalUXv2 = { version: '2.1.0', enhance: enhance };
 })(window);
