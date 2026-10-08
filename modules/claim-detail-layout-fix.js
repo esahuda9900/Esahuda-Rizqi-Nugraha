@@ -1,13 +1,13 @@
 /**
  * Claim detail layout fix — visual only.
- * Ensures clean CSS v2.2 loads (cache-bust v=3) and Claims tab looks active on detail.
+ * Relative CSS path for GitHub Project Pages.
  */
 (function () {
   'use strict';
   if (window.__SDLG_CLAIM_DETAIL_LAYOUT_FIX__) return;
   window.__SDLG_CLAIM_DETAIL_LAYOUT_FIX__ = true;
 
-  var HREF = '/styles/sdlg-claim-detail-clean-v2.css?v=3';
+  var HREF = './styles/sdlg-claim-detail-clean-v2.css?v=3';
 
   function ensureCss() {
     var link = document.querySelector('link[data-sdlg-claim-detail-clean]');
