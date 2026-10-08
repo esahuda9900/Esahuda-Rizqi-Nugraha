@@ -1,10 +1,11 @@
 /**
  * SDLG ops-clean UI — CSS layer + Phase C core bridge loader + Repair Date inject.
+ * Relative paths for GitHub Project Pages.
  */
 (function () {
   'use strict';
   var MARKER = 'data-sdlg-ops-clean';
-  var HREF = '/styles/sdlg-ops-clean-v1.css';
+  var HREF = './styles/sdlg-ops-clean-v1.css';
   function loadScript(src, marker) {
     if (typeof document === 'undefined') return;
     if (document.querySelector('script[' + marker + ']')) return;
@@ -16,8 +17,8 @@
   }
   function inject() {
     if (typeof document === 'undefined') return;
-    loadScript('/modules/sdlg-core-bridge.js', 'data-sdlg-core-bridge');
-    loadScript('/modules/sdlg-repair-date-inject.js?v=1.3.2', 'data-sdlg-repair-date');
+    loadScript('./modules/sdlg-core-bridge.js', 'data-sdlg-core-bridge');
+    loadScript('./modules/sdlg-repair-date-inject.js?v=1.5.7', 'data-sdlg-repair-date');
     if (document.querySelector('link[' + MARKER + '], style[' + MARKER + ']')) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
