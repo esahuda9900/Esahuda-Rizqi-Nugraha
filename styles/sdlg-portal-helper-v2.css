@@ -1,7 +1,8 @@
-/* SDLG Portal Helper v2 — hierarchy, sticky bar, collapse, copy-on-hover */
+/* SDLG Portal Helper v2.1 — hierarchy + polish FIX 1-7 */
+
 .sdlg-toast {
   position: fixed;
-  bottom: 72px;
+  bottom: 88px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100001;
@@ -11,8 +12,8 @@
   background: #0f172a;
   color: #fff;
   font: 500 13px/1.4 system-ui, sans-serif;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
 }
+
 .sdlg-toast-warn { background: #854d0e; }
 
 .sdlg-portal-sticky-bar {
@@ -29,8 +30,8 @@
   padding: 10px 14px;
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
-  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
 }
+
 .sdlg-portal-sticky-bar .primary-btn,
 .sdlg-portal-sticky-bar .secondary-btn {
   font-weight: 600;
@@ -39,9 +40,10 @@
   border-radius: 8px;
   text-decoration: none;
 }
+
 html.sdlg-has-portal-sticky .page.sdlg-input-helper-page,
 html.sdlg-has-portal-sticky .sdlg-input-helper-page {
-  padding-bottom: 72px;
+  padding-bottom: 100px;
 }
 
 .sdlg-portal-top-actions {
@@ -51,6 +53,7 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   margin: 8px 0 14px;
   align-items: center;
 }
+
 .sdlg-portal-top-actions .primary-btn {
   font-weight: 600;
   font-size: 12px;
@@ -58,13 +61,15 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   text-decoration: none;
 }
 
+.sdlg-input-helper-page a.sdlg-portal-bottom-link,
+.sdlg-input-helper-page a[data-sdlg-portal-mid] {
+  display: none !important;
+}
+
 .sdlg-input-helper-page .sdlg-section-home {
   border: 1px solid #cbd5e1;
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
 }
-.sdlg-input-helper-page .sdlg-section-home [data-sdlg-copy-all] {
-  font-weight: 600;
-}
+
 .sdlg-section-hidden,
 [data-sdlg-section-role="attachments"][hidden] {
   display: none !important;
@@ -78,28 +83,27 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   gap: 10px;
   margin-bottom: 4px;
 }
+
 .sdlg-section-head-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
-.sdlg-collapse-body[hidden] {
-  display: none !important;
-}
-.sdlg-collapse-toggle {
-  font-weight: 600;
-  font-size: 12px;
-}
+
+.sdlg-collapse-body[hidden] { display: none !important; }
+.sdlg-collapse-toggle { font-weight: 600; font-size: 12px; }
 
 .sdlg-portal-iov-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
+
 @media (max-width: 900px) {
   .sdlg-portal-iov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
 @media (max-width: 560px) {
   .sdlg-portal-iov-grid { grid-template-columns: 1fr; }
   .sdlg-portal-sticky-bar { justify-content: flex-start; overflow-x: auto; }
@@ -126,7 +130,7 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   pointer-events: auto !important;
 }
 
-.sdlg-portal-field { margin-bottom: 8px; }
+.sdlg-portal-field { margin-bottom: 0; }
 .sdlg-portal-field-head {
   display: flex;
   align-items: center;
@@ -148,4 +152,39 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   font-size: 12px;
   background: #fff;
 }
-.sdlg-section-report { word-break: break-word; }
+
+.sdlg-section-report,
+.sdlg-report-name-text {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-overflow: unset;
+  overflow: visible;
+}
+
+.sdlg-portal-note-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a2332;
+  line-height: 1.45;
+}
+.sdlg-portal-note-icon {
+  flex-shrink: 0;
+  color: #b45309;
+  display: inline-flex;
+  margin-top: 1px;
+}
+.sdlg-portal-note-text { min-width: 0; }
+
+.sdlg-input-helper-page [data-sdlg-portal-extra="repairReportDate"],
+.sdlg-input-helper-page [data-sdlg-portal-extra="logisticsBackfill"] {
+  min-width: 0;
+}
