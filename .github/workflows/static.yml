@@ -39,10 +39,57 @@ jobs:
           cp -R modules _site/modules
           cp -R styles _site/styles
           touch _site/.nojekyll
+
+          # --- Fix GitHub Project Pages base paths (root-absolute → relative) ---
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('_site/index.html')
+          data = p.read_text(encoding='utf-8', errors='replace')
+
+          reps = [
+            ('src="/modules/', 'src="./modules/'),
+            ("src='/modules/", "src='./modules/"),
+            ('src="/canonical-', 'src="./canonical-'),
+            ("src='/canonical-", "src='./canonical-"),
+            ('src="/styles/', 'src="./styles/'),
+            ("src='/styles/", "src='./styles/"),
+            ('href="/modules/', 'href="./modules/'),
+            ('href="/styles/', 'href="./styles/'),
+          ]
+          for a, b in reps:
+              data = data.replace(a, b)
+
+          if '<base ' not in data.lower():
+              data = data.replace('<head>', '<head>\n  <base href="./">', 1)
+
+          if 'supabase-client.js' not in data:
+              needle = 'supabase.min.js'
+              idx = data.find(needle)
+              if idx >= 0:
+                  end = data.find('</script>', idx)
+                  if end >= 0:
+                      inject = '</script>\n  <script src="./modules/supabase-client.js"></script>'
+                      data = data[:end] + inject + data[end + len('</script>'):]
+
+          p.write_text(data, encoding='utf-8')
+          print('index.html path rewrite complete')
+          PY
+
+          # Sanity checks
           test -s _site/index.html
           test -s _site/modules/sdlg-core.js
+          test -s _site/modules/sdlg-core-bridge.js
+          test -s _site/modules/supabase-client.js
+          test -s _site/modules/sdlg-core-constants.js
+          test -s _site/modules/sdlg-core-date.js
+          test -s _site/modules/sdlg-core-currency.js
+          test -s _site/modules/claim-parser-helpers.js
+          test -s _site/canonical-warranty-helper.js
           test -s _site/styles/sdlg-base.css
-          echo "Prepared SDLG static frontend for GitHub Pages."
+          grep -q 'src="\./modules/claim-parser-helpers' _site/index.html
+          grep -q 'supabase-client.js' _site/index.html
+          ! grep -qE 'src="/modules/' _site/index.html
+          echo "Prepared SDLG static frontend for GitHub Pages (paths fixed)."
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
