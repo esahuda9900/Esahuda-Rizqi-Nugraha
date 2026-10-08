@@ -7,28 +7,30 @@
 
 ;(function () {
   try {
-    if (window.__SDLG_CLAIM_CONTEXT_LOADER_V15__) return;
-    window.__SDLG_CLAIM_CONTEXT_LOADER_V15__ = true;
+    if (window.__SDLG_CLAIM_CONTEXT_LOADER_V16__) return;
+    window.__SDLG_CLAIM_CONTEXT_LOADER_V16__ = true;
     window.__SDLG_CLAIM_CONTEXT_LOADER__ = true;
-    function inject(src) {
+    function inject(src, sync) {
       var s = document.createElement('script');
       s.src = src;
-      s.async = true;
+      if (!sync) s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }
-    inject('./modules/claim-context-resolve.js?v=20261008-v4');
-    inject('./modules/sdlg-portal-copy-helper.js?v=20261008-v1.3');
-    inject('./modules/sdlg-portal-ux-v2.js?v=20261008-v2.1');
-    inject('./modules/sdlg-portal-enrich.js?v=20261008-v1.3');
-    inject('./modules/sdlg-policy-table-fill.js?v=20261008-v1');
-    if (/github\.io/i.test(location.host)) {
-      var base = (location.pathname.split('/').slice(0, 2).join('/') || '');
-      inject(base + '/modules/claim-context-resolve.js?v=20261008-v4');
-      inject(base + '/modules/sdlg-portal-copy-helper.js?v=20261008-v1.3');
-      inject(base + '/modules/sdlg-portal-ux-v2.js?v=20261008-v2.1');
-      inject(base + '/modules/sdlg-portal-enrich.js?v=20261008-v1.3');
-      inject(base + '/modules/sdlg-policy-table-fill.js?v=20261008-v1');
+    function basePath() {
+      try {
+        if (/github\.io/i.test(location.host)) {
+          return (location.pathname.split('/').slice(0, 2).join('/') || '') + '/';
+        }
+      } catch (_) {}
+      return './';
     }
+    var b = basePath();
+    inject(b + 'modules/sdlg-policy-repair-hardfix.js?v=20261008-v2', false);
+    inject(b + 'modules/claim-context-resolve.js?v=20261008-v4');
+    inject(b + 'modules/sdlg-portal-copy-helper.js?v=20261008-v1.3');
+    inject(b + 'modules/sdlg-portal-ux-v2.js?v=20261008-v2.1');
+    inject(b + 'modules/sdlg-portal-enrich.js?v=20261008-v1.3');
+    inject(b + 'modules/sdlg-policy-table-fill.js?v=20261008-v1');
   } catch (e) {
     console.warn('[SDLG] claim-context loader', e);
   }
