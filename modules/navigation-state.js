@@ -1,6 +1,6 @@
 /**
  * Navigation state + claim restore after refresh + progressive module loader.
- * v11: claim-restore only on Claims list; nav tabs skip restore (fix Data Quality hijack).
+ * v12: path-resolve for GH project pages + claim-restore only on Claims list; nav tabs skip restore.
  * Claim-restore is embedded here because CF may not serve brand-new module files.
  */
 (function () {
@@ -307,15 +307,37 @@
     window.SDLGNavClaimRestore = { version: '1.3-nav-guard', get: readStoredClaim, save: writeStoredClaim, clear: markSkipRestore, restore: tryRestore, isClaimsListContext: isClaimsListContext };
   }
 
+  function assetBase() {
+    try {
+      var host = String(location.hostname || '');
+      if (!/github\.io$/i.test(host)) return '';
+      var parts = String(location.pathname || '').split('/').filter(Boolean);
+      if (parts.length >= 1 && parts[0].indexOf('.') < 0) return '/' + parts[0];
+    } catch (_) {}
+    return '';
+  }
+  function resolveAsset(path) {
+    if (!path) return path;
+    var p = String(path);
+    if (/^https?:\/\//i.test(p)) return p;
+    if (p.charAt(0) === '/') {
+      var base = assetBase();
+      if (base && p.indexOf(base + '/') !== 0) return base + p;
+    }
+    return p;
+  }
+
   function loadScript(src, marker) {
     if (typeof document === 'undefined') return;
     if (document.querySelector('script[' + marker + ']')) return;
     var existing = document.querySelectorAll('script[src]');
+    var resolved = resolveAsset(src);
     for (var i = 0; i < existing.length; i++) {
-      if (existing[i].getAttribute('src') === src) return;
+      var cur = existing[i].getAttribute('src') || '';
+      if (cur === src || cur === resolved) return;
     }
     var s = document.createElement('script');
-    s.src = src;
+    s.src = resolved;
     s.async = true;
     s.setAttribute(marker, '1');
     (document.head || document.documentElement).appendChild(s);
@@ -326,7 +348,7 @@
     if (document.querySelector('link[' + marker + ']')) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = href;
+    link.href = resolveAsset(href);
     link.setAttribute(marker, '1');
     (document.head || document.documentElement).appendChild(link);
   }
