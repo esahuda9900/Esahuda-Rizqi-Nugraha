@@ -1,5 +1,5 @@
 /**
- * SDLG core helpers — identity + currency. Loads portal mirror v1.5.5 if needed.
+ * SDLG core helpers — identity + currency. Loads portal mirror with GH Pages base path.
  */
 (function (root) {
   'use strict';
@@ -97,7 +97,7 @@
     root.SDLGEffectiveClaimCurrency = effectiveClaimCurrency;
     root.SDLGInferCurrencyToken = inferCurrencyTokenFromSource;
     root.SDLGCore = Object.freeze({
-      version: '1.1.5', modelKey: modelKey, canonicalModel: canonicalModel,
+      version: '1.1.6', modelKey: modelKey, canonicalModel: canonicalModel,
       modelsEquivalent: modelsEquivalent, baseCustomerName: baseCustomerName,
       normalizeDealerCode: normalizeDealerCode, serialEquivalent: serialEquivalent,
       normalizeClaimCurrency: normalizeClaimCurrency, effectiveClaimCurrency: effectiveClaimCurrency,
@@ -117,7 +117,17 @@
     if (!document.querySelector('script[data-sdlg-portal-mirror-155]') &&
         !window.__SDLG_PORTAL_MIRROR_155__) {
       var s = document.createElement('script');
-      s.src = '/modules/sdlg-repair-date-inject.js?v=1.5.5';
+      s.src = (function () {
+        try {
+          if (/github\.io$/i.test(location.hostname || '')) {
+            var p = String(location.pathname || '').split('/').filter(Boolean);
+            if (p[0] && p[0].indexOf('.') < 0) {
+              return '/' + p[0] + '/modules/sdlg-repair-date-inject.js?v=1.5.6';
+            }
+          }
+        } catch (_) {}
+        return './modules/sdlg-repair-date-inject.js?v=1.5.6';
+      })();
       s.async = true;
       s.setAttribute('data-sdlg-portal-mirror-155', '1');
       (document.head || document.documentElement).appendChild(s);
