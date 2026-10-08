@@ -270,9 +270,12 @@
     }
     inject('./modules/claim-context-resolve.js?v=20261008-v4');
     inject('./modules/sdlg-portal-copy-helper.js?v=20261008-v1');
+    inject('./modules/sdlg-portal-ux-v2.js?v=20261008-v2');
     if (/github\.io/i.test(location.host)) {
-      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v4');
-      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/sdlg-portal-copy-helper.js?v=20261008-v1');
+      var base = (location.pathname.split('/').slice(0, 2).join('/') || '');
+      inject(base + '/modules/claim-context-resolve.js?v=20261008-v4');
+      inject(base + '/modules/sdlg-portal-copy-helper.js?v=20261008-v1');
+      inject(base + '/modules/sdlg-portal-ux-v2.js?v=20261008-v2');
     }
   } catch (e) {
     console.warn('[SDLG] claim-context loader', e);
