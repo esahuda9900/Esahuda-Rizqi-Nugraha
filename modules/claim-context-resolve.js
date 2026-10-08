@@ -1,10 +1,11 @@
 /**
- * Claim context resolve runtime v1.1.0
+ * Claim context resolve runtime v1.1.1
  * - resolve_sdlg_claim_context after parse / before save
  * - Auto-create customer when unresolved
  * - Branch typeahead: type name → suggest existing → Enter creates if new
  * - On branch pick: sdlg_resolve_or_create_branch + update machine unit
  * - STOCK / SOLD-no-branch banners via SDLGMasterResolutionUX
+ * - v1.1.1: getClient uses global singleton only (no createClient)
  */
 (function (root) {
   'use strict';
@@ -12,8 +13,6 @@
   root.__SDLG_CLAIM_CONTEXT_RESOLVE_V11__ = true;
   root.__SDLG_CLAIM_CONTEXT_RESOLVE_V1__ = true;
 
-  var SUPABASE_URL = 'https://frqvelcreczmnofldrga.supabase.co';
-  var SUPABASE_ANON = 'sb_publishable_5TrTvCR8ymE3VNLhthYFMg_vWRRMHMi';
   var client = null;
   var lastCtx = null;
   var branchCache = null;
@@ -21,14 +20,17 @@
 
   function getClient() {
     if (client) return client;
-    try {
-      if (root.supabase && typeof root.supabase.createClient === 'function') {
-        client = root.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-        });
-      }
-    } catch (_) {}
-    return client;
+    // Singleton only — never createClient here (avoids Multiple GoTrueClient)
+    if (typeof root.getSdlgSupabase === 'function') {
+      client = root.getSdlgSupabase();
+      return client;
+    }
+    var existing = root.supabaseClient || root.sdlgSupabase || root.__SDLG_SUPABASE_CLIENT || root.__SUPABASE_CLIENT;
+    if (existing && typeof existing.from === 'function' && typeof existing.rpc === 'function') {
+      client = existing;
+      return client;
+    }
+    return null;
   }
 
   function clean(v) {
@@ -549,60 +551,21 @@
     return claim;
   }
 
-  function patchClientRpc(c) {
-    if (!c || typeof c.rpc !== 'function' || c.__sdlgResolvePatched) return c;
-    var orig = c.rpc.bind(c);
-    c.rpc = async function (fn, args) {
-      if ((fn === 'create_sdlg_claim' || fn === 'update_sdlg_claim') && args && args.p_claim) {
-        try {
-          args.p_claim = await enrichClaimPayload(args.p_claim);
-        } catch (err) {
-          console.warn('[SDLG claim-context save patch]', err);
-        }
-      }
-      return orig(fn, args);
-    };
-    c.__sdlgResolvePatched = true;
-    return c;
-  }
-
-  function installRpcPatch() {
-    try {
-      if (root.supabase && typeof root.supabase.createClient === 'function' && !root.supabase.__sdlgCreatePatched) {
-        var origCreate = root.supabase.createClient.bind(root.supabase);
-        root.supabase.createClient = function () {
-          var c = origCreate.apply(root.supabase, arguments);
-          return patchClientRpc(c);
-        };
-        root.supabase.__sdlgCreatePatched = true;
-      }
-    } catch (_) {}
-    patchClientRpc(getClient());
-  }
-
-  function boot() {
-    installHooks();
-    var tries = 0;
-    (function wait() {
-      tries += 1;
-      installRpcPatch();
-      if (tries < 40) setTimeout(wait, 250);
-    })();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
-
   root.SDLGClaimContextResolve = {
-    version: '1.1.0',
-    resolve: resolveContext,
+    version: '1.1.1',
+    getClient: getClient,
+    resolveContext: resolveContext,
     ensureCustomer: ensureCustomer,
-    resolveOrCreateBranch: resolveOrCreateBranch,
     loadBranches: loadBranches,
-    runFromPage: runResolveFromPage,
+    resolveOrCreateBranch: resolveOrCreateBranch,
+    runResolveFromPage: runResolveFromPage,
+    enrichClaimPayload: enrichClaimPayload,
     getLastContext: function () { return lastCtx; }
   };
-})(window);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installHooks, { once: true });
+  } else {
+    installHooks();
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
