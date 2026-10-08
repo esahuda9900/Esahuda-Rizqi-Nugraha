@@ -1,7 +1,6 @@
 (function (root) {
   'use strict';
 
-  // Prefer modules/sdlg-core.js for SDLGCanonicalModel / SDLGModelsEquivalent when present.
   const MODEL_LOCK_RE = /SOURCE LOCK:\s*Model:\s*source=(["'])((?:(?!\1).)*)\1\s*vs\s*parse=(["'])((?:(?!\3).)*)\3/i;
   const BROAD_BRANCH_FALLBACK_MIN = 10;
   const BRANCH_EVIDENCE_MIN = 70;
@@ -73,7 +72,6 @@
     return canonicalModelMatch(sourceOrDocument, parsedModel, masterModel);
   }
 
-  // Branch evidence: UNIT-ONLY (serial / suffix6).
   function scoreBranchRows(rows, identity) {
     const byBranch = new Map();
     const seen = new Set();
@@ -99,10 +97,6 @@
     return Array.from(byBranch.values()).sort((a, b) => b.score - a.score || b.units - a.units || a.branch.localeCompare(b.branch));
   }
 
-  /**
-   * Infer unit stock status from resolve context or machine fields.
-   * STOCK only when no sale_date and no customer evidence (server also enforces this).
-   */
   function inferUnitStatus(ctx) {
     if (!ctx || typeof ctx !== 'object') return 'UNKNOWN';
     const explicit = clean(ctx.unit_status || ctx.unitStatus).toUpperCase();
@@ -211,7 +205,6 @@
     if (typeof document === 'undefined') return;
     if (root.__SDLG_INDENT_BRANCH_GUARD__) return;
     root.__SDLG_INDENT_BRANCH_GUARD__ = true;
-
     document.addEventListener('click', function (e) {
       var t = e.target;
       if (!t || !t.closest) return;
@@ -224,27 +217,17 @@
       e.stopPropagation();
       if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       ensureIndentBranchBanner(document);
-      try {
-        window.alert('Diblok: branch hasil tebakan indent+customer. Pilih branch manual sesuai unit/cabang yang benar, lalu simpan lagi.');
-      } catch (_) {}
+      try { window.alert('Diblok: branch hasil tebakan indent+customer. Pilih branch manual sesuai unit/cabang yang benar, lalu simpan lagi.'); } catch (_) {}
     }, true);
-
     function tick() {
-      try {
-        ensureIndentBranchBanner(document);
-        ensureStockUnitBanner(document, null);
-      } catch (_) {}
+      try { ensureIndentBranchBanner(document); ensureStockUnitBanner(document, null); } catch (_) {}
     }
     if (typeof MutationObserver !== 'undefined' && document.body) {
-      var obs = new MutationObserver(function () { tick(); });
-      obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+      new MutationObserver(function () { tick(); }).observe(document.body, { childList: true, subtree: true, characterData: true });
     }
     setInterval(tick, 1500);
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', tick);
-    } else {
-      tick();
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tick);
+    else tick();
   }
 
   function repair(documentRef) {
@@ -263,27 +246,13 @@
     });
   }
 
-  if (typeof root.SDLGCanonicalModel !== 'function') {
-    root.SDLGCanonicalModel = localCanonicalModel;
-  }
-  if (typeof root.SDLGModelsEquivalent !== 'function') {
-    root.SDLGModelsEquivalent = modelsEquivalent;
-  }
+  if (typeof root.SDLGCanonicalModel !== 'function') root.SDLGCanonicalModel = localCanonicalModel;
+  if (typeof root.SDLGModelsEquivalent !== 'function') root.SDLGModelsEquivalent = modelsEquivalent;
 
   root.SDLGMasterResolutionUX = Object.freeze({
-    normalizeModel,
-    canonicalModel,
-    modelsEquivalent,
-    isBenignCanonicalModelLock,
-    canonicalModelMatch,
-    scoreBranchRows,
-    repair,
-    pageHasIndentBranchInference: pageHasIndentBranchInference,
-    inferUnitStatus: inferUnitStatus,
-    isStockBranchName: isStockBranchName,
-    applyResolveContextHints: applyResolveContextHints,
-    ensureStockUnitBanner: ensureStockUnitBanner,
-    ensureSoldNoBranchHint: ensureSoldNoBranchHint
+    normalizeModel, canonicalModel, modelsEquivalent, isBenignCanonicalModelLock, canonicalModelMatch,
+    scoreBranchRows, repair, pageHasIndentBranchInference, inferUnitStatus, isStockBranchName,
+    applyResolveContextHints, ensureStockUnitBanner, ensureSoldNoBranchHint
   });
 
   try { installRuntimeIndentBranchGuard(); } catch (_) {}
@@ -300,8 +269,10 @@
       (document.head || document.documentElement).appendChild(s);
     }
     inject('./modules/claim-context-resolve.js?v=20261008-v4');
+    inject('./modules/sdlg-portal-copy-helper.js?v=20261008-v1');
     if (/github\.io/i.test(location.host)) {
       inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v4');
+      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/sdlg-portal-copy-helper.js?v=20261008-v1');
     }
   } catch (e) {
     console.warn('[SDLG] claim-context loader', e);
