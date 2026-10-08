@@ -1,12 +1,13 @@
 /**
  * Fast-path for Warranty Assessment panel + boot nav-claim-restore.
+ * Paths are relative so GitHub Project Pages resolves under /repo/.
  */
 (function () {
   'use strict';
   if (window.__SDLG_HELPER_FASTPATH__) return;
   window.__SDLG_HELPER_FASTPATH__ = true;
 
-  var FAST_HELPER = '/canonical-warranty-helper.js?v=20261001-fast';
+  var FAST_HELPER = './canonical-warranty-helper.js?v=20261008-pathfix';
 
   function loadScript(src, marker) {
     if (document.querySelector('script[' + marker + ']')) return;
@@ -21,8 +22,7 @@
     (document.head || document.documentElement).appendChild(s);
   }
 
-  // Stay on last claim after browser refresh
-  loadScript('/modules/nav-claim-restore.js?v=20261001', 'data-sdlg-nav-claim-restore');
+  loadScript('./modules/nav-claim-restore.js?v=20261008-pathfix', 'data-sdlg-nav-claim-restore');
 
   function ensureFastHelperScript() {
     try {
@@ -30,7 +30,7 @@
       var hasFast = false;
       for (var i = 0; i < scripts.length; i++) {
         var src = scripts[i].getAttribute('src') || '';
-        if (src.indexOf('20261001-fast') >= 0 || src.indexOf('v1.2') >= 0) hasFast = true;
+        if (src.indexOf('pathfix') >= 0 || src.indexOf('20261001-fast') >= 0 || src.indexOf('v1.2') >= 0) hasFast = true;
       }
       if (hasFast) return;
       try { delete window.__SDLG_CANONICAL_HELPER_BOOTED__; } catch (_) {
@@ -123,5 +123,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
   else schedule();
 
-  window.SDLGHelperFastpath = { version: '1.2', refresh: onMaybeDetail };
+  window.SDLGHelperFastpath = { version: '1.3-pathfix', refresh: onMaybeDetail };
 })();
