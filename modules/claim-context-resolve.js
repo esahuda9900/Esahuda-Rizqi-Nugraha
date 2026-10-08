@@ -1,8 +1,9 @@
 /**
- * Claim context resolve runtime v1.0.0
+ * Claim context resolve runtime v1.0.1
  * - After parse / before save: call resolve_sdlg_claim_context
  * - Auto-create customer via sdlg_resolve_or_create_customer when still unresolved
  * - Surface STOCK / SOLD-no-branch banners via SDLGMasterResolutionUX
+ * - Annotate MASTER MATCHING chips (customer / branch STOCK / SOLD·manual)
  */
 (function (root) {
   'use strict';
@@ -35,6 +36,10 @@
     var m = text.match(/\b(VLG[A-Z0-9]{8,})\b/i);
     if (m) return m[1].toUpperCase();
     m = text.match(/Serial No\.?\s*([A-Z0-9]{6,})/i);
+    if (m) return m[1].toUpperCase();
+    m = text.match(/SN:\s*(VLG[A-Z0-9]{6,}|[A-Z0-9]{8,})/i);
+    if (m) return m[1].toUpperCase();
+    m = text.match(/MACHINE\s*\n\s*(VLG[A-Z0-9]{6,})/i);
     return m ? m[1].toUpperCase() : '';
   }
 
@@ -43,6 +48,8 @@
     var m = text.match(/\nCustomer\n([^\n]+)/i);
     if (m) return clean(m[1]);
     m = text.match(/Customer Name\s+([^\n\t]+)/i);
+    if (m) return clean(m[1]);
+    m = text.match(/HASIL PARSE[\s\S]{0,400}?([A-Z][A-Z0-9 .,'-]{8,60})\s*\n/i);
     return m ? clean(m[1]) : '';
   }
 
@@ -95,40 +102,79 @@
     } catch (_) {}
   }
 
+  function styleChip(el, bg, color) {
+    el.style.background = bg;
+    el.style.color = color;
+    el.style.borderRadius = '8px';
+    el.style.padding = '4px 8px';
+  }
+
+  function setChipValue(el, value) {
+    var lines = el.querySelectorAll('div');
+    if (lines.length >= 2) {
+      lines[1].textContent = value;
+    } else {
+      var kids = el.childNodes;
+      var replaced = false;
+      for (var i = kids.length - 1; i >= 0; i--) {
+        if (kids[i].nodeType === 3 && clean(kids[i].textContent)) {
+          kids[i].textContent = ' ' + value;
+          replaced = true;
+          break;
+        }
+      }
+      if (!replaced) el.appendChild(document.createTextNode(' → ' + value));
+    }
+  }
+
   function enhanceMasterMatchingUi(ctx) {
     if (!ctx || !document.body) return;
     var section = null;
     var nodes = document.querySelectorAll('div');
     for (var i = 0; i < nodes.length; i++) {
-      if (/MASTER MATCHING/i.test(nodes[i].textContent || '') && (nodes[i].textContent || '').length < 800) {
+      if (/MASTER MATCHING/i.test(nodes[i].textContent || '') && (nodes[i].textContent || '').length < 1200) {
         section = nodes[i].parentElement || nodes[i];
         break;
       }
     }
     if (!section) return;
+
+    var unitStatus = clean(ctx.unit_status || '').toUpperCase();
+    if (!unitStatus && (ctx.machine_sale_date || ctx.sale_date)) unitStatus = 'SOLD';
+
     if (ctx.customer_id && ctx.customer_name) {
       section.querySelectorAll('div').forEach(function (el) {
         var t = clean(el.textContent);
-        if (/^CUSTOMER/i.test(t) && /Source only|Tidak match|kandidat/i.test(t)) {
-          el.style.background = '#dcfce7';
-          el.style.color = '#166534';
-          var lines = el.querySelectorAll('div');
-          if (lines.length >= 2) lines[1].textContent = ctx.customer_name;
-          else el.appendChild(document.createTextNode(' \u2192 ' + ctx.customer_name));
+        if (!/^CUSTOMER/i.test(t)) return;
+        if (/Source only|Tidak match|kandidat/i.test(t) || t.length < 80) {
+          styleChip(el, '#dcfce7', '#166534');
+          setChipValue(el, ctx.customer_name);
         }
       });
     }
-    if (ctx.branch_id && ctx.branch_name) {
-      section.querySelectorAll('div').forEach(function (el) {
-        var t = clean(el.textContent);
-        if (/^BRANCH/i.test(t) && /kandidat|Source only|Tidak match/i.test(t)) {
-          el.style.background = '#dcfce7';
-          el.style.color = '#166534';
-          var lines = el.querySelectorAll('div');
-          if (lines.length >= 2) lines[1].textContent = ctx.branch_name;
-        }
-      });
-    }
+
+    section.querySelectorAll('div').forEach(function (el) {
+      var t = clean(el.textContent);
+      if (!/^BRANCH/i.test(t)) return;
+
+      if (ctx.branch_id && ctx.branch_name) {
+        styleChip(el, '#dcfce7', '#166534');
+        setChipValue(el, ctx.branch_name);
+        return;
+      }
+
+      if (unitStatus === 'SOLD' || (ctx.machine_sale_date || ctx.sale_date)) {
+        styleChip(el, '#fef3c7', '#92400e');
+        setChipValue(el, 'SOLD · pilih manual');
+        return;
+      }
+
+      if (unitStatus === 'STOCK') {
+        styleChip(el, '#dbeafe', '#1e3a5f');
+        setChipValue(el, 'STOCK');
+      }
+    });
+
     applyBanners(ctx);
   }
 
@@ -149,6 +195,10 @@
         ctx.customer_source = 'CLAIM_TEXT_RESOLVE_OR_CREATE';
         ctx.customer_confidence = 'HIGH';
       }
+    }
+    if (ctx && !ctx.unit_status) {
+      if (ctx.machine_sale_date || ctx.sale_date) ctx.unit_status = 'SOLD';
+      else if (!ctx.customer_id && !ctx.customer_name_source) ctx.unit_status = 'STOCK';
     }
     if (ctx) enhanceMasterMatchingUi(ctx);
     return ctx;
@@ -175,8 +225,9 @@
       var btn = t.closest('button');
       if (!btn) return;
       if (isParseButton(btn)) {
-        setTimeout(function () { runResolveFromPage(); }, 1200);
-        setTimeout(function () { runResolveFromPage(); }, 2800);
+        setTimeout(function () { runResolveFromPage(); }, 900);
+        setTimeout(function () { runResolveFromPage(); }, 2200);
+        setTimeout(function () { runResolveFromPage(); }, 4000);
       }
       if (isSaveButton(btn)) runResolveFromPage();
     }, true);
@@ -186,10 +237,10 @@
         clearTimeout(timer);
         timer = setTimeout(function () {
           var body = document.body ? document.body.innerText : '';
-          if (/MASTER MATCHING/i.test(body) && /Source only|kandidat/i.test(body)) {
+          if (/MASTER MATCHING/i.test(body) && /Source only|kandidat|23 kandidat/i.test(body)) {
             runResolveFromPage();
           }
-        }, 600);
+        }, 500);
       });
       obs.observe(document.body, { childList: true, subtree: true });
     }
@@ -272,7 +323,7 @@
   }
 
   root.SDLGClaimContextResolve = {
-    version: '1.0.0',
+    version: '1.0.1',
     resolve: resolveContext,
     ensureCustomer: ensureCustomer,
     runFromPage: runResolveFromPage,

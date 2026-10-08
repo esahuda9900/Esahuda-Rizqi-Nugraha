@@ -131,7 +131,6 @@
     const text = String(el.body.innerText || '');
     if (/unit_status\s*[:=]\s*STOCK/i.test(text)) return true;
     if (/\bUNIT\s+STOCK\b|\bSTATUS\s+UNIT\s*[:：]?\s*STOCK\b/i.test(text)) return true;
-    // MASTER MATCHING branch row equals STOCK
     const section = text.match(/MASTER MATCHING([\s\S]{0,2000})/i);
     if (!section) return false;
     const lines = section[1].split(/\n+/).map(clean).filter(Boolean);
@@ -300,9 +299,9 @@
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }
-    inject('./modules/claim-context-resolve.js?v=20261008-v2');
+    inject('./modules/claim-context-resolve.js?v=20261008-v3');
     if (/github\.io/i.test(location.host)) {
-      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v2');
+      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v3');
     }
   } catch (e) {
     console.warn('[SDLG] claim-context loader', e);
