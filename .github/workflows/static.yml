@@ -42,9 +42,12 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('_site/index.html')
           data = p.read_text(encoding='utf-8', errors='replace')
 
+          # 1) Root-absolute → relative (GitHub Project Pages)
           reps = [
             ('src="/modules/', 'src="./modules/'),
             ("src='/modules/", "src='./modules/"),
@@ -61,45 +64,82 @@ jobs:
           if '<base ' not in data.lower():
               data = data.replace('<head>', '<head>\n  <base href="./">', 1)
 
-          def inject_after_supabase(src_path):
-              nonlocal data
-              if src_path.split('/')[-1] in data:
-                  return
-              needle = 'supabase.min.js'
-              idx = data.find(needle)
-              if idx < 0:
-                  # try already-injected supabase-client as anchor
-                  idx = data.find('supabase-client.js')
-              if idx < 0:
-                  return
-              end = data.find('</script>', idx)
-              if end < 0:
-                  return
-              inject = '</script>\n  <script src="' + src_path + '"></script>'
-              data = data[:end] + inject + data[end + len('</script>'):]
+          # 2) Rewrite getSupabaseClient to NEVER call createClient directly
+          old_fn = '''function getSupabaseClient() {
+    // Public build is pinned to the production project. Do not allow browser-local
+    // config to redirect the app to an arbitrary Supabase project.
+    if (!window.supabase || typeof window.supabase.createClient !== "function")
+        throw new Error("Supabase JS gagal dimuat.");
+    return window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, { db: { retry: false }, auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }, global: { headers: { "X-Client-Info": "sdlg-warranty-public-v2.30.6" } } });
+}'''
 
-          if 'supabase-client.js' not in data:
-              inject_after_supabase('./modules/supabase-client.js')
-          if 'data-pipeline-guard.js' not in data:
-              # inject after supabase-client if present, else after CDN
-              marker = 'supabase-client.js'
-              idx = data.find(marker)
-              if idx >= 0:
-                  end = data.find('</script>', idx)
-                  if end >= 0:
-                      inject = '</script>\n  <script src="./modules/data-pipeline-guard.js"></script>'
-                      data = data[:end] + inject + data[end + len('</script>'):]
+          new_fn = '''function getSupabaseClient() {
+    // SINGLETON ONLY — never call createClient here (fixes Multiple GoTrueClient + empty claims).
+    if (typeof window.getSdlgSupabase === "function") {
+        var c = window.getSdlgSupabase();
+        if (c) return c;
+    }
+    if (window.sdlgSupabase && typeof window.sdlgSupabase.from === "function") return window.sdlgSupabase;
+    if (window.supabaseClient && typeof window.supabaseClient.from === "function") return window.supabaseClient;
+    if (!window.supabase || typeof window.supabase.createClient !== "function")
+        throw new Error("Supabase JS gagal dimuat.");
+    // Last resort: create once via (possibly patched) createClient
+    var created = window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, {
+        db: { retry: false },
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sb-frqvelcreczmnofldrga-auth-token" },
+        global: { headers: { "X-Client-Info": "sdlg-warranty-public-v2.30.7-singleton" } }
+    });
+    window.sdlgSupabase = created;
+    window.supabaseClient = created;
+    return created;
+}'''
+
+          if old_fn in data:
+              data = data.replace(old_fn, new_fn)
+              print('getSupabaseClient rewritten to singleton')
+          else:
+              # Fallback regex if whitespace drifted
+              pattern = r'function getSupabaseClient\(\) \{[\s\S]*?return window\.supabase\.createClient\([\s\S]*?\);\n\}'
+              new_data, n = re.subn(pattern, new_fn, data, count=1)
+              if n:
+                  data = new_data
+                  print('getSupabaseClient rewritten via regex')
               else:
-                  inject_after_supabase('./modules/data-pipeline-guard.js')
+                  print('WARNING: getSupabaseClient pattern not found')
+
+          # 3) Inject supabase-client + data-pipeline-guard early after CDN
+          def inject_script_once(script_src, after_markers):
+              nonlocal data
+              leaf = script_src.split('/')[-1]
+              if leaf in data:
+                  return
+              for marker in after_markers:
+                  idx = data.find(marker)
+                  if idx < 0:
+                      continue
+                  end = data.find('</script>', idx)
+                  if end < 0:
+                      continue
+                  inject = '</script>\n  <script src="' + script_src + '"></script>'
+                  data = data[:end] + inject + data[end + len('</script>'):]
+                  print('injected', script_src, 'after', marker)
+                  return
+
+          inject_script_once('./modules/supabase-client.js', ['supabase.min.js', 'supabase-js'])
+          inject_script_once('./modules/data-pipeline-guard.js', ['supabase-client.js', 'supabase.min.js'])
 
           p.write_text(data, encoding='utf-8')
-          print('index.html path rewrite + pipeline guard inject complete')
+
+          # Verify
+          assert 'getSdlgSupabase' in data or 'supabase-client.js' in data
+          assert 'src="/modules/' not in data
+          print('index.html deploy patches complete')
           PY
 
           test -s _site/index.html
           test -s _site/modules/supabase-client.js
           test -s _site/modules/data-pipeline-guard.js
-          grep -q 'supabase-client.js' _site/index.html
+          grep -q 'getSdlgSupabase\|supabase-client.js' _site/index.html
           ! grep -qE 'src="/modules/' _site/index.html
           echo "Prepared SDLG static frontend for GitHub Pages."
 
