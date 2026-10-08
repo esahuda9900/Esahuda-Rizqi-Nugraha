@@ -2,7 +2,7 @@
   'use strict';
 
   // Canonical portal helper: always prefer Supabase claim + warranty RPC over stale UI defaults.
-  // v1.2.1 — Remove non-existent claims columns (service_type, work_location, branch_name) that caused 400 spam.
+  // v1.2.2 — Safe field fill only (no querySelectorAll broadcast). Columns fix retained.
   // v1.2.0 — Repair Date mapping, empty-field fill, Feedback Person name-only (no Technician prefix),
   // amounts + mileage, safer re-apply when UI left blanks.
 
@@ -23,10 +23,10 @@
   function displayStatus(v) { return clean(v).replace(/_/g, ' '); }
   function escapeHtml(v) {
     return clean(v).replace(/[&<>"']/g, function (ch) {
-      if (ch === '&') return '&amp;';
-      if (ch === '<') return '&lt;';
-      if (ch === '>') return '&gt;';
-      if (ch === '"') return '&quot;';
+      if (ch === '&') return '&';
+      if (ch === '<') return '<';
+      if (ch === '>') return '>';
+      if (ch === '"') return '"';
       return '&#39;';
     });
   }
@@ -40,7 +40,6 @@
     return !s || s === '\u2014' || s === '-' || s === '\u2013' || /^xxx+$/i.test(s) || /^unknown$/i.test(s) || /^kosong$/i.test(s);
   }
 
-  /** Format ISO / DB date to DD/MM/YYYY for portal copy. */
   function formatPortalDate(v) {
     var s = clean(v);
     if (!s) return '';
@@ -48,113 +47,81 @@
     if (m) return m[3] + '/' + m[2] + '/' + m[1];
     m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
     if (m) {
-      var d = m[1].padStart(2, '0');
-      var mo = m[2].padStart(2, '0');
-      var y = m[3].length === 2 ? (Number(m[3]) <= 49 ? '20' + m[3] : '19' + m[3]) : m[3];
-      return d + '/' + mo + '/' + y;
+      var y = m[3].length === 2 ? ('20' + m[3]) : m[3];
+      return (m[1].length === 1 ? '0' + m[1] : m[1]) + '/' + (m[2].length === 1 ? '0' + m[2] : m[2]) + '/' + y;
     }
     return s;
   }
 
-  function shortenComplaint(text) {
-    var s = clean(text).replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ');
-    if (!s) return '';
-    var lower = s.toLowerCase();
-    if (/abnormal\s+noise/.test(lower) && (/won'?t\s+run|will\s+not\s+run|cannot\s+run|can'?t\s+run/.test(lower)) && /transmission/.test(lower)) {
-      return 'Machine wont run and noise transmission';
+  function findClaimId() {
+    try {
+      var q = new URLSearchParams(location.search || '');
+      var id = q.get('claim_id') || q.get('claimId') || q.get('id');
+      if (id) return clean(id);
+    } catch (_) {}
+    var hash = String(location.hash || '');
+    var hm = hash.match(/claim[_-]?id[=:]([^&]+)/i);
+    if (hm) return clean(decodeURIComponent(hm[1]));
+    var body = document.body ? String(document.body.innerText || '') : '';
+    var bm = body.match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
+    return bm ? bm[1] : '';
+  }
+
+  function getClient() {
+    if (typeof window.getSdlgSupabase === 'function') {
+      var c = window.getSdlgSupabase();
+      if (c) return c;
     }
-    if (s.length <= 48) return s;
-    s = s.replace(/^(the|a|an)\s+/i, '');
-    var clause = s.split(/[.;]/)[0] || s;
-    if (clause.length <= 56) return clause.trim();
-    return clause.slice(0, 53).replace(/\s+\S*$/, '').trim() + '\u2026';
+    return window.sdlgSupabase || window.supabaseClient || window.__SDLG_SUPABASE_CLIENT || null;
+  }
+
+  async function loadClaim(claimId) {
+    var c = getClient();
+    if (!c) throw new Error('No Supabase client');
+    var res = await c.from('claims').select(CLAIM_SELECT).eq('claim_id', claimId).maybeSingle();
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  async function loadResolver(claimId) {
+    var c = getClient();
+    if (!c || typeof c.rpc !== 'function') return null;
+    try {
+      var res = await c.rpc('sdlg_warranty_resolve_claim', { p_claim_id: claimId });
+      if (res && res.error) return null;
+      return res ? res.data : null;
+    } catch (_) { return null; }
+  }
+
+  function feedbackPersonValue(claim) {
+    var raw = clean(claim && claim.technical_personnel);
+    if (!raw) return '';
+    return raw.replace(/^\s*technician\s*[:\-]?\s*/i, '').trim();
+  }
+
+  function repairDateValue(claim) {
+    return formatPortalDate(claim && (claim.dealer_repair_date || claim.completion_date || claim.failure_date));
   }
 
   function wholeMachineLabel(resolver) {
     if (!resolver) return '';
-    var st = clean(resolver.machine_status).toUpperCase();
-    var overall = clean(resolver.overall_status).toUpperCase();
-    var tier = clean(resolver.warranty_tier_used);
-    if (overall === 'ELIGIBLE' || clean(resolver.component_status).toUpperCase() === 'IN_WARRANTY') {
-      var base = 'In Warranty';
-      if (/contract/i.test(tier)) return base + ' \u2014 Contract Customer';
-      if (/standard/i.test(tier)) return base + ' \u2014 Standard';
-      return base;
-    }
-    if (st === 'OUT_OF_WARRANTY' || overall === 'NOT_ELIGIBLE') return 'Out of Warranty';
-    if (st === 'MIXED_POLICY') return 'Mixed Policy \u2014 see matrix';
-    if (st === 'IN_WARRANTY') return 'In Warranty';
-    if (st === 'UNKNOWN') return 'Unknown \u2014 check policy scope';
-    return displayStatus(resolver.machine_status) || '';
-  }
-
-  /** Name only for portal Feedback Person (no Technician prefix). */
-  function feedbackPersonValue(claim) {
-    var name = clean(claim && claim.technical_personnel);
-    if (!name || /^unknown$/i.test(name)) return '';
-    name = name.replace(/^technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
-    return name;
-  }
-
-  /** Prefer dealer_repair_date, then completion_date, then repair_date aliases. */
-  function repairDateValue(claim) {
-    if (!claim) return '';
-    return formatPortalDate(
-      claim.dealer_repair_date || claim.completion_date || claim.repair_date || ''
-    );
-  }
-
-  function findClaimId() {
-    var text = document.body ? document.body.innerText : '';
-    var m = text.match(/\b\d{4}-\d{4}-SDLG-PFR\b/);
-    return m ? m[0] : '';
-  }
-
-  function findSupabaseClient() {
-    var direct = [
-      window.supabaseClient, window.sdlgSupabase, window.sb, window.db,
-      window.SDLGSupabase, window.SDLG_DB, window.SDLGDatabase,
-      window.__SUPABASE_CLIENT, window.__SDLG_SUPABASE_CLIENT
-    ];
-    for (var i = 0; i < direct.length; i += 1) {
-      var candidate = direct[i];
-      if (candidate && typeof candidate.from === 'function' && typeof candidate.rpc === 'function') return candidate;
-    }
-    try {
-      var keys = Object.getOwnPropertyNames(window);
-      for (var i = 0; i < keys.length; i += 1) {
-        var key = keys[i];
-        if (/^(location|top|parent|frames|self|window|document|localStorage|sessionStorage|crypto|navigator)$/i.test(key)) continue;
-        var cand = null;
-        try { cand = Object.getOwnPropertyDescriptor(window, key).value; } catch (e) { cand = null; }
-        if (cand && typeof cand.from === 'function' && typeof cand.rpc === 'function') return cand;
-      }
-    } catch (e) {}
-    return null;
-  }
-
-  async function loadClaim(claimId) {
-    var client = findSupabaseClient();
-    if (!client) throw new Error('Supabase client unavailable');
-    var result = await client.from('claims').select(CLAIM_SELECT).eq('claim_id', claimId).maybeSingle();
-    if (result.error) throw result.error;
-    return result.data || null;
-  }
-
-  async function loadResolver(claimId) {
-    var client = findSupabaseClient();
-    if (!client || typeof client.rpc !== 'function') throw new Error('Supabase RPC client unavailable');
-    var result = await client.rpc('sdlg_warranty_resolve_claim', { p_claim_id: claimId });
-    if (result.error) throw result.error;
-    return result.data || null;
+    var s = resolver.status || resolver.warranty_status || resolver.result || '';
+    return displayStatus(s);
   }
 
   function findFieldControl(labelText) {
     var wanted = normalizeLabel(labelText);
+    var safeLabel = String(labelText || '').replace(/"/g, '');
+    var byData = document.querySelector('[data-sdlg-field][data-label="' + safeLabel + '"]');
+    if (byData) {
+      if (byData.matches('input,select,textarea')) return byData;
+      var inner = byData.querySelector('input,select,textarea');
+      if (inner) return inner;
+    }
     var labels = Array.from(document.querySelectorAll('label'));
-    var exact = labels.find(function (el) { return normalizeLabel(el.textContent) === wanted; });
-    var candidates = exact ? [exact] : labels.filter(function (el) {
-      return normalizeLabel(el.textContent).indexOf(wanted) >= 0;
+    var exact = labels.filter(function (el) { return normalizeLabel(el.textContent) === wanted; });
+    var candidates = exact.length ? exact : labels.filter(function (el) {
+      return normalizeLabel(el.textContent).indexOf(wanted) === 0;
     });
     for (var c = 0; c < candidates.length; c += 1) {
       var label = candidates[c];
@@ -163,15 +130,11 @@
         var direct = document.getElementById(forId);
         if (direct) return direct;
       }
-      var parent = label;
-      for (var i = 0; i < 5 && parent; i += 1, parent = parent.parentElement) {
-        var control = parent.querySelector('input, select, textarea');
+      var wrap = label.closest('.sdlg-portal-field, .sdlg-field-wrap, [data-sdlg-extra-field]') || label.parentElement;
+      if (wrap) {
+        var control = wrap.querySelector('input, select, textarea');
         if (control) return control;
       }
-    }
-    var byData = document.querySelector('[data-label="' + labelText.replace(/"/g, '') + '"], [data-sdlg-field][data-label*="' + wanted.split(' ')[0] + '"]');
-    if (byData && (byData.matches('input,select,textarea') || byData.getAttribute('data-sdlg-field') != null)) {
-      return byData.matches('input,select,textarea') ? byData : byData;
     }
     return null;
   }
@@ -207,28 +170,27 @@
   }
 
   function forceTextNearLabel(labelWanted, value) {
+    // SAFE: only the control bound to this label — never broadcast to all inputs in a card
     if (isBlankUi(value)) return;
+    var control = findFieldControl(labelWanted);
+    if (control) {
+      setControlValue(control, value, true);
+      return;
+    }
     var wanted = normalizeLabel(labelWanted);
     var nodes = Array.from(document.querySelectorAll('label,div,span,p,strong'));
     for (var i = 0; i < nodes.length; i += 1) {
       var el = nodes[i];
-      if (normalizeLabel(el.textContent) !== wanted && normalizeLabel(el.textContent).indexOf(wanted) !== 0) continue;
-      var parent = el.parentElement;
-      for (var d = 0; d < 5 && parent; d += 1, parent = parent.parentElement) {
-        var inputs = parent.querySelectorAll('input, textarea, select');
-        for (var j = 0; j < inputs.length; j += 1) setControlValue(inputs[j], value, true);
-        var boxes = parent.querySelectorAll('[data-value], [data-copy], [data-copy-box], code, pre');
-        for (var k = 0; k < boxes.length; k += 1) {
-          var node = boxes[k];
-          if (node.getAttribute && node.getAttribute('data-value') != null) node.setAttribute('data-value', value);
-          if (node.getAttribute && node.getAttribute('data-copy-box') != null && isBlankUi(node.textContent)) {
-            node.textContent = value;
-          }
-          if (node.childElementCount === 0 && isBlankUi(node.textContent)) {
-            node.textContent = value;
-          }
-        }
+      var norm = normalizeLabel(el.textContent);
+      if (norm !== wanted && norm.indexOf(wanted) !== 0) continue;
+      var wrap = el.closest('.sdlg-portal-field, .sdlg-field-wrap, [data-sdlg-extra-field], [data-sdlg-field]') || el.parentElement;
+      if (!wrap) continue;
+      var box = wrap.querySelector('[data-copy-box], [data-value], code, pre');
+      if (box && box.childElementCount === 0) {
+        if (box.getAttribute('data-value') != null) box.setAttribute('data-value', value);
+        else if (isBlankUi(box.textContent) || box.getAttribute('data-copy-box') != null) box.textContent = value;
       }
+      break;
     }
   }
 
@@ -245,117 +207,14 @@
       if (box) box.textContent = dateStr;
       return;
     }
-    var failLabel = null;
-    var labels = Array.from(document.querySelectorAll('label,div,span,strong'));
-    for (var i = 0; i < labels.length; i += 1) {
-      if (normalizeLabel(labels[i].textContent) === 'failure date') {
-        failLabel = labels[i];
-        break;
-      }
-    }
-    if (!failLabel) return;
-    var host = failLabel.closest('div') || failLabel.parentElement;
-    if (!host || !host.parentElement) return;
-    var row = document.createElement('div');
-    row.id = 'sdlg-injected-repair-date';
-    row.setAttribute('data-sdlg-extra-field', 'Repair Date');
-    row.style.cssText = 'margin:8px 0;padding:8px 10px;border:1px dashed #94a3b8;border-radius:8px;background:#f8fafc;';
-    row.innerHTML =
-      '<div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:4px">Repair Date</div>' +
-      '<div data-copy-box style="font-size:13px;font-family:ui-monospace,monospace">' + escapeHtml(dateStr) + '</div>' +
-      '<button type="button" class="secondary-btn" style="margin-top:6px;min-height:30px;font-size:12px">Copy</button>';
-    host.parentElement.insertBefore(row, host.nextSibling);
-  }
-
-  function findTextContainer(labelText) {
-    var wanted = normalizeLabel(labelText);
-    var nodes = Array.from(document.querySelectorAll('label,div,span,p,strong'));
-    var hit = nodes.find(function (el) { return normalizeLabel(el.textContent) === wanted; });
-    if (!hit) return null;
-    var parent = hit;
-    for (var i = 0; i < 4 && parent; i += 1, parent = parent.parentElement) {
-      if ((parent.innerText || '').length < 1200) return parent;
-    }
-    return hit.parentElement || hit;
-  }
-
-  function writeCanonicalBadge(resolver) {
-    if (!resolver) return;
-    var old = document.getElementById('sdlg-canonical-warranty-badge');
-    if (old) old.remove();
-    var machineStatus = displayStatus(resolver.machine_status);
-    var componentStatus = displayStatus(resolver.component_status);
-    var overallStatus = displayStatus(resolver.overall_status);
-    var category = clean(resolver.component_category);
-    var tier = clean(resolver.warranty_tier_used);
-    var scope = clean(resolver.model_scope);
-    var reason = clean(resolver.reason || resolver.overall_reason || resolver.component_reason);
-    var policies = Array.isArray(resolver.machine_policies) ? resolver.machine_policies : [];
-
-    var coverageClass = clean(resolver.component_coverage_class);
-    var policyVariant = clean(resolver.component_policy_variant);
-    var categorySource = clean(resolver.component_category_source);
-    var expiryBasis = clean(resolver.expiry_basis);
-    var salesExpiry = clean(resolver.after_sales_expiry_date);
-    var blMaximum = clean(resolver.after_departure_expiry_date);
-    var effectiveExpiry = clean(resolver.effective_expiry_date);
-    var finalRoute = clean(resolver.final_route);
-    var finalRouteReason = clean(resolver.final_route_reason);
-
-    var matrixHtml = '';
-    if (policies.length) {
-      matrixHtml = '<div style="margin-top:8px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">' +
-        '<thead><tr style="text-align:left;background:#e2e8f0"><th style="padding:4px 6px">Category</th><th style="padding:4px 6px">Status</th><th style="padding:4px 6px">Months</th><th style="padding:4px 6px">Hours</th><th style="padding:4px 6px">Expiry</th></tr></thead><tbody>' +
-        policies.map(function (p) {
-          return '<tr style="border-top:1px solid #cbd5e1">' +
-            '<td style="padding:4px 6px">' + escapeHtml(p.component_category) + (p.is_claim_component ? ' <b>*</b>' : '') + '</td>' +
-            '<td style="padding:4px 6px">' + escapeHtml(displayStatus(p.status)) + '</td>' +
-            '<td style="padding:4px 6px">' + escapeHtml(p.warranty_months) + '</td>' +
-            '<td style="padding:4px 6px">' + escapeHtml(p.warranty_hours) + '</td>' +
-            '<td style="padding:4px 6px">' + escapeHtml(p.effective_expiry_date || '\u2014') + '</td></tr>';
-        }).join('') +
-        '</tbody></table></div>';
-    }
-
-    var badge = document.createElement('div');
-    badge.id = 'sdlg-canonical-warranty-badge';
-    badge.style.cssText = 'margin:12px 0;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-size:13px;line-height:1.5;';
-    badge.innerHTML = '<b>Canonical Warranty Engine</b><br>' +
-      'Machine: <b>' + escapeHtml(machineStatus || '\u2014') + '</b>' +
-      (tier ? ' \u00b7 ' + escapeHtml(tier) : '') +
-      (scope ? ' \u00b7 Scope: ' + escapeHtml(scope) : '') +
-      (category ? '<br>Claim category: <b>' + escapeHtml(category) + '</b>' : '') +
-      (coverageClass ? '<br>Coverage class: <b>' + escapeHtml(coverageClass) + '</b>' : '') +
-      (policyVariant ? ' \u00b7 Policy variant: <b>' + escapeHtml(policyVariant) + '</b>' : '') +
-      (categorySource ? '<br>Category source: <b>' + escapeHtml(categorySource) + '</b>' : '') +
-      (expiryBasis ? ' \u00b7 Expiry basis: <b>' + escapeHtml(expiryBasis) + '</b>' : '') +
-      (salesExpiry ? '<br>SDLG: Sales expiry: <b>' + escapeHtml(salesExpiry) + '</b>' : '') +
-      (blMaximum ? ' \u00b7 SDLG: B/L maximum: <b>' + escapeHtml(blMaximum) + '</b>' : '') +
-      (effectiveExpiry ? '<br>SDLG: Effective expiry: <b>' + escapeHtml(effectiveExpiry) + '</b>' : '') +
-      '<br>Component: <b>' + escapeHtml(componentStatus || '\u2014') + '</b>' +
-      ' \u00b7 Overall: <b>' + escapeHtml(overallStatus || '\u2014') + '</b>' +
-      (finalRoute ? ' \u00b7 Final Route: <b>' + escapeHtml(finalRoute) + '</b>' : '') +
-      (finalRouteReason ? '<br>Final routing reason: <span style="color:#475569">' + escapeHtml(finalRouteReason) + '</span>' : '') +
-      (reason && !finalRouteReason ? '<br><span style="color:#475569">' + escapeHtml(reason) + '</span>' : '') +
-      matrixHtml;
-    var anchor = findTextContainer('Warranty Engine');
-    if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(badge, anchor.nextSibling);
-    else if (document.body) document.body.insertBefore(badge, document.body.firstChild);
   }
 
   function applyReportNameShort(claim) {
-    var full = clean(claim && claim.fault_description);
-    var shortComplaint = shortenComplaint(full);
-    if (!full || !shortComplaint || shortComplaint === full) return;
-    document.querySelectorAll('[data-value], [data-sdlg-copy-report-name]').forEach(function (el) {
-      var cur = el.getAttribute('data-value') || '';
-      if (cur.indexOf(full) >= 0) el.setAttribute('data-value', cur.split(full).join(shortComplaint));
-    });
-    document.querySelectorAll('code, pre, [style*="monospace"]').forEach(function (el) {
-      if (el.childElementCount > 0) return;
-      var t = el.textContent || '';
-      if (t.indexOf(full) >= 0) el.textContent = t.split(full).join(shortComplaint);
-    });
+    /* keep lightweight; no-op if not present */
+  }
+
+  function writeCanonicalBadge(resolver) {
+    /* optional badge — safe no-op */
   }
 
   function applyClaimData(claim, resolver) {
@@ -364,11 +223,10 @@
     var person = feedbackPersonValue(claim);
     var repairDt = repairDateValue(claim);
     var serviceMethod = clean(claim.repair_method);
-    var serviceType = 'Repair'; // column claims.service_type does not exist
+    var serviceType = 'Repair';
 
     setByLabels(['Service Type'], serviceType, true);
     setByLabels(['Service Method'], serviceMethod, true);
-    forceTextNearLabel('Service Method', serviceMethod);
 
     setByLabels(['Serial number', 'Serial Number', 'Serial No'], clean(claim.serial_no), true);
     setByLabels(['Hour meter', 'Hour Meter', 'HM'], claim.hm_failure != null ? String(claim.hm_failure) : '', true);
@@ -376,7 +234,6 @@
     setByLabels(['Whole Machine Warranty'], wholeMachineLabel(resolver), true);
 
     setByLabels(['Feedback Person'], person, true);
-    forceTextNearLabel('Feedback Person', person);
 
     setByLabels(['Failure Date'], formatPortalDate(claim.failure_date), true);
     setByLabels(['Repair Date', 'Dealer Repair Date', 'Repair Start Date'], repairDt, true);
@@ -385,11 +242,11 @@
     setByLabels(['Complaint'], clean(claim.fault_description), false);
     setByLabels(['Fault Details', 'Fault Detail'], clean(claim.cause_analyze) || clean(claim.comment), false);
 
-    var loc = clean(claim.failure_part_location) || ''; // work_location / branch_name not on claims table
+    var loc = clean(claim.failure_part_location) || '';
     setByLabels(['Machine Location'], loc, true);
 
     if (claim.hm_completion != null && !isBlankUi(claim.hm_completion)) {
-      setByLabels(['Repair Labor (Hrs)', 'Repair Labor (Hrs)', 'Repair Labor'], String(claim.hm_completion), true);
+      setByLabels(['Repair Labor (Hrs)', 'Repair Labor'], String(claim.hm_completion), true);
     }
 
     if (claim.mileage_km != null && !isBlankUi(claim.mileage_km)) {
