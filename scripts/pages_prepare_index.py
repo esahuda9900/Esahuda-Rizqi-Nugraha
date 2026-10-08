@@ -22,9 +22,9 @@ for a, b in [
 if "<base " not in data.lower():
     data = data.replace("<head>", '<head>\n  <base href="./">', 1)
 
-# 2) Rewrite getSupabaseClient to use singleton (never dual GoTrueClient)
-NEW_FN = '''function getSupabaseClient() {
-    // SINGLETON ONLY — never call createClient here (fixes Multiple GoTrueClient + empty claims).
+# 2) Rewrite getSupabaseClient to use singleton
+NEW_FN = r'''function getSupabaseClient() {
+    // SINGLETON ONLY - never call createClient here (fixes Multiple GoTrueClient + empty claims).
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
         if (c) return c;
@@ -51,7 +51,54 @@ if m:
 else:
     print("WARNING: getSupabaseClient not found")
 
-# 3) Inject scripts after supabase CDN
+# 3) loadClaims: recover user from singleton session when React user is null
+OLD_GATE = """const loadClaims = useCallback(async () => {
+        if (!user) {
+            setClaims([]);
+            setActionCenterRows([]);
+            setLoading(false);
+            return;
+        }"""
+
+NEW_GATE = """const loadClaims = useCallback(async () => {
+        let effectiveUser = user;
+        if (!effectiveUser) {
+            try {
+                const _c = (typeof window.getSdlgSupabase === "function" && window.getSdlgSupabase()) || window.sdlgSupabase || sdlgSupabase;
+                if (_c && _c.auth) {
+                    const _s = await _c.auth.getSession();
+                    effectiveUser = _s?.data?.session?.user || null;
+                    if (effectiveUser) {
+                        setUser(effectiveUser);
+                        console.info("[SDLG] loadClaims recovered user from session", effectiveUser.email || effectiveUser.id);
+                    }
+                }
+            } catch (e) {
+                console.warn("[SDLG] loadClaims session recover failed", e);
+            }
+        }
+        if (!effectiveUser) {
+            setClaims([]);
+            setActionCenterRows([]);
+            setLoading(false);
+            return;
+        }"""
+
+if OLD_GATE in data:
+    data = data.replace(OLD_GATE, NEW_GATE, 1)
+    print("loadClaims gate patched for session recovery")
+else:
+    print("WARNING: loadClaims gate not found")
+
+# 4) Prefer singleton for getSession
+data, n = re.subn(
+    r"sdlgSupabase\.auth\.getSession\(\)",
+    '((typeof window.getSdlgSupabase==="function"&&window.getSdlgSupabase())||sdlgSupabase).auth.getSession()',
+    data,
+)
+print("getSession redirects:", n)
+
+# 5) Inject scripts after supabase CDN
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
