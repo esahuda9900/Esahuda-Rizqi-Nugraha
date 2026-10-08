@@ -299,9 +299,9 @@
       s.async = true;
       (document.head || document.documentElement).appendChild(s);
     }
-    inject('./modules/claim-context-resolve.js?v=20261008-v3');
+    inject('./modules/claim-context-resolve.js?v=20261008-v4');
     if (/github\.io/i.test(location.host)) {
-      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v3');
+      inject((location.pathname.split('/').slice(0, 2).join('/') || '') + '/modules/claim-context-resolve.js?v=20261008-v4');
     }
   } catch (e) {
     console.warn('[SDLG] claim-context loader', e);
