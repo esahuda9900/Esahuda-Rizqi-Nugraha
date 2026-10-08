@@ -7,6 +7,7 @@
   const BRANCH_EVIDENCE_MIN = 70;
   const BRANCH_EVIDENCE_MARGIN = 1.5;
   const INDENT_BRANCH_RE = /Branch diinfer dari histori indent|indent\s*\+\s*model\s*\+\s*customer/i;
+  const STOCK_BRANCH_RE = /\bSTOCK\b/i;
   const MODEL_ALIASES = new Map([
     ['SDLG968F', 'L968F'],
     ['968F', 'L968F'],
@@ -98,10 +99,46 @@
     return Array.from(byBranch.values()).sort((a, b) => b.score - a.score || b.units - a.units || a.branch.localeCompare(b.branch));
   }
 
+  /**
+   * Infer unit stock status from resolve context or machine fields.
+   * STOCK only when no sale_date and no customer evidence (server also enforces this).
+   */
+  function inferUnitStatus(ctx) {
+    if (!ctx || typeof ctx !== 'object') return 'UNKNOWN';
+    const explicit = clean(ctx.unit_status || ctx.unitStatus).toUpperCase();
+    if (explicit === 'STOCK' || explicit === 'SOLD') return explicit;
+    const saleDate = ctx.machine_sale_date || ctx.sale_date || ctx.saleDate || null;
+    const customerId = ctx.customer_id || ctx.customerId || null;
+    const customerSource = clean(ctx.customer_name_source || ctx.customerNameSource || '');
+    if (saleDate) return 'SOLD';
+    if (!saleDate && !customerId && !customerSource) return 'STOCK';
+    return 'UNKNOWN';
+  }
+
+  function isStockBranchName(name) {
+    return STOCK_BRANCH_RE.test(clean(name));
+  }
+
   function pageHasIndentBranchInference(doc) {
     const el = doc || (typeof document !== 'undefined' ? document : null);
     if (!el || !el.body) return false;
     return INDENT_BRANCH_RE.test(String(el.body.innerText || ''));
+  }
+
+  function pageShowsStockUnit(doc) {
+    const el = doc || (typeof document !== 'undefined' ? document : null);
+    if (!el || !el.body) return false;
+    const text = String(el.body.innerText || '');
+    if (/unit_status\s*[:=]\s*STOCK/i.test(text)) return true;
+    if (/\bUNIT\s+STOCK\b|\bSTATUS\s+UNIT\s*[:：]?\s*STOCK\b/i.test(text)) return true;
+    // MASTER MATCHING branch row equals STOCK
+    const section = text.match(/MASTER MATCHING([\s\S]{0,2000})/i);
+    if (!section) return false;
+    const lines = section[1].split(/\n+/).map(clean).filter(Boolean);
+    for (let i = 0; i < lines.length - 1; i += 1) {
+      if (norm(lines[i]) === 'BRANCH' && isStockBranchName(lines[i + 1])) return true;
+    }
+    return false;
   }
 
   function ensureIndentBranchBanner(doc) {
@@ -120,6 +157,55 @@
     banner.style.cssText = 'position:sticky;top:0;z-index:99998;padding:10px 14px;background:#7c2d12;color:#fff;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.25)';
     banner.textContent = 'Branch dari tebakan indent diblok. Branch harus ikut UNIT (serial), bukan indent/customer. Pilih cabang manual sebelum simpan.';
     el.body.insertBefore(banner, el.body.firstChild);
+  }
+
+  function ensureStockUnitBanner(doc, unitStatus) {
+    const el = doc || document;
+    if (!el || !el.body) return;
+    var id = 'sdlg-stock-unit-banner';
+    var existing = el.getElementById(id);
+    var status = clean(unitStatus).toUpperCase();
+    var show = status === 'STOCK' || pageShowsStockUnit(el);
+    if (!show) {
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      return;
+    }
+    if (existing) return;
+    var banner = el.createElement('div');
+    banner.id = id;
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = 'position:sticky;top:0;z-index:99997;padding:10px 14px;background:#1e3a5f;color:#fff;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+    banner.textContent = 'Unit ini masih STOCK (belum ada sale date / customer master). Branch otomatis di-set STOCK. Customer dari form akan di-create ke master saat resolve/simpan.';
+    el.body.insertBefore(banner, el.body.firstChild);
+  }
+
+  function ensureSoldNoBranchHint(doc, ctx) {
+    const el = doc || document;
+    if (!el || !el.body) return;
+    var id = 'sdlg-sold-no-branch-hint';
+    var existing = el.getElementById(id);
+    var status = inferUnitStatus(ctx || {});
+    var branchId = ctx && (ctx.branch_id || ctx.branchId);
+    var show = status === 'SOLD' && !branchId;
+    if (!show) {
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      return;
+    }
+    if (existing) return;
+    var banner = el.createElement('div');
+    banner.id = id;
+    banner.setAttribute('role', 'status');
+    banner.style.cssText = 'position:sticky;top:0;z-index:99996;padding:10px 14px;background:#854d0e;color:#fff;font:600 13px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+    banner.textContent = 'Unit sudah SOLD (ada sale date) tapi branch master masih kosong. Pilih branch operasional manual — sistem tidak menebak cabang dari indent.';
+    el.body.insertBefore(banner, el.body.firstChild);
+  }
+
+  function applyResolveContextHints(ctx, doc) {
+    var status = inferUnitStatus(ctx || {});
+    ensureStockUnitBanner(doc, status);
+    ensureSoldNoBranchHint(doc, ctx || {});
+    ensureIndentBranchBanner(doc);
+    return { unitStatus: status };
   }
 
   function installRuntimeIndentBranchGuard() {
@@ -145,7 +231,10 @@
     }, true);
 
     function tick() {
-      try { ensureIndentBranchBanner(document); } catch (_) {}
+      try {
+        ensureIndentBranchBanner(document);
+        ensureStockUnitBanner(document, null);
+      } catch (_) {}
     }
     if (typeof MutationObserver !== 'undefined' && document.body) {
       var obs = new MutationObserver(function () { tick(); });
@@ -162,6 +251,7 @@
   function repair(documentRef) {
     if (!documentRef || !documentRef.body) return Promise.resolve(false);
     ensureIndentBranchBanner(documentRef);
+    ensureStockUnitBanner(documentRef, null);
     return Promise.resolve({
       benignCanonicalModelLock: isBenignCanonicalModelLock(documentRef),
       broadBranchFallbackMin: BROAD_BRANCH_FALLBACK_MIN,
@@ -169,7 +259,8 @@
       branchEvidenceMargin: BRANCH_EVIDENCE_MARGIN,
       diagnosticOnly: true,
       branchPolicy: 'unit-serial-only',
-      indentBranchBlocked: pageHasIndentBranchInference(documentRef)
+      indentBranchBlocked: pageHasIndentBranchInference(documentRef),
+      stockBanner: pageShowsStockUnit(documentRef)
     });
   }
 
@@ -188,7 +279,12 @@
     canonicalModelMatch,
     scoreBranchRows,
     repair,
-    pageHasIndentBranchInference: pageHasIndentBranchInference
+    pageHasIndentBranchInference: pageHasIndentBranchInference,
+    inferUnitStatus: inferUnitStatus,
+    isStockBranchName: isStockBranchName,
+    applyResolveContextHints: applyResolveContextHints,
+    ensureStockUnitBanner: ensureStockUnitBanner,
+    ensureSoldNoBranchHint: ensureSoldNoBranchHint
   });
 
   try { installRuntimeIndentBranchGuard(); } catch (_) {}
