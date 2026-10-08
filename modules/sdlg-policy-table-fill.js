@@ -1,16 +1,19 @@
 /**
- * SDLG Policy table fill v1 — After Sales = sales_expiry, After Departure = B/L expiry
- * Patches DOM when index still maps wrong field names.
+ * SDLG Policy table fill v1.1 — safe regex + OOW Sales / OOW B/L
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_POLICY_TABLE_FILL_V1__) return;
-  root.__SDLG_POLICY_TABLE_FILL_V1__ = true;
+  if (root.__SDLG_POLICY_TABLE_FILL_V11__) return;
+  root.__SDLG_POLICY_TABLE_FILL_V11__ = true;
+
+  var RE_CLAIM_HEADER = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\s*[\u00B7\u2022|]`);
+  var RE_CLAIM_ANY = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\b`);
+  var RE_ISO_DATE = new RegExp(String.raw`^(\d{4})-(\d{2})-(\d{2})`);
 
   function portalDate(value) {
     if (value == null || value === '') return '';
     var s = String(value).trim();
-    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var m = s.match(RE_ISO_DATE);
     if (m) return m[3] + '/' + m[2] + '/' + m[1];
     if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.slice(0, 10);
     return s;
@@ -27,33 +30,11 @@
         if (id) return id;
       } catch (_) {}
     }
-    var page = document.querySelector('.sdlg-input-helper-page, [data-sdlg-copy-all]');
-    var scope = page ? (page.closest('.page') || page) : document.body;
-    var text = (scope && scope.innerText) || '';
-    var m = text.match(/\b(\d{4}-\d{4}-SDLG-PFR)\s*[·|]/s*/);
+    var text = (document.body && document.body.innerText) || '';
+    var m = text.match(RE_CLAIM_HEADER);
     if (m) return m[1];
-    m = text.match(/\b(\d{4}-\d{4}-SDLG-PFR)\b/);
+    m = text.match(RE_CLAIM_ANY);
     return m ? m[1] : '';
-  }
-
-  function findPolicyTable() {
-    var tables = document.querySelectorAll('table');
-    for (var i = 0; i < tables.length; i++) {
-      var th = tables[i].querySelectorAll('th');
-      var labels = Array.prototype.map.call(th, function (el) { return (el.textContent || '').trim(); });
-      var hasAS = labels.indexOf('After Sales') >= 0 || labels.indexOf('OOW (Sales)') >= 0;
-      var hasAD = labels.indexOf('After Departure') >= 0 || labels.indexOf('OOW (B/L)') >= 0;
-      var hasOOW = labels.indexOf('Out of Warranty') >= 0;
-      if (hasAS && hasAD && hasOOW) {
-        labels = labels.map(function (x) {
-          if (x === 'OOW (Sales)') return 'After Sales';
-          if (x === 'OOW (B/L)') return 'After Departure';
-          return x;
-        });
-        return { table: tables[i], labels: labels };
-      }
-    }
-    return null;
   }
 
   var cache = Object.create(null);
@@ -68,6 +49,10 @@
         .select('warranty_policy_matrix')
         .eq('claim_id', claimId)
         .maybeSingle();
+      if (res && res.error) {
+        console.warn('[SDLG policy-table]', res.error);
+        return null;
+      }
       if (res && res.data && res.data.warranty_policy_matrix) {
         var policies = res.data.warranty_policy_matrix.policies || [];
         cache[claimId] = policies;
@@ -79,87 +64,99 @@
     return null;
   }
 
-  function apply(policies, meta) {
-    if (!policies || !meta) return;
-    var idxCat = meta.labels.indexOf('Component Category');
-    var idxAS = meta.labels.indexOf('After Sales');
-    var idxAD = meta.labels.indexOf('After Departure');
-    var idxOOW = meta.labels.indexOf('Out of Warranty');
-    if (idxAS < 0 || idxAD < 0) return;
+  function fillPolicyTable(policies) {
+    if (!policies || !policies.length) return;
+    var tables = document.querySelectorAll('table');
+    var table = null;
+    for (var i = 0; i < tables.length; i++) {
+      var txt = tables[i].innerText || '';
+      if (/Component Category/i.test(txt) && /Out of Warranty/i.test(txt)) {
+        table = tables[i];
+        break;
+      }
+    }
+    if (!table) return;
 
-    var ths = meta.table.querySelectorAll('thead th');
-    if (ths[idxAS] && !ths[idxAS].getAttribute('data-sdlg-policy-h')) {
-      ths[idxAS].setAttribute('data-sdlg-policy-h', '1');
-      ths[idxAS].setAttribute('title', 'Tanggal OOW dihitung dari Sales Date');
-      ths[idxAS].textContent = 'OOW (Sales)';
+    var headers = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+      return (th.textContent || '').trim();
+    });
+    function idxOf() {
+      var names = Array.prototype.slice.call(arguments);
+      for (var a = 0; a < names.length; a++) {
+        var j = headers.indexOf(names[a]);
+        if (j >= 0) return j;
+      }
+      for (var h = 0; h < headers.length; h++) {
+        for (var a2 = 0; a2 < names.length; a2++) {
+          if (headers[h].toLowerCase().indexOf(String(names[a2]).toLowerCase()) >= 0) return h;
+        }
+      }
+      return -1;
     }
-    if (ths[idxAD] && !ths[idxAD].getAttribute('data-sdlg-policy-h')) {
-      ths[idxAD].setAttribute('data-sdlg-policy-h', '1');
-      ths[idxAD].setAttribute('title', 'Tanggal OOW dihitung dari Bill of Lading / departure');
-      ths[idxAD].textContent = 'OOW (B/L)';
-    }
-    if (ths[idxOOW] && !ths[idxOOW].getAttribute('data-sdlg-policy-h')) {
-      ths[idxOOW].setAttribute('data-sdlg-policy-h', '1');
-      ths[idxOOW].setAttribute('title', 'Tanggal OOW efektif (policy: whichever comes first)');
+    var iCat = idxOf('Component Category');
+    var iAS = idxOf('After Sales', 'OOW (Sales)');
+    var iAD = idxOf('After Departure', 'OOW (B/L)');
+    if (iAS < 0 || iAD < 0) {
+      iCat = 0;
+      iAS = 3;
+      iAD = 4;
     }
 
-    var byCat = Object.create(null);
+    var ths = table.querySelectorAll('thead th');
+    if (ths[iAS]) {
+      ths[iAS].textContent = 'OOW (Sales)';
+      ths[iAS].title = 'OOW dihitung dari Sales Date';
+    }
+    if (ths[iAD]) {
+      ths[iAD].textContent = 'OOW (B/L)';
+      ths[iAD].title = 'OOW dihitung dari Bill of Lading';
+    }
+
+    var byCat = {};
     policies.forEach(function (p) {
-      var k = String(p.component_category || '').trim().toLowerCase();
-      if (k) byCat[k] = p;
+      byCat[String(p.component_category || '').toLowerCase()] = p;
     });
 
-    var rows = meta.table.querySelectorAll('tbody tr');
-    rows.forEach(function (tr) {
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
       var cells = tr.querySelectorAll('td');
-      if (!cells.length) return;
-      var cat = (cells[idxCat >= 0 ? idxCat : 0].textContent || '').trim().toLowerCase();
+      if (cells.length < 5) return;
+      var cat = (cells[iCat >= 0 ? iCat : 0].textContent || '').trim().toLowerCase();
       var p = byCat[cat];
+      if (!p) {
+        Object.keys(byCat).forEach(function (k) {
+          if (!p && (cat.indexOf(k) >= 0 || k.indexOf(cat) >= 0)) p = byCat[k];
+        });
+      }
       if (!p) return;
-
       var salesExp = portalDate(p.sales_expiry_date || p.after_sales_expiry_date);
       var blExp = portalDate(p.bill_of_lading_expiry_date || p.after_departure_expiry_date);
-      var eff = portalDate(p.effective_expiry_date);
-
-      if (idxAS >= 0 && cells[idxAS] && salesExp) {
-        cells[idxAS].textContent = salesExp;
-        cells[idxAS].setAttribute('title', 'OOW from Sales Date');
-      }
-      if (idxAD >= 0 && cells[idxAD] && blExp) {
-        cells[idxAD].textContent = blExp;
-        cells[idxAD].setAttribute('title', 'OOW from Bill of Lading');
-      }
-      if (idxOOW >= 0 && cells[idxOOW] && eff) {
-        var cur = (cells[idxOOW].textContent || '').trim();
-        if (!cur || cur === '\u2014' || cur === '-' || cur === '—') cells[idxOOW].textContent = eff;
-      }
+      if (salesExp && cells[iAS]) cells[iAS].textContent = salesExp;
+      if (blExp && cells[iAD]) cells[iAD].textContent = blExp;
     });
   }
 
   async function enhance() {
-    var meta = findPolicyTable();
-    if (!meta) return;
     var claimId = getClaimId();
     if (!claimId) return;
     var policies = await loadPolicies(claimId);
-    apply(policies, meta);
+    fillPolicyTable(policies);
   }
 
   function boot() {
     var t = null;
     function schedule() {
       clearTimeout(t);
-      t = setTimeout(function () { enhance().catch(function () {}); }, 500);
+      t = setTimeout(function () { enhance().catch(function () {}); }, 400);
     }
     schedule();
     if (typeof MutationObserver !== 'undefined' && document.body) {
       new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
     }
-    setInterval(schedule, 2500);
+    setInterval(schedule, 1500);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPolicyTableFill = { version: '1.0.0', enhance: enhance };
+  root.SDLGPolicyTableFill = { version: '1.1.0', enhance: enhance };
 })(window);
