@@ -1,2 +1,43 @@
 node_modules/
 .env
+.env.*
+!.env.example
+
+# Secrets & local credentials
+*.pem
+*.key
+*.p12
+credentials.json
+service-account*.json
+.supabase/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & dumps
+*.log
+npm-debug.log*
+*.sql.gz
+*.dump
+*.backup
+
+# Build / deploy artifacts
+_site/
+dist/
+build/
+.wrangler/
+.dev.vars
+
+# Local test / E2E
+playwright-report/
+test-results/
+.auth/
+
+# Large / binary local kits (keep source only)
+*.zip
+!SDLG_Free_Resilience_Kit.zip
