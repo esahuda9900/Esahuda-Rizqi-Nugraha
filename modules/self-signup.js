@@ -2,6 +2,7 @@
  * SDLG self-signup + pending approval UX
  * - "Belum punya akun? Buat akun" ONLY on the login screen
  * - Never mounts on authenticated app pages
+ * Relative module paths for GitHub Project Pages.
  */
 (function () {
   'use strict';
@@ -50,7 +51,6 @@
   }
 
   function isLoginScreenVisible() {
-    // Strong signal: visible login shell
     var login = $('.login-screen, [class*="login-screen"], [data-sdlg-login="1"], .login-layout, .login-card');
     if (login) {
       try {
@@ -62,12 +62,9 @@
         return true;
       }
     }
-    // Password field present and no authenticated app chrome → login UI
     var pwd = $('input[type="password"]');
     if (pwd && !hasAppChrome()) return true;
-    // If app chrome is up, never show signup
     if (hasAppChrome()) return false;
-    // Stale token alone should not block when password field is on screen
     if (pwd) return true;
     if (hasLiveSessionToken()) return false;
     return false;
@@ -80,7 +77,6 @@
   }
 
   function findLoginShell() {
-    // Prefer explicit login containers (may exist only as CSS class names on React nodes)
     var shell =
       $('.login-screen') ||
       $('[class*="login-screen"]') ||
@@ -91,12 +87,10 @@
       $('[class*="login-card"]');
     if (shell) return shell;
 
-    // Fallback: nearest meaningful ancestor of the login form / password field
     var form = $('form');
     var pwd = $('input[type="password"]');
     var anchor = form || (pwd && pwd.closest ? pwd.closest('form, section, main, div') : null) || pwd;
     if (!anchor) return null;
-    // Prefer a reasonably sized parent so the CTA sits under the form
     var el = anchor;
     for (var i = 0; i < 6 && el; i++) {
       if (el.classList && (el.classList.contains('login-card') || /login/i.test(el.className || ''))) return el;
@@ -313,7 +307,7 @@
     if (typeof document === 'undefined') return;
     if (document.querySelector('script[data-sdlg-fb-person-fix]')) return;
     var s = document.createElement('script');
-    s.src = '/modules/feedback-person-fix.js';
+    s.src = './modules/feedback-person-fix.js';
     s.async = true;
     s.setAttribute('data-sdlg-fb-person-fix', '1');
     (document.head || document.documentElement).appendChild(s);
@@ -323,7 +317,7 @@
     if (typeof document === 'undefined') return;
     if (document.querySelector('script[data-sdlg-machine-360]')) return;
     var s = document.createElement('script');
-    s.src = '/modules/machine-360.js';
+    s.src = './modules/machine-360.js';
     s.async = true;
     s.setAttribute('data-sdlg-machine-360', '1');
     (document.head || document.documentElement).appendChild(s);
