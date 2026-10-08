@@ -38,7 +38,7 @@ Users with Auth but **no** active `app_user_roles` row must not read master data
 | `sdlg_resolve_or_create_customer` | Master resolve/create |
 | `sdlg_resolve_or_create_branch` | Branch resolve/create + optional unit stamp |
 
-Advisor WARN on DEFINER executable by `authenticated` is **expected**. Authorization remains inside the function via `private_is_warranty_claim_writer()` (`admin` / `warranty_admin` only) where applicable.
+Advisor WARN on DEFINER executable by `authenticated` is **expected**. This is intentional: authorization remains inside the function via `private_is_warranty_claim_writer()` (`admin` / `warranty_admin` only) where applicable.
 
 ## 2026-10-08 hardening
 
