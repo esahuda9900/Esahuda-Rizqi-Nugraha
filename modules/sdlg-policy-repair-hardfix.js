@@ -1,16 +1,20 @@
 /**
- * SDLG Policy + Repair hard-fix v2
- * Does not depend on fragile header matching only.
+ * SDLG Policy + Repair hard-fix v2.1 — safe RegExp
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_POLICY_REPAIR_HARDFIX_V2__) return;
-  root.__SDLG_POLICY_REPAIR_HARDFIX_V2__ = true;
+  if (root.__SDLG_POLICY_REPAIR_HARDFIX_V21__) return;
+  root.__SDLG_POLICY_REPAIR_HARDFIX_V21__ = true;
+
+  var RE_ISO_DATE = new RegExp(String.raw`^(\d{4})-(\d{2})-(\d{2})`);
+  var RE_CLAIM_HEADER = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\s*[\u00B7\u2022|]`);
+  var RE_CLAIM_CARD = new RegExp(String.raw`\bCLAIM\s*\n?\s*(\d{4}-\d{4}-SDLG-PFR)\b`, 'i');
+  var RE_CLAIM_ANY = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\b`);
 
   function portalDate(value) {
     if (value == null || value === '') return '';
     var s = String(value).trim();
-    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var m = s.match(RE_ISO_DATE);
     if (m) return m[3] + '/' + m[2] + '/' + m[1];
     if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.slice(0, 10);
     return s;
@@ -22,11 +26,11 @@
 
   function claimIdFromPage() {
     var text = (document.body && document.body.innerText) || '';
-    var m = text.match(/\b(\d{4}-\d{4}-SDLG-PFR)\s*[·•|]/);
+    var m = text.match(RE_CLAIM_HEADER);
     if (m) return m[1];
-    m = text.match(/\bCLAIM\s*\n?\s*(\d{4}-\d{4}-SDLG-PFR)\b/i);
+    m = text.match(RE_CLAIM_CARD);
     if (m) return m[1];
-    m = text.match(/\b(\d{4}-\d{4}-SDLG-PFR)\b/);
+    m = text.match(RE_CLAIM_ANY);
     return m ? m[1] : '';
   }
 
@@ -95,7 +99,7 @@
     var table = null;
     for (var i = 0; i < tables.length; i++) {
       var txt = tables[i].innerText || '';
-      if (/Component Category/i.test(txt) && /Out of Warranty/i.test(txt) && /Key components|Other parts/i.test(txt)) {
+      if (/Component Category/i.test(txt) && /Out of Warranty/i.test(txt)) {
         table = tables[i];
         break;
       }
@@ -181,5 +185,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPolicyRepairHardfix = { version: '2.0.0', tick: tick };
+  root.SDLGPolicyRepairHardfix = { version: '2.1.0', tick: tick };
 })(window);
