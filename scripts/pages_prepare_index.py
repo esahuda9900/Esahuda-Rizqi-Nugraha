@@ -111,6 +111,7 @@ inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
 inject_after("claim-fields.js", "./modules/sdlg-repository.js")
+inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
