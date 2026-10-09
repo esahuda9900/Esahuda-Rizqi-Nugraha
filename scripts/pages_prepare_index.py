@@ -122,6 +122,7 @@ inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
 inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V20")
 inline_module(mod / "sdlg-route-finish.js", "SDLG_ROUTE_FINISH_INLINE_V1")
 inline_module(mod / "sdlg-ui-consolidate.js", "SDLG_UI_CONSOLIDATE_INLINE_V1")
+inline_module(mod / "sdlg-input-empty-guard.js", "SDLG_INPUT_EMPTY_GUARD_INLINE_V1")
 
 if 'esc(unitPrice || "—")' in data:
     data = data.replace('esc(unitPrice || "—")', 'esc((unitPrice === 0 || unitPrice === "0") ? "0.00" : (unitPrice || "0.00"))', 1)
@@ -195,8 +196,9 @@ for _src in [
     "./modules/sdlg-input-helper-ux.js?v=20261009-v191",
     "./modules/sdlg-portal-ux-v2.js?v=20261009-v24",
     "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
-    "./modules/sdlg-route-finish.js?v=20261009-v1",
+    "./modules/sdlg-route-finish.js?v=20261009-v12",
     "./modules/sdlg-ui-consolidate.js?v=20261009-v1",
+    "./modules/sdlg-input-empty-guard.js?v=20261009-v1",
 ]:
     leaf = _src.split("/")[-1].split("?")[0]
     tag = '<script src="' + _src + '"></script>\n'
