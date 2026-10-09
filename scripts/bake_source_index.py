@@ -28,7 +28,6 @@ if "<base " not in data.lower():
     changes.append("base href")
     print("OK base href")
 
-# Force repository to prefer extracted module
 if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {" not in data:
     if "const SDLG_REPOSITORY = {" in data:
         data = data.replace(
@@ -38,10 +37,6 @@ if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {" not in data:
         )
         changes.append("SDLG_REPOSITORY prefer")
         print("OK SDLG_REPOSITORY prefer")
-    else:
-        print("SKIP SDLG_REPOSITORY prefer (pattern missing)")
-else:
-    print("SKIP SDLG_REPOSITORY prefer (already)")
 
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
@@ -103,10 +98,14 @@ def inject_after(marker: str, script_src: str) -> None:
     changes.append(f"inject {script_src}")
     print(f"OK inject {script_src}")
 
+# Critical module chain (order matters)
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
 inject_after("claim-fields.js", "./modules/sdlg-repository.js")
+inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
+inject_after("paste-parse-ux.js", "./modules/wo-claim-policy.js")
+inject_after("wo-claim-policy.js", "./modules/wo-collision-modal.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))

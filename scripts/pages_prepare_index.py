@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-"""Patch index.html for GitHub Project Pages deploy artifact.
-Idempotent safety net — source is already baked, this double-checks production artifact.
-"""
+"""Patch index.html for GitHub Project Pages deploy artifact. Idempotent safety net."""
 from pathlib import Path
 import re
 
 INDEX = Path("_site/index.html")
 data = INDEX.read_text(encoding="utf-8", errors="replace")
 
-# 1) Root-absolute paths -> relative
 for a, b in [
     ('src="/modules/', 'src="./modules/'),
     ("src='/modules/", "src='./modules/"),
@@ -24,7 +21,6 @@ for a, b in [
 if "<base " not in data.lower():
     data = data.replace("<head>", '<head>\n  <base href="./">', 1)
 
-# 2) Rewrite getSupabaseClient to use singleton (if still old)
 NEW_FN = r'''function getSupabaseClient() {
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
@@ -52,7 +48,6 @@ if m and "getSdlgSupabase" not in m.group(0):
 else:
     print("getSupabaseClient OK")
 
-# 3) Prefer extracted repository module when present
 if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
     if "const SDLG_REPOSITORY = {" in data:
         data = data.replace(
@@ -61,12 +56,7 @@ if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
             1,
         )
         print("SDLG_REPOSITORY prefers window module")
-    else:
-        print("SDLG_REPOSITORY pattern not found")
-else:
-    print("SDLG_REPOSITORY already prefers window module")
 
-# portalValues safety net
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
     'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
@@ -89,7 +79,6 @@ if old_fields in data:
     data = data.replace(old_fields, new_fields, 1)
     print("fieldHtml Date of repair report")
 
-# Inject scripts (order matters)
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
@@ -112,6 +101,8 @@ inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
 inject_after("claim-fields.js", "./modules/sdlg-repository.js")
 inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
+inject_after("paste-parse-ux.js", "./modules/wo-claim-policy.js")
+inject_after("wo-claim-policy.js", "./modules/wo-collision-modal.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")

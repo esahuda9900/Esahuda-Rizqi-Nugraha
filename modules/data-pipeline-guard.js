@@ -1,14 +1,16 @@
 /**
- * SDLG Data Pipeline Guard v1.1
+ * SDLG Data Pipeline Guard v1.2
  * - Waits for Supabase singleton + session
+ * - Self-heal: if token exists but getSession() null, try refreshSession once
  * - Diagnoses empty UI (auth vs RLS vs real empty)
- * - Banner reflects pipeline health only (not React state speculation)
  * Load AFTER modules/supabase-client.js
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_DATA_PIPELINE_GUARD_V1__) return;
-  root.__SDLG_DATA_PIPELINE_GUARD_V1__ = true;
+  if (root.__SDLG_DATA_PIPELINE_GUARD_V12__) return;
+  root.__SDLG_DATA_PIPELINE_GUARD_V12__ = true;
+
+  var STORAGE_KEY = 'sb-frqvelcreczmnofldrga-auth-token';
 
   function log() {
     var a = Array.prototype.slice.call(arguments);
@@ -31,6 +33,52 @@
     return root.sdlgSupabase || root.supabaseClient || null;
   }
 
+  function hasStoredToken() {
+    try {
+      var raw = root.localStorage && root.localStorage.getItem(STORAGE_KEY);
+      return !!(raw && raw.length > 20);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** One-shot session recovery when token exists but getSession is empty */
+  async function recoverSession(supabase) {
+    if (!supabase || !supabase.auth) return null;
+    var sessionRes;
+    try {
+      sessionRes = await supabase.auth.getSession();
+    } catch (e) {
+      warn('getSession throw', e);
+      sessionRes = null;
+    }
+    var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+    if (session) return session;
+
+    if (!hasStoredToken()) return null;
+
+    log('Token present but session null — attempting refreshSession once');
+    try {
+      var refreshed = await supabase.auth.refreshSession();
+      session = refreshed && refreshed.data ? refreshed.data.session : null;
+      if (session) {
+        log('Session recovered via refreshSession');
+        return session;
+      }
+    } catch (e) {
+      warn('refreshSession failed', e);
+    }
+
+    // Last resort: re-read getSession after short delay
+    try {
+      await new Promise(function (r) { setTimeout(r, 200); });
+      sessionRes = await supabase.auth.getSession();
+      session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+      if (session) log('Session appeared after delay');
+    } catch (_) {}
+    return session;
+  }
+
   async function fetchClaimsProbe(limit) {
     limit = limit || 5;
     if (typeof root.waitForSupabaseReady === 'function') {
@@ -41,13 +89,7 @@
       return { ok: false, reason: 'NO_CLIENT', message: 'Supabase client is null', rows: [] };
     }
 
-    var sessionRes;
-    try {
-      sessionRes = await supabase.auth.getSession();
-    } catch (e) {
-      return { ok: false, reason: 'SESSION_THROW', message: String(e && e.message || e), rows: [] };
-    }
-    var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+    var session = await recoverSession(supabase);
     if (!session) {
       err('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA');
       return {
@@ -117,7 +159,6 @@
         el.style.border = '1px solid #a7f3d0';
       }
       el.textContent = text;
-      // Auto-hide success after 8s so it does not look like a permanent warning
       if (kind === 'ok') {
         clearTimeout(el.__sdlgHideTimer);
         el.__sdlgHideTimer = setTimeout(function () {
@@ -142,13 +183,13 @@
   }
 
   root.SDLGDataPipeline = {
-    version: '1.1.0',
+    version: '1.2.0',
     getClient: getClient,
+    recoverSession: recoverSession,
     fetchClaimsProbe: fetchClaimsProbe,
     runDiagnostics: runDiagnostics
   };
 
-  /** Display helper for empty UI values */
   root.SDLGDisplayValue = function SDLGDisplayValue(value, emptyText) {
     emptyText = emptyText == null ? '—' : emptyText;
     if (value == null) return emptyText;
@@ -157,7 +198,6 @@
     return value;
   };
 
-  /** Normalize evidence item for UI: always expose label + value strings */
   root.SDLGNormalizeEvidenceItem = function SDLGNormalizeEvidenceItem(item) {
     if (item == null) return { label: 'Evidence', value: '—' };
     if (typeof item === 'string') return { label: 'Evidence', value: item.trim() || '—' };
@@ -167,7 +207,6 @@
         : (item.text != null ? item.text
           : (item.description != null ? item.description : '')));
     if (value == null || String(value).trim() === '') {
-      // Parser often stores only label (photo caption name) — show label as content
       value = typeof item === 'object' && item.label ? String(item.label) : '—';
       if (value === label && item.source) value = label + ' (' + item.source + ')';
     }

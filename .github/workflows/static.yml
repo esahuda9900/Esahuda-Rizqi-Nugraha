@@ -36,7 +36,7 @@ jobs:
           cp index.html _site/index.html
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
           cp -R modules _site/modules
-          cp -R styles _site/styles
+          if [ -d styles ]; then cp -R styles _site/styles; fi
           touch _site/.nojekyll
 
           python3 scripts/pages_prepare_index.py
@@ -46,15 +46,12 @@ jobs:
           test -s _site/modules/data-pipeline-guard.js
           test -s _site/modules/claim-fields.js
           test -s _site/modules/sdlg-repository.js
+          test -s _site/modules/paste-parse-ux.js
+          test -s _site/modules/wo-claim-policy.js
+          test -s _site/modules/wo-collision-modal.js
           test -s _site/canonical-warranty-helper.js
 
-          grep -q 'supabase-client.js' _site/index.html
-          grep -q 'getSdlgSupabase' _site/index.html
-          grep -q 'sdlg-repository.js' _site/index.html
-          grep -q 'selectedClaim.repair_method' _site/index.html
-          grep -q 'portalValues.repairDate\|Date of repair report' _site/index.html
-          ! grep -qE 'src="/modules/' _site/index.html
-          ! grep -q 'serviceMethod: selectedClaim.service_method || ""' _site/index.html
+          bash scripts/regression_contract.sh _site/index.html
 
           echo "Prepared SDLG static frontend for GitHub Pages (contract OK)."
 
