@@ -98,22 +98,77 @@ data, n = re.subn(
 )
 print("getSession redirects:", n)
 
-# 5) Evidence / Photo Context: value fallback (parser stores {label,source} without value)
-old_evidence_value = 'e?.value || ""'
+# 5) Evidence / Photo Context: clean display (NO source/variant-form)
 idx = data.find("Evidence / Photo Context")
-if idx >= 0 and old_evidence_value in data[idx : idx + 1500]:
-    window = data[idx : idx + 1500]
-    new_window = window.replace(
-        old_evidence_value,
-        '(e?.value != null && String(e.value).trim() !== "" ? String(e.value) : (e?.caption || e?.text || e?.description || (e?.label ? String(e.label) + (e?.source ? " · " + e.source : "") : "—")))',
-        1,
-    )
-    data = data[:idx] + new_window + data[idx + 1500 :]
-    print("evidence value fallback patched")
+if idx >= 0:
+    window = data[idx : idx + 1800]
+    patterns = [
+        (
+            r'\(e\?\.value != null && String\(e\.value\)\.trim\(\) !== "" \? String\(e\.value\) : \(e\?\.caption \|\| e\?\.text \|\| e\?\.description \|\| \(e\?\.label \? String\(e\.label\) \+ \(e\?\.source \? " · " \+ e\.source : ""\) : "—"\)\)\)',
+            '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||(e&&e.url)||(e&&e.image_url)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()',
+        ),
+        (
+            'e?.value || ""',
+            '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()',
+        ),
+    ]
+    patched = False
+    for old, new in patterns:
+        if old in window or re.search(old, window):
+            if old in window:
+                new_window = window.replace(old, new, 1)
+            else:
+                new_window = re.sub(old, new, window, count=1)
+            data = data[:idx] + new_window + data[idx + 1800 :]
+            print("evidence display cleaned (no source)")
+            patched = True
+            break
+    if not patched:
+        print("WARNING: evidence value pattern not found for clean patch")
 else:
-    print("WARNING: evidence value pattern not found near Photo Context")
+    print("WARNING: Photo Context not found")
 
-# 6) Inject scripts after supabase CDN
+# 6) Repair Date: fallback chain dealer_repair_date -> completion_date -> failure_date
+old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
+new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
+if old_repair in data:
+    data = data.replace(old_repair, new_repair, 1)
+    print("Repair Date fallback patched")
+else:
+    print("WARNING: Repair Date Row not found")
+
+# 7) Row component: show em-dash for empty instead of hiding the row
+old_row_full = '''const Row = ({ label, value, mono }) => {
+    if (value == null || value === "" || value === "null")
+        return null;
+    return (React.createElement("div", { style: { display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" } },
+        React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#94a3b8", paddingTop: 1 } }, label),
+        React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));
+};'''
+
+new_row_full = '''const Row = ({ label, value, mono }) => {
+    const empty = value == null || value === "" || value === "null" || value === "undefined";
+    const display = empty ? "—" : value;
+    return (React.createElement("div", { style: { display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" } },
+        React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#6b7280", paddingTop: 1 } }, label),
+        React.createElement("div", { style: { flex: 1, fontSize: 13, color: empty ? "#9ca3af" : "#1e293b", fontStyle: empty ? "italic" : "normal", fontFamily: mono && !empty ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(display))));
+};'''
+
+if old_row_full in data:
+    data = data.replace(old_row_full, new_row_full, 1)
+    print("Row empty fallback patched (full)")
+else:
+    if "const display = empty" in data and "String(value))));" in data:
+        data = data.replace(
+            'React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));',
+            'React.createElement("div", { style: { flex: 1, fontSize: 13, color: empty ? "#9ca3af" : "#1e293b", fontStyle: empty ? "italic" : "normal", fontFamily: mono && !empty ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(display))));',
+            1,
+        )
+        print("Row value cell fixed to display")
+    else:
+        print("WARNING: Row component not found for empty fallback")
+
+# 8) Inject scripts after supabase CDN
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
