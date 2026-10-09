@@ -153,6 +153,7 @@
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
       loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v23', 'data-sdlg-portal-ux-v2');
+      loadScript('./modules/sdlg-route-finish.js?v=20261009-v1', 'data-sdlg-route-finish');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
