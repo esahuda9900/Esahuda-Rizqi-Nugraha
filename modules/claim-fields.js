@@ -83,10 +83,7 @@
     faultDetails: {
       labels: ['Fault Details', 'Fault Detail'],
       id: 'sdlg_faultDetails',
-      fromClaim: function (c) {
-        if (!c) return '';
-        return [c.cause_analyze, c.comment].filter(Boolean).join('\n\n');
-      }
+      fromClaim: function (c) { return (c && [c.cause_analyze, c.comment].filter(Boolean).join('\n\n')) || ''; }
     },
     machineLocation: {
       labels: ['Machine Location'],
@@ -99,14 +96,8 @@
       fromClaim: function (c) {
         if (!c) return '';
         return stripTechPrefix(pickFirst(
-          c.technical_personnel,
-          c.feedback_person,
-          c.pic_name,
-          c.person_in_charge,
-          c.technician_name,
-          c.technician,
-          c.service_advisor,
-          c.reported_by
+          c.technical_personnel, c.feedback_person, c.pic_name, c.person_in_charge,
+          c.technician_name, c.technician, c.service_advisor, c.reported_by
         ));
       }
     },
@@ -116,14 +107,8 @@
       fromClaim: function (c) {
         if (!c) return '';
         return pickFirst(
-          c.feedback_contact,
-          c.feedback_phone,
-          c.technician_contact,
-          c.technical_personnel_phone,
-          c.contact,
-          c.phone,
-          c.customer_phone,
-          c.mobile
+          c.feedback_contact, c.feedback_phone, c.technician_contact, c.technical_personnel_phone,
+          c.contact, c.phone, c.customer_phone, c.mobile
         );
       }
     }
@@ -152,8 +137,9 @@
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
-      loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v23', 'data-sdlg-portal-ux-v2');
+      loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
       loadScript('./modules/sdlg-route-finish.js?v=20261009-v1', 'data-sdlg-route-finish');
+      loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
