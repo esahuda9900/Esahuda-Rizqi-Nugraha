@@ -1,0 +1,32 @@
+name: Bake source index.html to production-safe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/bake_source_index.py'
+      - '.github/workflows/bake-source-to-production.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bake index.html (permanent source fixes)
+        run: python3 scripts/bake_source_index.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name "sdlg-bake-bot"
+          git config user.email "sdlg-bake-bot@users.noreply.github.com"
+          if git diff --quiet index.html; then
+            echo "No changes to index.html"
+          else
+            git add index.html
+            git commit -m "chore(bake): source index.html = production-safe (paths, singleton, portalValues)"
+            git push origin HEAD
+          fi
