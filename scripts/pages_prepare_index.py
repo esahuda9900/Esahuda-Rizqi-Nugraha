@@ -104,7 +104,6 @@ inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
 inject_after("paste-parse-ux.js", "./modules/wo-claim-policy.js")
 inject_after("wo-claim-policy.js", "./modules/wo-collision-modal.js")
 
-# --- Portal finance + feedback (inline: Workers SPA cannot serve /modules/*) ---
 def inline_module(path, marker):
     global data
     if marker in data:
@@ -122,7 +121,7 @@ def inline_module(path, marker):
     print("inlined", path.name)
 
 mod = Path("_site/modules") if Path("_site/modules").is_dir() else Path("modules")
-inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V2")
+inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V3")
 inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
 
 if 'esc(unitPrice || "—")' in data:
@@ -138,26 +137,25 @@ if 'esc(unitPrice || "—")' in data:
     )
     print("parts money 0.00")
 
-old_fh = (
+# USER FEEDBACK: keep per-field Copy buttons
+_no_copy = (
+    'return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff">'
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
+    '<label for="${id}" style="font-size:11px;font-weight:800;color:#334155">${esc(label)}${requiredMark}</label>'
+    '</div>${control}</div>`;'
+)
+_with_copy = (
     'return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff">'
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
     '<label for="${id}" style="font-size:11px;font-weight:800;color:#334155">${esc(label)}${requiredMark}</label>'
     '<button type="button" data-sdlg-copy data-target="#${id}" style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">Copy</button>'
     '</div>${control}</div>`;'
 )
-new_fh = (
-    'return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff">'
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
-    '<label for="${id}" style="font-size:11px;font-weight:800;color:#334155">${esc(label)}${requiredMark}</label>'
-    '</div>${control}</div>`;'
-)
-if old_fh in data:
-    data = data.replace(old_fh, new_fh, 1)
-    print("removed per-field Copy")
-
-if ">📋 Copy All</button>" in data:
-    data = data.replace(">📋 Copy All</button>", ">📋 Copy Semua Field Home</button>", 1)
-    print("rename Copy All")
+if _no_copy in data:
+    data = data.replace(_no_copy, _with_copy, 1)
+    print("restored per-field Copy")
+elif 'data-sdlg-copy data-target="#${id}"' in data:
+    print("per-field Copy present")
 
 for a, b in [
     (
@@ -209,6 +207,20 @@ if "data-sdlg-report-toggle" in data and "data-wired" not in data:
     if "</body>" in data:
         data = data.replace("</body>", toggle + "</body>", 1)
         print("report toggle script")
+
+for _src in [
+    "./modules/sdlg-input-helper-ux.js?v=20261009-v19",
+    "./modules/sdlg-portal-ux-v2.js?v=20261009-v22",
+    "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
+]:
+    leaf = _src.split("/")[-1].split("?")[0]
+    tag = '<script src="' + _src + '"></script>\n'
+    if leaf in data and _src in data:
+        print("skip inject", leaf)
+        continue
+    if "</body>" in data and f'src="./modules/{leaf}' not in data:
+        data = data.replace("</body>", tag + "</body>", 1)
+        print("injected", _src)
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
