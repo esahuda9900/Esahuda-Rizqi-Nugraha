@@ -1,9 +1,12 @@
 /**
- * SDLG Warranty Assessment UX v1.3 — fallback only when Tracking UX is unavailable
+ * SDLG Warranty Assessment UX v1.4 — fallback only when Tracking UX is unavailable
  *
  * Instant decision-first shell on claim detail; hydrate from Live DB UI when ready.
  * Progressive enhancement only — no engine/DB writes.
  *
+ * v1.4 (2026-10-09):
+ * - Fix stuck LOADING badge: resolve OUT OF WARRANTY / IN WARRANTY without requiring matrix keywords
+ * - Only show LOADING when status not yet ready
  * v1.3 (2026-10-02):
  * - Treat detached Tracking panel as absent (isConnected)
  * - Slightly longer debounce to reduce race with Tracking UX + React
@@ -16,7 +19,7 @@
   var PANEL_ID = 'sdlg-warranty-assessment-shell';
   var DEBOUNCE_MS = 480;
   var OBSERVER = null;
-  var VERSION = '1.3';
+  var VERSION = '1.4';
 
   function textOf(el) {
     if (!el) return '';
@@ -29,10 +32,10 @@
 
   function esc(s) {
     return String(s == null ? '' : s)
-      .replace(/&/g, '&')
-      .replace(/</g, '<')
-      .replace(/>/g, '>')
-      .replace(/"/g, '"');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function claimDetailPage() {
@@ -46,7 +49,6 @@
   }
 
   function trackingPreferred() {
-    // Tracking module owns the operator surface when loaded
     if (typeof window !== 'undefined' && window.SDLGTrackingUX) return true;
     return !!liveTrackingPanel();
   }
@@ -126,16 +128,17 @@
     };
     var body = textOf(page);
 
-    if (/Memuat|Loading/i.test(body) && /matrix|Warranty Policy/i.test(body) && !/IN WARRANTY|OUT OF WARRANTY/i.test(body)) {
-      out.loading = true;
-    }
-
     if (/\bIN WARRANTY\b/i.test(body)) {
       out.inWarranty = 'IN WARRANTY';
       out.ready = true;
-    } else if (/OUT OF WARRANTY|\bOOW\b/i.test(body) && /Component Category|matrix|Other parts|Key components/i.test(body)) {
+    } else if (/OUT OF WARRANTY|\bOOW\b|Out of Warranty/i.test(body)) {
       out.inWarranty = 'OUT OF WARRANTY';
       out.ready = true;
+    }
+
+    // Only show loading when status not yet resolved
+    if (!out.ready && /Memuat|Loading/i.test(body) && /matrix|Warranty Policy|policy/i.test(body)) {
+      out.loading = true;
     }
 
     var cat = body.match(/Claim component policy:\s*([^·\n]{3,100})/i);
@@ -192,14 +195,18 @@
   }
 
   function statusBadge(policy, matrix) {
-    if (matrix.inWarranty === 'IN WARRANTY' || /covered/i.test(policy.coverage)) {
+    if (matrix.inWarranty === 'IN WARRANTY' || /^covered$/i.test(policy.coverage)) {
       return { text: 'IN WARRANTY', kind: 'is-ok' };
     }
     if (matrix.inWarranty === 'OUT OF WARRANTY' || /not covered/i.test(policy.coverage)) {
       return { text: 'OUT OF WARRANTY', kind: 'is-bad' };
     }
     if (policy.coverage === 'DATA GAP') return { text: 'DATA GAP', kind: 'is-wait' };
-    if (policy.loading || matrix.loading) return { text: 'LOADING', kind: 'is-wait' };
+    // Only show LOADING while actively loading AND no resolved status
+    if ((policy.loading || matrix.loading) && !matrix.ready && !policy.ready) {
+      return { text: 'LOADING', kind: 'is-wait' };
+    }
+    if (policy.ready || matrix.ready) return { text: 'REVIEW', kind: 'is-wait' };
     return { text: '—', kind: 'is-wait' };
   }
 
@@ -262,108 +269,84 @@
     style.textContent =
       '#' +
       PANEL_ID +
-      '{margin:12px 0 14px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;' +
-      'background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04)}' +
-      '.sdlg-wa-shell__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}' +
-      '.sdlg-wa-shell__eyebrow{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b}' +
+      '{margin:0 0 14px;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%);box-shadow:0 1px 2px rgba(15,23,42,.04)}' +
+      '.sdlg-wa-shell__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}' +
+      '.sdlg-wa-shell__eyebrow{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#64748b}' +
       '.sdlg-wa-shell__title{font-size:16px;font-weight:800;color:#0f172a;margin-top:2px}' +
       '.sdlg-wa-shell__badge{font-size:11px;font-weight:800;padding:6px 10px;border-radius:999px;border:1px solid #e2e8f0}' +
       '.sdlg-wa-shell__badge--is-ok{background:#f0fdf4;color:#166534;border-color:#bbf7d0}' +
       '.sdlg-wa-shell__badge--is-bad{background:#fef2f2;color:#991b1b;border-color:#fecaca}' +
       '.sdlg-wa-shell__badge--is-wait{background:#fffbeb;color:#b45309;border-color:#fde68a}' +
       '.sdlg-wa-shell__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
-      '.sdlg-wa-shell__cell{padding:10px;border:1px solid #f1f5f9;border-radius:10px;background:#f8fafc}' +
-      '.sdlg-wa-shell__cell--wide{grid-column:1/-1}' +
-      '.sdlg-wa-shell__label{display:block;font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px}' +
-      '.sdlg-wa-shell__value{font-size:13px;font-weight:700;color:#0f172a}' +
+      '.sdlg-wa-shell__cell{padding:10px 12px;border-radius:10px;background:#fff;border:1px solid #e2e8f0}' +
+      '.sdlg-wa-shell__cell--wide{grid-column:1 / -1}' +
+      '.sdlg-wa-shell__label{display:block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#64748b;margin-bottom:4px}' +
+      '.sdlg-wa-shell__value{display:block;font-size:13px;font-weight:700;color:#0f172a;line-height:1.35}' +
       '.sdlg-wa-shell__value--next{color:#1d4ed8}' +
-      '.sdlg-wa-shell__value--muted{font-weight:500;color:#64748b;line-height:1.35}' +
-      '@media(max-width:720px){.sdlg-wa-shell__grid{grid-template-columns:1fr}}';
-    (document.head || document.documentElement).appendChild(style);
+      '.sdlg-wa-shell__value--muted{font-weight:500;color:#475569}' +
+      '@media (max-width:640px){.sdlg-wa-shell__grid{grid-template-columns:1fr}}';
+    document.head.appendChild(style);
   }
 
-  function removeShell() {
-    var existing = document.getElementById(PANEL_ID);
-    if (existing && existing.parentNode) {
-      try {
-        existing.parentNode.removeChild(existing);
-      } catch (_) {}
-    }
-  }
-
-  function enhance() {
-    var page = claimDetailPage();
-    if (!page) return;
-
-    // Tracking UX is canonical. Never compete with it.
-    if (trackingPreferred()) {
-      removeShell();
-      return;
-    }
-
-    ensureStyles();
-
+  function buildModel(page) {
     var policy = extractFromPolicyCard(page);
     var matrix = extractFromMatrix(page);
-    var stage = extractStage(page);
-    var model = {
-      stage: stage,
+    return {
+      stage: extractStage(page),
       policy: policy,
       matrix: matrix,
       happened: extractHappened(page),
       route: routeLabel(policy, matrix),
-      next: nextAction(stage, policy, matrix)
+      next: nextAction(extractStage(page), policy, matrix)
     };
-
-    var existing = document.getElementById(PANEL_ID);
-    if (existing && !existing.isConnected) {
-      existing = null;
-    }
-
-    if (existing) {
-      existing.innerHTML = buildHtml(model);
-      return;
-    }
-
-    var panel = document.createElement('div');
-    panel.id = PANEL_ID;
-    panel.setAttribute('data-sdlg-warranty-assessment', '1');
-    panel.innerHTML = buildHtml(model);
-
-    var policyCard = findPolicyCard(page);
-    if (policyCard && policyCard.parentNode) {
-      policyCard.parentNode.insertBefore(panel, policyCard);
-    } else {
-      var anchor = page.querySelector('.page-header, .claim-detail-header, h1, .page-title');
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(panel, anchor.nextSibling);
-      else page.insertBefore(panel, page.firstChild);
-    }
   }
 
-  function run() {
-    try {
-      if (document.hidden) return;
-      if (!claimDetailPage()) {
-        removeShell();
-        return;
-      }
-      enhance();
-    } catch (err) {
-      if (typeof console !== 'undefined' && console.warn) console.warn('[SDLGAssessmentUX]', err);
+  function render() {
+    if (trackingPreferred()) {
+      var existing = document.getElementById(PANEL_ID);
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      return;
     }
+    var page = claimDetailPage();
+    if (!page) return;
+    ensureStyles();
+    var model = buildModel(page);
+    var panel = document.getElementById(PANEL_ID);
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = PANEL_ID;
+      panel.setAttribute('data-sdlg-wa-shell', VERSION);
+      var anchor = page.querySelector('.card, .card.card-pad, h1, h2');
+      if (anchor && anchor.parentNode) {
+        anchor.parentNode.insertBefore(panel, anchor);
+      } else {
+        page.insertBefore(panel, page.firstChild);
+      }
+    }
+    panel.innerHTML = buildHtml(model);
+  }
+
+  var timer = null;
+  function schedule() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      timer = null;
+      try {
+        render();
+      } catch (e) {
+        console.warn('[SDLG WA UX]', e);
+      }
+    }, DEBOUNCE_MS);
   }
 
   function boot() {
-    run();
+    schedule();
     if (OBSERVER) return;
+    if (typeof MutationObserver === 'undefined') return;
     OBSERVER = new MutationObserver(function () {
-      clearTimeout(window.__sdlgWaTimer);
-      window.__sdlgWaTimer = setTimeout(run, DEBOUNCE_MS);
+      schedule();
     });
-    OBSERVER.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) setTimeout(run, 120);
-    });
+    OBSERVER.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   }
 
   if (document.readyState === 'loading') {
@@ -372,5 +355,5 @@
     boot();
   }
 
-  window.SDLGAssessmentUX = { refresh: run, version: VERSION };
+  window.SDLGWarrantyAssessmentUX = { version: VERSION, render: render };
 })();
