@@ -139,7 +139,7 @@
     stripTechPrefix: stripTechPrefix
   };
 
-  // Auto-load runtime portal fillers (no index.html script tag required)
+  // Auto-load runtime portal fillers
   try {
     if (typeof document !== 'undefined') {
       function loadScript(src, attr) {
@@ -151,7 +151,7 @@
         (document.head || document.documentElement).appendChild(s);
       }
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
-      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v1', 'data-sdlg-finance-ux');
+      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v2', 'data-sdlg-finance-ux');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
