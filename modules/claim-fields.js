@@ -138,8 +138,9 @@
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
       loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
-      loadScript('./modules/sdlg-route-finish.js?v=20261009-v1', 'data-sdlg-route-finish');
+      loadScript('./modules/sdlg-route-finish.js?v=20261009-v12', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
+      loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
