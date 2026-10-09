@@ -15,18 +15,13 @@ def rep(old: str, new: str, label: str, count: int = 0) -> None:
         return
     if count:
         data = data.replace(old, new, count)
-        changes.append(f"{label}:{min(count, n)}")
     else:
         data = data.replace(old, new)
-        changes.append(f"{label}:{n}")
-    print(f"OK {label}: {n if not count else min(count, n)}")
+    changes.append(label)
+    print(f"OK {label}: {min(count, n) if count else n}")
 
 rep('src="/modules/', 'src="./modules/', "src /modules/")
-rep("src='/modules/", "src='./modules/", "src '/modules/")
-rep('href="/modules/', 'href="./modules/', "href /modules/")
 rep('src="/canonical-', 'src="./canonical-', "src /canonical-")
-rep('src="/styles/', 'src="./styles/', "src /styles/")
-rep('href="/styles/', 'href="./styles/', "href /styles/")
 
 if "<base " not in data.lower():
     data = data.replace("<head>", '<head>\n  <base href="./">', 1)
@@ -51,6 +46,15 @@ new_fields = (
 )
 rep(old_fields, new_fields, "fieldHtml repairDate", 1)
 
+# Prefer extracted module
+if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
+    rep(
+        "const SDLG_REPOSITORY = {",
+        "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {",
+        "SDLG_REPOSITORY window prefer",
+        1,
+    )
+
 NEW_FN = '''function getSupabaseClient() {
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
@@ -74,51 +78,6 @@ if m and "getSdlgSupabase" not in m.group(0):
     data = data[: m.start()] + NEW_FN + data[m.end() :]
     changes.append("getSupabaseClient")
     print("OK getSupabaseClient")
-elif m:
-    print("SKIP getSupabaseClient (already singleton)")
-else:
-    print("SKIP getSupabaseClient (not found)")
-
-OLD_GATE = """const loadClaims = useCallback(async () => {
-        if (!user) {
-            setClaims([]);
-            setActionCenterRows([]);
-            setLoading(false);
-            return;
-        }"""
-NEW_GATE = """const loadClaims = useCallback(async () => {
-        let effectiveUser = user;
-        if (!effectiveUser) {
-            try {
-                const _c = (typeof window.getSdlgSupabase === "function" && window.getSdlgSupabase()) || window.sdlgSupabase || sdlgSupabase;
-                if (_c && _c.auth) {
-                    const _s = await _c.auth.getSession();
-                    effectiveUser = _s?.data?.session?.user || null;
-                    if (effectiveUser) {
-                        setUser(effectiveUser);
-                        console.info("[SDLG] loadClaims recovered user from session", effectiveUser.email || effectiveUser.id);
-                    }
-                }
-            } catch (e) {
-                console.warn("[SDLG] loadClaims session recover failed", e);
-            }
-        }
-        if (!effectiveUser) {
-            setClaims([]);
-            setActionCenterRows([]);
-            setLoading(false);
-            return;
-        }"""
-if OLD_GATE in data:
-    data = data.replace(OLD_GATE, NEW_GATE, 1)
-    changes.append("loadClaims")
-    print("OK loadClaims")
-else:
-    print("SKIP loadClaims")
-
-old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
-new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
-rep(old_repair, new_repair, "Assessment Repair Date", 1)
 
 def inject_after(marker: str, script_src: str) -> None:
     global data
@@ -141,8 +100,7 @@ def inject_after(marker: str, script_src: str) -> None:
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
+inject_after("claim-fields.js", "./modules/sdlg-repository.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))
-for c in changes:
-    print(" -", c)

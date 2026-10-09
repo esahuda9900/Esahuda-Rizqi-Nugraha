@@ -45,12 +45,12 @@ jobs:
           test -s _site/modules/supabase-client.js
           test -s _site/modules/data-pipeline-guard.js
           test -s _site/modules/claim-fields.js
+          test -s _site/modules/sdlg-repository.js
           test -s _site/canonical-warranty-helper.js
 
-          # Smoke: production-safe artifact contract
           grep -q 'supabase-client.js' _site/index.html
           grep -q 'getSdlgSupabase' _site/index.html
-          grep -q 'claim-fields.js' _site/index.html || grep -q 'SDLG_CLAIM_FIELDS' _site/modules/claim-fields.js
+          grep -q 'sdlg-repository.js' _site/index.html
           grep -q 'selectedClaim.repair_method' _site/index.html
           grep -q 'portalValues.repairDate\|Date of repair report' _site/index.html
           ! grep -qE 'src="/modules/' _site/index.html

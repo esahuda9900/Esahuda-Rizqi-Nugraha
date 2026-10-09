@@ -50,55 +50,23 @@ if m and "getSdlgSupabase" not in m.group(0):
     data = data[: m.start()] + NEW_FN + data[m.end() :]
     print("getSupabaseClient rewritten")
 else:
-    print("getSupabaseClient OK (singleton or missing)")
+    print("getSupabaseClient OK")
 
-# 3) loadClaims session recovery
-OLD_GATE = """const loadClaims = useCallback(async () => {
-        if (!user) {
-            setClaims([]);
-            setActionCenterRows([]);
-            setLoading(false);
-            return;
-        }"""
-
-NEW_GATE = """const loadClaims = useCallback(async () => {
-        let effectiveUser = user;
-        if (!effectiveUser) {
-            try {
-                const _c = (typeof window.getSdlgSupabase === "function" && window.getSdlgSupabase()) || window.sdlgSupabase || sdlgSupabase;
-                if (_c && _c.auth) {
-                    const _s = await _c.auth.getSession();
-                    effectiveUser = _s?.data?.session?.user || null;
-                    if (effectiveUser) {
-                        setUser(effectiveUser);
-                        console.info("[SDLG] loadClaims recovered user from session", effectiveUser.email || effectiveUser.id);
-                    }
-                }
-            } catch (e) {
-                console.warn("[SDLG] loadClaims session recover failed", e);
-            }
-        }
-        if (!effectiveUser) {
-            setClaims([]);
-            setActionCenterRows([]);
-            setLoading(false);
-            return;
-        }"""
-
-if OLD_GATE in data:
-    data = data.replace(OLD_GATE, NEW_GATE, 1)
-    print("loadClaims gate patched")
+# 3) Prefer extracted repository module when present
+if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
+    if "const SDLG_REPOSITORY = {" in data:
+        data = data.replace(
+            "const SDLG_REPOSITORY = {",
+            "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {",
+            1,
+        )
+        print("SDLG_REPOSITORY prefers window module")
+    else:
+        print("SDLG_REPOSITORY pattern not found")
 else:
-    print("loadClaims gate already patched or different")
+    print("SDLG_REPOSITORY already prefers window module")
 
-data, n = re.subn(
-    r"sdlgSupabase\.auth\.getSession\(\)",
-    '((typeof window.getSdlgSupabase==="function"&&window.getSdlgSupabase())||sdlgSupabase).auth.getSession()',
-    data,
-)
-print("getSession redirects:", n)
-
-# 5) portalValues safety net
+# portalValues safety net
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
     'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
@@ -107,8 +75,6 @@ new_sm = (
 if old_sm in data:
     data = data.replace(old_sm, new_sm, 1)
     print("portalValues serviceMethod + repairDate")
-else:
-    print("portalValues already uses repair_method")
 
 old_fields = (
     '${fieldHtml("failureDate","Failure Date",portalValues.failureDate,true,false)}\n'
@@ -122,15 +88,6 @@ new_fields = (
 if old_fields in data:
     data = data.replace(old_fields, new_fields, 1)
     print("fieldHtml Date of repair report")
-else:
-    print("fieldHtml repairDate already present or different")
-
-# Assessment Repair Date
-old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
-new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
-if old_repair in data:
-    data = data.replace(old_repair, new_repair, 1)
-    print("Assessment Repair Date fallback")
 
 # Inject scripts (order matters)
 def inject_after(marker: str, script_src: str) -> None:
@@ -153,6 +110,7 @@ def inject_after(marker: str, script_src: str) -> None:
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
+inject_after("claim-fields.js", "./modules/sdlg-repository.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
