@@ -139,14 +139,19 @@
     stripTechPrefix: stripTechPrefix
   };
 
-  // Auto-load runtime Feedback Person/Contact filler (no index.html script tag required)
+  // Auto-load runtime portal fillers (no index.html script tag required)
   try {
-    if (typeof document !== 'undefined' && !document.querySelector('script[data-sdlg-fb-fix]')) {
-      var s = document.createElement('script');
-      s.src = './modules/feedback-person-fix.js?v=20261009-v13';
-      s.async = true;
-      s.setAttribute('data-sdlg-fb-fix', '1');
-      (document.head || document.documentElement).appendChild(s);
+    if (typeof document !== 'undefined') {
+      function loadScript(src, attr) {
+        if (document.querySelector('script[' + attr + ']')) return;
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.setAttribute(attr, '1');
+        (document.head || document.documentElement).appendChild(s);
+      }
+      loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
+      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v1', 'data-sdlg-finance-ux');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
