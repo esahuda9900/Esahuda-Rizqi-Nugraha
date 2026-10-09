@@ -1,12 +1,10 @@
 /**
- * SDLG Input Helper — Copy Fix + UX patch v1.9.0 — no top action bar
- * Standalone progressive enhancement. Safe to load after core modules.
- * Per-field Copy + toast. Top bar (field siap / Copy All Labeled / TSV) removed per user feedback.
+ * SDLG Input Helper — Copy Fix + UX patch v1.9.1 — strict page detection
  */
 (function () {
   'use strict';
-  if (window.__SDLG_COPY_FIX_190__) return;
-  window.__SDLG_COPY_FIX_190__ = true;
+  if (window.__SDLG_COPY_FIX_191__) return;
+  window.__SDLG_COPY_FIX_191__ = true;
 
   var ACTION_ID = 'sdlg-input-action-bar';
   var TOAST_ID = 'sdlg-input-toast';
@@ -52,9 +50,7 @@
       ta.setAttribute('readonly', '');
       ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
       document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      ta.setSelectionRange(0, t.length);
+      ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
       var ok = document.execCommand('copy');
       document.body.removeChild(ta);
       return !!ok;
@@ -70,7 +66,7 @@
     function ok() { showToast('Tersalin ke clipboard', 'ok'); return true; }
     function fail(r) {
       if (fallbackCopy(t)) { showToast('Tersalin (fallback)', 'ok'); return true; }
-      showToast('Gagal copy \u2014 pilih teks manual', 'err');
+      showToast('Gagal copy — pilih teks manual', 'err');
       console.warn('[SDLG CopyFix]', r);
       return false;
     }
@@ -105,8 +101,17 @@
     var page = document.querySelector('.page');
     if (!page) return false;
     var t = textOf(page.querySelector('.page-title')).toLowerCase();
-    return /input|helper|portal/.test(t) || page.getAttribute('data-sdlg-input-helper') === '1' ||
-      /Warranty Claim Input Helper/i.test(textOf(page));
+    if (/warranty claim input helper|sdlg input helper/.test(t)) return true;
+    if (/warranty claim input helper/i.test(textOf(page).slice(0, 400))) return true;
+    try {
+      if (window.SDLGHashRouter && window.SDLGHashRouter.parse) {
+        var r = window.SDLGHashRouter.parse();
+        if (r && (r.page === 'sdlg-input' || (r.page === 'claim' && r.subTab === 'input'))) return true;
+      }
+      var h = String(location.hash || '');
+      if (/#\/?sdlg-input/i.test(h) || /#\/?claim\/[^/]+\/input/i.test(h) || /#\/?sdlginput/i.test(h)) return true;
+    } catch (_) {}
+    return false;
   }
 
   function hardenButtons(page) {
@@ -150,8 +155,7 @@
     });
   }
 
-  function ensureActionBar(page) {
-    /* USER FEEDBACK 2026-10-09: top floating bar (field siap / Copy All Labeled / TSV / Buka Dealer) removed. */
+  function ensureActionBar() {
     var old = document.getElementById(ACTION_ID);
     if (old && old.parentNode) old.parentNode.removeChild(old);
   }
@@ -181,12 +185,18 @@
   }
 
   function run() {
-    if (!isHelperPage()) return;
     var page = document.querySelector('.page');
+    if (!isHelperPage()) {
+      if (page && page.getAttribute('data-sdlg-input-helper') === '1') {
+        var t = textOf(page.querySelector('.page-title')).toLowerCase();
+        if (!/warranty claim input helper|sdlg input helper/.test(t)) page.removeAttribute('data-sdlg-input-helper');
+      }
+      return;
+    }
     if (!page) return;
     page.setAttribute('data-sdlg-input-helper', '1');
     hardenButtons(page);
-    ensureActionBar(page);
+    ensureActionBar();
     ensureZeroBanner(page);
   }
 
@@ -206,6 +216,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.SDLGInputCopyFix = { version: '1.9.0', refresh: run, copyText: copyText };
-  window.SDLGInputHelperUX = { version: '1.9.0', refresh: run, copyText: copyText };
+  window.SDLGInputCopyFix = { version: '1.9.1', refresh: run, copyText: copyText };
+  window.SDLGInputHelperUX = { version: '1.9.1', refresh: run, copyText: copyText };
 })();
