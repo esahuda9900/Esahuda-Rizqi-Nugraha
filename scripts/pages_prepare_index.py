@@ -24,7 +24,6 @@ if "<base " not in data.lower():
 
 # 2) Rewrite getSupabaseClient to use singleton
 NEW_FN = r'''function getSupabaseClient() {
-    // SINGLETON ONLY - never call createClient here (fixes Multiple GoTrueClient + empty claims).
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
         if (c) return c;
@@ -51,7 +50,7 @@ if m:
 else:
     print("WARNING: getSupabaseClient not found")
 
-# 3) loadClaims: recover user from singleton session when React user is null
+# 3) loadClaims session recovery
 OLD_GATE = """const loadClaims = useCallback(async () => {
         if (!user) {
             setClaims([]);
@@ -86,11 +85,10 @@ NEW_GATE = """const loadClaims = useCallback(async () => {
 
 if OLD_GATE in data:
     data = data.replace(OLD_GATE, NEW_GATE, 1)
-    print("loadClaims gate patched for session recovery")
+    print("loadClaims gate patched")
 else:
     print("WARNING: loadClaims gate not found")
 
-# 4) Prefer singleton for getSession
 data, n = re.subn(
     r"sdlgSupabase\.auth\.getSession\(\)",
     '((typeof window.getSdlgSupabase==="function"&&window.getSdlgSupabase())||sdlgSupabase).auth.getSession()',
@@ -98,46 +96,31 @@ data, n = re.subn(
 )
 print("getSession redirects:", n)
 
-# 5) Evidence / Photo Context: clean display (NO source/variant-form)
+# 5) Evidence: no source metadata
 idx = data.find("Evidence / Photo Context")
 if idx >= 0:
     window = data[idx : idx + 1800]
-    patterns = [
-        (
-            r'\(e\?\.value != null && String\(e\.value\)\.trim\(\) !== "" \? String\(e\.value\) : \(e\?\.caption \|\| e\?\.text \|\| e\?\.description \|\| \(e\?\.label \? String\(e\.label\) \+ \(e\?\.source \? " · " \+ e\.source : ""\) : "—"\)\)\)',
-            '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||(e&&e.url)||(e&&e.image_url)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()',
-        ),
-        (
-            'e?.value || ""',
-            '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()',
-        ),
-    ]
-    patched = False
-    for old, new in patterns:
-        if old in window or re.search(old, window):
-            if old in window:
-                new_window = window.replace(old, new, 1)
-            else:
-                new_window = re.sub(old, new, window, count=1)
-            data = data[:idx] + new_window + data[idx + 1800 :]
-            print("evidence display cleaned (no source)")
-            patched = True
-            break
-    if not patched:
-        print("WARNING: evidence value pattern not found for clean patch")
-else:
-    print("WARNING: Photo Context not found")
+    old_ev = 'e?.value || ""'
+    new_ev = '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()'
+    if old_ev in window:
+        data = data[:idx] + window.replace(old_ev, new_ev, 1) + data[idx + 1800 :]
+        print("evidence cleaned")
+    else:
+        # already patched variant with source
+        import re as _re
+        m2 = _re.search(r'\(e\?\.value[^\)]{20,400}e\.source[^\)]{0,80}\)', window)
+        if m2:
+            data = data[:idx] + window.replace(m2.group(0), new_ev, 1) + data[idx + 1800 :]
+            print("evidence cleaned (regex)")
 
-# 6) Repair Date: fallback chain dealer_repair_date -> completion_date -> failure_date
+# 6) Assessment Repair Date fallback
 old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
 new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
 if old_repair in data:
     data = data.replace(old_repair, new_repair, 1)
-    print("Repair Date fallback patched")
-else:
-    print("WARNING: Repair Date Row not found")
+    print("Assessment Repair Date fallback")
 
-# 7) Row component: show em-dash for empty instead of hiding the row
+# 7) Row empty -> em dash
 old_row_full = '''const Row = ({ label, value, mono }) => {
     if (value == null || value === "" || value === "null")
         return null;
@@ -145,7 +128,6 @@ old_row_full = '''const Row = ({ label, value, mono }) => {
         React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#94a3b8", paddingTop: 1 } }, label),
         React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));
 };'''
-
 new_row_full = '''const Row = ({ label, value, mono }) => {
     const empty = value == null || value === "" || value === "null" || value === "undefined";
     const display = empty ? "—" : value;
@@ -153,22 +135,38 @@ new_row_full = '''const Row = ({ label, value, mono }) => {
         React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#6b7280", paddingTop: 1 } }, label),
         React.createElement("div", { style: { flex: 1, fontSize: 13, color: empty ? "#9ca3af" : "#1e293b", fontStyle: empty ? "italic" : "normal", fontFamily: mono && !empty ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(display))));
 };'''
-
 if old_row_full in data:
     data = data.replace(old_row_full, new_row_full, 1)
-    print("Row empty fallback patched (full)")
-else:
-    if "const display = empty" in data and "String(value))));" in data:
-        data = data.replace(
-            'React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));',
-            'React.createElement("div", { style: { flex: 1, fontSize: 13, color: empty ? "#9ca3af" : "#1e293b", fontStyle: empty ? "italic" : "normal", fontFamily: mono && !empty ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(display))));',
-            1,
-        )
-        print("Row value cell fixed to display")
-    else:
-        print("WARNING: Row component not found for empty fallback")
+    print("Row empty fallback")
 
-# 8) Inject scripts after supabase CDN
+# 8) Portal Home: REAL fix for empty Service Method + Date of repair report
+old_sm = 'serviceMethod: selectedClaim.service_method || "",'
+new_sm = (
+    'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
+    '        repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),'
+)
+if old_sm in data:
+    data = data.replace(old_sm, new_sm, 1)
+    print("portalValues serviceMethod + repairDate")
+else:
+    print("WARNING: portalValues serviceMethod not found")
+
+old_fields = (
+    '${fieldHtml("failureDate","Failure Date",portalValues.failureDate,true,false)}\n'
+    '        ${fieldHtml("complaint","Complaint",portalValues.complaint,true,true)}'
+)
+new_fields = (
+    '${fieldHtml("failureDate","Failure Date",portalValues.failureDate,true,false)}\n'
+    '        ${fieldHtml("repairDate","Date of repair report",portalValues.repairDate,true,false)}\n'
+    '        ${fieldHtml("complaint","Complaint",portalValues.complaint,true,true)}'
+)
+if old_fields in data:
+    data = data.replace(old_fields, new_fields, 1)
+    print("fieldHtml Date of repair report")
+else:
+    print("WARNING: fieldHtml pair not found")
+
+# 9) Inject scripts
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
