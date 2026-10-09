@@ -1,13 +1,13 @@
 /**
- * SDLG UI Consolidate v1.0
+ * SDLG UI Consolidate v1.1
+ * - Kill D365 Portal Mirror (Warranty Claim Form)
  * - Only ONE sticky taskbar on Input Helper
- * - Remove any duplicate "Warranty Claim Form" / cloned form sections
  * - Page padding so sticky never covers content
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_UI_CONSOLIDATE_V1__) return;
-  root.__SDLG_UI_CONSOLIDATE_V1__ = true;
+  if (root.__SDLG_UI_CONSOLIDATE_V11__) return;
+  root.__SDLG_UI_CONSOLIDATE_V11__ = true;
 
   function isHelperPage() {
     try {
@@ -53,10 +53,14 @@
   }
 
   function removeDuplicateForms() {
+    document.querySelectorAll('[data-sdlg-dynamics-mirror], #sdlg-portal-mirror-panel').forEach(function (n) {
+      if (n.parentNode) n.parentNode.removeChild(n);
+    });
+
     document.querySelectorAll('.page-title, h1, h2, h3, [class*="title"]').forEach(function (el) {
       var t = String(el.textContent || '').trim();
       if (!/^Warranty Claim Form$/i.test(t)) return;
-      var section = el.closest('.card, [class*="card"], section, form, .page > div') || el.parentElement;
+      var section = el.closest('section, .card, [class*="card"], form, .page > div') || el.parentElement;
       if (section && section.parentNode) {
         var page = document.querySelector('.page');
         if (page && page.querySelectorAll('[data-sdlg-copy-all], [data-sdlg-field]').length > 5) {
@@ -110,5 +114,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGUIConsolidate = { version: '1.0.0', refresh: enhance };
+  root.SDLGUIConsolidate = { version: '1.1.0', refresh: enhance };
 })(window);
