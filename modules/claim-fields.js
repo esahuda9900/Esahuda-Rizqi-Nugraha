@@ -148,11 +148,11 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      loadScript('./modules/sdlg-hash-router.js?v=20261009-v1', 'data-sdlg-hash-router');
+      loadScript('./modules/sdlg-hash-router.js?v=20261009-v20', 'data-sdlg-hash-router');
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
-      loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v19', 'data-sdlg-input-helper-ux');
-      loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v22', 'data-sdlg-portal-ux-v2');
+      loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
+      loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v23', 'data-sdlg-portal-ux-v2');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
