@@ -1,10 +1,10 @@
 (function () {
   'use strict';
 
-  // Canonical portal helper v1.2.3
-  // - Map portal label "Date of repair report" (was looking for "Repair Date" only)
-  // - Strip Kosong badge from label text when matching fields
-  // - repair date fallback: dealer_repair_date || completion_date || failure_date
+  // Canonical portal helper v1.2.4
+  // - Fix infinite re-apply (lastAppliedKey was always unique)
+  // - Prefer #sdlg_* ids and data-label from portal fieldHtml
+  // - Date of repair report + repair_method mapping
 
   var CLAIM_SELECT = [
     'claim_id','model','serial_no','customer','repair_method','technical_personnel',
@@ -16,7 +16,7 @@
 
   var scheduled = false;
   var lastAppliedKey = '';
-  var runSequence = 0;
+  var applying = false;
 
   function clean(v) { return v == null ? '' : String(v).trim(); }
   function displayStatus(v) { return clean(v).replace(/_/g, ' '); }
@@ -63,9 +63,6 @@
         if (m) return m[1];
       }
     } catch (_) {}
-    var hash = String(location.hash || '');
-    var hm = hash.match(/claim[_-]?id[=:]([^&]+)/i);
-    if (hm) return clean(decodeURIComponent(hm[1]));
     var body = document.body ? String(document.body.innerText || '') : '';
     var bm = body.match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
     return bm ? bm[1] : '';
@@ -76,7 +73,7 @@
       var c = window.getSdlgSupabase();
       if (c) return c;
     }
-    return window.sdlgSupabase || window.supabaseClient || window.__SDLG_SUPABASE_CLIENT || null;
+    return window.sdlgSupabase || window.supabaseClient || null;
   }
 
   async function loadClaim(claimId) {
@@ -113,55 +110,95 @@
     return displayStatus(s);
   }
 
+  function findById(id) {
+    var el = document.getElementById(id);
+    return el && el.matches && el.matches('input,select,textarea') ? el : null;
+  }
+
   function findFieldControl(labelText) {
     var wanted = normalizeLabel(labelText);
     if (!wanted) return null;
-    var safeLabel = String(labelText || '').replace(/"/g, '');
 
-    var byData = document.querySelector('[data-sdlg-field][data-label="' + safeLabel + '"]');
-    if (byData) {
-      if (byData.matches('input,select,textarea')) return byData;
-      var inner = byData.querySelector('input,select,textarea');
-      if (inner) return inner;
+    // Portal fieldHtml ids: sdlg_serviceMethod, sdlg_repairDate, etc.
+    var idMap = {
+      'service type': 'sdlg_serviceType',
+      'service method': 'sdlg_serviceMethod',
+      'serial number': 'sdlg_serialNumber',
+      'serial no': 'sdlg_serialNumber',
+      'hour meter': 'sdlg_hourMeter',
+      'hm': 'sdlg_hourMeter',
+      'whole machine warranty': 'sdlg_warrantyScope',
+      'feedback person': 'sdlg_feedbackPerson',
+      'feedback contact information': 'sdlg_feedbackContact',
+      'failure date': 'sdlg_failureDate',
+      'date of repair report': 'sdlg_repairDate',
+      'date of repair': 'sdlg_repairDate',
+      'repair date': 'sdlg_repairDate',
+      'dealer repair date': 'sdlg_repairDate',
+      'complaint': 'sdlg_complaint',
+      'fault details': 'sdlg_faultDetails',
+      'fault detail': 'sdlg_faultDetails',
+      'machine location': 'sdlg_machineLocation',
+      'repair labor (hrs)': 'sdlg_repairLabor',
+      'repair labor': 'sdlg_repairLabor',
+      'service mileage (km)': 'sdlg_serviceMileage',
+      'service mileage': 'sdlg_serviceMileage',
+      'labour amount': 'sdlg_labourAmount',
+      'mileage amount': 'sdlg_mileageAmount',
+      'other amount': 'sdlg_otherAmount',
+      'total amount': 'sdlg_totalAmount',
+      'total amount claimed': 'sdlg_totalAmount'
+    };
+    if (idMap[wanted]) {
+      var byId = findById(idMap[wanted]);
+      if (byId) return byId;
     }
 
-    var labels = Array.from(document.querySelectorAll('label, .sdlg-portal-field label, [data-sdlg-field]'));
-    var candidates = [];
-    for (var i = 0; i < labels.length; i++) {
-      var el = labels[i];
-      var norm = normalizeLabel(el.textContent);
-      if (!norm) continue;
-      if (norm === wanted || norm.indexOf(wanted) === 0 || wanted.indexOf(norm) === 0 || norm.indexOf(wanted) >= 0) {
-        candidates.push(el);
+    var byData = document.querySelector('[data-sdlg-field][data-label="' + String(labelText).replace(/"/g, '') + '"]');
+    if (byData && byData.matches('input,select,textarea')) return byData;
+
+    var nodes = document.querySelectorAll('[data-sdlg-field][data-label]');
+    for (var i = 0; i < nodes.length; i++) {
+      if (normalizeLabel(nodes[i].getAttribute('data-label')) === wanted) {
+        if (nodes[i].matches('input,select,textarea')) return nodes[i];
       }
     }
-    candidates.sort(function (a, b) {
-      return normalizeLabel(a.textContent).length - normalizeLabel(b.textContent).length;
-    });
 
-    for (var c = 0; c < candidates.length; c++) {
-      var label = candidates[c];
-      var forId = label.getAttribute && label.getAttribute('for');
-      if (forId) {
-        var direct = document.getElementById(forId);
-        if (direct && direct.matches && direct.matches('input,select,textarea')) return direct;
-      }
-      var wrap = (label.closest && label.closest('.sdlg-portal-field, .sdlg-field-wrap, [data-sdlg-extra-field], [data-sdlg-field]')) || label.parentElement;
-      if (wrap) {
-        var control = wrap.querySelector('input, select, textarea');
-        if (control) return control;
+    var labels = Array.from(document.querySelectorAll('label'));
+    for (var j = 0; j < labels.length; j++) {
+      var norm = normalizeLabel(labels[j].textContent);
+      if (norm === wanted || norm.indexOf(wanted) >= 0) {
+        var forId = labels[j].getAttribute('for');
+        if (forId) {
+          var d = document.getElementById(forId);
+          if (d) return d;
+        }
+        var wrap = labels[j].closest('div');
+        if (wrap) {
+          var ctrl = wrap.querySelector('input,select,textarea');
+          if (ctrl) return ctrl;
+        }
       }
     }
     return null;
   }
 
-  function setControlValue(control, value, forceFillEmpty) {
+  function setControlValue(control, value) {
     if (!control) return false;
     if (value == null || value === '') return false;
     var next = String(value);
     var cur = control.value != null ? String(control.value) : '';
-    if (!forceFillEmpty && !isBlankUi(cur) && cur !== next) return false;
-    control.value = next;
+    if (cur === next) return true;
+
+    // Native setter so React/controlled-ish UIs pick up the change
+    try {
+      var proto = control.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      var desc = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (desc && desc.set) desc.set.call(control, next);
+      else control.value = next;
+    } catch (_) {
+      control.value = next;
+    }
     if (typeof control.setAttribute === 'function') control.setAttribute('value', next);
     try {
       control.dispatchEvent(new Event('input', { bubbles: true }));
@@ -170,11 +207,11 @@
     return true;
   }
 
-  function setByLabels(labels, value, force) {
+  function setByLabels(labels, value) {
     if (isBlankUi(value)) return false;
     var ok = false;
     for (var i = 0; i < labels.length; i++) {
-      if (setControlValue(findFieldControl(labels[i]), value, force)) ok = true;
+      if (setControlValue(findFieldControl(labels[i]), value)) ok = true;
     }
     return ok;
   }
@@ -185,73 +222,66 @@
     var person = feedbackPersonValue(claim);
     var repairDt = repairDateValue(claim);
     var serviceMethod = clean(claim.repair_method);
-    var serviceType = 'Repair';
 
-    setByLabels(['Service Type'], serviceType, true);
-    setByLabels(['Service Method'], serviceMethod, true);
-
-    setByLabels(['Serial number', 'Serial Number', 'Serial No'], clean(claim.serial_no), true);
-    setByLabels(['Hour meter', 'Hour Meter', 'HM'], claim.hm_failure != null ? String(claim.hm_failure) : '', true);
+    setByLabels(['Service Type'], 'Repair');
+    setByLabels(['Service Method'], serviceMethod);
+    setByLabels(['Serial number', 'Serial Number'], clean(claim.serial_no));
+    setByLabels(['Hour meter'], claim.hm_failure != null ? String(claim.hm_failure) : '');
 
     var wmw = wholeMachineLabel(resolver);
-    if (wmw) setByLabels(['Whole Machine Warranty'], wmw, true);
+    if (wmw) setByLabels(['Whole Machine Warranty'], wmw);
 
-    setByLabels(['Feedback Person'], person, true);
-    setByLabels(['Failure Date'], formatPortalDate(claim.failure_date), true);
+    setByLabels(['Feedback Person'], person);
+    setByLabels(['Failure Date'], formatPortalDate(claim.failure_date));
+    setByLabels(['Date of repair report', 'Repair Date', 'Dealer Repair Date'], repairDt);
+    setByLabels(['Complaint'], clean(claim.fault_description));
+    setByLabels(['Fault Details'], clean(claim.cause_analyze) || clean(claim.comment));
+    setByLabels(['Machine Location'], clean(claim.failure_part_location));
 
-    // CRITICAL: portal uses "Date of repair report" not "Repair Date"
-    setByLabels([
-      'Date of repair report',
-      'Date of Repair Report',
-      'Repair Date',
-      'Dealer Repair Date',
-      'Repair Start Date',
-      'Date of repair'
-    ], repairDt, true);
+    if (claim.mileage_km != null) setByLabels(['Service Mileage (Km)', 'Service Mileage'], String(claim.mileage_km));
+    if (claim.labour_amount != null) setByLabels(['Labour Amount'], String(claim.labour_amount));
+    if (claim.mileage_amount != null) setByLabels(['Mileage Amount'], String(claim.mileage_amount));
+    if (claim.other_amount != null) setByLabels(['Other Amount'], String(claim.other_amount));
+    if (claim.total_amount != null) setByLabels(['Total Amount', 'Total Amount Claimed'], String(claim.total_amount));
 
-    setByLabels(['Complaint'], clean(claim.fault_description), true);
-    setByLabels(['Fault Details', 'Fault Detail'], clean(claim.cause_analyze) || clean(claim.comment), true);
-
-    setByLabels(['Machine Location'], clean(claim.failure_part_location), true);
-
-    if (claim.mileage_km != null && !isBlankUi(claim.mileage_km)) {
-      setByLabels(['Service Mileage (Km)', 'Service Mileage', 'Mileage'], String(claim.mileage_km), true);
-    }
-
-    if (claim.labour_amount != null) setByLabels(['Labour Amount'], String(claim.labour_amount), true);
-    if (claim.mileage_amount != null) setByLabels(['Mileage Amount'], String(claim.mileage_amount), true);
-    if (claim.other_amount != null) setByLabels(['Other Amount'], String(claim.other_amount), true);
-    if (claim.total_amount != null) setByLabels(['Total Amount', 'Total Amount Claimed'], String(claim.total_amount), true);
+    // Direct id fallback (portal fieldHtml)
+    setControlValue(findById('sdlg_repairDate'), repairDt);
+    setControlValue(findById('sdlg_serviceMethod'), serviceMethod);
 
     try {
-      console.info('[SDLG Helper] filled', claim.claim_id, 'repairDate=', repairDt || '(none)', 'method=', serviceMethod || '(empty in DB)');
+      console.info('[SDLG Helper] applied', claim.claim_id, 'repairDate=', repairDt || '(none)', 'method=', serviceMethod || '(empty)', 'el=', !!findById('sdlg_repairDate'));
     } catch (_) {}
   }
 
   async function run() {
-    if (scheduled) return;
+    if (scheduled || applying) return;
     scheduled = true;
     try {
       var claimId = findClaimId();
       if (!claimId) return;
-      var key = claimId + ':' + (++runSequence);
-      if (key === lastAppliedKey) return;
+      if (lastAppliedKey === claimId) {
+        // Re-apply only if repair date input still empty
+        var el = findById('sdlg_repairDate') || findFieldControl('Date of repair report');
+        if (el && !isBlankUi(el.value)) return;
+      }
+      applying = true;
       var claim = await loadClaim(claimId);
       if (!claim) return;
       var resolver = null;
-      try { resolver = await loadResolver(claimId); } catch (e) { console.warn('[SDLG Helper] resolver', e); }
+      try { resolver = await loadResolver(claimId); } catch (_) {}
       applyClaimData(claim, resolver);
-      lastAppliedKey = key;
+      lastAppliedKey = claimId;
     } catch (err) {
       console.warn('[SDLG Helper]', err && err.message ? err.message : err);
     } finally {
+      applying = false;
       scheduled = false;
     }
   }
 
   function schedule() {
-    if (scheduled) return;
-    setTimeout(run, 150);
+    if (scheduled || applying) return;
+    setTimeout(run, 200);
   }
 
   document.addEventListener('change', function (e) {
@@ -263,7 +293,10 @@
   }, true);
 
   if (typeof MutationObserver !== 'undefined' && document.body) {
-    var obs = new MutationObserver(function () { schedule(); });
+    var obs = new MutationObserver(function () {
+      if (applying) return;
+      schedule();
+    });
     obs.observe(document.body, { childList: true, subtree: true });
   }
   if (document.readyState === 'loading') {
@@ -271,7 +304,6 @@
   } else {
     schedule();
   }
-  setTimeout(schedule, 400);
-  setTimeout(schedule, 1200);
-  setTimeout(schedule, 2500);
+  setTimeout(schedule, 500);
+  setTimeout(schedule, 1500);
 })();
