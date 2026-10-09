@@ -1,88 +1,106 @@
 /**
- * Runtime fix: Feedback Person field.
- * v1.1 — also fill empty/Kosong/xxx placeholders from claims.technical_personnel
- * (name only, no Technician prefix).
+ * Runtime fix: Feedback Person + Feedback Contact.
+ * v1.2 — getSdlgSupabase, broader claim-id match, fill by id + label, never Kosong/xxx.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_FB_PERSON_FIX_V11__) return;
-  window.__SDLG_FB_PERSON_FIX_V11__ = true;
+  if (window.__SDLG_FB_PERSON_FIX_V12__) return;
+  window.__SDLG_FB_PERSON_FIX_V12__ = true;
 
   function clean(v) { return v == null ? '' : String(v).trim(); }
 
-  function feedbackPerson(claim) {
-    var n = clean(claim && claim.technical_personnel);
-    if (!n || /^unknown$/i.test(n)) return '';
-    n = n.replace(/^technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
-    return n;
-  }
-
-  function isBroken(v) {
-    var s = String(v || '');
-    return s.indexOf('sdlgFeedbackPerson') >= 0 || s.indexOf('${') >= 0;
-  }
-
   function isEmptyish(v) {
     var s = clean(v);
-    return !s || s === '\u2014' || s === '-' || /^xxx+$/i.test(s) || /^kosong$/i.test(s) || /^unknown$/i.test(s);
+    return !s || s === '\u2014' || s === '-' || s === '\u2013' || /^xxx+$/i.test(s) || /^kosong$/i.test(s) || /^unknown$/i.test(s);
   }
 
-  function needsStrip(v) {
-    return /^technician\s*[\u2014\u2013\-:]\s*/i.test(String(v || ''));
+  function stripTech(n) {
+    return clean(n).replace(/^technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
+  }
+
+  function personFrom(claim) {
+    try {
+      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson) {
+        var r = window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson.fromClaim(claim);
+        if (r) return r;
+      }
+    } catch (_) {}
+    return stripTech(claim && (claim.technical_personnel || claim.feedback_person || claim.technician_name || claim.technician));
+  }
+
+  function contactFrom(claim) {
+    try {
+      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackContact) {
+        var r = window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackContact.fromClaim(claim);
+        if (r) return r;
+      }
+    } catch (_) {}
+    return clean(claim && (claim.feedback_contact || claim.feedback_phone || claim.phone || claim.customer_phone || claim.mobile));
   }
 
   function findClaimId() {
+    try {
+      var q = new URLSearchParams(location.search || '');
+      var id = q.get('claim_id') || q.get('claimId') || q.get('id');
+      if (id) return clean(id);
+    } catch (_) {}
     var t = document.body ? document.body.innerText : '';
-    var m = t.match(/\b\d{4}-\d{4}-SDLG-PFR\b/);
+    var m = t.match(/\b\d{3,4}-\d{4}-SDLG-[A-Z0-9]+\b/i);
     return m ? m[0] : '';
   }
 
   function findClient() {
+    if (typeof window.getSdlgSupabase === 'function') {
+      try {
+        var c = window.getSdlgSupabase();
+        if (c && typeof c.from === 'function') return c;
+      } catch (_) {}
+    }
     var names = ['sdlgSupabase', 'supabaseClient', 'sb', 'db', 'SDLGSupabase'];
     for (var i = 0; i < names.length; i++) {
-      var c = window[names[i]];
-      if (c && typeof c.from === 'function') return c;
+      var x = window[names[i]];
+      if (x && typeof x.from === 'function') return x;
     }
     return null;
   }
 
-  function setFeedbackValue(person) {
-    if (person == null) return;
-    var nodes = document.querySelectorAll('input, textarea, [data-value]');
+  function setInput(el, value) {
+    if (!el) return;
+    var next = value == null ? '' : String(value);
+    try {
+      var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      var desc = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (desc && desc.set) desc.set.call(el, next);
+      else el.value = next;
+    } catch (_) {
+      el.value = next;
+    }
+    if (typeof el.setAttribute === 'function') el.setAttribute('value', next);
+    try {
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (_) {}
+  }
+
+  function fillField(id, labels, value) {
+    var out = isEmptyish(value) ? '\u2014' : String(value);
+    var byId = document.getElementById(id);
+    if (byId && (byId.tagName === 'INPUT' || byId.tagName === 'TEXTAREA')) {
+      if (isEmptyish(byId.value) || byId.value !== out) setInput(byId, out);
+      return;
+    }
+    var nodes = document.querySelectorAll('input, textarea');
     for (var i = 0; i < nodes.length; i++) {
       var el = nodes[i];
-      var cur = el.value != null ? el.value : (el.getAttribute && el.getAttribute('data-value')) || '';
       var near = el.closest ? el.closest('div, section, form, label') : null;
       var nearText = near ? (near.innerText || '') : '';
-      var isFbField = nearText.indexOf('Feedback Person') >= 0;
-      if (!isFbField && !isBroken(cur) && !needsStrip(cur)) continue;
-      if (!isBroken(cur) && !needsStrip(cur) && !isEmptyish(cur) && cur === person) continue;
-      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-        if (isBroken(cur) || needsStrip(cur) || isEmptyish(cur) || isFbField) {
-          if (el.value !== person) {
-            el.value = person;
-            el.setAttribute('value', person);
-            try {
-              el.dispatchEvent(new Event('input', { bubbles: true }));
-              el.dispatchEvent(new Event('change', { bubbles: true }));
-            } catch (_) {}
-          }
-        }
+      var hit = false;
+      for (var j = 0; j < labels.length; j++) {
+        if (nearText.indexOf(labels[j]) >= 0) { hit = true; break; }
       }
-      if (el.getAttribute && el.getAttribute('data-value') != null) {
-        if (isBroken(cur) || needsStrip(cur) || isEmptyish(cur) || isFbField) {
-          el.setAttribute('data-value', person);
-        }
-      }
-    }
-    var walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-    var textNodes = [];
-    while (walk.nextNode()) textNodes.push(walk.currentNode);
-    for (var t = 0; t < textNodes.length; t++) {
-      var node = textNodes[t];
-      if (node.nodeValue && (isBroken(node.nodeValue) || needsStrip(node.nodeValue))) {
-        node.nodeValue = person;
-      }
+      if (!hit) continue;
+      if (isEmptyish(el.value) || el.value !== out) setInput(el, out);
+      return;
     }
   }
 
@@ -102,14 +120,11 @@
       if (!client) return;
       var res = await client.from('claims').select('claim_id,technical_personnel').eq('claim_id', claimId).maybeSingle();
       if (res.error || !res.data) return;
-      var person = feedbackPerson(res.data);
-      var key = claimId + '|' + person;
-      if (key === lastKey && !isBroken(bodyText) && bodyText.indexOf('Technician') < 0) {
-        // still try fill if UI shows empty
-        if (!person) return;
-      }
-      setFeedbackValue(person || '');
-      lastKey = key;
+      var person = personFrom(res.data);
+      var contact = contactFrom(res.data);
+      fillField('sdlg_feedbackPerson', ['Feedback Person'], person);
+      fillField('sdlg_feedbackContact', ['Feedback Contact Information', 'Feedback Contact'], contact);
+      lastKey = claimId + '|' + person + '|' + contact;
     } catch (e) {
       console.warn('[SDLG FB fix]', e && e.message ? e.message : e);
     } finally {
