@@ -37,6 +37,7 @@
   <script src="./modules/supabase-client.js"></script>
   <script src="./modules/data-pipeline-guard.js"></script>
   <script src="./modules/claim-fields.js"></script>
+  <script src="./modules/sdlg-repository.js"></script>
   <script>
 window.SDLG_LOAD_XLSX = function () {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -6395,7 +6396,7 @@ function App() {
         }
     });
     // Infrastructure / Repository: one stable contract around Supabase I/O.
-    const SDLG_REPOSITORY = {
+    const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {
         async listClaims() {
             const PAGE_SIZE = 100;
             const all = [];
