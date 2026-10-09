@@ -3,25 +3,25 @@
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_CORE_IDENTITY_V1__) return;
-  root.__SDLG_CORE_IDENTITY_V1__ = true;
 
-  var MODEL_ALIASES = {
+  const MODEL_ALIASES = {
     L936H: ['L936H', 'L936'],
     L956H: ['L956H', 'L956'],
     L968F: ['L968F', 'L968'],
     L975H: ['L975H', 'L975']
   };
 
-  function modelKey(m) {
-    return String(m || '').trim().toUpperCase().replace(/\s+/g, '');
+  function modelKey(value) {
+    return String(value == null ? '' : value).trim().toUpperCase().replace(/\s+/g, '');
   }
 
-  function canonicalModel(m) {
-    var k = modelKey(m);
+  function canonicalModel(value) {
+    var k = modelKey(value);
     if (!k) return '';
     for (var base in MODEL_ALIASES) {
-      if (MODEL_ALIASES[base].indexOf(k) >= 0 || base === k) return base;
+      if (Object.prototype.hasOwnProperty.call(MODEL_ALIASES, base)) {
+        if (base === k || MODEL_ALIASES[base].indexOf(k) >= 0) return base;
+      }
     }
     return k;
   }
@@ -32,42 +32,52 @@
     return !!(ca && cb && ca === cb);
   }
 
-  function baseCustomerName(name) {
-    return String(name || '')
+  function baseCustomerName(value) {
+    return String(value == null ? '' : value)
       .replace(/\s+/g, ' ')
       .trim()
       .toUpperCase();
   }
 
-  function normalizeDealerCode(code) {
-    return String(code || '').trim().toUpperCase();
+  function normalizeDealerCode(value) {
+    return String(value == null ? '' : value).trim().toUpperCase();
   }
 
   function serialEquivalent(a, b) {
-    var sa = String(a || '').replace(/\s+/g, '').toUpperCase();
-    var sb = String(b || '').replace(/\s+/g, '').toUpperCase();
+    var sa = String(a == null ? '' : a).replace(/\s+/g, '').toUpperCase();
+    var sb = String(b == null ? '' : b).replace(/\s+/g, '').toUpperCase();
     if (!sa || !sb) return false;
     if (sa === sb) return true;
-    if (sa.length >= 6 && sb.length >= 6 && (sa.slice(-6) === sb.slice(-6))) return true;
+    if (sa.length >= 6 && sb.length >= 6 && sa.slice(-6) === sb.slice(-6)) return true;
     return false;
   }
 
-  function normalizeClaimCurrency(v) {
-    var s = String(v || '').trim().toUpperCase();
-    if (!s) return '';
+  function normalizeClaimCurrency(value, sourceText, dealerClaimNo) {
+    var s = String(value == null ? '' : value).trim().toUpperCase();
+    if (!s) {
+      var blob = String(sourceText || '') + ' ' + String(dealerClaimNo || '');
+      if (/\bIDR\b|\bRP\b|RUPIAH/i.test(blob)) return 'IDR';
+      if (/\bUSD\b|\$/i.test(blob)) return 'USD';
+      if (/\bCNY\b|\bRMB\b/i.test(blob)) return 'CNY';
+      return '';
+    }
     if (/IDR|RP|RUPIAH/.test(s)) return 'IDR';
     if (/USD|\$|DOLLAR/.test(s)) return 'USD';
     if (/CNY|RMB|YUAN/.test(s)) return 'CNY';
     return s;
   }
 
-  function effectiveClaimCurrency(row) {
-    if (!row) return '';
-    return normalizeClaimCurrency(row.currency || row.claim_currency || row.amount_currency || '');
+  function effectiveClaimCurrency(claim) {
+    if (!claim || typeof claim !== 'object') return '';
+    return normalizeClaimCurrency(
+      claim.currency || claim.claim_currency || claim.amount_currency,
+      claim.source_text || claim.raw_text,
+      claim.dealer_claim_no
+    );
   }
 
-  function inferCurrencyTokenFromSource(text) {
-    var s = String(text || '').toUpperCase();
+  function inferCurrencyTokenFromSource(rawText) {
+    var s = String(rawText == null ? '' : rawText).toUpperCase();
     if (/\bIDR\b|\bRP\b|RUPIAH/.test(s)) return 'IDR';
     if (/\bUSD\b|\$/.test(s)) return 'USD';
     if (/\bCNY\b|\bRMB\b/.test(s)) return 'CNY';
@@ -127,19 +137,11 @@
     } catch (_) {}
     return false;
   }
-  function getClient() {
-    try {
-      if (typeof root.getSdlgSupabase === 'function') {
-        var c = root.getSdlgSupabase();
-        if (c) return c;
-      }
-    } catch (_) {}
-    return root.sdlgSupabase || root.supabaseClient || null;
-  }
-  async function waitForSession(client) {
+  async function waitForSession(client, maxMs) {
     if (!client || !client.auth) return null;
+    var limit = typeof maxMs === 'number' ? maxMs : SESSION_WAIT_MS;
     var start = Date.now();
-    while (Date.now() - start < SESSION_WAIT_MS) {
+    while (Date.now() - start < limit) {
       try {
         var res = await client.auth.getSession();
         if (res && res.data && res.data.session) return res.data.session;
@@ -148,5 +150,46 @@
     }
     return null;
   }
-  root.SDLGPolicyRulesQuery = previous || function () { return Promise.resolve([]); };
-})(typeof window !== 'undefined' ? window : globalThis);
+  root.SDLGPolicyRulesQuery = async function (client, selectColumns, ruleCodes) {
+    try {
+      if (!client || typeof client.from !== 'function') {
+        if (typeof previous === 'function') return previous(client, selectColumns, ruleCodes);
+        return { data: null, error: new Error('No supabase client') };
+      }
+      if (hasStoredSessionHint()) {
+        try { await waitForSession(client, 1500); } catch (_) {}
+      }
+      var q = client.from('policy_rules').select(selectColumns || '*');
+      var res = await q;
+      var rows = res && res.data;
+      if (res && res.error) throw res.error;
+      var normalizedRows = (Array.isArray(rows) ? rows : []).map(function (row) {
+        if (!row || typeof row !== 'object') return row;
+        var out = Object.assign({}, row);
+        if (out.rule_code != null) out.rule_code = String(out.rule_code).trim();
+        return out;
+      });
+      var wanted = new Set((Array.isArray(ruleCodes) ? ruleCodes : []).map(function (code) {
+        return String(code == null ? '' : code).trim();
+      }).filter(Boolean));
+      var columns = String(selectColumns || '').split(',').map(function (v) { return v.trim(); }).filter(Boolean);
+      var data = normalizedRows.filter(function (row) {
+        return row && (!wanted.size || wanted.has(row.rule_code));
+      }).map(function (row) {
+        if (!columns.length) return row;
+        var mapped = {};
+        columns.forEach(function (key) { mapped[key] = row[key]; });
+        return mapped;
+      });
+      return { data: data, error: null, meta: { rowCount: normalizedRows.length } };
+    } catch (error) {
+      if (typeof previous === 'function') {
+        try {
+          var fallback = await previous(client, selectColumns, ruleCodes);
+          if (fallback && Array.isArray(fallback.data) && fallback.data.length) return fallback;
+        } catch (_) {}
+      }
+      return { data: null, error: error };
+    }
+  };
+})(window);
