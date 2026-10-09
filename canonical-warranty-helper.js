@@ -1,18 +1,27 @@
 (function () {
   'use strict';
 
-  // Canonical portal helper v1.2.4
-  // - Fix infinite re-apply (lastAppliedKey was always unique)
-  // - Prefer #sdlg_* ids and data-label from portal fieldHtml
+  // Canonical portal helper v1.2.5
+  // - Prefer window.SDLG_CLAIM_FIELDS when present (single field registry)
   // - Date of repair report + repair_method mapping
+  // - Stable lastAppliedKey (no log spam)
 
-  var CLAIM_SELECT = [
+  var DEFAULT_CLAIM_SELECT = [
     'claim_id','model','serial_no','customer','repair_method','technical_personnel',
     'causing_part_no','causing_part_desc','failure_part_location','fault_description',
     'cause_analyze','comment','parts','hm_failure','hm_completion','sales_date',
     'failure_date','dealer_repair_date','completion_date','dealer_claim_date',
     'labour_amount','mileage_amount','other_amount','total_amount','mileage_km'
   ].join(',');
+
+  function claimSelect() {
+    try {
+      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.CLAIM_SELECT) {
+        return window.SDLG_CLAIM_FIELDS.CLAIM_SELECT;
+      }
+    } catch (_) {}
+    return DEFAULT_CLAIM_SELECT;
+  }
 
   var scheduled = false;
   var lastAppliedKey = '';
@@ -79,7 +88,7 @@
   async function loadClaim(claimId) {
     var c = getClient();
     if (!c) throw new Error('No Supabase client');
-    var res = await c.from('claims').select(CLAIM_SELECT).eq('claim_id', claimId).maybeSingle();
+    var res = await c.from('claims').select(claimSelect()).eq('claim_id', claimId).maybeSingle();
     if (res.error) throw res.error;
     return res.data;
   }
@@ -95,12 +104,22 @@
   }
 
   function feedbackPersonValue(claim) {
+    try {
+      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson) {
+        return window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson.fromClaim(claim) || '';
+      }
+    } catch (_) {}
     var raw = clean(claim && claim.technical_personnel);
     if (!raw) return '';
     return raw.replace(/^\s*technician\s*[:\-]?\s*/i, '').trim();
   }
 
   function repairDateValue(claim) {
+    try {
+      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.repairDate) {
+        return window.SDLG_CLAIM_FIELDS.PORTAL_HOME.repairDate.fromClaim(claim) || '';
+      }
+    } catch (_) {}
     return formatPortalDate(claim && (claim.dealer_repair_date || claim.completion_date || claim.failure_date));
   }
 
@@ -119,7 +138,6 @@
     var wanted = normalizeLabel(labelText);
     if (!wanted) return null;
 
-    // Portal fieldHtml ids: sdlg_serviceMethod, sdlg_repairDate, etc.
     var idMap = {
       'service type': 'sdlg_serviceType',
       'service method': 'sdlg_serviceMethod',
@@ -190,7 +208,6 @@
     var cur = control.value != null ? String(control.value) : '';
     if (cur === next) return true;
 
-    // Native setter so React/controlled-ish UIs pick up the change
     try {
       var proto = control.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
       var desc = Object.getOwnPropertyDescriptor(proto, 'value');
@@ -244,7 +261,6 @@
     if (claim.other_amount != null) setByLabels(['Other Amount'], String(claim.other_amount));
     if (claim.total_amount != null) setByLabels(['Total Amount', 'Total Amount Claimed'], String(claim.total_amount));
 
-    // Direct id fallback (portal fieldHtml)
     setControlValue(findById('sdlg_repairDate'), repairDt);
     setControlValue(findById('sdlg_serviceMethod'), serviceMethod);
 
@@ -260,7 +276,6 @@
       var claimId = findClaimId();
       if (!claimId) return;
       if (lastAppliedKey === claimId) {
-        // Re-apply only if repair date input still empty
         var el = findById('sdlg_repairDate') || findFieldControl('Date of repair report');
         if (el && !isBlankUi(el.value)) return;
       }
