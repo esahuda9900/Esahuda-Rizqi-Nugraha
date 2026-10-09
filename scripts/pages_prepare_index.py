@@ -50,11 +50,7 @@ else:
 
 if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
     if "const SDLG_REPOSITORY = {" in data:
-        data = data.replace(
-            "const SDLG_REPOSITORY = {",
-            "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {",
-            1,
-        )
+        data = data.replace("const SDLG_REPOSITORY = {", "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {", 1)
         print("SDLG_REPOSITORY prefers window module")
 
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
@@ -123,19 +119,11 @@ def inline_module(path, marker):
 mod = Path("_site/modules") if Path("_site/modules").is_dir() else Path("modules")
 inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V3")
 inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
-inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V1")
+inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V11")
 
 if 'esc(unitPrice || "—")' in data:
-    data = data.replace(
-        'esc(unitPrice || "—")',
-        'esc((unitPrice === 0 || unitPrice === "0") ? "0.00" : (unitPrice || "0.00"))',
-        1,
-    )
-    data = data.replace(
-        'esc(amount || "—")',
-        'esc((amount === 0 || amount === "0") ? "0.00" : (amount || "0.00"))',
-        1,
-    )
+    data = data.replace('esc(unitPrice || "—")', 'esc((unitPrice === 0 || unitPrice === "0") ? "0.00" : (unitPrice || "0.00"))', 1)
+    data = data.replace('esc(amount || "—")', 'esc((amount === 0 || amount === "0") ? "0.00" : (amount || "0.00"))', 1)
     print("parts money 0.00")
 
 _no_copy = (
@@ -158,22 +146,14 @@ elif 'data-sdlg-copy data-target="#${id}"' in data:
     print("per-field Copy present")
 
 for a, b in [
-    (
-        'fieldHtml("labourAmount","Labour Amount",selectedClaim.labour_amount ?? "",false,false)',
-        'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)',
-    ),
-    (
-        'fieldHtml("mileageAmount","Mileage Amount",selectedClaim.mileage_amount ?? "",false,false)',
-        'fieldHtml("mileageAmount","Mileage Amount",(selectedClaim.mileage_amount == null || selectedClaim.mileage_amount === "") ? "0.00" : selectedClaim.mileage_amount,false,false)',
-    ),
-    (
-        'fieldHtml("otherAmount","Other Amount",selectedClaim.other_amount ?? "",false,false)',
-        'fieldHtml("otherAmount","Other Amount",(selectedClaim.other_amount == null || selectedClaim.other_amount === "") ? "0.00" : selectedClaim.other_amount,false,false)',
-    ),
-    (
-        'fieldHtml("totalAmount","Total Amount Claimed",selectedClaim.total_amount ?? "",false,false)',
-        'fieldHtml("totalAmount","Total Amount Claimed",(selectedClaim.total_amount == null || selectedClaim.total_amount === "") ? "0.00" : selectedClaim.total_amount,false,false)',
-    ),
+    ('fieldHtml("labourAmount","Labour Amount",selectedClaim.labour_amount ?? "",false,false)',
+     'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)'),
+    ('fieldHtml("mileageAmount","Mileage Amount",selectedClaim.mileage_amount ?? "",false,false)',
+     'fieldHtml("mileageAmount","Mileage Amount",(selectedClaim.mileage_amount == null || selectedClaim.mileage_amount === "") ? "0.00" : selectedClaim.mileage_amount,false,false)'),
+    ('fieldHtml("otherAmount","Other Amount",selectedClaim.other_amount ?? "",false,false)',
+     'fieldHtml("otherAmount","Other Amount",(selectedClaim.other_amount == null || selectedClaim.other_amount === "") ? "0.00" : selectedClaim.other_amount,false,false)'),
+    ('fieldHtml("totalAmount","Total Amount Claimed",selectedClaim.total_amount ?? "",false,false)',
+     'fieldHtml("totalAmount","Total Amount Claimed",(selectedClaim.total_amount == null || selectedClaim.total_amount === "") ? "0.00" : selectedClaim.total_amount,false,false)'),
 ]:
     if a in data:
         data = data.replace(a, b, 1)
@@ -209,7 +189,7 @@ if "data-sdlg-report-toggle" in data and "data-wired" not in data:
         print("report toggle script")
 
 for _src in [
-    "./modules/sdlg-hash-router.js?v=20261009-v1",
+    "./modules/sdlg-hash-router.js?v=20261009-v11",
     "./modules/sdlg-input-helper-ux.js?v=20261009-v19",
     "./modules/sdlg-portal-ux-v2.js?v=20261009-v22",
     "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
@@ -223,11 +203,13 @@ for _src in [
         data = data.replace("</body>", tag + "</body>", 1)
         print("injected", _src)
 
-# Hash routing: fix SDLG Input claim persistence + init
+# Hash: sdlgInputClaimId init
 _old_init = 'const [sdlgInputClaimId, setSdlgInputClaimId] = useState("");'
 _new_init = (
     'const [sdlgInputClaimId, setSdlgInputClaimId] = useState(() => {'
     ' try {'
+    '  var _hm = String(location.hash||"").match(/#?\\/?(?:sdlginput|claim)\\/([^/?#]+)/i);'
+    '  if (_hm) return decodeURIComponent(_hm[1]);'
     '  if (window.SDLGNavState && typeof window.SDLGNavState.restoreSdlgInputClaimId === "function") {'
     '    var _sid = window.SDLGNavState.restoreSdlgInputClaimId(); if (_sid) return _sid;'
     '  }'
@@ -242,32 +224,30 @@ _new_init = (
 )
 if _old_init in data:
     data = data.replace(_old_init, _new_init, 1)
-    print("hash: sdlgInputClaimId init from storage/hash")
+    print("hash: sdlgInputClaimId init")
 
 _old_sel = 'onSelectClaim: (id) => setSdlgInputClaimId(id)'
 _new_sel = (
     'onSelectClaim: (id) => { setSdlgInputClaimId(id);'
-    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||"")); } catch(_e){}'
-    ' try { localStorage.setItem("sdlg-warranty:last-claim:v1", String(id||"")); } catch(_e){}'
+    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||"")); localStorage.setItem("sdlg-warranty:last-claim:v1", String(id||"")); localStorage.setItem("sdlg-warranty:last-tab:v1:guest", "sdlginput"); } catch(_e){}'
     ' try { if (window.SDLGHashRouter) window.SDLGHashRouter.set({ tab:"sdlginput", claimId:id, mode:"sdlginput", replace:true });'
     ' else { window.history.replaceState(null,"", location.pathname + location.search + "#/sdlginput/" + encodeURIComponent(String(id||""))); }'
     ' } catch(_e){} }'
 )
 if _old_sel in data:
     data = data.replace(_old_sel, _new_sel, 1)
-    print("hash: onSelectClaim writes hash")
+    print("hash: onSelectClaim")
 
 _old_open = 'setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setDetailId(null); setEditing(false);'
 _new_open = (
     'setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setEditing(false);'
-    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(detail.claim_id||""));'
-    ' localStorage.setItem("sdlg-warranty:last-claim:v1", String(detail.claim_id||"")); } catch(_e){}'
+    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(detail.claim_id||"")); localStorage.setItem("sdlg-warranty:last-claim:v1", String(detail.claim_id||"")); localStorage.setItem("sdlg-warranty:last-tab:v1:guest", "sdlginput"); } catch(_e){}'
     ' try { if (window.SDLGHashRouter) window.SDLGHashRouter.set({ tab:"sdlginput", claimId:detail.claim_id, mode:"sdlginput", replace:true }); } catch(_e){}'
     ' setDetailId(null);'
 )
 if _old_open in data:
     data = data.replace(_old_open, _new_open, 1)
-    print("hash: open SDLG Input keeps claim in storage+hash")
+    print("hash: open SDLG Input")
 
 _old_fb = 'selectedClaimId: sdlgInputClaimId || (claims.find(c => !c.archived_at)?.claim_id || "")'
 _new_fb = (
@@ -278,7 +258,58 @@ _new_fb = (
 )
 if _old_fb in data:
     data = data.replace(_old_fb, _new_fb, 1)
-    print("hash: selectedClaimId prefers stored/hash over first claim")
+    print("hash: selectedClaimId fallback")
+
+# Early hash boot before React
+if "data-sdlg-hash-boot" not in data:
+    _early = (
+        '\n<script data-sdlg-hash-boot="1">\n'
+        '(function(){try{'  
+        'var h=String(location.hash||"");'
+        'var m=h.match(/#?\\/?(?:sdlginput|claim)\\/([^/?#]+)/i);'
+        'if(!m)return;'
+        'var id=decodeURIComponent(m[1]);'
+        'if(!/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(id))return;'
+        'localStorage.setItem("sdlg-warranty:last-claim:v1",id);'
+        'if(/sdlginput/i.test(h)){localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1",id);localStorage.setItem("sdlg-warranty:last-tab:v1:guest","sdlginput");}'
+        'else{localStorage.setItem("sdlg-warranty:last-tab:v1:guest","list");}'
+        '}catch(e){}})();\n</script>\n'
+    )
+    if "</head>" in data:
+        data = data.replace("</head>", _early + "</head>", 1)
+        print("early hash boot")
+
+# Tab init from hash
+_old_tab = 'const [tab, setTab] = useState(() => window.SDLGNavState?.restore("list") || "list");'
+_new_tab = (
+    'const [tab, setTab] = useState(() => {'
+    ' try {'
+    '  var _h = String(location.hash || "");'
+    '  if (/sdlginput/i.test(_h)) return "sdlginput";'
+    '  if (/#\\/?claim\\//i.test(_h)) return "list";'
+    '  var _t = localStorage.getItem("sdlg-warranty:last-tab:v1:guest");'
+    '  if (_t === "sdlginput" || _t === "list" || _t === "dashboard" || _t === "paste" || _t === "masters" || _t === "quality" || _t === "unit360") return _t;'
+    ' } catch (_e) {}'
+    ' return (window.SDLGNavState && window.SDLGNavState.restore && window.SDLGNavState.restore("list")) || "list";'
+    '});'
+)
+if _old_tab in data:
+    data = data.replace(_old_tab, _new_tab, 1)
+    print("tab init from hash")
+
+_old_p = "try { window.SDLGNavState?.persist(tab, null, detailId); } catch (_) {}"
+_new_p = (
+    'try {'
+    ' if (tab === "sdlginput") {'
+    '  var _cid = (typeof sdlgInputClaimId !== "undefined" && sdlgInputClaimId) ? sdlgInputClaimId : (localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1") || localStorage.getItem("sdlg-warranty:last-claim:v1") || null);'
+    '  window.SDLGNavState?.persist("sdlginput", null, _cid);'
+    ' } else { window.SDLGNavState?.persist(tab, null, detailId); }'
+    ' } catch (_) {}'
+)
+idx = data.find(_old_p)
+if idx >= 0 and 'tab === "sdlginput"' not in data[max(0, idx - 80):idx + 120]:
+    data = data.replace(_old_p, _new_p, 1)
+    print("persist respects sdlginput")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
