@@ -8,7 +8,6 @@ test -s "$HTML"
 fail() { echo "CONTRACT FAIL: $*"; exit 1; }
 ok() { echo "CONTRACT OK: $*"; }
 
-# Required strings (must exist)
 for needle in \
   'getSdlgSupabase' \
   'supabase-client.js' \
@@ -19,7 +18,10 @@ for needle in \
   'wo-claim-policy.js' \
   'wo-collision-modal.js' \
   'selectedClaim.repair_method' \
-  'window.SDLG_REPOSITORY ||'
+  'window.SDLG_REPOSITORY ||' \
+  'SDLGHashRouter' \
+  'sdlg-hash-router' \
+  'showBottomTaskbar'
 do
   grep -q "$needle" "$HTML" || fail "missing required: $needle"
   ok "has $needle"
@@ -27,6 +29,15 @@ done
 
 grep -qE 'portalValues.repairDate|Date of repair report' "$HTML" || fail "missing repairDate mapping"
 ok "has repairDate mapping"
+
+grep -qE '#/overview|#/claims|#/sdlg-input|#/master-data' "$HTML" || fail "missing hierarchical route markers"
+ok "has hierarchical route markers"
+
+if grep -q 'SDLGRouteFinish\|sdlg-route-finish\|sdlg-route-breadcrumb' "$HTML"; then
+  ok "has route-finish enhancements"
+else
+  echo "CONTRACT WARN: route-finish module not baked yet (non-fatal)"
+fi
 
 if grep -qE 'src="/modules/|src="/canonical-|src="/styles/' "$HTML"; then
   fail "absolute root path src=/modules|/canonical|/styles found"
@@ -38,9 +49,6 @@ if grep -q 'serviceMethod: selectedClaim.service_method || ""' "$HTML"; then
 fi
 ok "portal mapping not regressed"
 
-# --- createClient discipline (index.html only; modules checked separately) ---
-# Every createClient( must have getSdlgSupabase in the preceding ~1200 chars
-# (i.e. only allowed as fallback inside getSupabaseClient after singleton check).
 python3 - "$HTML" <<'PY'
 import sys
 from pathlib import Path
@@ -55,7 +63,6 @@ while True:
     n += 1
     window = html[max(0, i - 1200) : i]
     if "getSdlgSupabase" not in window:
-        # show a short snippet for the log
         snip = html[max(0, i - 40) : i + 40].replace("\n", " ")
         bad.append(snip)
     idx = i + 12
