@@ -1,25 +1,24 @@
 /**
- * SDLG Portal UX v2.1 — hierarchy + polish (sticky labels, mid-link hide, note banner, report wrap).
+ * SDLG Portal UX v2.2 — hierarchy + polish. Bottom sticky only; no top portal promo.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_PORTAL_UX_V21__) return;
-  root.__SDLG_PORTAL_UX_V21__ = true;
-  root.__SDLG_PORTAL_UX_V2__ = true;
+  if (root.__SDLG_PORTAL_UX_V22__) return;
+  root.__SDLG_PORTAL_UX_V22__ = true;
 
   function ensureCss() {
-    if (document.querySelector('link[data-sdlg-portal-helper-css="v21"]')) return;
-    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261008-v2.1'];
+    if (document.querySelector('link[data-sdlg-portal-helper-css="v22"]')) return;
+    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261009-v2.2'];
     try {
       if (/github\.io/i.test(location.host)) {
-        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261008-v2.1');
+        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261009-v2.2');
       }
     } catch (_) {}
     hrefs.forEach(function (href, i) {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
-      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v21' : String(i));
+      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v22' : String(i));
       (document.head || document.documentElement).appendChild(link);
     });
   }
@@ -29,6 +28,8 @@
   }
 
   function findPage() {
+    var page = document.querySelector('[data-sdlg-input-helper].page, .page[data-sdlg-input-helper]');
+    if (page) return page;
     var all = document.querySelector('[data-sdlg-copy-all]');
     if (!all) return null;
     var el = all;
@@ -43,7 +44,7 @@
     page.querySelectorAll('.card, [class*="card"], div[style*="border-radius:14px"]').forEach(function (card) {
       if (card.getAttribute('data-sdlg-section-role')) return;
       var text = (card.innerText || '').slice(0, 500);
-      if (card.querySelector('[data-sdlg-copy-all]') || (/Dealer Portal/i.test(text) && /Home/i.test(text) && /Copy All/i.test(text))) {
+      if (card.querySelector('[data-sdlg-copy-all]') || (/Dealer Portal/i.test(text) && /Home/i.test(text))) {
         card.setAttribute('data-sdlg-section-role', 'home');
         card.classList.add('sdlg-section-home');
       } else if (/Replacement Record/i.test(text)) {
@@ -134,32 +135,18 @@
   }
 
   function promotePortalLink(page) {
-    if (page.querySelector('[data-sdlg-portal-top]')) return;
-    var bottom = null;
-    page.querySelectorAll('a').forEach(function (a) {
-      if (/Buka Dealer Portal|Buka Portal|Buka SDLG Portal/i.test(a.textContent || '')) bottom = a;
-    });
-    var bar = document.createElement('div');
-    bar.className = 'sdlg-portal-top-actions';
-    bar.setAttribute('data-sdlg-portal-top', '1');
-    var openBtn = document.createElement('a');
-    openBtn.href = (bottom && bottom.getAttribute('href')) || portalUrl();
-    openBtn.target = '_blank';
-    openBtn.rel = 'noreferrer';
-    openBtn.className = 'primary-btn';
-    openBtn.textContent = 'Buka Dealer Portal';
-    bar.appendChild(openBtn);
-    var title = page.querySelector('.page-title');
-    if (title && title.parentElement) title.parentElement.insertAdjacentElement('afterend', bar);
-    else page.insertBefore(bar, page.firstChild);
+    /* USER FEEDBACK: do not add extra top "Buka Dealer Portal" — bottom sticky is enough */
   }
 
   function hideMidPortalLinks(page) {
     page.querySelectorAll('a').forEach(function (a) {
       if (!/Buka Dealer Portal|Buka Portal|Buka SDLG Portal/i.test(a.textContent || '')) return;
-      if (a.closest('[data-sdlg-portal-top]') || a.closest('#sdlg-portal-sticky-bar')) return;
-      a.classList.add('sdlg-portal-bottom-link');
-      a.setAttribute('data-sdlg-portal-mid', '1');
+      if (a.closest('#sdlg-portal-sticky-bar')) return;
+      a.style.display = 'none';
+    });
+    page.querySelectorAll('#sdlg-copy-all, [data-sdlg-copy-all]').forEach(function (btn) {
+      if (btn.closest('#sdlg-portal-sticky-bar')) return;
+      btn.style.display = 'none';
     });
   }
 
@@ -182,7 +169,7 @@
       if (el.classList.contains('sdlg-portal-note-banner')) return;
       el.classList.add('sdlg-portal-note-banner');
       var html = el.innerHTML;
-      el.innerHTML = '<span class="sdlg-portal-note-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span class="sdlg-portal-note-text">' + html + '</span>';
+      el.innerHTML = '<span class="sdlg-portal-note-icon" aria-hidden="true"></span><span class="sdlg-portal-note-text">' + html + '</span>';
       return;
     }
   }
@@ -192,27 +179,21 @@
     cards.forEach(function (card) {
       if (!/Report Naming|Nama Report/i.test(card.innerText || '')) return;
       card.classList.add('sdlg-section-report');
-      var divs = card.querySelectorAll('div');
-      for (var i = 0; i < divs.length; i++) {
-        var tx = (divs[i].textContent || '').trim();
-        if (/^SDLG\s+/i.test(tx) && tx.length > 20) {
-          divs[i].classList.add('sdlg-report-name-text');
-          divs[i].setAttribute('title', tx);
-          break;
-        }
-      }
     });
   }
 
   function clickCopyAll() {
     var btn = document.querySelector('[data-sdlg-copy-all]');
-    if (btn) btn.click();
+    if (btn) {
+      btn.style.display = '';
+      btn.click();
+      btn.style.display = 'none';
+    }
   }
 
   function ensureStickyBar(page) {
     var existing = document.getElementById('sdlg-portal-sticky-bar');
     if (existing) {
-      // upgrade labels if old
       existing.querySelectorAll('button, a').forEach(function (el) {
         if (el.textContent === 'Copy All') el.textContent = 'Copy Home Fields';
         if (el.textContent === 'Copy Parts') el.textContent = 'Copy Replacement';
@@ -255,7 +236,7 @@
   }
 
   function removeStickyIfLeft() {
-    if (document.querySelector('[data-sdlg-copy-all]')) return;
+    if (document.querySelector('[data-sdlg-input-helper], [data-sdlg-copy-all]')) return;
     var bar = document.getElementById('sdlg-portal-sticky-bar');
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
     document.documentElement.classList.remove('sdlg-has-portal-sticky');
@@ -277,7 +258,7 @@
       ensureReportNameFull(page);
       ensureStickyBar(page);
     } catch (err) {
-      console.warn('[SDLG portal-ux v2.1]', err);
+      console.warn('[SDLG portal-ux v2.2]', err);
     }
   }
 
@@ -293,5 +274,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPortalUXv2 = { version: '2.1.0', enhance: enhance };
+  root.SDLGPortalUXv2 = { version: '2.2.0', enhance: enhance };
 })(window);
