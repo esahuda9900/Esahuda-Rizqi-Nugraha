@@ -1,10 +1,11 @@
 /**
- * SDLG Route Finish v1.0 — year URL, unit360 serial, breadcrumb, NotFound, sub-tab hashes
+ * SDLG Route Finish v1.2 — year URL, unit360 serial, breadcrumb, NotFound, sub-tab hashes
+ * v1.2: no breadcrumb on SDLG Input (looked like empty/broken page)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_ROUTE_FINISH_V1__) return;
-  root.__SDLG_ROUTE_FINISH_V1__ = true;
+  if (root.__SDLG_ROUTE_FINISH_V12__) return;
+  root.__SDLG_ROUTE_FINISH_V12__ = true;
 
   function R() { return root.SDLGHashRouter || null; }
 
@@ -64,10 +65,8 @@
         parts.push('<span style="font-weight:800">' + route.params.year + '</span>');
       }
     } else if (route.page === 'sdlg-input') {
-      parts.push(link('SDLG Input', '#/sdlg-input'));
-      if (route.params && route.params.claimId) {
-        parts.push('<span style="font-weight:800">' + route.params.claimId + '</span>');
-      }
+      // No breadcrumb on SDLG Input — main nav already highlights the tab.
+      return '';
     } else if (route.page === 'master-data') {
       parts.push(link('Master Data', '#/master-data/customers'));
       if (route.params && route.params.type) {
@@ -93,7 +92,7 @@
     var id = 'sdlg-route-breadcrumb';
     var existing = document.getElementById(id);
     var html = breadcrumbHtml(route);
-    if (!html || route.page === 'overview') {
+    if (!html || route.page === 'overview' || route.page === 'sdlg-input') {
       if (existing) existing.remove();
       return;
     }
@@ -248,5 +247,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGRouteFinish = { version: '1.0.0', refresh: tick };
+  root.SDLGRouteFinish = { version: '1.2.0', refresh: tick };
 })(window);
