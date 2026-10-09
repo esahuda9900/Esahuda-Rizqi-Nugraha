@@ -101,7 +101,6 @@
         return stripTechPrefix(pickFirst(
           c.technical_personnel,
           c.feedback_person,
-          c.feedback_person_name,
           c.pic_name,
           c.person_in_charge,
           c.technician_name,
@@ -139,7 +138,6 @@
     stripTechPrefix: stripTechPrefix
   };
 
-  // Auto-load runtime portal fillers
   try {
     if (typeof document !== 'undefined') {
       function loadScript(src, attr) {
@@ -150,6 +148,7 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
+      loadScript('./modules/sdlg-hash-router.js?v=20261009-v1', 'data-sdlg-hash-router');
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v19', 'data-sdlg-input-helper-ux');
