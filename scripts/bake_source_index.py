@@ -28,6 +28,21 @@ if "<base " not in data.lower():
     changes.append("base href")
     print("OK base href")
 
+# Force repository to prefer extracted module
+if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {" not in data:
+    if "const SDLG_REPOSITORY = {" in data:
+        data = data.replace(
+            "const SDLG_REPOSITORY = {",
+            "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {",
+            1,
+        )
+        changes.append("SDLG_REPOSITORY prefer")
+        print("OK SDLG_REPOSITORY prefer")
+    else:
+        print("SKIP SDLG_REPOSITORY prefer (pattern missing)")
+else:
+    print("SKIP SDLG_REPOSITORY prefer (already)")
+
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
     'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
@@ -45,15 +60,6 @@ new_fields = (
     '        ${fieldHtml("complaint","Complaint",portalValues.complaint,true,true)}'
 )
 rep(old_fields, new_fields, "fieldHtml repairDate", 1)
-
-# Prefer extracted module
-if "const SDLG_REPOSITORY = window.SDLG_REPOSITORY" not in data:
-    rep(
-        "const SDLG_REPOSITORY = {",
-        "const SDLG_REPOSITORY = window.SDLG_REPOSITORY || {",
-        "SDLG_REPOSITORY window prefer",
-        1,
-    )
 
 NEW_FN = '''function getSupabaseClient() {
     if (typeof window.getSdlgSupabase === "function") {
@@ -104,3 +110,5 @@ inject_after("claim-fields.js", "./modules/sdlg-repository.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))
+for c in changes:
+    print(" -", c)
