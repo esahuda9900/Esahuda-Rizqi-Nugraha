@@ -123,6 +123,7 @@ def inline_module(path, marker):
 mod = Path("_site/modules") if Path("_site/modules").is_dir() else Path("modules")
 inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V3")
 inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
+inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V1")
 
 if 'esc(unitPrice || "—")' in data:
     data = data.replace(
@@ -137,7 +138,6 @@ if 'esc(unitPrice || "—")' in data:
     )
     print("parts money 0.00")
 
-# USER FEEDBACK: keep per-field Copy buttons
 _no_copy = (
     'return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff">'
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
@@ -209,6 +209,7 @@ if "data-sdlg-report-toggle" in data and "data-wired" not in data:
         print("report toggle script")
 
 for _src in [
+    "./modules/sdlg-hash-router.js?v=20261009-v1",
     "./modules/sdlg-input-helper-ux.js?v=20261009-v19",
     "./modules/sdlg-portal-ux-v2.js?v=20261009-v22",
     "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
@@ -221,6 +222,63 @@ for _src in [
     if "</body>" in data and f'src="./modules/{leaf}' not in data:
         data = data.replace("</body>", tag + "</body>", 1)
         print("injected", _src)
+
+# Hash routing: fix SDLG Input claim persistence + init
+_old_init = 'const [sdlgInputClaimId, setSdlgInputClaimId] = useState("");'
+_new_init = (
+    'const [sdlgInputClaimId, setSdlgInputClaimId] = useState(() => {'
+    ' try {'
+    '  if (window.SDLGNavState && typeof window.SDLGNavState.restoreSdlgInputClaimId === "function") {'
+    '    var _sid = window.SDLGNavState.restoreSdlgInputClaimId(); if (_sid) return _sid;'
+    '  }'
+    '  if (window.SDLGHashRouter && typeof window.SDLGHashRouter.claimId === "function") {'
+    '    var _hid = window.SDLGHashRouter.claimId(); if (_hid) return _hid;'
+    '  }'
+    '  var _ls = localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1") || localStorage.getItem("sdlg-warranty:last-claim:v1");'
+    '  if (_ls) return String(_ls);'
+    ' } catch(_e) {}'
+    ' return "";'
+    '});'
+)
+if _old_init in data:
+    data = data.replace(_old_init, _new_init, 1)
+    print("hash: sdlgInputClaimId init from storage/hash")
+
+_old_sel = 'onSelectClaim: (id) => setSdlgInputClaimId(id)'
+_new_sel = (
+    'onSelectClaim: (id) => { setSdlgInputClaimId(id);'
+    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||"")); } catch(_e){}'
+    ' try { localStorage.setItem("sdlg-warranty:last-claim:v1", String(id||"")); } catch(_e){}'
+    ' try { if (window.SDLGHashRouter) window.SDLGHashRouter.set({ tab:"sdlginput", claimId:id, mode:"sdlginput", replace:true });'
+    ' else { window.history.replaceState(null,"", location.pathname + location.search + "#/sdlginput/" + encodeURIComponent(String(id||""))); }'
+    ' } catch(_e){} }'
+)
+if _old_sel in data:
+    data = data.replace(_old_sel, _new_sel, 1)
+    print("hash: onSelectClaim writes hash")
+
+_old_open = 'setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setDetailId(null); setEditing(false);'
+_new_open = (
+    'setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setEditing(false);'
+    ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(detail.claim_id||""));'
+    ' localStorage.setItem("sdlg-warranty:last-claim:v1", String(detail.claim_id||"")); } catch(_e){}'
+    ' try { if (window.SDLGHashRouter) window.SDLGHashRouter.set({ tab:"sdlginput", claimId:detail.claim_id, mode:"sdlginput", replace:true }); } catch(_e){}'
+    ' setDetailId(null);'
+)
+if _old_open in data:
+    data = data.replace(_old_open, _new_open, 1)
+    print("hash: open SDLG Input keeps claim in storage+hash")
+
+_old_fb = 'selectedClaimId: sdlgInputClaimId || (claims.find(c => !c.archived_at)?.claim_id || "")'
+_new_fb = (
+    'selectedClaimId: sdlgInputClaimId'
+    ' || (typeof window !== "undefined" && window.SDLGHashRouter && window.SDLGHashRouter.claimId && window.SDLGHashRouter.claimId())'
+    ' || (typeof localStorage !== "undefined" && (localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1") || localStorage.getItem("sdlg-warranty:last-claim:v1")))'
+    ' || (claims.find(c => !c.archived_at)?.claim_id || "")'
+)
+if _old_fb in data:
+    data = data.replace(_old_fb, _new_fb, 1)
+    print("hash: selectedClaimId prefers stored/hash over first claim")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
