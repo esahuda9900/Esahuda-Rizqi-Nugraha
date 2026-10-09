@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -52,6 +52,7 @@ jobs:
           test -s _site/canonical-warranty-helper.js
 
           bash scripts/regression_contract.sh _site/index.html
+          bash scripts/regression_contract_modules.sh _site
 
           echo "Prepared SDLG static frontend for GitHub Pages (contract OK)."
 
@@ -63,3 +64,19 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Snapshot backup branch (auto)
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "sdlg-backup-bot"
+          git config user.email "sdlg-backup-bot@users.noreply.github.com"
+          DATE=$(date -u +%Y-%m-%d)
+          DAY_BRANCH="backup/auto-${DATE}"
+          # Point movable branches at this green SHA
+          git branch -f backup/latest-green "${GITHUB_SHA}"
+          git branch -f "${DAY_BRANCH}" "${GITHUB_SHA}"
+          git push -f origin backup/latest-green
+          git push -f origin "${DAY_BRANCH}"
+          echo "Backup snapshots: backup/latest-green and ${DAY_BRANCH} -> ${GITHUB_SHA}"

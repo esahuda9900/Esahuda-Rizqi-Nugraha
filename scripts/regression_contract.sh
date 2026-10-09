@@ -25,24 +25,49 @@ do
   ok "has $needle"
 done
 
-# repairDate either in portalValues or field label
 grep -qE 'portalValues.repairDate|Date of repair report' "$HTML" || fail "missing repairDate mapping"
 ok "has repairDate mapping"
 
-# Forbidden absolute paths (GitHub Project Pages break)
 if grep -qE 'src="/modules/|src="/canonical-|src="/styles/' "$HTML"; then
   fail "absolute root path src=/modules|/canonical|/styles found"
 fi
 ok "no absolute module paths"
 
-# Forbidden old portal mapping
 if grep -q 'serviceMethod: selectedClaim.service_method || ""' "$HTML"; then
   fail "old service_method-only portal mapping returned"
 fi
 ok "portal mapping not regressed"
 
-# createClient only allowed outside raw index inline is hard to enforce fully;
-# at least require singleton marker present
-grep -q 'getSdlgSupabase' "$HTML" || fail "singleton marker missing"
+# --- createClient discipline (index.html only; modules checked separately) ---
+# Every createClient( must have getSdlgSupabase in the preceding ~1200 chars
+# (i.e. only allowed as fallback inside getSupabaseClient after singleton check).
+python3 - "$HTML" <<'PY'
+import sys
+from pathlib import Path
+html = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")
+idx = 0
+n = 0
+bad = []
+while True:
+    i = html.find("createClient(", idx)
+    if i < 0:
+        break
+    n += 1
+    window = html[max(0, i - 1200) : i]
+    if "getSdlgSupabase" not in window:
+        # show a short snippet for the log
+        snip = html[max(0, i - 40) : i + 40].replace("\n", " ")
+        bad.append(snip)
+    idx = i + 12
+if n > 3:
+    print(f"CONTRACT FAIL: too many createClient( in index.html: {n} (max 3)")
+    sys.exit(1)
+if bad:
+    print("CONTRACT FAIL: createClient( without nearby getSdlgSupabase (dual-client risk):")
+    for b in bad:
+        print("  ...", b, "...")
+    sys.exit(1)
+print(f"CONTRACT OK: createClient( count={n}, all guarded by getSdlgSupabase")
+PY
 
 echo "All regression contracts passed for $HTML"

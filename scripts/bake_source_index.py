@@ -98,7 +98,6 @@ def inject_after(marker: str, script_src: str) -> None:
     changes.append(f"inject {script_src}")
     print(f"OK inject {script_src}")
 
-# Critical module chain (order matters)
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
 inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
@@ -106,6 +105,27 @@ inject_after("claim-fields.js", "./modules/sdlg-repository.js")
 inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
 inject_after("paste-parse-ux.js", "./modules/wo-claim-policy.js")
 inject_after("wo-claim-policy.js", "./modules/wo-collision-modal.js")
+
+# Final hard-require: if still missing, inject before </head>
+REQUIRED = [
+    "./modules/supabase-client.js",
+    "./modules/data-pipeline-guard.js",
+    "./modules/claim-fields.js",
+    "./modules/sdlg-repository.js",
+    "./modules/paste-parse-ux.js",
+    "./modules/wo-claim-policy.js",
+    "./modules/wo-collision-modal.js",
+]
+for src in REQUIRED:
+    leaf = src.rsplit("/", 1)[-1]
+    if leaf not in data:
+        tag = f'  <script src="{src}"></script>\n'
+        if "</head>" in data:
+            data = data.replace("</head>", tag + "</head>", 1)
+        else:
+            data = tag + data
+        changes.append(f"force inject {src}")
+        print(f"OK force inject {src}")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))

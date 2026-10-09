@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'scripts/bake_source_index.py'
+      - 'scripts/pages_prepare_index.py'
+      - 'scripts/regression_contract.sh'
       - '.github/workflows/bake-source-to-production.yml'
 
 permissions:
@@ -19,6 +21,13 @@ jobs:
       - name: Bake index.html (permanent source fixes)
         run: python3 scripts/bake_source_index.py
 
+      - name: Verify source contracts
+        run: |
+          set -euo pipefail
+          # Source must already contain critical injects after bake
+          bash scripts/regression_contract.sh index.html
+          bash scripts/regression_contract_modules.sh .
+
       - name: Commit if changed
         run: |
           git config user.name "sdlg-bake-bot"
@@ -27,6 +36,6 @@ jobs:
             echo "No changes to index.html"
           else
             git add index.html
-            git commit -m "chore(bake): source index.html = production-safe (paths, singleton, portalValues)"
+            git commit -m "chore(bake): source index.html = production-safe (paths, singleton, portalValues, injects)"
             git push origin HEAD
           fi
