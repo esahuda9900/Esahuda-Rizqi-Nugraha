@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Patch index.html for GitHub Project Pages deploy artifact."""
+"""Patch index.html for GitHub Project Pages deploy artifact.
+Idempotent safety net — source is already baked, this double-checks production artifact.
+"""
 from pathlib import Path
 import re
 
@@ -22,7 +24,7 @@ for a, b in [
 if "<base " not in data.lower():
     data = data.replace("<head>", '<head>\n  <base href="./">', 1)
 
-# 2) Rewrite getSupabaseClient to use singleton
+# 2) Rewrite getSupabaseClient to use singleton (if still old)
 NEW_FN = r'''function getSupabaseClient() {
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
@@ -44,11 +46,11 @@ NEW_FN = r'''function getSupabaseClient() {
 
 pattern = r"function getSupabaseClient\(\) \{[\s\S]*?\n\}"
 m = re.search(pattern, data)
-if m:
+if m and "getSdlgSupabase" not in m.group(0):
     data = data[: m.start()] + NEW_FN + data[m.end() :]
     print("getSupabaseClient rewritten")
 else:
-    print("WARNING: getSupabaseClient not found")
+    print("getSupabaseClient OK (singleton or missing)")
 
 # 3) loadClaims session recovery
 OLD_GATE = """const loadClaims = useCallback(async () => {
@@ -87,7 +89,7 @@ if OLD_GATE in data:
     data = data.replace(OLD_GATE, NEW_GATE, 1)
     print("loadClaims gate patched")
 else:
-    print("WARNING: loadClaims gate not found")
+    print("loadClaims gate already patched or different")
 
 data, n = re.subn(
     r"sdlgSupabase\.auth\.getSession\(\)",
@@ -96,50 +98,7 @@ data, n = re.subn(
 )
 print("getSession redirects:", n)
 
-# 5) Evidence: no source metadata
-idx = data.find("Evidence / Photo Context")
-if idx >= 0:
-    window = data[idx : idx + 1800]
-    old_ev = 'e?.value || ""'
-    new_ev = '(function(){var v=e&&e.value!=null&&String(e.value).trim()!==""?String(e.value):(e&&e.caption)||(e&&e.text)||(e&&e.description)||null;if(v&&String(v).trim())return String(v);if(e&&e.label)return String(e.label);return "—";})()'
-    if old_ev in window:
-        data = data[:idx] + window.replace(old_ev, new_ev, 1) + data[idx + 1800 :]
-        print("evidence cleaned")
-    else:
-        # already patched variant with source
-        import re as _re
-        m2 = _re.search(r'\(e\?\.value[^\)]{20,400}e\.source[^\)]{0,80}\)', window)
-        if m2:
-            data = data[:idx] + window.replace(m2.group(0), new_ev, 1) + data[idx + 1800 :]
-            print("evidence cleaned (regex)")
-
-# 6) Assessment Repair Date fallback
-old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
-new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
-if old_repair in data:
-    data = data.replace(old_repair, new_repair, 1)
-    print("Assessment Repair Date fallback")
-
-# 7) Row empty -> em dash
-old_row_full = '''const Row = ({ label, value, mono }) => {
-    if (value == null || value === "" || value === "null")
-        return null;
-    return (React.createElement("div", { style: { display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" } },
-        React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#94a3b8", paddingTop: 1 } }, label),
-        React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));
-};'''
-new_row_full = '''const Row = ({ label, value, mono }) => {
-    const empty = value == null || value === "" || value === "null" || value === "undefined";
-    const display = empty ? "—" : value;
-    return (React.createElement("div", { style: { display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" } },
-        React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#6b7280", paddingTop: 1 } }, label),
-        React.createElement("div", { style: { flex: 1, fontSize: 13, color: empty ? "#9ca3af" : "#1e293b", fontStyle: empty ? "italic" : "normal", fontFamily: mono && !empty ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(display))));
-};'''
-if old_row_full in data:
-    data = data.replace(old_row_full, new_row_full, 1)
-    print("Row empty fallback")
-
-# 8) Portal Home: REAL fix for empty Service Method + Date of repair report
+# 5) portalValues safety net
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
     'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
@@ -149,7 +108,7 @@ if old_sm in data:
     data = data.replace(old_sm, new_sm, 1)
     print("portalValues serviceMethod + repairDate")
 else:
-    print("WARNING: portalValues serviceMethod not found")
+    print("portalValues already uses repair_method")
 
 old_fields = (
     '${fieldHtml("failureDate","Failure Date",portalValues.failureDate,true,false)}\n'
@@ -164,16 +123,25 @@ if old_fields in data:
     data = data.replace(old_fields, new_fields, 1)
     print("fieldHtml Date of repair report")
 else:
-    print("WARNING: fieldHtml pair not found")
+    print("fieldHtml repairDate already present or different")
 
-# 9) Inject scripts
+# Assessment Repair Date
+old_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date })'
+new_repair = 'React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" })'
+if old_repair in data:
+    data = data.replace(old_repair, new_repair, 1)
+    print("Assessment Repair Date fallback")
+
+# Inject scripts (order matters)
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
     if leaf in data:
+        print("skip inject", leaf)
         return
     i = data.find(marker)
     if i < 0:
+        print("marker missing for", script_src)
         return
     end = data.find("</script>", i)
     if end < 0:
@@ -184,6 +152,7 @@ def inject_after(marker: str, script_src: str) -> None:
 
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
+inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")

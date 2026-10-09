@@ -44,10 +44,19 @@ jobs:
           test -s _site/index.html
           test -s _site/modules/supabase-client.js
           test -s _site/modules/data-pipeline-guard.js
+          test -s _site/modules/claim-fields.js
+          test -s _site/canonical-warranty-helper.js
+
+          # Smoke: production-safe artifact contract
           grep -q 'supabase-client.js' _site/index.html
           grep -q 'getSdlgSupabase' _site/index.html
+          grep -q 'claim-fields.js' _site/index.html || grep -q 'SDLG_CLAIM_FIELDS' _site/modules/claim-fields.js
+          grep -q 'selectedClaim.repair_method' _site/index.html
+          grep -q 'portalValues.repairDate\|Date of repair report' _site/index.html
           ! grep -qE 'src="/modules/' _site/index.html
-          echo "Prepared SDLG static frontend for GitHub Pages."
+          ! grep -q 'serviceMethod: selectedClaim.service_method || ""' _site/index.html
+
+          echo "Prepared SDLG static frontend for GitHub Pages (contract OK)."
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4

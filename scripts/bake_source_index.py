@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Permanently bake production-safe fixes into source index.html.
-
-Idempotent: safe to run multiple times.
-Fixes:
-- /modules/ -> ./modules/
-- base href
-- portalValues repair_method + repairDate
-- fieldHtml Date of repair report
-- getSupabaseClient singleton
-- loadClaims session recovery
-- Assessment Repair Date fallback
-- inject supabase-client + data-pipeline-guard
-"""
+"""Permanently bake production-safe fixes into source index.html. Idempotent."""
 from pathlib import Path
 import re
 
@@ -33,7 +21,6 @@ def rep(old: str, new: str, label: str, count: int = 0) -> None:
         changes.append(f"{label}:{n}")
     print(f"OK {label}: {n if not count else min(count, n)}")
 
-# Paths
 rep('src="/modules/', 'src="./modules/', "src /modules/")
 rep("src='/modules/", "src='./modules/", "src '/modules/")
 rep('href="/modules/', 'href="./modules/', "href /modules/")
@@ -46,7 +33,6 @@ if "<base " not in data.lower():
     changes.append("base href")
     print("OK base href")
 
-# portalValues
 old_sm = 'serviceMethod: selectedClaim.service_method || "",'
 new_sm = (
     'serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",\n'
@@ -65,7 +51,6 @@ new_fields = (
 )
 rep(old_fields, new_fields, "fieldHtml repairDate", 1)
 
-# getSupabaseClient
 NEW_FN = '''function getSupabaseClient() {
     if (typeof window.getSdlgSupabase === "function") {
         var c = window.getSdlgSupabase();
@@ -155,6 +140,7 @@ def inject_after(marker: str, script_src: str) -> None:
 
 inject_after("supabase.min.js", "./modules/supabase-client.js")
 inject_after("supabase-client.js", "./modules/data-pipeline-guard.js")
+inject_after("data-pipeline-guard.js", "./modules/claim-fields.js")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))
