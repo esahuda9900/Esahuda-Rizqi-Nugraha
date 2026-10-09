@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <base href="./">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
@@ -33,6 +34,8 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
           onerror="window.SDLGLoadDependencyFallback(this,'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js','ReactDOM runtime failed on both CDNs')"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"}))"></script>
+  <script src="./modules/supabase-client.js"></script>
+  <script src="./modules/data-pipeline-guard.js"></script>
   <script>
 window.SDLG_LOAD_XLSX = function () {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -3349,9 +3352,9 @@ html[data-theme="dark"] .sdlg-theme-switcher {
 
 
 
-  <script src="/modules/claim-parser-helpers.js"></script>
-<script src="/modules/master-resolution-ux.js"></script>
-<script src="/modules/export-table-helper.js"></script>
+  <script src="./modules/claim-parser-helpers.js"></script>
+<script src="./modules/master-resolution-ux.js"></script>
+<script src="./modules/export-table-helper.js"></script>
 
 
 <!-- SDLG_RESPONSIVE_UI_V10 --><style data-sdlg-responsive-v10>/* SDLG_RESPONSIVE_UI_V11 + V12 — mobile layout hardening
@@ -3738,11 +3741,22 @@ function getAppConfig() {
     }
 }
 function getSupabaseClient() {
-    // Public build is pinned to the production project. Do not allow browser-local
-    // config to redirect the app to an arbitrary Supabase project.
+    if (typeof window.getSdlgSupabase === "function") {
+        var c = window.getSdlgSupabase();
+        if (c) return c;
+    }
+    if (window.sdlgSupabase && typeof window.sdlgSupabase.from === "function") return window.sdlgSupabase;
+    if (window.supabaseClient && typeof window.supabaseClient.from === "function") return window.supabaseClient;
     if (!window.supabase || typeof window.supabase.createClient !== "function")
         throw new Error("Supabase JS gagal dimuat.");
-    return window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, { db: { retry: false }, auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }, global: { headers: { "X-Client-Info": "sdlg-warranty-public-v2.30.6" } } });
+    var created = window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, {
+        db: { retry: false },
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sb-frqvelcreczmnofldrga-auth-token" },
+        global: { headers: { "X-Client-Info": "sdlg-warranty-public-v2.30.7-singleton" } }
+    });
+    window.sdlgSupabase = created;
+    window.supabaseClient = created;
+    return created;
 }
 let sdlgSupabase = getSupabaseClient();
 // Expose the canonical client for legacy modules loaded before the main app.
@@ -6025,7 +6039,8 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
 
     const portalValues = {
         serviceType: "Repair",
-        serviceMethod: selectedClaim.service_method || "",
+        serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",
+        repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),
         serialNumber: selectedClaim.serial_no || selectedClaim.canonical_serial_no || "",
         hourMeter: numberText(selectedClaim.hm_failure),
         warrantyScope: wholeMachineWarranty,
@@ -6082,6 +6097,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         ${fieldHtml("feedbackPerson","Feedback Person",portalValues.feedbackPerson,true,false)}
         ${fieldHtml("feedbackContact","Feedback Contact Information",portalValues.feedbackContact,true,false)}
         ${fieldHtml("failureDate","Failure Date",portalValues.failureDate,true,false)}
+        ${fieldHtml("repairDate","Date of repair report",portalValues.repairDate,true,false)}
         ${fieldHtml("complaint","Complaint",portalValues.complaint,true,true)}
         ${fieldHtml("faultDetails","Fault Details",portalValues.faultDetails,false,true)}
         ${fieldHtml("machineLocation","Machine Location",portalValues.machineLocation,true,false)}
@@ -7219,7 +7235,23 @@ SDLG_REPOSITORY.listClaims = async function () {
     }, [loading]);
     // Load claims with pagination so the app keeps working beyond the Data API row cap.
     const loadClaims = useCallback(async () => {
-        if (!user) {
+        let effectiveUser = user;
+        if (!effectiveUser) {
+            try {
+                const _c = (typeof window.getSdlgSupabase === "function" && window.getSdlgSupabase()) || window.sdlgSupabase || sdlgSupabase;
+                if (_c && _c.auth) {
+                    const _s = await _c.auth.getSession();
+                    effectiveUser = _s?.data?.session?.user || null;
+                    if (effectiveUser) {
+                        setUser(effectiveUser);
+                        console.info("[SDLG] loadClaims recovered user from session", effectiveUser.email || effectiveUser.id);
+                    }
+                }
+            } catch (e) {
+                console.warn("[SDLG] loadClaims session recover failed", e);
+            }
+        }
+        if (!effectiveUser) {
             setClaims([]);
             setActionCenterRows([]);
             setLoading(false);
@@ -10932,7 +10964,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement(Row, { label: "Sales Date", value: detail.sales_date }),
                         React.createElement(Row, { label: "Failure Date", value: detail.failure_date }),
                         React.createElement(Row, { label: "HM Failure", value: detail.hm_failure != null ? detail.hm_failure + " hr" : null }),
-                        React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date }),
+                        React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" }),
                         React.createElement(Row, { label: "Completion Date", value: detail.completion_date }),
                         React.createElement(Row, { label: "Repair Status", value: detail.repair_status }),
                         React.createElement(Row, { label: "HM Completion", value: detail.hm_completion != null ? detail.hm_completion + " hr" : null }),
@@ -11220,7 +11252,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   };
 })();
 </script>
-<script src="/canonical-warranty-helper.js?v=20261006-mirror155"></script>
+<script src="./canonical-warranty-helper.js?v=20261006-mirror155"></script>
 
 
 
