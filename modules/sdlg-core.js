@@ -1,5 +1,6 @@
 /**
- * SDLG core helpers — identity + currency. Portal Mirror (Warranty Claim Form) disabled.
+ * SDLG core helpers — identity + currency. Portal Mirror disabled.
+ * Policy via sdlg_policy_runtime_snapshot RPC (service_policy_rules).
  */
 (function (root) {
   'use strict';
@@ -94,7 +95,7 @@
     root.SDLGEffectiveClaimCurrency = effectiveClaimCurrency;
     root.SDLGInferCurrencyToken = inferCurrencyTokenFromSource;
     root.SDLGCore = Object.freeze({
-      version: '1.1.7',
+      version: '1.1.8',
       modelKey: modelKey,
       canonicalModel: canonicalModel,
       modelsEquivalent: modelsEquivalent,
@@ -116,7 +117,7 @@
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', installIdentityHelpers, { once: true });
     }
-    // Portal Mirror (Warranty Claim Form) permanently disabled — do not load sdlg-repair-date-inject.js
+    // Portal Mirror disabled — do not load sdlg-repair-date-inject.js
     try { window.__SDLG_PORTAL_MIRROR_155__ = true; } catch (_) {}
   }
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -133,36 +134,78 @@
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i) || '';
         if (/sb-.*-auth-token/i.test(k) || /supabase\.auth/i.test(k)) return true;
+        if (k.indexOf('supabase') !== -1 && k.toLowerCase().indexOf('auth') !== -1) return true;
       }
     } catch (_) {}
     return false;
   }
   async function waitForSession(client, maxMs) {
-    if (!client || !client.auth) return null;
-    var limit = typeof maxMs === 'number' ? maxMs : SESSION_WAIT_MS;
-    var start = Date.now();
-    while (Date.now() - start < limit) {
+    var started = Date.now();
+    var session = null;
+    while (Date.now() - started < maxMs) {
       try {
-        var res = await client.auth.getSession();
-        if (res && res.data && res.data.session) return res.data.session;
+        var sessionResult = await client.auth.getSession();
+        session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+        if (session && session.access_token) return session;
       } catch (_) {}
       await sleep(SESSION_POLL_MS);
     }
+    try {
+      var finalResult = await client.auth.getSession();
+      session = finalResult && finalResult.data ? finalResult.data.session : null;
+      if (session && session.access_token) return session;
+    } catch (_) {}
     return null;
   }
   root.SDLGPolicyRulesQuery = async function (client, selectColumns, ruleCodes) {
     try {
-      if (!client || typeof client.from !== 'function') {
-        if (typeof previous === 'function') return previous(client, selectColumns, ruleCodes);
-        return { data: null, error: new Error('No supabase client') };
+      if (!client || !client.auth || typeof client.rpc !== 'function') {
+        return { data: [], error: null, deferred: true };
       }
-      if (hasStoredSessionHint()) {
-        try { await waitForSession(client, 1500); } catch (_) {}
+      var session = null;
+      try {
+        var quick = await client.auth.getSession();
+        session = quick && quick.data ? quick.data.session : null;
+      } catch (_) {}
+      if ((!session || !session.access_token) && hasStoredSessionHint()) {
+        session = await waitForSession(client, SESSION_WAIT_MS);
       }
-      var q = client.from('policy_rules').select(selectColumns || '*');
-      var res = await q;
-      var rows = res && res.data;
-      if (res && res.error) throw res.error;
+      if (!session || !session.access_token) {
+        return { data: [], error: null, deferred: true };
+      }
+      // Correct source: RPC over service_policy_rules (table policy_rules does NOT exist)
+      var rpc = await client.rpc('sdlg_policy_runtime_snapshot');
+      if (rpc && rpc.error) return { data: null, error: rpc.error };
+      var payload = rpc && rpc.data != null ? rpc.data : [];
+      var normalizeJsonValue = function (value) {
+        if (typeof value !== 'string') return value;
+        try { return JSON.parse(value); } catch (_) { return value; }
+      };
+      var unwrapPolicyPayload = function (value) {
+        var current = normalizeJsonValue(value);
+        for (var depth = 0; depth < 5; depth++) {
+          current = normalizeJsonValue(current);
+          if (Array.isArray(current)) {
+            if (current.length === 1 && current[0] && typeof current[0] === 'object') {
+              var one = current[0];
+              if (Array.isArray(one.service_policy_rules)) return one.service_policy_rules;
+              if (one.sdlg_policy_runtime_snapshot !== undefined) { current = one.sdlg_policy_runtime_snapshot; continue; }
+              if (one.data !== undefined) { current = one.data; continue; }
+              if (one.result !== undefined) { current = one.result; continue; }
+            }
+            return current;
+          }
+          if (current && typeof current === 'object') {
+            if (Array.isArray(current.service_policy_rules)) return current.service_policy_rules;
+            if (current.sdlg_policy_runtime_snapshot !== undefined) { current = current.sdlg_policy_runtime_snapshot; continue; }
+            if (current.data !== undefined) { current = current.data; continue; }
+            if (current.result !== undefined) { current = current.result; continue; }
+          }
+          return [];
+        }
+        return [];
+      };
+      var rows = unwrapPolicyPayload(payload);
       var normalizedRows = (Array.isArray(rows) ? rows : []).map(function (row) {
         if (!row || typeof row !== 'object') return row;
         var out = Object.assign({}, row);
