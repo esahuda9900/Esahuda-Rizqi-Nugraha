@@ -1,24 +1,24 @@
 /**
- * SDLG Portal UX v2.2 — hierarchy + polish. Bottom sticky only; no top portal promo.
+ * SDLG Portal UX v2.3 — sticky taskbar only on real Input Helper page.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_PORTAL_UX_V22__) return;
-  root.__SDLG_PORTAL_UX_V22__ = true;
+  if (root.__SDLG_PORTAL_UX_V23__) return;
+  root.__SDLG_PORTAL_UX_V23__ = true;
 
   function ensureCss() {
-    if (document.querySelector('link[data-sdlg-portal-helper-css="v22"]')) return;
-    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261009-v2.2'];
+    if (document.querySelector('link[data-sdlg-portal-helper-css="v23"]')) return;
+    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261009-v2.3'];
     try {
       if (/github\.io/i.test(location.host)) {
-        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261009-v2.2');
+        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261009-v2.3');
       }
     } catch (_) {}
     hrefs.forEach(function (href, i) {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
-      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v22' : String(i));
+      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v23' : String(i));
       (document.head || document.documentElement).appendChild(link);
     });
   }
@@ -27,17 +27,25 @@
     return 'https://crm.sdlg.com/main.aspx?appid=2097e5d7-73ca-4f97-aae3-94c5e34bea39&forceUCI=1&pagetype=entityrecord&etn=new_srv_workorder';
   }
 
+  function isInputHelperSurface() {
+    try {
+      if (window.SDLGHashRouter && typeof window.SDLGHashRouter.showBottomTaskbar === 'function') {
+        if (!window.SDLGHashRouter.showBottomTaskbar()) return false;
+      }
+    } catch (_) {}
+    var page = document.querySelector('.page');
+    if (!page) return false;
+    var title = '';
+    try { title = String((page.querySelector('.page-title') || {}).textContent || '').toLowerCase(); } catch (_) {}
+    if (/warranty claim input helper|sdlg input helper/.test(title)) return true;
+    var all = page.querySelector('[data-sdlg-copy-all]');
+    if (all && all.offsetParent !== null && /input helper|dealer portal/i.test(title)) return true;
+    return false;
+  }
+
   function findPage() {
-    var page = document.querySelector('[data-sdlg-input-helper].page, .page[data-sdlg-input-helper]');
-    if (page) return page;
-    var all = document.querySelector('[data-sdlg-copy-all]');
-    if (!all) return null;
-    var el = all;
-    for (var i = 0; i < 14 && el; i++) {
-      if (el.classList && el.classList.contains('page')) return el;
-      el = el.parentElement;
-    }
-    return all.closest('.page') || all.parentElement;
+    if (!isInputHelperSurface()) return null;
+    return document.querySelector('.page') || null;
   }
 
   function markSections(page) {
@@ -134,9 +142,7 @@
     else { att.removeAttribute('hidden'); att.classList.remove('sdlg-section-hidden'); }
   }
 
-  function promotePortalLink(page) {
-    /* USER FEEDBACK: do not add extra top "Buka Dealer Portal" — bottom sticky is enough */
-  }
+  function promotePortalLink() {}
 
   function hideMidPortalLinks(page) {
     page.querySelectorAll('a').forEach(function (a) {
@@ -175,8 +181,7 @@
   }
 
   function ensureReportNameFull(page) {
-    var cards = page.querySelectorAll('.card, [class*="card"]');
-    cards.forEach(function (card) {
+    page.querySelectorAll('.card, [class*="card"]').forEach(function (card) {
       if (!/Report Naming|Nama Report/i.test(card.innerText || '')) return;
       card.classList.add('sdlg-section-report');
     });
@@ -184,14 +189,11 @@
 
   function clickCopyAll() {
     var btn = document.querySelector('[data-sdlg-copy-all]');
-    if (btn) {
-      btn.style.display = '';
-      btn.click();
-      btn.style.display = 'none';
-    }
+    if (btn) { btn.style.display = ''; btn.click(); btn.style.display = 'none'; }
   }
 
-  function ensureStickyBar(page) {
+  function ensureStickyBar() {
+    if (!isInputHelperSurface()) { removeStickyIfLeft(); return; }
     var existing = document.getElementById('sdlg-portal-sticky-bar');
     if (existing) {
       existing.querySelectorAll('button, a').forEach(function (el) {
@@ -236,7 +238,7 @@
   }
 
   function removeStickyIfLeft() {
-    if (document.querySelector('[data-sdlg-input-helper], [data-sdlg-copy-all]')) return;
+    if (isInputHelperSurface()) return;
     var bar = document.getElementById('sdlg-portal-sticky-bar');
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
     document.documentElement.classList.remove('sdlg-has-portal-sticky');
@@ -244,6 +246,7 @@
 
   function enhance() {
     ensureCss();
+    if (!isInputHelperSurface()) { removeStickyIfLeft(); return; }
     var page = findPage();
     if (!page) { removeStickyIfLeft(); return; }
     try {
@@ -251,14 +254,14 @@
       markSections(page);
       collapseIov(page);
       hideEmptyAttachments(page);
-      promotePortalLink(page);
+      promotePortalLink();
       hideMidPortalLinks(page);
       styleFieldCopyButtons(page);
       upgradeNoteBanner(page);
       ensureReportNameFull(page);
-      ensureStickyBar(page);
+      ensureStickyBar();
     } catch (err) {
-      console.warn('[SDLG portal-ux v2.2]', err);
+      console.warn('[SDLG portal-ux v2.3]', err);
     }
   }
 
@@ -274,5 +277,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPortalUXv2 = { version: '2.2.0', enhance: enhance };
+  root.SDLGPortalUXv2 = { version: '2.3.0', enhance: enhance };
 })(window);
