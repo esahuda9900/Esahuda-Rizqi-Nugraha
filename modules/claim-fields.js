@@ -143,7 +143,7 @@
   try {
     if (typeof document !== 'undefined' && !document.querySelector('script[data-sdlg-fb-fix]')) {
       var s = document.createElement('script');
-      s.src = './modules/feedback-person-fix.js?v=20261009-v12';
+      s.src = './modules/feedback-person-fix.js?v=20261009-v13';
       s.async = true;
       s.setAttribute('data-sdlg-fb-fix', '1');
       (document.head || document.documentElement).appendChild(s);
