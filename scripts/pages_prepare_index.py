@@ -119,7 +119,7 @@ def inline_module(path, marker):
 mod = Path("_site/modules") if Path("_site/modules").is_dir() else Path("modules")
 inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V3")
 inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
-inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V11")
+inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V20")
 
 if 'esc(unitPrice || "—")' in data:
     data = data.replace('esc(unitPrice || "—")', 'esc((unitPrice === 0 || unitPrice === "0") ? "0.00" : (unitPrice || "0.00"))', 1)
@@ -189,9 +189,9 @@ if "data-sdlg-report-toggle" in data and "data-wired" not in data:
         print("report toggle script")
 
 for _src in [
-    "./modules/sdlg-hash-router.js?v=20261009-v11",
-    "./modules/sdlg-input-helper-ux.js?v=20261009-v19",
-    "./modules/sdlg-portal-ux-v2.js?v=20261009-v22",
+    "./modules/sdlg-hash-router.js?v=20261009-v20",
+    "./modules/sdlg-input-helper-ux.js?v=20261009-v191",
+    "./modules/sdlg-portal-ux-v2.js?v=20261009-v23",
     "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
 ]:
     leaf = _src.split("/")[-1].split("?")[0]
@@ -203,16 +203,12 @@ for _src in [
         data = data.replace("</body>", tag + "</body>", 1)
         print("injected", _src)
 
-# Hash: sdlgInputClaimId init
 _old_init = 'const [sdlgInputClaimId, setSdlgInputClaimId] = useState("");'
 _new_init = (
     'const [sdlgInputClaimId, setSdlgInputClaimId] = useState(() => {'
     ' try {'
-    '  var _hm = String(location.hash||"").match(/#?\\/?(?:sdlginput|claim)\\/([^/?#]+)/i);'
+    '  var _hm = String(location.hash||"").match(/#?\\/?(?:sdlg-input|sdlginput|claim)\\/([^/?#]+)/i);'
     '  if (_hm) return decodeURIComponent(_hm[1]);'
-    '  if (window.SDLGNavState && typeof window.SDLGNavState.restoreSdlgInputClaimId === "function") {'
-    '    var _sid = window.SDLGNavState.restoreSdlgInputClaimId(); if (_sid) return _sid;'
-    '  }'
     '  if (window.SDLGHashRouter && typeof window.SDLGHashRouter.claimId === "function") {'
     '    var _hid = window.SDLGHashRouter.claimId(); if (_hid) return _hid;'
     '  }'
@@ -231,7 +227,7 @@ _new_sel = (
     'onSelectClaim: (id) => { setSdlgInputClaimId(id);'
     ' try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||"")); localStorage.setItem("sdlg-warranty:last-claim:v1", String(id||"")); localStorage.setItem("sdlg-warranty:last-tab:v1:guest", "sdlginput"); } catch(_e){}'
     ' try { if (window.SDLGHashRouter) window.SDLGHashRouter.set({ tab:"sdlginput", claimId:id, mode:"sdlginput", replace:true });'
-    ' else { window.history.replaceState(null,"", location.pathname + location.search + "#/sdlginput/" + encodeURIComponent(String(id||""))); }'
+    ' else { window.history.replaceState(null,"", location.pathname + location.search + "#/sdlg-input/" + encodeURIComponent(String(id||""))); }'
     ' } catch(_e){} }'
 )
 if _old_sel in data:
@@ -260,33 +256,42 @@ if _old_fb in data:
     data = data.replace(_old_fb, _new_fb, 1)
     print("hash: selectedClaimId fallback")
 
-# Early hash boot before React
 if "data-sdlg-hash-boot" not in data:
     _early = (
         '\n<script data-sdlg-hash-boot="1">\n'
         '(function(){try{'  
         'var h=String(location.hash||"");'
-        'var m=h.match(/#?\\/?(?:sdlginput|claim)\\/([^/?#]+)/i);'
-        'if(!m)return;'
-        'var id=decodeURIComponent(m[1]);'
-        'if(!/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(id))return;'
+        'var m=h.match(/#?\\/?(?:sdlg-input|sdlginput|claim)\\/([^/?#]+)/i);'
+        'if(m){var id=decodeURIComponent(m[1]);'
+        'if(/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(id)){'  
         'localStorage.setItem("sdlg-warranty:last-claim:v1",id);'
-        'if(/sdlginput/i.test(h)){localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1",id);localStorage.setItem("sdlg-warranty:last-tab:v1:guest","sdlginput");}'
-        'else{localStorage.setItem("sdlg-warranty:last-tab:v1:guest","list");}'
+        'if(/sdlg-input|sdlginput/i.test(h)){localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1",id);localStorage.setItem("sdlg-warranty:last-tab:v1:guest","sdlginput");}'
+        'else{localStorage.setItem("sdlg-warranty:last-tab:v1:guest","list");}}}'  
+        'if(/#\\/?overview/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","dashboard");'
+        'if(/#\\/?claims/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","list");'
+        'if(/#\\/?new-claim/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","paste");'
+        'if(/#\\/?master-data/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","masters");'
+        'if(/#\\/?unit360/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","unit360");'
+        'if(/#\\/?data-quality/i.test(h))localStorage.setItem("sdlg-warranty:last-tab:v1:guest","quality");'
         '}catch(e){}})();\n</script>\n'
     )
     if "</head>" in data:
         data = data.replace("</head>", _early + "</head>", 1)
         print("early hash boot")
 
-# Tab init from hash
 _old_tab = 'const [tab, setTab] = useState(() => window.SDLGNavState?.restore("list") || "list");'
 _new_tab = (
     'const [tab, setTab] = useState(() => {'
     ' try {'
     '  var _h = String(location.hash || "");'
-    '  if (/sdlginput/i.test(_h)) return "sdlginput";'
-    '  if (/#\\/?claim\\//i.test(_h)) return "list";'
+    '  if (/sdlg-input|sdlginput/i.test(_h)) return "sdlginput";'
+    '  if (/#\\/?new-claim|#\\/?paste/i.test(_h)) return "paste";'
+    '  if (/#\\/?master-data|#\\/?masters/i.test(_h)) return "masters";'
+    '  if (/#\\/?data-quality/i.test(_h)) return "quality";'
+    '  if (/#\\/?unit360/i.test(_h)) return "unit360";'
+    '  if (/#\\/?overview/i.test(_h)) return "dashboard";'
+    '  if (/#\\/?claims|#\\/?claim\\//i.test(_h)) return "list";'
+    '  if (window.SDLGHashRouter && typeof window.SDLGHashRouter.tabForRoute === "function") { var _tr = window.SDLGHashRouter.tabForRoute(); if (_tr) return _tr; }'
     '  var _t = localStorage.getItem("sdlg-warranty:last-tab:v1:guest");'
     '  if (_t === "sdlginput" || _t === "list" || _t === "dashboard" || _t === "paste" || _t === "masters" || _t === "quality" || _t === "unit360") return _t;'
     ' } catch (_e) {}'
@@ -295,7 +300,7 @@ _new_tab = (
 )
 if _old_tab in data:
     data = data.replace(_old_tab, _new_tab, 1)
-    print("tab init from hash")
+    print("tab init from hierarchical hash")
 
 _old_p = "try { window.SDLGNavState?.persist(tab, null, detailId); } catch (_) {}"
 _new_p = (
@@ -310,6 +315,27 @@ idx = data.find(_old_p)
 if idx >= 0 and 'tab === "sdlginput"' not in data[max(0, idx - 80):idx + 120]:
     data = data.replace(_old_p, _new_p, 1)
     print("persist respects sdlginput")
+
+_old_nav = "onClick: () => { setTab(t); setDetailId(null); }"
+_new_nav = (
+    "onClick: () => { setTab(t); setDetailId(null);"
+    " try { if (window.SDLGHashRouter && window.SDLGHashRouter.setFromTab) window.SDLGHashRouter.setFromTab(t, null);"
+    " else { var _map={dashboard:'#/overview',list:'#/claims',paste:'#/new-claim',sdlginput:'#/sdlg-input',masters:'#/master-data',quality:'#/data-quality',unit360:'#/unit360'};"
+    " window.history.pushState(null,'', location.pathname + location.search + (_map[t]||'#/overview')); } } catch(_e){} }"
+)
+if _old_nav in data:
+    data = data.replace(_old_nav, _new_nav, 1)
+    print("nav click writes hierarchical hash")
+
+_old_row = "onClick: () => setDetailId(c.claim_id)"
+_new_row = (
+    "onClick: () => { setDetailId(c.claim_id);"
+    " try { if (window.SDLGHashRouter) window.SDLGHashRouter.navigate('claim', { claimId: c.claim_id }, { subTab: 'overview' });"
+    " else { window.history.pushState(null,'', location.pathname + location.search + '#/claim/' + encodeURIComponent(c.claim_id)); } } catch(_e){} }"
+)
+if _old_row in data:
+    data = data.replace(_old_row, _new_row, 1)
+    print("claim row writes #/claim/id")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
