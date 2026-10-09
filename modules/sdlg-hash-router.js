@@ -1,15 +1,11 @@
 /**
- * SDLG Hash Router v1.0 — GitHub Pages–safe routing
- * Formats:
- *   #/list | #/dashboard | #/paste | #/masters | #/quality | #/unit360
- *   #/claim/0250-2026-SDLG-PFR
- *   #/sdlginput/0250-2026-SDLG-PFR
- * Legacy: #claim/ID
+ * SDLG Hash Router v1.1 — GitHub Pages–safe routing
+ * Formats: #/list #/claim/ID #/sdlginput/ID
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_HASH_ROUTER_V1__) return;
-  root.__SDLG_HASH_ROUTER_V1__ = true;
+  if (root.__SDLG_HASH_ROUTER_V1_1__) return;
+  root.__SDLG_HASH_ROUTER_V1_1__ = true;
 
   var CLAIM_KEY = 'sdlg-warranty:last-claim:v1';
   var TAB_KEY = 'sdlg-warranty:last-tab:v1:guest';
@@ -18,6 +14,21 @@
     dashboard: true, list: true, claims: true, paste: true,
     sdlginput: true, masters: true, quality: true, unit360: true
   };
+
+  (function seedFromHash() {
+    try {
+      var h = String(root.location.hash || '');
+      var m = h.match(/#?\/?(?:sdlginput|claim)\/([^/?#]+)/i);
+      if (!m) return;
+      var id = decodeURIComponent(m[1]);
+      if (!/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(id)) return;
+      root.localStorage.setItem(CLAIM_KEY, id);
+      if (/sdlginput/i.test(h)) {
+        root.localStorage.setItem(INPUT_KEY, id);
+        root.localStorage.setItem(TAB_KEY, 'sdlginput');
+      }
+    } catch (_) {}
+  })();
 
   function normClaim(id) {
     id = String(id || '').trim();
@@ -43,9 +54,7 @@
       };
     }
     m = h.match(/^\/?([a-z0-9_-]+)\/?$/i);
-    if (m && normTab(m[1])) {
-      return { tab: normTab(m[1]), claimId: '', mode: 'tab' };
-    }
+    if (m && normTab(m[1])) return { tab: normTab(m[1]), claimId: '', mode: 'tab' };
     m = h.match(/^\/?(\d{3,4}-\d{4}-SDLG-PFR)$/i);
     if (m) return { tab: 'list', claimId: normClaim(m[1]), mode: 'detail' };
     return { tab: '', claimId: '', mode: '' };
@@ -60,7 +69,6 @@
     if (mode === 'detail' || (claimId && tab === 'list')) {
       return claimId ? '#/claim/' + encodeURIComponent(claimId) : '#/list';
     }
-    if (tab === 'claims') tab = 'list';
     return '#/' + tab;
   }
 
@@ -92,9 +100,8 @@
   }
 
   function readLocalInputClaim() {
-    try {
-      return normClaim(root.localStorage.getItem(INPUT_KEY) || root.localStorage.getItem(CLAIM_KEY) || '');
-    } catch (_) { return ''; }
+    try { return normClaim(root.localStorage.getItem(INPUT_KEY) || root.localStorage.getItem(CLAIM_KEY) || ''); }
+    catch (_) { return ''; }
   }
 
   function setRoute(opts) {
@@ -102,20 +109,12 @@
     var tab = normTab(opts.tab) || 'list';
     var claimId = normClaim(opts.claimId);
     var mode = opts.mode || (tab === 'sdlginput' ? 'sdlginput' : (claimId ? 'detail' : 'tab'));
-    var replace = !!opts.replace;
     persistLocal(tab, claimId, mode);
-    applyHash(buildHash(tab, claimId, mode), replace);
+    applyHash(buildHash(tab, claimId, mode), !!opts.replace);
     try {
       if (root.SDLGNavState && typeof root.SDLGNavState.persist === 'function') {
-        root.SDLGNavState.persist(
-          tab === 'sdlginput' ? 'sdlginput' : tab,
-          null,
-          claimId || null
-        );
+        root.SDLGNavState.persist(tab === 'sdlginput' ? 'sdlginput' : tab, null, claimId || null);
       }
-    } catch (_) {}
-    try {
-      root.dispatchEvent(new CustomEvent('sdlg-route', { detail: parseHash() }));
     } catch (_) {}
   }
 
@@ -137,11 +136,10 @@
       if (typeof orig === 'function') orig(detailId, user);
       var id = normClaim(detailId);
       if (id) applyHash(buildHash('list', id, 'detail'), true);
-      else applyHash('#/list', true);
+      else if (!/sdlginput\//i.test(String(root.location.hash || ''))) applyHash('#/list', true);
     };
     root.SDLGNavState.restoreSdlgInputClaimId = function () {
       var p = parseHash();
-      if (p.mode === 'sdlginput' && p.claimId) return p.claimId;
       if (p.claimId) return p.claimId;
       return readLocalInputClaim();
     };
@@ -163,16 +161,13 @@
         var label = String(btn.textContent || btn.getAttribute('data-tab') || '').toLowerCase();
         if (/sdlg input|input helper/.test(label)) {
           var cid = readLocalClaim() || readLocalInputClaim();
-          setTimeout(function () {
-            setRoute({ tab: 'sdlginput', claimId: cid, mode: 'sdlginput', replace: true });
-          }, 0);
+          setTimeout(function () { setRoute({ tab: 'sdlginput', claimId: cid, mode: 'sdlginput', replace: true }); }, 0);
         }
         if (/^claims$|^klaim$|semua klaim|back to list|kembali/.test(label.trim())) {
           setRoute({ tab: 'list', claimId: '', mode: 'tab', replace: true });
         }
       }
     }, true);
-
     document.addEventListener('change', function (e) {
       var el = e.target;
       if (!el || el.tagName !== 'SELECT') return;
@@ -192,7 +187,6 @@
     root.addEventListener('hashchange', function () {
       var r = parseHash();
       if (r.claimId) persistLocal(r.tab || 'list', r.claimId, r.mode || 'detail');
-      try { root.dispatchEvent(new CustomEvent('sdlg-route', { detail: r })); } catch (_) {}
     });
   }
 
@@ -200,7 +194,7 @@
   else boot();
 
   root.SDLGHashRouter = {
-    version: '1.0.0',
+    version: '1.1.0',
     parse: parseHash,
     get: getRoute,
     set: setRoute,
