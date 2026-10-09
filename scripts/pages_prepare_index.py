@@ -120,6 +120,7 @@ mod = Path("_site/modules") if Path("_site/modules").is_dir() else Path("modules
 inline_module(mod / "sdlg-portal-finance-ux.js", "SDLG_PORTAL_FINANCE_UX_INLINE_V3")
 inline_module(mod / "feedback-person-fix.js", "SDLG_FB_PERSON_INLINE_V13")
 inline_module(mod / "sdlg-hash-router.js", "SDLG_HASH_ROUTER_INLINE_V20")
+inline_module(mod / "sdlg-route-finish.js", "SDLG_ROUTE_FINISH_INLINE_V1")
 
 if 'esc(unitPrice || "—")' in data:
     data = data.replace('esc(unitPrice || "—")', 'esc((unitPrice === 0 || unitPrice === "0") ? "0.00" : (unitPrice || "0.00"))', 1)
@@ -193,6 +194,7 @@ for _src in [
     "./modules/sdlg-input-helper-ux.js?v=20261009-v191",
     "./modules/sdlg-portal-ux-v2.js?v=20261009-v23",
     "./modules/sdlg-portal-finance-ux.js?v=20261009-v3",
+    "./modules/sdlg-route-finish.js?v=20261009-v1",
 ]:
     leaf = _src.split("/")[-1].split("?")[0]
     tag = '<script src="' + _src + '"></script>\n'
@@ -336,6 +338,20 @@ _new_row = (
 if _old_row in data:
     data = data.replace(_old_row, _new_row, 1)
     print("claim row writes #/claim/id")
+
+_old_yf = 'const [yearFilter, setYearFilter] = useState("all");'
+_new_yf = (
+    'const [yearFilter, setYearFilter] = useState(() => {'
+    ' try {'
+    '  var _ym = String(location.hash||"").match(/#\\/?claims\\/(\\d{4})/i);'
+    '  if (_ym) return _ym[1];'
+    ' } catch(_e) {}'
+    ' return "all";'
+    '});'
+)
+if _old_yf in data:
+    data = data.replace(_old_yf, _new_yf, 1)
+    print("yearFilter init from hash")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
