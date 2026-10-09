@@ -1,11 +1,15 @@
 /**
  * Runtime fix: Feedback Person + Feedback Contact.
- * v1.2 — getSdlgSupabase, broader claim-id match, fill by id + label, never Kosong/xxx.
+ * v1.3 — resolve claim id from SELECTED select value / header, NEVER first option in dropdown list.
+ * Wrong-id regression: body.innerText includes all <option> texts → matched other claim (e.g. Unknown) → wiped Panji with —.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_FB_PERSON_FIX_V12__) return;
-  window.__SDLG_FB_PERSON_FIX_V12__ = true;
+  if (window.__SDLG_FB_PERSON_FIX_V13__) return;
+  window.__SDLG_FB_PERSON_FIX_V13__ = true;
+
+  var CLAIM_RE = /\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i;
+  var CLAIM_HEADER_RE = /\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\s*[·•|]\s*\S+/i;
 
   function clean(v) { return v == null ? '' : String(v).trim(); }
 
@@ -22,31 +26,70 @@
     try {
       if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson) {
         var r = window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson.fromClaim(claim);
-        if (r) return r;
+        if (r && !isEmptyish(r)) return r;
       }
     } catch (_) {}
-    return stripTech(claim && (claim.technical_personnel || claim.feedback_person || claim.technician_name || claim.technician));
+    var raw = claim && (claim.technical_personnel || claim.feedback_person || claim.technician_name || claim.technician);
+    var n = stripTech(raw);
+    if (!n || isEmptyish(n)) return '';
+    return n;
   }
 
   function contactFrom(claim) {
     try {
       if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackContact) {
         var r = window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackContact.fromClaim(claim);
-        if (r) return r;
+        if (r && !isEmptyish(r)) return r;
       }
     } catch (_) {}
     return clean(claim && (claim.feedback_contact || claim.feedback_phone || claim.phone || claim.customer_phone || claim.mobile));
   }
 
   function findClaimId() {
+    // 1) URL
     try {
       var q = new URLSearchParams(location.search || '');
-      var id = q.get('claim_id') || q.get('claimId') || q.get('id');
-      if (id) return clean(id);
+      var id = clean(q.get('claim_id') || q.get('claimId') || q.get('id') || '');
+      if (id && CLAIM_RE.test(id)) return id.match(CLAIM_RE)[1];
     } catch (_) {}
-    var t = document.body ? document.body.innerText : '';
-    var m = t.match(/\b\d{3,4}-\d{4}-SDLG-[A-Z0-9]+\b/i);
-    return m ? m[0] : '';
+
+    // 2) SELECTED value of any claim <select> (NOT option list / NOT body.innerText)
+    try {
+      var selects = document.querySelectorAll('select');
+      for (var i = 0; i < selects.length; i++) {
+        var v = clean(selects[i].value);
+        if (v && CLAIM_RE.test(v)) return v.match(CLAIM_RE)[1];
+        var opt = selects[i].options && selects[i].options[selects[i].selectedIndex];
+        if (opt) {
+          var ot = clean(opt.value || opt.textContent || '');
+          var om = ot.match(CLAIM_RE);
+          if (om) return om[1];
+        }
+      }
+    } catch (_) {}
+
+    // 3) Header inside helper page only: "0250-2026-SDLG-PFR · L936H · ..."
+    try {
+      var root = document.querySelector('[data-sdlg-input-helper]') || document.body;
+      if (root) {
+        var nodes = root.querySelectorAll('div, span, h1, h2, h3, p, strong, b');
+        for (var j = 0; j < nodes.length; j++) {
+          var t = clean(nodes[j].childNodes.length === 1 ? nodes[j].textContent : '');
+          if (!t || t.length > 120) continue;
+          var hm = t.match(CLAIM_HEADER_RE);
+          if (hm) return hm[1];
+        }
+        var scoped = clean(root.innerText || '').split('\n');
+        for (var k = 0; k < scoped.length; k++) {
+          var line = clean(scoped[k]);
+          if (!line || line.length > 160) continue;
+          var lm = line.match(CLAIM_HEADER_RE);
+          if (lm) return lm[1];
+        }
+      }
+    } catch (_) {}
+
+    return '';
   }
 
   function findClient() {
@@ -82,11 +125,15 @@
     } catch (_) {}
   }
 
-  function fillField(id, labels, value) {
-    var out = isEmptyish(value) ? '\u2014' : String(value);
+  function fillField(id, labels, value, forceDash) {
+    var out;
+    if (value && !isEmptyish(value)) out = String(value);
+    else if (forceDash) out = '\u2014';
+    else return; // do not wipe a good value with empty
+
     var byId = document.getElementById(id);
     if (byId && (byId.tagName === 'INPUT' || byId.tagName === 'TEXTAREA')) {
-      if (isEmptyish(byId.value) || byId.value !== out) setInput(byId, out);
+      if (byId.value !== out) setInput(byId, out);
       return;
     }
     var nodes = document.querySelectorAll('input, textarea');
@@ -99,7 +146,7 @@
         if (nearText.indexOf(labels[j]) >= 0) { hit = true; break; }
       }
       if (!hit) continue;
-      if (isEmptyish(el.value) || el.value !== out) setInput(el, out);
+      if (el.value !== out) setInput(el, out);
       return;
     }
   }
@@ -119,12 +166,23 @@
       var client = findClient();
       if (!client) return;
       var res = await client.from('claims').select('claim_id,technical_personnel').eq('claim_id', claimId).maybeSingle();
-      if (res.error || !res.data) return;
+      if (res.error) {
+        console.warn('[SDLG FB fix] query error', claimId, res.error);
+        return;
+      }
+      if (!res.data) {
+        console.warn('[SDLG FB fix] no row', claimId);
+        return;
+      }
       var person = personFrom(res.data);
       var contact = contactFrom(res.data);
-      fillField('sdlg_feedbackPerson', ['Feedback Person'], person);
-      fillField('sdlg_feedbackContact', ['Feedback Contact Information', 'Feedback Contact'], contact);
+      // Always write person when we have a real name; dash only after confirmed empty for THIS claim
+      fillField('sdlg_feedbackPerson', ['Feedback Person'], person, true);
+      fillField('sdlg_feedbackContact', ['Feedback Contact Information', 'Feedback Contact'], contact, true);
       lastKey = claimId + '|' + person + '|' + contact;
+      try {
+        console.info('[SDLG FB fix] filled', claimId, 'person=', person || '(none)', 'contact=', contact || '(none)');
+      } catch (_) {}
     } catch (e) {
       console.warn('[SDLG FB fix]', e && e.message ? e.message : e);
     } finally {
@@ -132,13 +190,23 @@
     }
   }
 
-  function schedule() { setTimeout(run, 250); }
+  function schedule() { setTimeout(run, 300); }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
   else schedule();
   if (typeof MutationObserver !== 'undefined') {
-    var obs = new MutationObserver(schedule);
-    obs.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    var t = null;
+    var obs = new MutationObserver(function () {
+      clearTimeout(t);
+      t = setTimeout(run, 400);
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
   }
-  setInterval(run, 2000);
+  document.addEventListener('change', function (e) {
+    if (e && e.target && e.target.tagName === 'SELECT') {
+      lastKey = '';
+      schedule();
+    }
+  }, true);
+  setInterval(run, 3000);
 })();
