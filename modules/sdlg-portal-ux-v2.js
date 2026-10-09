@@ -1,24 +1,24 @@
 /**
- * SDLG Portal UX v2.3 — sticky taskbar only on real Input Helper page.
+ * SDLG Portal UX v2.4 — sticky taskbar only on Input Helper; purge clones.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_PORTAL_UX_V23__) return;
-  root.__SDLG_PORTAL_UX_V23__ = true;
+  if (root.__SDLG_PORTAL_UX_V24__) return;
+  root.__SDLG_PORTAL_UX_V24__ = true;
 
   function ensureCss() {
-    if (document.querySelector('link[data-sdlg-portal-helper-css="v23"]')) return;
-    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261009-v2.3'];
+    if (document.querySelector('link[data-sdlg-portal-helper-css="v24"]')) return;
+    var hrefs = ['./styles/sdlg-portal-helper-v2.css?v=20261009-v2.4'];
     try {
       if (/github\.io/i.test(location.host)) {
-        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261009-v2.3');
+        hrefs.push((location.pathname.split('/').slice(0, 2).join('/') || '') + '/styles/sdlg-portal-helper-v2.css?v=20261009-v2.4');
       }
     } catch (_) {}
     hrefs.forEach(function (href, i) {
       var link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
-      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v23' : String(i));
+      link.setAttribute('data-sdlg-portal-helper-css', i === 0 ? 'v24' : String(i));
       (document.head || document.documentElement).appendChild(link);
     });
   }
@@ -194,8 +194,15 @@
 
   function ensureStickyBar() {
     if (!isInputHelperSurface()) { removeStickyIfLeft(); return; }
-    var existing = document.getElementById('sdlg-portal-sticky-bar');
+    var allBars = document.querySelectorAll('#sdlg-portal-sticky-bar, .sdlg-portal-sticky-bar');
+    if (allBars.length > 1) {
+      for (var i = 1; i < allBars.length; i++) {
+        if (allBars[i].parentNode) allBars[i].parentNode.removeChild(allBars[i]);
+      }
+    }
+    var existing = document.getElementById('sdlg-portal-sticky-bar') || document.querySelector('.sdlg-portal-sticky-bar');
     if (existing) {
+      existing.id = 'sdlg-portal-sticky-bar';
       existing.querySelectorAll('button, a').forEach(function (el) {
         if (el.textContent === 'Copy All') el.textContent = 'Copy Home Fields';
         if (el.textContent === 'Copy Parts') el.textContent = 'Copy Replacement';
@@ -239,8 +246,9 @@
 
   function removeStickyIfLeft() {
     if (isInputHelperSurface()) return;
-    var bar = document.getElementById('sdlg-portal-sticky-bar');
-    if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+    document.querySelectorAll('#sdlg-portal-sticky-bar, .sdlg-portal-sticky-bar').forEach(function (bar) {
+      if (bar.parentNode) bar.parentNode.removeChild(bar);
+    });
     document.documentElement.classList.remove('sdlg-has-portal-sticky');
   }
 
@@ -261,7 +269,7 @@
       ensureReportNameFull(page);
       ensureStickyBar();
     } catch (err) {
-      console.warn('[SDLG portal-ux v2.3]', err);
+      console.warn('[SDLG portal-ux v2.4]', err);
     }
   }
 
@@ -277,5 +285,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGPortalUXv2 = { version: '2.3.0', enhance: enhance };
+  root.SDLGPortalUXv2 = { version: '2.4.0', enhance: enhance };
 })(window);
