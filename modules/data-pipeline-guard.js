@@ -1,8 +1,8 @@
 /**
- * SDLG Data Pipeline Guard v1
+ * SDLG Data Pipeline Guard v1.1
  * - Waits for Supabase singleton + session
  * - Diagnoses empty UI (auth vs RLS vs real empty)
- * - Exposes window.SDLGDataPipeline for console debugging
+ * - Banner reflects pipeline health only (not React state speculation)
  * Load AFTER modules/supabase-client.js
  */
 (function (root) {
@@ -31,9 +31,6 @@
     return root.sdlgSupabase || root.supabaseClient || null;
   }
 
-  /**
-   * Core fetch probe — distinguishes auth / error / empty / data.
-   */
   async function fetchClaimsProbe(limit) {
     limit = limit || 5;
     if (typeof root.waitForSupabaseReady === 'function') {
@@ -56,7 +53,7 @@
       return {
         ok: false,
         reason: 'NOT_AUTHENTICATED',
-        message: 'USER NOT AUTHENTICATED — RLS WILL BLOCK DATA. Login required before claims load.',
+        message: 'USER NOT AUTHENTICATED — RLS WILL BLOCK DATA. Login required.',
         rows: []
       };
     }
@@ -87,11 +84,11 @@
 
     var rows = Array.isArray(result.data) ? result.data : [];
     if (!rows.length) {
-      warn('Query OK but 0 rows — real empty OR RLS filtered all rows');
+      warn('Query OK but 0 rows');
       return { ok: true, reason: 'EMPTY', message: 'Belum ada data yang cocok', rows: [] };
     }
 
-    log('Fetch OK —', rows.length, 'row(s) sample', rows[0]);
+    log('Fetch OK —', rows.length, 'row(s)');
     return { ok: true, reason: 'DATA', message: 'ok', rows: rows };
   }
 
@@ -102,7 +99,7 @@
       if (!el) {
         el = document.createElement('div');
         el.id = id;
-        el.setAttribute('role', 'alert');
+        el.setAttribute('role', 'status');
         el.style.cssText = 'position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;padding:12px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.18);';
         document.body.appendChild(el);
       }
@@ -120,35 +117,68 @@
         el.style.border = '1px solid #a7f3d0';
       }
       el.textContent = text;
+      // Auto-hide success after 8s so it does not look like a permanent warning
+      if (kind === 'ok') {
+        clearTimeout(el.__sdlgHideTimer);
+        el.__sdlgHideTimer = setTimeout(function () {
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        }, 8000);
+      }
     } catch (_) {}
   }
 
   async function runDiagnostics() {
     var probe = await fetchClaimsProbe(5);
     if (probe.reason === 'NOT_AUTHENTICATED') {
-      showBanner('error', 'Failed to fetch data: belum login. Session kosong — RLS memblokir semua baris. Silakan login ulang.');
+      showBanner('error', 'Belum login — session kosong. RLS memblokir data. Silakan login.');
     } else if (probe.reason === 'FETCH_ERROR' || probe.reason === 'FETCH_THROW' || probe.reason === 'NO_CLIENT') {
-      showBanner('error', 'Failed to fetch data. Check console. (' + probe.message + ')');
+      showBanner('error', 'Gagal fetch data. Cek console. (' + probe.message + ')');
     } else if (probe.reason === 'EMPTY') {
-      showBanner('warn', 'Belum ada data yang cocok (query sukses, 0 baris).');
+      showBanner('warn', 'Query sukses, 0 baris claims. Belum ada data yang cocok.');
     } else if (probe.reason === 'DATA') {
-      showBanner('ok', 'Supabase OK — ' + probe.rows.length + ' sample claim(s) readable. Jika UI masih 0, React state/user belum ter-bind.');
+      showBanner('ok', 'Data loaded successfully — ' + probe.rows.length + ' claim(s) readable from Supabase.');
     }
     return probe;
   }
 
   root.SDLGDataPipeline = {
-    version: '1.0.0',
+    version: '1.1.0',
     getClient: getClient,
     fetchClaimsProbe: fetchClaimsProbe,
     runDiagnostics: runDiagnostics
+  };
+
+  /** Display helper for empty UI values */
+  root.SDLGDisplayValue = function SDLGDisplayValue(value, emptyText) {
+    emptyText = emptyText == null ? '—' : emptyText;
+    if (value == null) return emptyText;
+    if (typeof value === 'string' && value.trim() === '') return emptyText;
+    if (Array.isArray(value) && value.length === 0) return emptyText;
+    return value;
+  };
+
+  /** Normalize evidence item for UI: always expose label + value strings */
+  root.SDLGNormalizeEvidenceItem = function SDLGNormalizeEvidenceItem(item) {
+    if (item == null) return { label: 'Evidence', value: '—' };
+    if (typeof item === 'string') return { label: 'Evidence', value: item.trim() || '—' };
+    var label = item.label || item.name || item.title || item.type || 'Evidence';
+    var value = item.value != null ? item.value
+      : (item.caption != null ? item.caption
+        : (item.text != null ? item.text
+          : (item.description != null ? item.description : '')));
+    if (value == null || String(value).trim() === '') {
+      // Parser often stores only label (photo caption name) — show label as content
+      value = typeof item === 'object' && item.label ? String(item.label) : '—';
+      if (value === label && item.source) value = label + ' (' + item.source + ')';
+    }
+    return { label: String(label), value: String(value) };
   };
 
   function boot() {
     if (typeof root.waitForSupabaseReady === 'function') {
       root.waitForSupabaseReady()
         .then(function () { return runDiagnostics(); })
-        .catch(function (e) { err(e); showBanner('error', 'Failed to fetch data. Check console.'); });
+        .catch(function (e) { err(e); showBanner('error', 'Gagal init data pipeline. Cek console.'); });
     } else {
       setTimeout(function () {
         runDiagnostics().catch(function (e) { err(e); });
