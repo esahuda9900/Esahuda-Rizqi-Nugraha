@@ -1,10 +1,9 @@
 /**
- * WO ↔ claim policy v1.4.1
+ * WO ↔ claim policy v1.5.0
  * Match + confirm via SDLGWoCollisionModal (fallback window.confirm).
  *
- * v1.4.1: Simpan Baru no longer clears dealerWoSo. claims.dealer_wo_so is not UNIQUE
- * (only btree indexes), and clearing WO caused SOURCE LOCK to block save
- * (source=WO… vs parse=""). Provenance fields remain for optional lock exception.
+ * v1.5.0: ALWAYS show modal+diff on Update Klaim (not only risky matches).
+ * v1.4.1: Simpan Baru no longer clears dealerWoSo.
  */
 (function (root) {
   'use strict';
@@ -25,32 +24,32 @@
       .replace(/[^A-Z0-9]/g, '');
   }
 
-  const MULTI_CLAIM_WO_ALLOWLIST = Object.freeze(['WO26040309']);
-  const allowSet = new Set(MULTI_CLAIM_WO_ALLOWLIST.map(normalizeWo));
+  var MULTI_CLAIM_WO_ALLOWLIST = Object.freeze(['WO26040309']);
+  var allowSet = new Set(MULTI_CLAIM_WO_ALLOWLIST.map(normalizeWo));
 
   function isMultiClaimAllowed(wo) {
-    const key = normalizeWo(wo);
+    var key = normalizeWo(wo);
     return Boolean(key && allowSet.has(key));
   }
 
   function findMatchedClaim(claims, parsed, serialEquivalentFn) {
     if (!parsed || !Array.isArray(claims)) return null;
-    const active = claims.filter(function (c) {
+    var active = claims.filter(function (c) {
       return c && !c.archived_at;
     });
 
-    const dist = parsed.distributorNo != null ? String(parsed.distributorNo).trim() : '';
+    var dist = parsed.distributorNo != null ? String(parsed.distributorNo).trim() : '';
     if (dist) {
-      const byId = active.find(function (c) {
+      var byId = active.find(function (c) {
         return String(c.claim_id || '').trim() === dist;
       });
       if (byId) return byId;
     }
 
-    const wo = normalizeWo(parsed.dealerWoSo);
+    var wo = normalizeWo(parsed.dealerWoSo);
     if (!wo) return null;
 
-    const serialEq =
+    var serialEq =
       typeof serialEquivalentFn === 'function'
         ? serialEquivalentFn
         : typeof root.SDLGSerialEquivalent === 'function'
@@ -77,30 +76,28 @@
 
   function isStrictWoMatch(parsed, matchedClaim) {
     if (!parsed || !matchedClaim) return false;
-    const wo = normalizeWo(parsed.dealerWoSo);
-    if (!wo || isMultiClaimAllowed(wo)) return false;
-    return normalizeWo(matchedClaim.dealer_wo_so) === wo;
+    var wo = normalizeWo(parsed.dealerWoSo);
+    return Boolean(wo && normalizeWo(matchedClaim.dealer_wo_so) === wo);
   }
 
   function partsEqual(parsed, matchedClaim) {
-    const a = normalizePart(parsed && (parsed.causingPartNo || parsed.causing_part_no));
-    const b = normalizePart(matchedClaim && (matchedClaim.causing_part_no || matchedClaim.causingPartNo));
-    if (!a || !b) return false;
-    return a === b;
+    var a = normalizePart(parsed && (parsed.causingPartNo || parsed.causing_part_no));
+    var b = normalizePart(matchedClaim && matchedClaim.causing_part_no);
+    return Boolean(a && b && a === b);
   }
 
   function faultsSimilar(parsed, matchedClaim) {
-    const a = normalizeKey(parsed && (parsed.faultDescription || parsed.fault_description));
-    const b = normalizeKey(matchedClaim && (matchedClaim.fault_description || matchedClaim.faultDescription));
+    var a = normalizeKey(parsed && (parsed.faultDescription || parsed.fault_description));
+    var b = normalizeKey(matchedClaim && matchedClaim.fault_description);
     if (!a || !b) return false;
     if (a === b) return true;
-    if (a.length >= 12 && b.indexOf(a) >= 0) return true;
-    if (b.length >= 12 && a.indexOf(b) >= 0) return true;
+    if (a.length > 12 && b.indexOf(a.slice(0, 12)) >= 0) return true;
+    if (b.length > 12 && a.indexOf(b.slice(0, 12)) >= 0) return true;
     return false;
   }
 
   function isAuditStatus(matchedClaim) {
-    const s = String((matchedClaim && matchedClaim.claim_status) || '').toUpperCase();
+    var s = String((matchedClaim && matchedClaim.claim_status) || '').toUpperCase();
     return s.indexOf('AUDIT') >= 0 || (s.indexOf('SDLG') >= 0 && s.indexOf('APPROV') < 0);
   }
 
@@ -111,15 +108,15 @@
   }
 
   function shortText(value, max) {
-    const s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+    var s = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
     if (!s) return '—';
     return s.length > max ? s.slice(0, max) + '…' : s;
   }
 
   function collisionConfirmMessage(parsed, matchedClaim) {
-    const wo = normalizeWo(parsed && parsed.dealerWoSo);
-    const id = matchedClaim && matchedClaim.claim_id ? matchedClaim.claim_id : '?';
-    const kind = classifyMatch(parsed, matchedClaim);
+    var wo = normalizeWo(parsed && parsed.dealerWoSo);
+    var id = matchedClaim && matchedClaim.claim_id ? matchedClaim.claim_id : '?';
+    var kind = classifyMatch(parsed, matchedClaim);
     return (
       'WO ' +
       wo +
@@ -141,8 +138,8 @@
   }
 
   function updateConfirmMessage(parsed, matchedClaim) {
-    const id = matchedClaim && matchedClaim.claim_id ? matchedClaim.claim_id : '?';
-    const status = matchedClaim && matchedClaim.claim_status ? matchedClaim.claim_status : '—';
+    var id = matchedClaim && matchedClaim.claim_id ? matchedClaim.claim_id : '?';
+    var status = matchedClaim && matchedClaim.claim_status ? matchedClaim.claim_status : '—';
     return (
       'Update akan menimpa klaim ' +
       id +
@@ -160,42 +157,27 @@
     );
   }
 
-  /**
-   * Legacy helper kept for callers. v1.4.1 does not clear WO on Simpan Baru
-   * (DB has no unique on dealer_wo_so; clearing broke SOURCE LOCK).
-   * Still records provenance if a caller clears WO intentionally.
-   */
   function clearWoOnParsed(parsed) {
     if (!parsed || typeof parsed !== 'object') return;
-    var prior =
-      parsed.dealerWoSo != null && String(parsed.dealerWoSo).trim()
-        ? String(parsed.dealerWoSo).trim()
-        : parsed.dealer_wo_so != null && String(parsed.dealer_wo_so).trim()
-          ? String(parsed.dealer_wo_so).trim()
-          : parsed.sourceDealerWoSo != null
-            ? String(parsed.sourceDealerWoSo).trim()
-            : '';
-    if (prior) {
-      parsed.sourceDealerWoSo = prior;
+    if (parsed.dealerWoSo) {
+      parsed.sourceDealerWoSo = String(parsed.dealerWoSo).trim();
     }
     parsed.dealerWoSo = '';
-    if (Object.prototype.hasOwnProperty.call(parsed, 'dealer_wo_so')) {
-      parsed.dealer_wo_so = null;
-    }
     parsed.woClearedForCollision = true;
   }
 
   function filterSourceLockIssues(issues, parsed) {
-    if (!parsed || parsed.woClearedForCollision !== true) return issues || [];
+    if (!parsed || !parsed.woClearedForCollision) return issues || [];
     return (issues || []).filter(function (issue) {
-      return !/^Dealer\s*WO\/SO\s*:/i.test(String(issue || ''));
+      var msg = String((issue && (issue.message || issue)) || '').toLowerCase();
+      return msg.indexOf('wo') < 0 && msg.indexOf('source') < 0;
     });
   }
 
   function askUser(mode, parsed, matchedClaim) {
-    const kind = classifyMatch(parsed, matchedClaim);
-    const wo = normalizeWo(parsed && parsed.dealerWoSo);
-    const Modal = root.SDLGWoCollisionModal;
+    var kind = classifyMatch(parsed, matchedClaim);
+    var wo = normalizeWo(parsed && parsed.dealerWoSo);
+    var Modal = root.SDLGWoCollisionModal;
     if (Modal && typeof Modal.show === 'function') {
       return Modal.show({
         mode: mode,
@@ -205,11 +187,11 @@
         parsed: parsed
       });
     }
-    const msg =
+    var msg =
       mode === 'update'
         ? updateConfirmMessage(parsed, matchedClaim)
         : collisionConfirmMessage(parsed, matchedClaim);
-    const ok = typeof root.confirm === 'function' ? root.confirm(msg) : true;
+    var ok = typeof root.confirm === 'function' ? root.confirm(msg) : true;
     return Promise.resolve(!!ok);
   }
 
@@ -218,7 +200,6 @@
     if (!isStrictWoMatch(parsed, matchedClaim)) return Promise.resolve(true);
     return askUser('new', parsed, matchedClaim).then(function (ok) {
       if (!ok) return false;
-      // Keep WO on the new claim — multi-claim is allowed; clearing broke SOURCE LOCK.
       if (parsed && parsed.dealerWoSo) {
         parsed.sourceDealerWoSo = String(parsed.dealerWoSo).trim();
       }
@@ -227,17 +208,18 @@
     });
   }
 
-  /** @returns {Promise<boolean>} */
+  /**
+   * ALWAYS confirm update with modal+diff (v1.5.0).
+   * Previously only risky/weak matches prompted — too easy to overwrite by accident.
+   * @returns {Promise<boolean>}
+   */
   function confirmUpdateSave(parsed, matchedClaim) {
     if (!matchedClaim) return Promise.resolve(true);
-    const kind = classifyMatch(parsed, matchedClaim);
-    const risky = kind === 'weak' || isAuditStatus(matchedClaim);
-    if (!risky) return Promise.resolve(true);
     return askUser('update', parsed, matchedClaim);
   }
 
   function bannerHint(parsed, matchedClaim) {
-    const kind = classifyMatch(parsed, matchedClaim);
+    var kind = classifyMatch(parsed, matchedClaim);
     if (kind === 'none') return '';
     if (kind === 'strong') {
       return ' Match kuat (part/fault mirip) — Update lebih aman bila ini revisi klaim yang sama.';
@@ -246,7 +228,7 @@
   }
 
   root.SDLGWoClaimPolicy = Object.freeze({
-    version: '1.4.1',
+    version: '1.5.0',
     MULTI_CLAIM_WO_ALLOWLIST: MULTI_CLAIM_WO_ALLOWLIST,
     normalizeWo: normalizeWo,
     isMultiClaimAllowed: isMultiClaimAllowed,
