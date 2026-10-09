@@ -1,13 +1,12 @@
 /**
- * SDLG Input Helper — Copy Fix + SWOT UX patch v1.8.1
+ * SDLG Input Helper — Copy Fix + UX patch v1.9.0 — no top action bar
  * Standalone progressive enhancement. Safe to load after core modules.
- * Fixes: clipboard silent fail, empty payload no-feedback, missing Copy All,
- * zero-amount warning, sticky action bar.
+ * Per-field Copy + toast. Top bar (field siap / Copy All Labeled / TSV) removed per user feedback.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_COPY_FIX_181__) return;
-  window.__SDLG_COPY_FIX_181__ = true;
+  if (window.__SDLG_COPY_FIX_190__) return;
+  window.__SDLG_COPY_FIX_190__ = true;
 
   var ACTION_ID = 'sdlg-input-action-bar';
   var TOAST_ID = 'sdlg-input-toast';
@@ -110,27 +109,6 @@
       /Warranty Claim Input Helper/i.test(textOf(page));
   }
 
-  function collectPayloads(page) {
-    var items = [];
-    page.querySelectorAll('[data-sdlg-field]').forEach(function (el) {
-      var label = el.getAttribute('data-label') || '';
-      var val = String(el.value || '').trim();
-      if (label && !isEmptyDisplay(val)) items.push({ label: label, value: val });
-    });
-    page.querySelectorAll('[data-sdlg-extra-field]').forEach(function (wrap) {
-      var label = wrap.getAttribute('data-sdlg-extra-field') || '';
-      var box = wrap.querySelector('[data-copy-box]');
-      var val = box ? textOf(box) : '';
-      if (label && !isEmptyDisplay(val)) items.push({ label: label, value: val });
-    });
-    var report = page.querySelector('[data-sdlg-copy-report-name], [data-value]');
-    if (report) {
-      var rv = report.getAttribute('data-value') || textOf(report);
-      if (!isEmptyDisplay(rv)) items.push({ label: 'Report Name', value: rv });
-    }
-    return items;
-  }
-
   function hardenButtons(page) {
     page.querySelectorAll('[data-sdlg-field]').forEach(function (field) {
       var wrap = field.closest('div') || field.parentElement;
@@ -157,15 +135,6 @@
 
     page.querySelectorAll('button').forEach(function (btn) {
       var t = (btn.textContent || '').trim();
-      if (/Copy All/i.test(t) && btn.getAttribute('data-sdlg-copy-all-hard') !== '1') {
-        btn.setAttribute('data-sdlg-copy-all-hard', '1');
-        btn.addEventListener('click', function (e) {
-          var list = collectPayloads(page);
-          if (!list.length) { e.preventDefault(); showToast('Tidak ada field siap copy', 'warn'); return; }
-          var block = list.map(function (it) { return it.label + ':\n' + it.value; }).join('\n\n');
-          copyText(block).then(function (ok) { setBtnState(btn, ok ? 'ok' : 'err'); });
-        }, true);
-      }
       if (/Copy Nama Report/i.test(t) && btn.getAttribute('data-sdlg-report-hard') !== '1') {
         btn.setAttribute('data-sdlg-report-hard', '1');
         btn.addEventListener('click', function () {
@@ -179,89 +148,12 @@
         }, true);
       }
     });
-
-    page.querySelectorAll('[data-sdlg-extra-field] button').forEach(function (btn) {
-      if (btn.getAttribute('data-sdlg-copy-hard') === '1') return;
-      btn.setAttribute('data-sdlg-copy-hard', '1');
-      var wrap = btn.closest('[data-sdlg-extra-field]');
-      var box = wrap && wrap.querySelector('[data-copy-box]');
-      var val = box ? textOf(box) : '';
-      if (isEmptyDisplay(val)) { setBtnState(btn, 'empty'); return; }
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var current = box ? textOf(box) : '';
-        copyText(current).then(function (ok) { setBtnState(btn, ok ? 'ok' : 'err'); });
-      }, true);
-    });
   }
 
   function ensureActionBar(page) {
-    if (!page.querySelector('[data-sdlg-field]')) {
-      var old = document.getElementById(ACTION_ID);
-      if (old) old.remove();
-      return;
-    }
-    var items = collectPayloads(page);
-    var bar = document.getElementById(ACTION_ID);
-    if (!bar) {
-      bar = document.createElement('div');
-      bar.id = ACTION_ID;
-      bar.style.cssText =
-        'position:sticky;top:96px;z-index:24;display:flex;flex-wrap:wrap;align-items:center;gap:8px;' +
-        'padding:10px 14px;margin:0 0 12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;' +
-        'box-shadow:0 1px 3px rgba(15,23,42,.06)';
-      var sel = document.getElementById('sdlg-input-selected-bar');
-      if (sel && sel.parentNode) sel.parentNode.insertBefore(bar, sel.nextSibling);
-      else page.insertBefore(bar, page.firstChild);
-    }
-    var sig = String(items.length);
-    if (bar.getAttribute('data-sig') === sig) return;
-    bar.setAttribute('data-sig', sig);
-    bar.innerHTML = '';
-
-    var prog = document.createElement('span');
-    prog.style.cssText = 'font-size:12px;color:#475569;font-weight:600';
-    prog.textContent = items.length + ' field siap';
-    bar.appendChild(prog);
-
-    var bodyText = textOf(page);
-    if (/Total Amount Claimed[\s\S]{0,40}\b0\b/i.test(bodyText) || /Labour Amount[\s\S]{0,20}\b0\b/i.test(bodyText)) {
-      var warn = document.createElement('span');
-      warn.style.cssText = 'font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:#fef3c7;color:#92400e';
-      warn.textContent = 'Amount = 0 \u2014 lengkapi di portal';
-      bar.appendChild(warn);
-    }
-
-    var spacer = document.createElement('span');
-    spacer.style.flex = '1';
-    bar.appendChild(spacer);
-
-    function mk(label, primary, fn) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = primary ? 'primary-btn' : 'secondary-btn';
-      b.textContent = label;
-      b.style.cssText = 'min-height:34px;font-size:12px;font-weight:650;cursor:pointer';
-      b.addEventListener('click', fn);
-      return b;
-    }
-
-    bar.appendChild(mk('Copy All (Labeled)', false, function () {
-      var list = collectPayloads(page);
-      if (!list.length) { showToast('Tidak ada field siap copy', 'warn'); return; }
-      copyText(list.map(function (it) { return it.label + ':\n' + it.value; }).join('\n\n'));
-    }));
-    bar.appendChild(mk('Copy All (TSV)', false, function () {
-      var list = collectPayloads(page);
-      if (!list.length) { showToast('Tidak ada field siap copy', 'warn'); return; }
-      copyText('Label\tValue\n' + list.map(function (it) {
-        return (it.label || '').replace(/\t/g, ' ') + '\t' + (it.value || '').replace(/\t|\n/g, ' ');
-      }).join('\n'));
-    }));
-    bar.appendChild(mk('\u2197 Buka Dealer Portal', true, function () {
-      window.open('https://dealer.sdlg.com', '_blank', 'noopener');
-    }));
+    /* USER FEEDBACK 2026-10-09: top floating bar (field siap / Copy All Labeled / TSV / Buka Dealer) removed. */
+    var old = document.getElementById(ACTION_ID);
+    if (old && old.parentNode) old.parentNode.removeChild(old);
   }
 
   function ensureZeroBanner(page) {
@@ -314,6 +206,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.SDLGInputCopyFix = { version: '1.8.1', refresh: run, copyText: copyText };
-  window.SDLGInputHelperUX = { version: '1.8.1', refresh: run, copyText: copyText };
+  window.SDLGInputCopyFix = { version: '1.9.0', refresh: run, copyText: copyText };
+  window.SDLGInputHelperUX = { version: '1.9.0', refresh: run, copyText: copyText };
 })();
