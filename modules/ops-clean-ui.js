@@ -1,5 +1,5 @@
 /**
- * SDLG ops-clean UI — CSS layer + Phase C core bridge loader + Repair Date inject.
+ * SDLG ops-clean UI — CSS layer + Phase C core bridge loader (Portal Mirror disabled).
  * Relative paths for GitHub Project Pages.
  */
 (function () {
@@ -18,7 +18,7 @@
   function inject() {
     if (typeof document === 'undefined') return;
     loadScript('./modules/sdlg-core-bridge.js', 'data-sdlg-core-bridge');
-    loadScript('./modules/sdlg-repair-date-inject.js?v=1.5.7', 'data-sdlg-repair-date');
+    // Portal Mirror disabled — do not load sdlg-repair-date-inject.js
     if (document.querySelector('link[' + MARKER + '], style[' + MARKER + ']')) return;
     var link = document.createElement('link');
     link.rel = 'stylesheet';
