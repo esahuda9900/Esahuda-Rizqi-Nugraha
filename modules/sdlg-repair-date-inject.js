@@ -10,11 +10,11 @@
   window.__SDLG_PORTAL_MIRROR_DISABLED_V2__ = true;
   window.__SDLG_PORTAL_MIRROR_155__ = true;
 
-  var PANEL_ID = 'sdlg-portal-mirror-panel';
-
   function removePanel() {
-    var el = document.getElementById(PANEL_ID);
-    if (el && el.parentNode) el.parentNode.removeChild(el);
+    ['sdlg-portal-mirror-panel', 'sdlg-dynamics-portal-mirror'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
     document.querySelectorAll('[data-sdlg-dynamics-mirror]').forEach(function (n) {
       if (n.parentNode) n.parentNode.removeChild(n);
     });
@@ -39,7 +39,7 @@
   }
 
   window.SDLGPortalMirror = {
-    version: '2.0.0-disabled',
+    version: '2.0.1-disabled',
     refresh: removePanel,
     remove: removePanel,
     isHelper: function () { return false; },
