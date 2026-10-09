@@ -1,3 +1,1 @@
-inline-portal-finance-v2-for-workers-2026-10-09
-Run: python3 scripts/bake_source_index.py if available; Pages prepare inlines finance on deploy.
-Production Workers must pick up index.html with SDLG_PORTAL_FINANCE_UX_INLINE_V2.
+deprecated — safe to ignore

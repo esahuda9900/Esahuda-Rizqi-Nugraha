@@ -1,1 +1,1 @@
-Trigger parser bake workflow.
+deprecated — safe to ignore

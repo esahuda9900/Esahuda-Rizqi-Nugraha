@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "sdlg-warranty-backup",
   "compatibility_date": "2026-09-16",
+  "_comment": "ARCHIVED 2026-10-09 — production is GitHub Pages only. Do not deploy this worker for the live app.",
   "assets": {
     "directory": ".",
     "include": [
@@ -13,6 +14,6 @@
     "not_found_handling": "single-page-application"
   },
   "observability": {
-    "enabled": true
+    "enabled": false
   }
 }

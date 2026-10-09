@@ -1,26 +1,20 @@
-name: Browser Smoke Check
+name: Browser Smoke
 
+# FREE TIER: manual only
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: browser-smoke
-  cancel-in-progress: true
-
 jobs:
   browser-smoke:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
 
@@ -36,9 +30,9 @@ jobs:
           set -euo pipefail
           google-chrome --version
 
-      - name: Run production browser smoke (Cloudflare primary)
+      - name: Run production browser smoke (GitHub Pages)
         env:
-          BASE_URL: https://sdlg-warranty-backup.esahuda9900.workers.dev/
+          BASE_URL: https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/
           SUPABASE_URL: https://frqvelcreczmnofldrga.supabase.co
           PLAYWRIGHT_CHANNEL: chrome
         shell: bash

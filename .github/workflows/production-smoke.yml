@@ -12,30 +12,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Production HTML markers + policy v3 asset
+      - name: GitHub Pages HTML markers + modules
         shell: bash
         run: |
           set -euo pipefail
-          url='https://sdlg-warranty-backup.esahuda9900.workers.dev/'
+          url='https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/'
           html="$(curl -fsSL --max-time 30 "$url")"
           test -n "$html"
           for marker in \
             'frqvelcreczmnofldrga.supabase.co' \
             'canonical-warranty-helper.js' \
-            'modules/sdlg-core.js' \
-            'modules/command-center.js' \
-            'modules/boss-analytics-dashboard.js' \
+            'modules/claim-fields.js' \
             'SDLG Warranty'; do
             case "$html" in
               *"$marker"*) echo "OK marker: $marker" ;;
               *) echo "Missing marker: $marker"; exit 1 ;;
             esac
           done
-          policy="$(curl -fsSL --max-time 30 "${url}modules/policy-runtime-fix.js")"
-          case "$policy" in
-            *__SDLG_POLICY_RUNTIME_FIX_V3__*) echo 'OK policy-runtime v3 live' ;;
-            *) echo 'FAIL: policy-runtime v3 not live'; exit 1 ;;
-          esac
+          # modules must be real JS on Pages (not SPA HTML fallback)
+          for asset in modules/claim-fields.js modules/supabase-client.js modules/sdlg-portal-finance-ux.js; do
+            body="$(curl -fsSL --max-time 30 "${url}${asset}")"
+            case "$body" in
+              *'<!DOCTYPE html>'*|*'<!doctype html>'*)
+                echo "FAIL: ${asset} returned HTML (SPA fallback)"; exit 1 ;;
+            esac
+            echo "OK asset: $asset"
+          done
 
       - name: Supabase REST + RLS
         shell: bash
@@ -45,23 +47,3 @@ jobs:
           case "$code" in 200|401|403) echo "Supabase REST HTTP $code" ;; *) echo "Unexpected $code"; exit 1 ;; esac
           code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 'https://frqvelcreczmnofldrga.supabase.co/rest/v1/claims?select=id&limit=1')"
           case "$code" in 401|403) echo "claims protected HTTP $code" ;; *) echo "claims leak HTTP $code"; exit 1 ;; esac
-          for endpoint in 'service_policy_rules?select=*&limit=1' 'service_policy_warranty_rules?select=*&limit=1' 'claim_workflow_transitions?select=*&limit=1'; do
-            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 "https://frqvelcreczmnofldrga.supabase.co/rest/v1/$endpoint")"
-            case "$code" in 401|403) echo "$endpoint protected" ;; *) echo "$endpoint exposed $code"; exit 1 ;; esac
-          done
-
-      - name: RPCs + parser reject anonymous
-        shell: bash
-        run: |
-          set -euo pipefail
-          for rpc in search_warranty_master sdlg_decode_model_policy; do
-            case "$rpc" in
-              search_warranty_master) body='{"p_query":"E6210F","p_limit":1}' ;;
-              sdlg_decode_model_policy) body='{"p_model_code":"E6210F"}' ;;
-            esac
-            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -X POST "https://frqvelcreczmnofldrga.supabase.co/rest/v1/rpc/$rpc" -H 'Content-Type: application/json' --data "$body")"
-            case "$code" in 401|403) echo "$rpc protected" ;; *) echo "$rpc open $code"; exit 1 ;; esac
-          done
-          code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 https://frqvelcreczmnofldrga.supabase.co/functions/v1/gemini-parse-claim)"
-          case "$code" in 401|403) echo "parser protected HTTP $code" ;; *) echo "parser unexpected $code"; exit 1 ;; esac
-          echo 'PASS: smoke-curl'

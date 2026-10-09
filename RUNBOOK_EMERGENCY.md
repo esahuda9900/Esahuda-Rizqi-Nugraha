@@ -35,6 +35,7 @@ File kritis:
 - `scripts/pages_prepare_index.py`
 - `modules/supabase-client.js`
 - `modules/wo-claim-policy.js` / `wo-collision-modal.js`
+- `modules/sdlg-portal-finance-ux.js`
 - `canonical-warranty-helper.js`
 
 ### 4) Data kosong tapi Supabase OK
@@ -44,9 +45,9 @@ File kritis:
 ### 5) Kontak / akses
 - Repo: https://github.com/esahuda9900/Esahuda-Rizqi-Nugraha
 - Supabase: `frqvelcreczmnofldrga`
-- Host: GitHub Pages + Cloudflare (sync keduanya setelah push)
+- **Host production (sole):** https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/
+- Cloudflare Workers: **retired** — jangan pakai `*.workers.dev`
 
 ### 6) Jangan dilakukan saat darurat
 - Jangan force-push tanpa backup branch di atas
-- Jangan edit `index.html` 3MB tanpa hard-refresh test
-- Jangan hapus `pages_prepare_index.py` sampai yakin source 100% = production
+- Jangan redeploy Cloudflare Workers (path sudah diarsipkan)
