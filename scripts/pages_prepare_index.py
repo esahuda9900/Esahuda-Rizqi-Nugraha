@@ -98,16 +98,31 @@ data, n = re.subn(
 )
 print("getSession redirects:", n)
 
-# 5) Inject scripts after supabase CDN
+# 5) Evidence / Photo Context: value fallback (parser stores {label,source} without value)
+old_evidence_value = 'e?.value || ""'
+idx = data.find("Evidence / Photo Context")
+if idx >= 0 and old_evidence_value in data[idx : idx + 1500]:
+    window = data[idx : idx + 1500]
+    new_window = window.replace(
+        old_evidence_value,
+        '(e?.value != null && String(e.value).trim() !== "" ? String(e.value) : (e?.caption || e?.text || e?.description || (e?.label ? String(e.label) + (e?.source ? " · " + e.source : "") : "—")))',
+        1,
+    )
+    data = data[:idx] + new_window + data[idx + 1500 :]
+    print("evidence value fallback patched")
+else:
+    print("WARNING: evidence value pattern not found near Photo Context")
+
+# 6) Inject scripts after supabase CDN
 def inject_after(marker: str, script_src: str) -> None:
     global data
     leaf = script_src.rsplit("/", 1)[-1]
     if leaf in data:
         return
-    idx = data.find(marker)
-    if idx < 0:
+    i = data.find(marker)
+    if i < 0:
         return
-    end = data.find("</script>", idx)
+    end = data.find("</script>", i)
     if end < 0:
         return
     inject = '</script>\n  <script src="' + script_src + '"></script>'
