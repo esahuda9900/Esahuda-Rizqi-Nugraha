@@ -1,0 +1,7 @@
+/* SDLG Overview UX v1 */
+[data-sdlg-priority="P0"] { border-color:#fecaca !important; background:#fef2f2 !important; }
+[data-sdlg-priority="P1"] { border-color:#fde68a !important; background:#fffbeb !important; }
+[data-sdlg-priority="P2"] { border-color:#e2e8f0 !important; background:#f9fafb !important; }
+[data-sdlg-priority="ACTION"] { border-color:#bfdbfe !important; background:#eff6ff !important; }
+.metric-card[data-empty="1"] .metric-value { color:#94a3b8 !important; font-weight:600 !important; }
+.page:has(.metric-grid) [style*="height: 8px"] { height:12px !important; }
