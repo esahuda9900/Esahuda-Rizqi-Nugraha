@@ -79,7 +79,6 @@ else:
         data,
     )
 
-# Boss analytics session-wait patch
 MARKER = 'client.from("claim_ops_boss_v").select("*")'
 if "loadBossAnalytics" in data:
     print("boss analytics session-wait already present")
@@ -157,7 +156,6 @@ elif MARKER in data and "setBossOpsRows" in data:
 else:
     print("WARNING: boss marker not found")
 
-# Overview UX source patches
 if '["Approval Rate", approvedRate + "%"]' in data:
     data = data.replace(
         '["Approval Rate", approvedRate + "%"]',
@@ -189,11 +187,14 @@ if _old_st in data and 'P0: "#fecaca"' not in data:
     data = data.replace(_old_st, _new_st, 1)
     print("patched My Action Today semantic colors")
 
-# Hard-link overview UX module
+data = data.replace(
+    'sdlg-overview-ux.js?v=20261010-v1',
+    'sdlg-overview-ux.js?v=20261010-v11',
+)
 if "sdlg-overview-ux.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-overview-ux.js?v=20261010-v1" data-sdlg-overview-ux="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-overview-ux.js?v=20261010-v11" data-sdlg-overview-ux="1"></script>\n</body>',
         1,
     )
     print("injected overview-ux script before </body>")
