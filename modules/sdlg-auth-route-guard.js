@@ -1,12 +1,14 @@
 /**
- * SDLG Auth Route Guard v1
- * - Logged out + protected route → #/login (save intent)
- * - Logged in + #/login → restore intent or #/overview
- * - URL always matches visible auth state
+ * SDLG Auth Route Guard v1.1
+ * - Empty hash + not auth → #/login (URL must show #/login)
+ * - Empty hash + auth → #/overview
+ * - Protected route + not auth → #/login (save intent)
+ * - #/login + auth → restore intent or #/overview
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_AUTH_ROUTE_GUARD_V1__) return;
+  if (root.__SDLG_AUTH_ROUTE_GUARD_V11__) return;
+  root.__SDLG_AUTH_ROUTE_GUARD_V11__ = true;
   root.__SDLG_AUTH_ROUTE_GUARD_V1__ = true;
 
   var KEY = 'sdlg_redirect_after_login';
@@ -26,47 +28,69 @@
     return String(root.location.hash || '').replace(/^#/, '');
   }
 
+  /** True when URL has no meaningful route hash */
+  function isEmptyHash() {
+    var h = rawHash().replace(/^\//, '').trim().toLowerCase();
+    return !h || h === '/' || h === 'index.html';
+  }
+
+  /** True only for explicit login route */
   function isLoginHash() {
     var h = rawHash().replace(/^\//, '').toLowerCase();
-    return !h || h === 'login' || h === '/' || h.indexOf('login') === 0;
+    return h === 'login' || h.indexOf('login/') === 0 || h === 'signin' || h === 'auth';
+  }
+
+  function isPublicHash() {
+    return isEmptyHash() || isLoginHash();
   }
 
   function currentFullHash() {
     var h = String(root.location.hash || '');
-    return h || '#/overview';
+    if (!h || h === '#' || h === '#/') return '';
+    return h;
+  }
+
+  function setHash(hash, saveIntent) {
+    if (busy) return;
+    var target = hash.charAt(0) === '#' ? hash : '#' + hash;
+    var cur = String(root.location.hash || '');
+    if (cur === target || cur === target.replace(/^#\//, '#') ) {
+      // already there
+      if (cur === target) return;
+    }
+    if (saveIntent) {
+      var intent = currentFullHash();
+      if (intent && !isPublicHash() && intent !== target) {
+        try { root.localStorage.setItem(KEY, intent); } catch (_) {}
+      }
+    }
+    busy = true;
+    try {
+      root.location.replace(root.location.pathname + root.location.search + target);
+    } catch (_) {
+      root.location.hash = target;
+    }
+    setTimeout(function () { busy = false; }, 80);
   }
 
   function goLogin(saveIntent) {
-    if (busy) return;
-    var cur = currentFullHash();
-    if (saveIntent && cur && !/^#\/?login/i.test(cur) && cur !== '#' && cur !== '#/') {
-      try { root.localStorage.setItem(KEY, cur); } catch (_) {}
-    }
-    if (isLoginHash()) return;
-    busy = true;
-    try {
-      root.location.replace(root.location.pathname + root.location.search + '#/login');
-    } catch (_) {
-      root.location.hash = '#/login';
-    }
-    setTimeout(function () { busy = false; }, 50);
+    // Always force explicit #/login so address bar matches UI
+    if (isLoginHash() && !isEmptyHash()) return;
+    setHash('#/login', !!saveIntent);
   }
 
   function goAfterLogin() {
-    if (busy) return;
     var dest = null;
     try { dest = root.localStorage.getItem(KEY); } catch (_) {}
     try { root.localStorage.removeItem(KEY); } catch (_) {}
-    if (!dest || /^#\/?login/i.test(dest) || dest === '#' || dest === '#/') {
+    if (!dest || /^#\/?login/i.test(dest) || dest === '#' || dest === '#/' || !dest) {
       dest = '#/overview';
     }
-    busy = true;
-    try {
-      root.location.replace(root.location.pathname + root.location.search + dest);
-    } catch (_) {
-      root.location.hash = dest;
-    }
-    setTimeout(function () { busy = false; }, 50);
+    setHash(dest, false);
+  }
+
+  function goOverview() {
+    setHash('#/overview', false);
   }
 
   async function sessionPresent() {
@@ -81,13 +105,31 @@
     }
   }
 
+  function hasTokenHint() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i) || '';
+        if (/sb-.*-auth-token/i.test(k)) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   async function enforce() {
     var authed = await sessionPresent();
+
     if (!authed) {
-      if (!isLoginHash()) goLogin(true);
+      // Empty hash OR any protected route → explicit #/login
+      if (isEmptyHash() || !isLoginHash()) {
+        goLogin(!isEmptyHash());
+      }
       return;
     }
-    if (isLoginHash()) goAfterLogin();
+
+    // Authenticated
+    if (isEmptyHash() || isLoginHash()) {
+      if (isLoginHash() || isEmptyHash()) goAfterLogin();
+    }
   }
 
   function wireAuthListener() {
@@ -96,7 +138,7 @@
     try {
       client.auth.onAuthStateChange(function (event, session) {
         if (event === 'SIGNED_IN' || (session && session.access_token)) {
-          if (isLoginHash()) goAfterLogin();
+          if (isEmptyHash() || isLoginHash()) goAfterLogin();
           return;
         }
         if (event === 'SIGNED_OUT' || !session) {
@@ -115,9 +157,9 @@
     var tries = 0;
     var t = setInterval(function () {
       tries++;
-      if (wireAuthListener() || tries > 20) clearInterval(t);
+      if (wireAuthListener() || tries > 25) clearInterval(t);
       enforce();
-    }, 400);
+    }, 350);
   }
 
   if (document.readyState === 'loading') {
@@ -126,23 +168,21 @@
     boot();
   }
 
-  // Early sync redirect when no auth token and hash is protected (reduces wrong-URL flash)
+  // Early: empty hash + no token → #/login immediately (sync, no wait for Supabase)
   try {
-    var hasToken = false;
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i) || '';
-      if (/sb-.*-auth-token/i.test(k)) { hasToken = true; break; }
-    }
-    if (!hasToken && !isLoginHash()) {
-      try { localStorage.setItem(KEY, currentFullHash()); } catch (_) {}
-      root.location.replace(root.location.pathname + root.location.search + '#/login');
+    if (!hasTokenHint() && (isEmptyHash() || !isLoginHash())) {
+      if (!isLoginHash()) {
+        root.location.replace(root.location.pathname + root.location.search + '#/login');
+      }
     }
   } catch (_) {}
 
   root.SDLGAuthRouteGuard = {
-    version: '1.0.0',
+    version: '1.1.0',
     enforce: enforce,
     goLogin: goLogin,
-    goAfterLogin: goAfterLogin
+    goAfterLogin: goAfterLogin,
+    isEmptyHash: isEmptyHash,
+    isLoginHash: isLoginHash
   };
 })(window);
