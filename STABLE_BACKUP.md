@@ -17,11 +17,25 @@ git push origin main --force
 
 | Branch | Notes |
 |--------|--------|
+| **`backup/stable-2026-10-10-overview-fix`** | Auth singleton v2.2 (legacy anon JWT) + session recheck; auth-guard v1.3; Overview session gate; blank Overview fixed (JWT timing). SHA tip at create: `781d2f4` |
 | **`backup/stable-2026-10-10-no-duplicate-back`** | Route-finish v1.5 nuclear breadcrumb kill; single React ← Kembali on Claim Detail; AGENTS ban on global DOM nav inject |
 | `backup/stable-2026-10-09-antiregression` | Contract + session heal + AGENTS |
 | `backup/stable-2026-10-09-parse-diff` | Diff modal Update Klaim |
 | `backup/stable-2026-10-09-baked-source` | Source bake paths/singleton |
 | `backup/stable-2026-10-09-portal-ok` | Portal repair_method / repairDate |
+
+## Chapter status (2026-10-10)
+
+| Chapter | Status |
+|---------|--------|
+| Auth + Supabase singleton | Done |
+| Hash routing + auth guard | Done |
+| Login polish + FOUC | Done |
+| Duplicate back button | Done |
+| Session persist + 401 handling | Done |
+| Overview page render | Done |
+
+**Next recommended:** Claims list pagination (538+ rows).
 
 ## Emergency
 
