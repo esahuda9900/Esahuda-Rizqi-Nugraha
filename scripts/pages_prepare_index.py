@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview + loading UX."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview + loading UX architecture."""
 from pathlib import Path
 import re
 import urllib.request
@@ -122,43 +122,92 @@ if "sdlg-overview-ux.js" not in data:
     )
     print("injected overview-ux script before </body>")
 
-if 'src="./modules/sdlg-repository.js"' in data and 'sdlg-repository.js?v=' not in data:
-    data = data.replace(
-        'src="./modules/sdlg-repository.js"',
-        'src="./modules/sdlg-repository.js?v=20261010-v2"',
-        1,
-    )
-    print("cache-bust sdlg-repository v2")
+# Cache-bust repository to v3 (countClaimsCached)
+data = re.sub(
+    r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"',
+    'src="./modules/sdlg-repository.js?v=20261010-v3"',
+    data,
+    count=1,
+)
+print("cache-bust sdlg-repository v3")
 
-# === Loading UX: no 0 → 100 → 538 flash ===
-if "LOAD_UX: single full fetch" not in data and "firstPage && firstPage.length" in data:
-    soft_old = (
-        'const firstPage = typeof SDLG_REPOSITORY.listClaimsPage === "function"\n'
-        '                ? await SDLG_REPOSITORY.listClaimsPage(0)\n'
-        '                : null;\n'
-        '            if (firstPage && firstPage.length) {\n'
-        '                setClaims(firstPage);\n'
-        '                setLoading(false);\n'
-        '            }\n'
-        '            const [all, actionRows] = await Promise.all([\n'
-        '                SDLG_REPOSITORY.listClaims(),'
+# === Loading Architecture: no 0 → 100 → 538 flash ===
+if "LOAD_UX: single full fetch" not in data:
+    pat = re.compile(
+        r'const firstPage\s*=\s*typeof SDLG_REPOSITORY\.listClaimsPage\s*===\s*"function"\s*'
+        r'\?\s*await SDLG_REPOSITORY\.listClaimsPage\(0\)\s*'
+        r':\s*null;\s*'
+        r'if\s*\(\s*firstPage\s*&&\s*firstPage\.length\s*\)\s*\{\s*'
+        r'setClaims\(firstPage\);\s*'
+        r'setLoading\(false\);\s*'
+        r'\}\s*'
+        r'const\s*\[all,\s*actionRows\]\s*=\s*await\s*Promise\.all\(\[\s*'
+        r'SDLG_REPOSITORY\.listClaims\(\),',
+        re.MULTILINE,
     )
-    soft_new = (
+    repl = (
         '/* LOAD_UX: single full fetch — no intermediate 100-row flash */\n'
         '            const [all, actionRows] = await Promise.all([\n'
         '                SDLG_REPOSITORY.listClaims(),'
     )
-    if soft_old in data:
-        data = data.replace(soft_old, soft_new, 1)
-        print("patched loadClaims: single full fetch (no 100-flash)")
+    new_data, n = pat.subn(repl, data, count=1)
+    if n:
+        data = new_data
+        print("patched loadClaims: single full fetch (no 100-flash) via regex")
     else:
-        print("WARNING: firstPage block not matched exactly")
+        if "listClaimsPage(0)" in data and "setClaims(firstPage)" in data:
+            data = data.replace("setClaims(firstPage);", "/* LOAD_UX skip intermediate */;", 1)
+            data = data.replace("setLoading(false);\n            }\n            const [all, actionRows]",
+                                "/* keep loading until full */\n            }\n            const [all, actionRows]", 1)
+            print("patched loadClaims: soft skip setClaims(firstPage)")
+        else:
+            print("WARNING: firstPage block not matched")
 
 OLD_NAV = '["list", `Claims · ${claims.filter(c => !c.archived_at).length}`],'
 NEW_NAV = '["list", loading ? "Claims · …" : `Claims · ${claims.filter(c => !c.archived_at).length}`],'
-if OLD_NAV in data and "Claims · …" not in data:
+if OLD_NAV in data:
     data = data.replace(OLD_NAV, NEW_NAV, 1)
     print("patched nav Claims count: … while loading")
+elif "Claims · …" in data:
+    print("nav Claims … already present")
+else:
+    data2, n2 = re.subn(
+        r'\["list",\s*`Claims · \$\{claims\.filter\(c => !c\.archived_at\)\.length\}`\],',
+        NEW_NAV,
+        data,
+        count=1,
+    )
+    if n2:
+        data = data2
+        print("patched nav Claims via regex")
+    else:
+        print("WARNING: nav Claims pattern not matched")
+
+if '["Total Claims", loading' not in data and '["Total Claims", totalClaims]' in data:
+    data = data.replace(
+        '["Total Claims", totalClaims]',
+        '["Total Claims", loading ? "\\u2026" : totalClaims]',
+        1,
+    )
+    data = data.replace(
+        '["Total Claim Amount", totalAmountDisplay]',
+        '["Total Claim Amount", loading ? "\\u2026" : totalAmountDisplay]',
+        1,
+    )
+    data = data.replace(
+        '["On Hold", onHold]',
+        '["On Hold", loading ? "\\u2026" : onHold]',
+        1,
+    )
+    print("patched KPI cards: … while loading")
+
+if "sdlg-overview-loading.js" not in data:
+    data = data.replace(
+        "</body>",
+        '  <script src="./modules/sdlg-overview-loading.js?v=20261010-v1" data-sdlg-overview-loading="1"></script>\n</body>',
+        1,
+    )
+    print("injected overview-loading script")
 
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare post-FOUC + loading UX done")
+print("pages_prepare post-FOUC + loading architecture done")
