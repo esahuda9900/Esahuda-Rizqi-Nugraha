@@ -1,7 +1,6 @@
 /**
  * SDLG Claim field registry — single source of truth for portal / assessment / helper.
  * Load before portal helpers. Exposes window.SDLG_CLAIM_FIELDS
- * v1.3 — Feedback Person + Feedback Contact; empty → "" (UI uses —)
  */
 (function (global) {
   'use strict';
@@ -133,7 +132,7 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      loadScript('./modules/sdlg-hash-router.js?v=20261009-v20', 'data-sdlg-hash-router');
+      loadScript('./modules/sdlg-hash-router.js?v=20261010-v21', 'data-sdlg-hash-router');
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
@@ -141,7 +140,8 @@
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
       loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
-      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v31', 'data-sdlg-ui-polish-v3');
+      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v32', 'data-sdlg-ui-polish-v3');
+      loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v1', 'data-sdlg-auth-route-guard');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
