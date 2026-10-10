@@ -1,15 +1,12 @@
 /**
- * SDLG_REPOSITORY — extracted data access layer (P3 phase 1)
- * Loads before React bootstrap. Safe if index also defines a fallback object.
- *
- * Depends on: window.getSdlgSupabase (or sdlgSupabase)
- * Optional: window.SDLG_DATA_MODEL.normalizeClaimCollection
+ * SDLG_REPOSITORY — data access layer
+ * v2: listClaims uses single range fetch (avoids stuck-at-100 after first page)
  */
 (function (global) {
   'use strict';
 
-  var PAGE_SIZE = 100;
-  var MAX_PAGES = 10000;
+  var PAGE_SIZE = 500;
+  var MAX_PAGES = 50;
   var MAX_RETRIES = 3;
 
   function getClient() {
@@ -62,6 +59,16 @@
   }
 
   var repo = {
+    async countClaims() {
+      var client = getClient();
+      if (!client) throw new Error('Supabase client not ready');
+      var result = await runRead(function () {
+        return client.from('claims').select('*', { count: 'exact', head: true });
+      });
+      if (result && result.error) throw result.error;
+      return typeof result.count === 'number' ? result.count : null;
+    },
+
     async listClaimsPage(page) {
       var client = getClient();
       if (!client) throw new Error('Supabase client not ready');
@@ -78,11 +85,39 @@
     },
 
     async listClaims() {
+      var client = getClient();
+      if (!client) throw new Error('Supabase client not ready');
+
+      try {
+        var result = await runRead(function () {
+          return client
+            .from('claims')
+            .select('*')
+            .order('claim_id', { ascending: false })
+            .range(0, 1999);
+        });
+        if (result && !result.error && Array.isArray(result.data)) {
+          var rows = normalizeRows(result.data);
+          if (rows.length < 2000) return rows;
+        }
+      } catch (_) {}
+
       var all = [];
       for (var page = 0; page < MAX_PAGES; page++) {
-        var rows = await repo.listClaimsPage(page);
-        all = all.concat(rows);
-        if (!rows || rows.length < PAGE_SIZE) break;
+        var pageRows = null;
+        var attempts = 0;
+        while (attempts < MAX_RETRIES) {
+          try {
+            pageRows = await repo.listClaimsPage(page);
+            break;
+          } catch (e) {
+            attempts++;
+            if (attempts >= MAX_RETRIES) throw e;
+            await sleep(300 * attempts);
+          }
+        }
+        all = all.concat(pageRows || []);
+        if (!pageRows || pageRows.length < PAGE_SIZE) break;
       }
       return all;
     },
@@ -163,9 +198,8 @@
     }
   };
 
-  // Prefer module implementation; index may assign fallback if this did not load
   global.SDLG_REPOSITORY = repo;
   try {
-    console.info('[SDLG] sdlg-repository.js loaded (P3 extract)');
+    console.info('[SDLG] sdlg-repository.js v2 loaded (full list + count)');
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
