@@ -140,7 +140,7 @@
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
       loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
       loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v33', 'data-sdlg-ui-polish-v3');
-      loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v12', 'data-sdlg-auth-route-guard');
+      loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v13', 'data-sdlg-auth-route-guard');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
