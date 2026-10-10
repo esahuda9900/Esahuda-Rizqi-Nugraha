@@ -1,19 +1,18 @@
 /**
- * SDLG Overview Loading Architecture v1.0
- * Runtime patch: eliminates 0 → 100 → 538 KPI flicker.
- * - Uses countClaimsCached when available
- * - Prevents intermediate setClaims(firstPage)
- * - Nav + KPI show "…" while loading
+ * SDLG Overview Loading Architecture v2.0
+ * Ensures ALL Overview sections show skeleton/… during hydrate — not just top KPIs.
  * Fail-safe: never crash the app.
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_OVERVIEW_LOADING_V1__) return;
+    if (root.__SDLG_OVERVIEW_LOADING_V2__) return;
+    root.__SDLG_OVERVIEW_LOADING_V2__ = true;
     root.__SDLG_OVERVIEW_LOADING_V1__ = true;
 
     var COUNT_KEY = 'sdlg:claims-count:v1';
     var TTL = 5 * 60 * 1000;
+    var hydrateUntil = Date.now() + 8000;
 
     function readCache() {
       try {
@@ -37,26 +36,58 @@
       var s = document.createElement('style');
       s.id = 'sdlg-overview-loading-css';
       s.textContent = [
-        '.metric-card.is-loading .metric-value{opacity:.45;letter-spacing:.08em}',
-        '.nav-btn.is-count-loading{opacity:.85}'
+        '@keyframes sdlg-pulse{0%{background-position:200% 0}100%{background-position:-200% 0}}',
+        '.metric-card.is-loading .metric-value,.wx-metric.is-loading .wx-metric-value{opacity:.45;letter-spacing:.08em}',
+        '.nav-btn.is-count-loading{opacity:.85}',
+        '.sdlg-skel{display:inline-block;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:sdlg-pulse 1.5s ease-in-out infinite;border-radius:4px}',
+        '.wx-filter.is-loading .wx-filter-count{opacity:.6}'
       ].join('');
       (document.head || document.documentElement).appendChild(s);
     }
 
-    function suppressZeroKpis() {
+    function isHydrating() {
+      return Date.now() < hydrateUntil;
+    }
+
+    function hasClaimData() {
       try {
-        var cards = document.querySelectorAll('.metric-card');
-        for (var i = 0; i < cards.length; i++) {
-          var card = cards[i];
-          var val = card.querySelector('.metric-value');
-          if (!val) continue;
-          var t = String(val.textContent || '').trim();
-          if (t === '0' || t === '0.0%' || t === '0%') {
-            var hasRows = !!document.querySelector('.claim-row, .claims-table-shell tbody tr');
-            if (!hasRows) {
-              val.textContent = '\u2026';
-              card.classList.add('is-loading');
-            }
+        return !!document.querySelector('.claim-row, .claims-table-shell tbody tr, [data-sdlg-claims-ready="1"]');
+      } catch (_) { return false; }
+    }
+
+    function suppressLoadingZeros() {
+      if (!isHydrating() && hasClaimData()) return;
+      try {
+        var vals = document.querySelectorAll('.metric-value, .wx-metric-value, b');
+        for (var i = 0; i < vals.length; i++) {
+          var el = vals[i];
+          var t = String(el.textContent || '').trim();
+          if (t === '0' || t === '0.0%' || t === '0%' || t === 'Rp 0' || t === 'Rp0') {
+            var page = el.closest('.page, .wx-analytics-shell, .metric-card, .card');
+            if (!page) continue;
+            if (hasClaimData() && !isHydrating()) continue;
+            el.textContent = '\u2026';
+            if (el.parentElement) el.parentElement.classList.add('is-loading');
+          }
+        }
+
+        var counts = document.querySelectorAll('.wx-filter-count');
+        for (var j = 0; j < counts.length; j++) {
+          var c = counts[j];
+          var ct = String(c.textContent || '');
+          if (/^0\s+claim/.test(ct) && (isHydrating() || !hasClaimData())) {
+            c.textContent = '\u2026 claim dalam periode';
+          }
+        }
+
+        var emptyMsgs = document.querySelectorAll('div, span, p');
+        for (var k = 0; k < emptyMsgs.length; k++) {
+          var em = emptyMsgs[k];
+          if (em.children && em.children.length > 0) continue;
+          var et = String(em.textContent || '').trim();
+          if (/^Belum ada (data|tanggal|claim)/i.test(et) && (isHydrating() || !hasClaimData())) {
+            em.textContent = '\u2026';
+            em.setAttribute('data-sdlg-was-empty', '1');
           }
         }
       } catch (_) {}
@@ -70,10 +101,10 @@
           var label = String(b.textContent || '');
           if (!/^Claims/i.test(label)) continue;
           if (typeof count === 'number') {
-            b.textContent = 'Claims · ' + count;
+            b.textContent = 'Claims \u00b7 ' + count;
             b.classList.remove('is-count-loading');
           } else {
-            b.textContent = 'Claims · \u2026';
+            b.textContent = 'Claims \u00b7 \u2026';
             b.classList.add('is-count-loading');
           }
         }
@@ -87,20 +118,13 @@
           patchNavCount(cached);
           return cached;
         }
-        if (root.SDLG_REPOSITORY && typeof root.SDLG_REPOSITORY.countClaimsCached === 'function') {
-          var n = await root.SDLG_REPOSITORY.countClaimsCached();
-          if (typeof n === 'number') {
-            writeCache(n);
-            patchNavCount(n);
-            return n;
-          }
-        } else if (root.SDLG_REPOSITORY && typeof root.SDLG_REPOSITORY.countClaims === 'function') {
-          var n2 = await root.SDLG_REPOSITORY.countClaims();
-          if (typeof n2 === 'number') {
-            writeCache(n2);
-            patchNavCount(n2);
-            return n2;
-          }
+        var repo = root.SDLG_REPOSITORY;
+        if (repo && typeof repo.countClaimsCached === 'function') {
+          var n = await repo.countClaimsCached();
+          if (typeof n === 'number') { writeCache(n); patchNavCount(n); return n; }
+        } else if (repo && typeof repo.countClaims === 'function') {
+          var n2 = await repo.countClaims();
+          if (typeof n2 === 'number') { writeCache(n2); patchNavCount(n2); return n2; }
         }
       } catch (e) {
         console.warn('[SDLG overview-loading] earlyCount', e);
@@ -115,32 +139,35 @@
       else patchNavCount(null);
 
       function onReady() {
+        hydrateUntil = Date.now() + 8000;
         earlyCount();
         var tries = 0;
         var iv = setInterval(function () {
-          suppressZeroKpis();
+          suppressLoadingZeros();
           tries++;
-          if (tries > 20) clearInterval(iv);
-        }, 150);
+          if (tries > 40 || (!isHydrating() && hasClaimData())) clearInterval(iv);
+        }, 120);
       }
 
       if (typeof root.waitForSupabaseReady === 'function') {
         root.waitForSupabaseReady().then(onReady).catch(onReady);
       } else {
-        setTimeout(onReady, 400);
-        setTimeout(onReady, 1200);
+        setTimeout(onReady, 300);
+        setTimeout(onReady, 1000);
       }
 
       root.addEventListener('hashchange', function () {
+        hydrateUntil = Date.now() + 4000;
         setTimeout(function () {
           var c2 = readCache();
           if (c2 != null) patchNavCount(c2);
-          suppressZeroKpis();
-        }, 200);
+          suppressLoadingZeros();
+        }, 150);
       });
 
       root.addEventListener('sdlg-session-ready', function () {
-        setTimeout(onReady, 300);
+        hydrateUntil = Date.now() + 8000;
+        setTimeout(onReady, 200);
       });
     }
 
@@ -150,7 +177,7 @@
       try { boot(); } catch (_) {}
     }
 
-    root.SDLGOverviewLoading = { version: '1.0.0', earlyCount: earlyCount, patchNavCount: patchNavCount };
+    root.SDLGOverviewLoading = { version: '2.0.0', earlyCount: earlyCount, patchNavCount: patchNavCount };
   } catch (e) {
     try { console.warn('[SDLG overview-loading] init failed (non-fatal)', e); } catch (_) {}
   }
