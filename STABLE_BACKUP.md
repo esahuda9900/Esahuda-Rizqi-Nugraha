@@ -17,8 +17,9 @@ git push origin main --force
 
 | Branch | Notes |
 |--------|--------|
-| **`backup/stable-2026-10-10-overview-fix`** | Auth singleton v2.2 (legacy anon JWT) + session recheck; auth-guard v1.3; Overview session gate; blank Overview fixed (JWT timing). SHA tip at create: `781d2f4` |
-| **`backup/stable-2026-10-10-no-duplicate-back`** | Route-finish v1.5 nuclear breadcrumb kill; single React ← Kembali on Claim Detail |
+| **`backup/stable-2026-10-10-overview-ux`** | Overview UX: KPI 0%→—, semantic My Action colors, P2 MONITOR, rejection %, thicker bars. Modules `sdlg-overview-ux.js/css` |
+| **`backup/stable-2026-10-10-overview-fix`** | Auth singleton v2.2 + session recheck; auth-guard v1.3; Overview session gate (JWT timing) |
+| **`backup/stable-2026-10-10-no-duplicate-back`** | Route-finish v1.5 nuclear breadcrumb kill |
 | `backup/stable-2026-10-09-antiregression` | Contract + session heal + AGENTS |
 | `backup/stable-2026-10-09-parse-diff` | Diff modal Update Klaim |
 | `backup/stable-2026-10-09-baked-source` | Source bake paths/singleton |
@@ -34,8 +35,9 @@ git push origin main --force
 | Duplicate back button | Done |
 | Session persist + 401 handling | Done |
 | Overview page render | Done |
+| Overview UX hierarchy | Deploying (ensure live modules) |
 
-**Next recommended:** Claims list pagination (538+ rows).
+**Next recommended:** Finance auto-calc, then Claims pagination.
 
 ## Emergency
 
