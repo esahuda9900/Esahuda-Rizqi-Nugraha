@@ -1,14 +1,20 @@
 /**
- * SDLG UI Polish v3 — inject industrial ops stylesheet (anti-slop).
+ * SDLG UI Polish v3.1 — force login fixes + hide pipeline banner on login.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_UI_POLISH_V3__) return;
+  if (root.__SDLG_UI_POLISH_V31__) return;
+  root.__SDLG_UI_POLISH_V31__ = true;
   root.__SDLG_UI_POLISH_V3__ = true;
 
-  var HREF = './modules/sdlg-ui-polish-v3.css?v=20261010-v3';
-  function inject() {
-    if (document.getElementById('sdlg-ui-polish-v3')) return;
+  var HREF = './modules/sdlg-ui-polish-v3.css?v=20261010-v31';
+
+  function injectCss() {
+    var existing = document.getElementById('sdlg-ui-polish-v3');
+    if (existing) {
+      existing.href = HREF;
+      return;
+    }
     var link = document.createElement('link');
     link.id = 'sdlg-ui-polish-v3';
     link.rel = 'stylesheet';
@@ -16,35 +22,76 @@
     (document.head || document.documentElement).appendChild(link);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inject, { once: true });
-  } else {
-    inject();
+  function onLoginPage() {
+    return !!document.querySelector('main.login-screen, .login-screen');
   }
 
-  setTimeout(function () {
-    try {
-      var link = document.getElementById('sdlg-ui-polish-v3');
-      if (!link) return;
-      var ok = false;
-      try {
-        ok = !!(link.sheet && link.sheet.cssRules && link.sheet.cssRules.length);
-      } catch (_) {
-        return;
-      }
-      if (!ok) {
-        var s = document.createElement('style');
-        s.id = 'sdlg-ui-polish-v3-inline';
-        s.textContent =
-          '.login-screen{background:#eef1f6!important;background-image:none!important}' +
-          '.login-card{border-radius:12px!important;border:1px solid #d5dbe6!important;background:#fff!important;' +
-          'box-shadow:0 1px 1px rgba(15,23,42,.04),0 10px 28px rgba(15,23,42,.06)!important;backdrop-filter:none!important}' +
-          '.claim-row:hover{transform:none!important;box-shadow:none!important;background:#f8fafc!important}' +
-          '.app-shell:not(:has(.login-screen)) .topbar{backdrop-filter:none!important;background:#fff!important;box-shadow:none!important}';
-        document.head.appendChild(s);
-      }
-    } catch (_) {}
-  }, 2500);
+  function hidePipelineBannerOnLogin() {
+    var el = document.getElementById('sdlg-data-pipeline-banner');
+    if (!el) return;
+    if (onLoginPage()) {
+      el.setAttribute('data-login-hide', '1');
+      el.style.display = 'none';
+      try { el.remove(); } catch (_) {}
+    } else {
+      el.removeAttribute('data-login-hide');
+    }
+  }
 
-  root.SDLGUiPolish = { version: '3.0.0' };
+  function ensureStatusPill() {
+    if (!onLoginPage()) return;
+    var intro = document.querySelector('.login-intro');
+    if (!intro) return;
+    if (intro.querySelector('.login-status-pill')) return;
+    var trust = intro.querySelector('.login-trust-list');
+    var pill = document.createElement('div');
+    pill.className = 'login-status-pill';
+    pill.setAttribute('role', 'status');
+    pill.innerHTML =
+      '<span class="login-status-dot" aria-hidden="true"></span>' +
+      '<span>Sistem siap · Silakan login</span>';
+    if (trust && trust.parentNode) {
+      trust.parentNode.insertBefore(pill, trust);
+    } else {
+      intro.appendChild(pill);
+    }
+  }
+
+  function tick() {
+    hidePipelineBannerOnLogin();
+    ensureStatusPill();
+  }
+
+  function boot() {
+    injectCss();
+    tick();
+    if (typeof MutationObserver !== 'undefined') {
+      var t = null;
+      new MutationObserver(function () {
+        clearTimeout(t);
+        t = setTimeout(tick, 120);
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    }
+    setInterval(tick, 1500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+  try {
+    var prev = root.SDLGDataPipeline && root.SDLGDataPipeline.runDiagnostics;
+    if (typeof prev === 'function' && !root.__SDLG_PIPELINE_LOGIN_PATCH__) {
+      root.__SDLG_PIPELINE_LOGIN_PATCH__ = true;
+      root.SDLGDataPipeline.runDiagnostics = async function () {
+        var result = await prev.apply(this, arguments);
+        if (onLoginPage()) hidePipelineBannerOnLogin();
+        return result;
+      };
+    }
+  } catch (_) {}
+
+  root.SDLGUiPolish = { version: '3.1.0', refresh: tick };
 })(window);
