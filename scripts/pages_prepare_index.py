@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview loading consistency."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview priority loading."""
 from pathlib import Path
 import re
 import urllib.request
@@ -62,10 +62,7 @@ if "sdlg-auth-route-guard.js" not in data:
 else:
     data = re.sub(r'./modules/sdlg-auth-route-guard\.js\?v=[^"]+', AUTH_SRC, data)
 
-if '["Approval Rate", approvedRate + "%"]' in data:
-    data = data.replace('["Approval Rate", approvedRate + "%"]', '["Approval Rate", (approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%")]', 1)
-    data = data.replace('["Rejection Rate", rejectedRate + "%"]', '["Rejection Rate", (rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%")]', 1)
-
+# LOAD_UX
 if "LOAD_UX: single full fetch" not in data:
     pat = re.compile(
         r'const firstPage\s*=\s*typeof SDLG_REPOSITORY\.listClaimsPage\s*===\s*"function"\s*'
@@ -80,53 +77,84 @@ if "LOAD_UX: single full fetch" not in data:
         re.MULTILINE,
     )
     repl = (
-        '/* LOAD_UX: single full fetch \u2014 no intermediate 100-row flash */\n'
+        '/* LOAD_UX: single full fetch */\n'
         '            const [all, actionRows] = await Promise.all([\n'
         '                SDLG_REPOSITORY.listClaims(),'
     )
     data, n = pat.subn(repl, data, count=1)
     if n:
-        print("patched loadClaims: single full fetch")
+        print("patched loadClaims")
     elif "setClaims(firstPage)" in data:
-        data = data.replace("setClaims(firstPage);", "/* LOAD_UX skip intermediate */;", 1)
-        print("patched loadClaims: soft skip")
+        data = data.replace("setClaims(firstPage);", "/* LOAD_UX skip */;", 1)
 
+# Nav
 OLD_NAV = '["list", `Claims \u00b7 ${claims.filter(c => !c.archived_at).length}`],'
 NEW_NAV = '["list", loading ? "Claims \u00b7 \u2026" : `Claims \u00b7 ${claims.filter(c => !c.archived_at).length}`],'
 if OLD_NAV in data:
     data = data.replace(OLD_NAV, NEW_NAV, 1)
-    print("patched nav")
 else:
     OLD_NAV2 = '["list", `Claims · ${claims.filter(c => !c.archived_at).length}`],'
     NEW_NAV2 = '["list", loading ? "Claims · \u2026" : `Claims · ${claims.filter(c => !c.archived_at).length}`],'
     if OLD_NAV2 in data:
         data = data.replace(OLD_NAV2, NEW_NAV2, 1)
-        print("patched nav (utf8)")
 
+# ALL 5 KPIs gated on loading (including rates)
 if '["Total Claims", loading' not in data and '["Total Claims", totalClaims]' in data:
     data = data.replace('["Total Claims", totalClaims]', '["Total Claims", loading ? "\\u2026" : totalClaims]', 1)
     data = data.replace('["Total Claim Amount", totalAmountDisplay]', '["Total Claim Amount", loading ? "\\u2026" : totalAmountDisplay]', 1)
     data = data.replace('["On Hold", onHold]', '["On Hold", loading ? "\\u2026" : onHold]', 1)
-    print("patched top KPI")
 
+# Rates: always apply loading gate (covers both raw and em-dash forms)
+if 'loading ? "\\u2026" : ((approvedRate' not in data:
+    if '["Approval Rate", (approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%")]' in data:
+        data = data.replace(
+            '["Approval Rate", (approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%")]',
+            '["Approval Rate", loading ? "\\u2026" : ((approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%"))]',
+            1,
+        )
+        print("gated Approval Rate")
+    elif '["Approval Rate", approvedRate + "%"]' in data:
+        data = data.replace(
+            '["Approval Rate", approvedRate + "%"]',
+            '["Approval Rate", loading ? "\\u2026" : ((approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%"))]',
+            1,
+        )
+        print("gated Approval Rate raw")
+
+if 'loading ? "\\u2026" : ((rejectedRate' not in data:
+    if '["Rejection Rate", (rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%")]' in data:
+        data = data.replace(
+            '["Rejection Rate", (rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%")]',
+            '["Rejection Rate", loading ? "\\u2026" : ((rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%"))]',
+            1,
+        )
+        print("gated Rejection Rate")
+    elif '["Rejection Rate", rejectedRate + "%"]' in data:
+        data = data.replace(
+            '["Rejection Rate", rejectedRate + "%"]',
+            '["Rejection Rate", loading ? "\\u2026" : ((rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%"))]',
+            1,
+        )
+        print("gated Rejection Rate raw")
+
+# My Action
 for pri in ("P0", "P1", "P2"):
     old_v = "value: counts.%s || 0" % pri
     new_v = 'value: loading ? "\\u2026" : (counts.%s || 0)' % pri
     if old_v in data:
         data = data.replace(old_v, new_v, 1)
-        print("gated My Action", pri)
 if 'value: actionRequired.length' in data and 'loading ? "\\u2026" : actionRequired.length' not in data:
     data = data.replace('value: actionRequired.length', 'value: loading ? "\\u2026" : actionRequired.length', 1)
-    print("gated Needs action")
 
+# Status Flow
 if 'React.createElement("b", { style: { fontSize: 12 } }, n));' in data:
     data = data.replace(
         'React.createElement("b", { style: { fontSize: 12 } }, n));',
         'React.createElement("b", { style: { fontSize: 12 } }, loading ? "\\u2026" : n));',
         1,
     )
-    print("gated Status Flow")
 
+# Charts empty
 for msg in (
     "Belum ada tanggal yang bisa dianalisis.",
     "Belum ada data model.",
@@ -138,19 +166,18 @@ for msg in (
     new_e = 'React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, loading ? "\\u2026" : "%s")' % msg
     if old_e in data:
         data = data.replace(old_e, new_e, 1)
-        print("gated empty:", msg[:28])
 
+# Rupiah
 _old_rp = '"Rp ",\n                            new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(idrEquivalent || 0)'
 _new_rp = 'loading ? "\\u2026" : ("Rp " + new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(idrEquivalent || 0))'
 if _old_rp in data:
     data = data.replace(_old_rp, _new_rp, 1)
-    print("gated Rupiah")
 
+# Pass loading to boss analytics
 old_pf = "window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth })"
 new_pf = "window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth, loading: loading })"
 if old_pf in data:
     data = data.replace(old_pf, new_pf, 1)
-    print("passed loading to periodFilterBar")
 
 if "renderExtraPanels({" in data and "loading: loading" not in data.split("renderExtraPanels({")[1][:300]:
     data = data.replace(
@@ -158,19 +185,19 @@ if "renderExtraPanels({" in data and "loading: loading" not in data.split("rende
         "window.SDLGBossAnalytics.renderExtraPanels({ loading: loading,",
         1,
     )
-    print("passed loading to renderExtraPanels")
 
+# Cache-bust
 data = re.sub(r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"', 'src="./modules/sdlg-repository.js?v=20261010-v3"', data, count=1)
-data = re.sub(r'sdlg-overview-loading\.js\?v=[^"\s]+', 'sdlg-overview-loading.js?v=20261010-v21', data)
+data = re.sub(r'sdlg-overview-loading\.js\?v=[^"\s]+', 'sdlg-overview-loading.js?v=20261010-v22', data)
 data = re.sub(r'boss-analytics-dashboard\.js(?:\?v=[^"]*)?', 'boss-analytics-dashboard.js?v=20261010-v42', data)
 
 if "sdlg-overview-ux.js" not in data:
     data = data.replace("</body>", '  <script src="./modules/sdlg-overview-ux.js?v=20261010-v11" data-sdlg-overview-ux="1"></script>\n</body>', 1)
 if "sdlg-overview-loading.js" not in data:
-    data = data.replace("</body>", '  <script src="./modules/sdlg-overview-loading.js?v=20261010-v21" data-sdlg-overview-loading="1"></script>\n</body>', 1)
-    print("injected overview-loading v21")
+    data = data.replace("</body>", '  <script src="./modules/sdlg-overview-loading.js?v=20261010-v22" data-sdlg-overview-loading="1"></script>\n</body>', 1)
+    print("injected overview-loading v22")
 else:
-    print("overview-loading already present")
+    print("overview-loading ref present")
 
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare loading-consistency done")
+print("pages_prepare priority-loading done")
