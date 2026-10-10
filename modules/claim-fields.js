@@ -141,8 +141,8 @@
       loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
       loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v33', 'data-sdlg-ui-polish-v3');
       loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v13', 'data-sdlg-auth-route-guard');
-      loadScript('./modules/sdlg-overview-session-gate.js?v=20261010-v1', 'data-sdlg-overview-gate');
-      loadScript('./modules/sdlg-overview-ux.js?v=20261010-v1', 'data-sdlg-overview-ux');
+      loadScript('./modules/sdlg-overview-session-gate.js?v=20261010-v11', 'data-sdlg-overview-gate');
+      loadScript('./modules/sdlg-overview-ux.js?v=20261010-v11', 'data-sdlg-overview-ux');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
