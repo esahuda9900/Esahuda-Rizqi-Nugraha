@@ -52,7 +52,7 @@ if "SDLG_CRITICAL_FOUC_V1" not in data:
     print("injected FOUC critical CSS + static polish link")
 else:
     data = re.sub(
-        r"./modules/sdlg-ui-polish-v3\.css\?v=[^"]+",
+        r'./modules/sdlg-ui-polish-v3\.css\?v=[^"]+',
         "./modules/sdlg-ui-polish-v3.css?v=20261010-v33",
         data,
     )
@@ -74,7 +74,7 @@ if "sdlg-auth-route-guard.js" not in data:
         print("injected auth-route-guard before body end")
 else:
     data = re.sub(
-        r"./modules/sdlg-auth-route-guard\.js\?v=[^"]+",
+        r'./modules/sdlg-auth-route-guard\.js\?v=[^"]+',
         AUTH_SRC,
         data,
     )
@@ -157,7 +157,7 @@ elif MARKER in data and "setBossOpsRows" in data:
 else:
     print("WARNING: boss marker not found")
 
-# Overview UX: KPI zero rates → em dash
+# Overview UX source patches
 if '["Approval Rate", approvedRate + "%"]' in data:
     data = data.replace(
         '["Approval Rate", approvedRate + "%"]',
@@ -188,6 +188,15 @@ if _old_st in data and 'P0: "#fecaca"' not in data:
     )
     data = data.replace(_old_st, _new_st, 1)
     print("patched My Action Today semantic colors")
+
+# Hard-link overview UX module
+if "sdlg-overview-ux.js" not in data:
+    data = data.replace(
+        "</body>",
+        '  <script src="./modules/sdlg-overview-ux.js?v=20261010-v1" data-sdlg-overview-ux="1"></script>\n</body>',
+        1,
+    )
+    print("injected overview-ux script before </body>")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare post-FOUC + boss analytics + overview UX done")
