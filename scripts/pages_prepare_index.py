@@ -27,7 +27,7 @@ FOUC = """<!-- SDLG_CRITICAL_FOUC_V1 -->
 <style id="sdlg-critical-fouc">
 html, body { background: #eef1f6; }
 .login-screen { background: #eef1f6 !important; background-image: none !important; }
-.login-intro h1 { font-size: 32px !important; line-height: 1.2 !important; font-weight: 700 !important; color: #0f172a !important; }
+.login-intro h1 { font-size: 28px !important; line-height: 1.2 !important; font-weight: 700 !important; color: #0f172a !important; }
 .login-card input, #login-email, #login-password {
   background: #ffffff !important; background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important; color: #0f172a !important;
@@ -39,7 +39,7 @@ html, body { background: #eef1f6; }
 .login-trust-list { display: none !important; }
 #sdlg-data-pipeline-banner { display: none !important; }
 </style>
-<link rel="stylesheet" href="./modules/sdlg-ui-polish-v3.css?v=20261010-v32" id="sdlg-ui-polish-v3-static" />
+<link rel="stylesheet" href="./modules/sdlg-ui-polish-v3.css?v=20261010-v33" id="sdlg-ui-polish-v3-static" />
 """
 
 if "SDLG_CRITICAL_FOUC_V1" not in data:
@@ -53,9 +53,10 @@ if "SDLG_CRITICAL_FOUC_V1" not in data:
 else:
     data = re.sub(
         r"./modules/sdlg-ui-polish-v3\.css\?v=[^\"]+",
-        "./modules/sdlg-ui-polish-v3.css?v=20261010-v32",
+        "./modules/sdlg-ui-polish-v3.css?v=20261010-v33",
         data,
     )
+    data = data.replace("font-size: 32px !important", "font-size: 28px !important")
     print("FOUC already present; version refreshed")
 
 AUTH_SRC = "./modules/sdlg-auth-route-guard.js?v=20261010-v1"

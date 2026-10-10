@@ -1,13 +1,13 @@
 /**
- * SDLG UI Polish v3.1 — force login fixes + hide pipeline banner on login.
+ * SDLG UI Polish v3.3 — force login fixes + hide pipeline banner + autofocus.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_UI_POLISH_V31__) return;
-  root.__SDLG_UI_POLISH_V31__ = true;
+  if (root.__SDLG_UI_POLISH_V33__) return;
+  root.__SDLG_UI_POLISH_V33__ = true;
   root.__SDLG_UI_POLISH_V3__ = true;
 
-  var HREF = './modules/sdlg-ui-polish-v3.css?v=20261010-v31';
+  var HREF = './modules/sdlg-ui-polish-v3.css?v=20261010-v33';
 
   function injectCss() {
     var existing = document.getElementById('sdlg-ui-polish-v3');
@@ -20,6 +20,9 @@
     link.rel = 'stylesheet';
     link.href = HREF;
     (document.head || document.documentElement).appendChild(link);
+    // also refresh static link if present
+    var st = document.getElementById('sdlg-ui-polish-v3-static');
+    if (st) st.href = HREF;
   }
 
   function onLoginPage() {
@@ -36,6 +39,20 @@
     } else {
       el.removeAttribute('data-login-hide');
     }
+  }
+
+  function autoFocusLogin() {
+    if (!onLoginPage()) return;
+    var el = document.getElementById('login-email');
+    if (!el) return;
+    try {
+      if (document.activeElement === el) return;
+      if (el.getAttribute('data-sdlg-autofocused') === '1') return;
+      el.setAttribute('data-sdlg-autofocused', '1');
+      setTimeout(function () {
+        try { el.focus({ preventScroll: true }); } catch (_) { try { el.focus(); } catch (__) {} }
+      }, 80);
+    } catch (_) {}
   }
 
   function ensureStatusPill() {
@@ -60,6 +77,7 @@
   function tick() {
     hidePipelineBannerOnLogin();
     ensureStatusPill();
+    autoFocusLogin();
   }
 
   function boot() {
@@ -93,5 +111,5 @@
     }
   } catch (_) {}
 
-  root.SDLGUiPolish = { version: '3.1.0', refresh: tick };
+  root.SDLGUiPolish = { version: '3.3.0', refresh: tick };
 })(window);

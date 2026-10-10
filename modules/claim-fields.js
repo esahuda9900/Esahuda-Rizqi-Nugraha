@@ -1,6 +1,5 @@
 /**
  * SDLG Claim field registry — single source of truth for portal / assessment / helper.
- * Load before portal helpers. Exposes window.SDLG_CLAIM_FIELDS
  */
 (function (global) {
   'use strict';
@@ -140,7 +139,7 @@
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
       loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
-      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v32', 'data-sdlg-ui-polish-v3');
+      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v33', 'data-sdlg-ui-polish-v3');
       loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v1', 'data-sdlg-auth-route-guard');
     }
   } catch (_) {}
