@@ -19,6 +19,7 @@ Internal web app for **SDLG warranty claims** (monitor, parse, assess, track).
 | Hosting | GitHub Pages (Project Pages) + Cloudflare |
 | Database | Supabase (Postgres, RLS, claim RPCs) |
 | Auth | Supabase Auth · storageKey `sb-frqvelcreczmnofldrga-auth-token` |
+| Routing | Hash router (`#/claims`, `#/claim/:id`, …) via `modules/sdlg-hash-router.js` |
 
 ## ANTI-REGRESSION RULES (never violate)
 
@@ -56,6 +57,22 @@ These regressions already happened in production. **Do not reintroduce them.**
 
 8. **Domain logic stays in Supabase** (warranty resolve RPCs). Frontend does not re-implement policy.
 
+9. **Navigation / breadcrumb (2026-10-10 incident)**
+   - **Forbidden:** inject global DOM bars (`#sdlg-route-breadcrumb`, `data-sdlg-bc-back`, `document.body.prepend` nav).
+   - Claim Detail already has React header: `← Kembali` + claim id + Edit / SDLG Input / Hapus.
+   - Top nav tabs handle Master Data / Data Quality / Overview / Claims.
+   - `modules/sdlg-route-finish.js` **v1.5+** must keep breadcrumb injection **DELETED** and `killBreadcrumb()` active.
+   - Do not reintroduce `breadcrumbHtml()` that builds `Overview / Claims / …`.
+   - Hash changes go through `window.SDLGHashRouter.navigate` / `setFromTab`.
+
+10. **Feedback Person mapping**
+    - Must use fallback chain ≥5 keys (`technical_personnel`, `feedback_person`, `pic_name`, …).
+    - Empty → `""` (UI shows `—`), never the word `Kosong`.
+
+11. **Policy rules table**
+    - There is **no** `public.policy_rules` table.
+    - Use RPC `sdlg_policy_runtime_snapshot` → `service_policy_rules`.
+
 ## Before you change anything
 
 | Working on… | Read first |
@@ -69,8 +86,18 @@ These regressions already happened in production. **Do not reintroduce them.**
 1. Root cause identified; smallest safe fix (prefer `modules/*.js`)
 2. No forbidden path or dual `createClient`
 3. `bash scripts/regression_contract.sh` would still pass on built `index.html`
-4. Hard-refresh test on GitHub Pages URL
-5. If breaking change risk → note rollback branch in `STABLE_BACKUP.md`
+4. Hard-refresh test on GitHub Pages URL **and** verify live source (not only git push)
+5. For UI claims: confirm in live HTML markers (e.g. `ROUTE_FINISH_V15`, `killBreadcrumb`)
+6. If breaking change risk → note rollback branch in `STABLE_BACKUP.md`
+
+## Verify Claim Detail has ONE back button
+
+```javascript
+window.SDLGRouteFinish?.version          // "1.5.0"+
+window.__SDLG_ROUTE_FINISH_DISABLED__    // true
+document.getElementById('sdlg-route-breadcrumb')  // null
+location.hash
+```
 
 ## Rollback
 
@@ -82,4 +109,4 @@ git push origin main --force
 
 ---
 
-*Last aligned: 2026-10-09 — anti-regression locks after production incident sprint.*
+*Last aligned: 2026-10-10 — nuclear breadcrumb kill (route-finish v1.5); ban global DOM nav injection.*
