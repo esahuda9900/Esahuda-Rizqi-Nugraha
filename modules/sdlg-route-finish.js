@@ -1,11 +1,12 @@
 /**
- * SDLG Route Finish v1.4 — year URL, unit360 serial, breadcrumb, NotFound, sub-tab hashes
- * v1.4: no breadcrumb on Claims list, Claim detail, or SDLG Input (React header owns nav)
+ * SDLG Route Finish v1.5 — year URL, unit360 serial, NotFound, sub-tab hashes
+ * v1.5: breadcrumb injection DELETED entirely; nuclear kill of #sdlg-route-breadcrumb
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_ROUTE_FINISH_V14__) return;
-  root.__SDLG_ROUTE_FINISH_V14__ = true;
+  if (root.__SDLG_ROUTE_FINISH_V15__) return;
+  root.__SDLG_ROUTE_FINISH_V15__ = true;
+  root.__SDLG_ROUTE_FINISH_DISABLED__ = true; // breadcrumb off
 
   function R() { return root.SDLGHashRouter || null; }
 
@@ -48,72 +49,28 @@
     }
   }
 
-  function breadcrumbHtml(route) {
-    var parts = [];
-    function link(label, hash) {
-      return '<a href="' + hash + '" data-sdlg-bc style="color:#2563eb;text-decoration:none;font-weight:700">' + label + '</a>';
-    }
-    parts.push(link('Overview', '#/overview'));
-    if (route.page === 'claims' || route.page === 'claim') {
-      // Claims list + Claim detail: React already has ← Kembali + claim id + actions.
-      // Injected breadcrumb caused DOUBLE back buttons. Never inject here.
-      return '';
-    } else if (route.page === 'sdlg-input') {
-      return '';
-    } else if (route.page === 'master-data') {
-      parts.push(link('Master Data', '#/master-data/customers'));
-      if (route.params && route.params.type) {
-        parts.push('<span style="font-weight:800">' + route.params.type + '</span>');
+  // BREADCRUMB PERMANENTLY DISABLED (v1.5)
+  // React headers already own ← Kembali on Claim Detail / Claims / SDLG Input.
+  // Any leftover #sdlg-route-breadcrumb is removed on every tick (nuclear).
+  function killBreadcrumb() {
+    var id = 'sdlg-route-breadcrumb';
+    var existing = document.getElementById(id);
+    if (existing) existing.remove();
+    try {
+      var nodes = document.querySelectorAll('nav[aria-label="Breadcrumb"], [data-sdlg-bc-back]');
+      for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        if (n.id === id || n.getAttribute('data-sdlg-bc-back') != null) {
+          var victim = (n.id === id) ? n : (document.getElementById(id) || n.parentElement || n);
+          if (victim && victim.parentNode) victim.parentNode.removeChild(victim);
+          else if (n.parentNode) n.parentNode.removeChild(n);
+        }
       }
-    } else if (route.page === 'unit360') {
-      parts.push(link('Unit 360', '#/unit360'));
-      if (route.params && route.params.serial) {
-        parts.push('<span style="font-weight:800">' + route.params.serial + '</span>');
-      }
-    } else if (route.page === 'data-quality') {
-      parts.push('<span style="font-weight:800">Data Quality</span>');
-    } else if (route.page === 'new-claim') {
-      parts.push('<span style="font-weight:800">New Claim</span>');
-    } else {
-      return '';
-    }
-    return parts.join(' <span style="color:#94a3b8">/</span> ');
+    } catch (_) {}
   }
 
   function ensureBreadcrumb() {
-    var route = parse();
-    var id = 'sdlg-route-breadcrumb';
-    var existing = document.getElementById(id);
-    var html = breadcrumbHtml(route);
-    if (!html || route.page === 'overview' || route.page === 'sdlg-input' || route.page === 'claims' || route.page === 'claim') {
-      if (existing) existing.remove();
-      return;
-    }
-    var page = document.querySelector('.page');
-    if (!page) return;
-    if (!existing) {
-      existing = document.createElement('nav');
-      existing.id = id;
-      existing.setAttribute('aria-label', 'Breadcrumb');
-      existing.style.cssText =
-        'display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 0 4px;' +
-        'font-size:12px;color:#64748b;margin:0 0 6px';
-      var title = page.querySelector('.page-title, h1, h2');
-      if (title && title.parentNode) title.parentNode.insertBefore(existing, title);
-      else page.insertBefore(existing, page.firstChild);
-    }
-    existing.innerHTML =
-      '<button type="button" data-sdlg-bc-back style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:800;cursor:pointer;margin-right:6px">\u2190 Back</button>' +
-      html;
-    var back = existing.querySelector('[data-sdlg-bc-back]');
-    if (back && !back.getAttribute('data-wired')) {
-      back.setAttribute('data-wired', '1');
-      back.addEventListener('click', function () {
-        if (root.history.length > 1) root.history.back();
-        else if (R() && R().navigate) R().navigate('overview');
-        else root.location.hash = '#/overview';
-      });
-    }
+    killBreadcrumb();
   }
 
   function wireYearFilter() {
@@ -231,14 +188,14 @@
     root.addEventListener('sdlg-route', tick);
     if (typeof MutationObserver !== 'undefined') {
       var t = null;
-      new MutationObserver(function () { clearTimeout(t); t = setTimeout(tick, 300); })
+      new MutationObserver(function () { clearTimeout(t); t = setTimeout(tick, 200); })
         .observe(document.documentElement, { childList: true, subtree: true });
     }
-    setInterval(tick, 2000);
+    setInterval(tick, 1000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGRouteFinish = { version: '1.4.0', refresh: tick };
+  root.SDLGRouteFinish = { version: '1.5.0', refresh: tick, killBreadcrumb: killBreadcrumb };
 })(window);
