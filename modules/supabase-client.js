@@ -1,5 +1,5 @@
 /**
- * SDLG Supabase singleton v2 — one GoTrueClient only.
+ * SDLG Supabase singleton v2.1 — one GoTrueClient only + session recovery.
  * Load AFTER supabase-js CDN, BEFORE index app bundle / other modules that call createClient.
  *
  * Public API:
@@ -109,10 +109,6 @@
     }
   }
 
-  /**
-   * Patch window.supabase.createClient so the React app + helpers
-   * always reuse the same GoTrueClient (same storageKey / session).
-   */
   function patchCreateClient() {
     if (!root.supabase || typeof root.supabase.createClient !== 'function') return false;
     if (root.__SDLG_CREATE_CLIENT_PATCHED__) return true;
@@ -123,12 +119,23 @@
         log('createClient reused singleton');
         return existing;
       }
-      var c = originalCreateClient(url || SUPABASE_URL, key || SUPABASE_ANON, mergeAuthOptions(opts));
+      var c = createRaw(url, key, opts);
       log('createClient first instance stored as singleton');
       return remember(c);
     };
     root.__SDLG_CREATE_CLIENT_PATCHED__ = true;
     return true;
+  }
+
+  function hasTokenHint() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i) || '';
+        if (/sb-.*-auth-token/i.test(k)) return true;
+      }
+      if (localStorage.getItem(STORAGE_KEY)) return true;
+    } catch (_) {}
+    return false;
   }
 
   function checkSession(c) {
@@ -139,6 +146,27 @@
       var session = res && res.data ? res.data.session : null;
       var error = res ? res.error : null;
       if (error) warn('getSession error', error);
+
+      if (!session && hasTokenHint() && typeof c.auth.refreshSession === 'function') {
+        log('Token present but session null — refreshSession once');
+        return c.auth.refreshSession().then(function (ref) {
+          session = ref && ref.data ? ref.data.session : null;
+          error = ref ? ref.error : null;
+          if (session) {
+            log('Session recovered via refreshSession', session.user && session.user.email);
+          } else {
+            warn('refreshSession failed — clearing dead token');
+            try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
+            warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
+          }
+          return { session: session, error: error };
+        }).catch(function (err) {
+          warn('refreshSession threw', err);
+          warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
+          return { session: null, error: err };
+        });
+      }
+
       if (!session) {
         warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
       } else {
@@ -156,9 +184,6 @@
     return ensureClient();
   };
 
-  /**
-   * Resolves when client exists and getSession() has completed (session may still be null).
-   */
   root.waitForSupabaseReady = function waitForSupabaseReady(timeoutMs) {
     timeoutMs = timeoutMs || 15000;
     if (readyPromise) return readyPromise;
@@ -190,7 +215,6 @@
     return readyPromise;
   };
 
-  // Boot: patch as soon as CDN is present
   function boot() {
     if (patchCreateClient()) {
       ensureClient();
