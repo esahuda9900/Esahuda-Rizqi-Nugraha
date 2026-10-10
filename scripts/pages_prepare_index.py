@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview stable + Finance."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview stable + Finance auto-calc."""
 from pathlib import Path
 import re
 import urllib.request
@@ -168,6 +168,63 @@ if "renderExtraPanels({" in data and "loading: loading" not in data.split("rende
         1,
     )
 
+# Finance: Other Cost Details auto-calc when DB amount is 0 but hrs/km exist
+_old_la = 'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)'
+_new_la = (
+    'fieldHtml("labourAmount","Labour Amount",(function(){'
+    'var a=Number(selectedClaim.labour_amount);'
+    'if(Number.isFinite(a)&&a!==0)return a.toFixed(2);'
+    'var h=Number(selectedClaim.labour_hrs||0);'
+    'var r=Number(selectedClaim.labour_rate);'
+    'if(!Number.isFinite(r)||r<=0)r=25;'
+    'return h>0?(h*r).toFixed(2):"0.00";'
+    '})(),false,false)'
+)
+if _old_la in data:
+    data = data.replace(_old_la, _new_la, 1)
+    print("patched labourAmount auto-calc display")
+else:
+    print("WARNING: labourAmount pattern not found")
+
+_old_ma = 'fieldHtml("mileageAmount","Mileage Amount",(selectedClaim.mileage_amount == null || selectedClaim.mileage_amount === "") ? "0.00" : selectedClaim.mileage_amount,false,false)'
+_new_ma = (
+    'fieldHtml("mileageAmount","Mileage Amount",(function(){'
+    'var a=Number(selectedClaim.mileage_amount);'
+    'if(Number.isFinite(a)&&a!==0)return a.toFixed(2);'
+    'var k=Number(selectedClaim.mileage_km||0);'
+    'var r=Number(selectedClaim.mileage_rate);'
+    'if(!Number.isFinite(r)||r<=0)r=0.5;'
+    'return k>0?(k*r).toFixed(2):"0.00";'
+    '})(),false,false)'
+)
+if _old_ma in data:
+    data = data.replace(_old_ma, _new_ma, 1)
+    print("patched mileageAmount auto-calc display")
+else:
+    print("WARNING: mileageAmount pattern not found")
+
+_old_ta = 'fieldHtml("totalAmount","Total Amount Claimed",(selectedClaim.total_amount == null || selectedClaim.total_amount === "") ? "0.00" : selectedClaim.total_amount,false,false)'
+_new_ta = (
+    'fieldHtml("totalAmount","Total Amount Claimed",(function(){'
+    'var t=Number(selectedClaim.total_amount);'
+    'if(Number.isFinite(t)&&t!==0)return t.toFixed(2);'
+    'var parts=Number(selectedClaim.parts_total||0);'
+    'var h=Number(selectedClaim.labour_hrs||0);'
+    'var lr=Number(selectedClaim.labour_rate);if(!Number.isFinite(lr)||lr<=0)lr=25;'
+    'var k=Number(selectedClaim.mileage_km||0);'
+    'var mr=Number(selectedClaim.mileage_rate);if(!Number.isFinite(mr)||mr<=0)mr=0.5;'
+    'var o=Number(selectedClaim.other_amount||0);'
+    'var lab=h>0?h*lr:Number(selectedClaim.labour_amount||0);'
+    'var mil=k>0?k*mr:Number(selectedClaim.mileage_amount||0);'
+    'return (parts+lab+mil+o).toFixed(2);'
+    '})(),false,false)'
+)
+if _old_ta in data:
+    data = data.replace(_old_ta, _new_ta, 1)
+    print("patched totalAmount auto-calc display")
+else:
+    print("WARNING: totalAmount pattern not found")
+
 data = re.sub(r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"', 'src="./modules/sdlg-repository.js?v=20261010-v3"', data, count=1)
 data = re.sub(r'sdlg-overview-loading\.js\?v=[^"\s]+', 'sdlg-overview-loading.js?v=20261010-v30', data)
 data = re.sub(r'boss-analytics-dashboard\.js(?:\?v=[^"]*)?', 'boss-analytics-dashboard.js?v=20261010-v42', data)
@@ -181,4 +238,4 @@ if "sdlg-portal-finance-ux.js" not in data:
     data = data.replace("</body>", '  <script src="./modules/sdlg-portal-finance-ux.js?v=20261010-v4" data-sdlg-portal-finance="1"></script>\n</body>', 1)
 
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare v30 no-flicker done")
+print("pages_prepare finance-display-calc done")
