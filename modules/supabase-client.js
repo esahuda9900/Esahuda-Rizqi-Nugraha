@@ -1,20 +1,16 @@
 /**
- * SDLG Supabase singleton v2.1 — one GoTrueClient only + session recovery.
- * Load AFTER supabase-js CDN, BEFORE index app bundle / other modules that call createClient.
- *
- * Public API:
- *   window.getSdlgSupabase()
- *   window.waitForSupabaseReady() -> Promise<client>
- *   window.sdlgSupabase / window.supabaseClient (same instance)
+ * SDLG Supabase singleton v2.2 — legacy anon JWT + session recheck on SIGNED_IN
+ * Root cause of blank Overview: REST grants only to authenticated; requests without JWT → 401.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_SUPABASE_SINGLETON_V2__) return;
+  if (root.__SDLG_SUPABASE_SINGLETON_V22__) return;
+  root.__SDLG_SUPABASE_SINGLETON_V22__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V2__ = true;
 
   var SUPABASE_URL = 'https://frqvelcreczmnofldrga.supabase.co';
   var SUPABASE_ANON = root.__SDLG_SUPABASE_ANON__ ||
-    'sb_publishable_5TrTvCR8ymE3VNLhthYFMg_vWRRMHMi';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZycXZlbGNyZWN6bW5vZmxkcmdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMzQyMDksImV4cCI6MjEwMzkxMDIwOX0.EQoGxEu8cNDF84tObZH13rwHiYt9EGcqnJiT3yRMa-w';
   var STORAGE_KEY = 'sb-frqvelcreczmnofldrga-auth-token';
 
   var client = null;
@@ -26,7 +22,6 @@
     args.unshift('[SDLG supabase-client]');
     try { console.info.apply(console, args); } catch (_) {}
   }
-
   function warn() {
     var args = Array.prototype.slice.call(arguments);
     args.unshift('[SDLG supabase-client]');
@@ -49,14 +44,7 @@
   }
 
   function findExisting() {
-    var candidates = [
-      client,
-      root.sdlgSupabase,
-      root.supabaseClient,
-      root.__SDLG_SUPABASE_CLIENT,
-      root.__SUPABASE_CLIENT,
-      root.SDLGSupabase
-    ];
+    var candidates = [client, root.sdlgSupabase, root.supabaseClient, root.__SDLG_SUPABASE_CLIENT, root.__SUPABASE_CLIENT, root.SDLGSupabase];
     for (var i = 0; i < candidates.length; i++) {
       if (isClient(candidates[i])) return remember(candidates[i]);
     }
@@ -64,24 +52,29 @@
   }
 
   function defaultOptions() {
+    var storage = null;
+    try { storage = root.localStorage; } catch (_) {}
     return {
       db: { retry: false },
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
-        storageKey: STORAGE_KEY
+        storageKey: STORAGE_KEY,
+        storage: storage || undefined,
+        flowType: 'implicit'
       },
       global: {
-        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v2' }
+        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v22' }
       }
     };
   }
 
   function mergeAuthOptions(opts) {
     opts = opts || {};
-    var auth = Object.assign({}, (defaultOptions().auth), opts.auth || {});
+    var auth = Object.assign({}, defaultOptions().auth, opts.auth || {});
     auth.storageKey = STORAGE_KEY;
+    try { if (!auth.storage) auth.storage = root.localStorage; } catch (_) {}
     return Object.assign({}, defaultOptions(), opts, { auth: auth });
   }
 
@@ -96,12 +89,11 @@
   function ensureClient() {
     var existing = findExisting();
     if (existing) return existing;
-    if (!root.supabase || typeof root.supabase.createClient !== 'function') {
-      return null;
-    }
+    if (!root.supabase || typeof root.supabase.createClient !== 'function') return null;
     try {
       var c = createRaw(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
-      log('Supabase client initialized (singleton)');
+      log('Supabase client initialized (singleton v2.2, legacy anon JWT)');
+      wireAuthRecheck(c);
       return remember(c);
     } catch (err) {
       warn('createClient failed', err);
@@ -119,8 +111,9 @@
         log('createClient reused singleton');
         return existing;
       }
-      var c = createRaw(url, key, opts);
+      var c = createRaw(SUPABASE_URL, SUPABASE_ANON, opts);
       log('createClient first instance stored as singleton');
+      wireAuthRecheck(c);
       return remember(c);
     };
     root.__SDLG_CREATE_CLIENT_PATCHED__ = true;
@@ -136,6 +129,11 @@
       if (localStorage.getItem(STORAGE_KEY)) return true;
     } catch (_) {}
     return false;
+  }
+
+  function applySessionFlags(c, session) {
+    c.__SDLG_LAST_SESSION__ = session || null;
+    c.__SDLG_AUTHENTICATED__ = !!(session && session.access_token);
   }
 
   function checkSession(c) {
@@ -156,12 +154,23 @@
             log('Session recovered via refreshSession', session.user && session.user.email);
           } else {
             warn('refreshSession failed — clearing dead token');
+            try {
+              var keys = [];
+              for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && /^sb-/i.test(k)) keys.push(k);
+              }
+              keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
+            } catch (_) {}
             try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
+            applySessionFlags(c, null);
             warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
           }
+          applySessionFlags(c, session);
           return { session: session, error: error };
         }).catch(function (err) {
           warn('refreshSession threw', err);
+          applySessionFlags(c, null);
           warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
           return { session: null, error: err };
         });
@@ -170,13 +179,36 @@
       if (!session) {
         warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
       } else {
-        log('Supabase client initialized & authenticated', session.user && session.user.email);
+        log('authenticated', session.user && session.user.email);
       }
+      applySessionFlags(c, session);
       return { session: session, error: error };
     }).catch(function (err) {
       warn('getSession threw', err);
+      applySessionFlags(c, null);
       return { session: null, error: err };
     });
+  }
+
+  function wireAuthRecheck(c) {
+    if (!c || !c.auth || c.__SDLG_AUTH_RECHECK__) return;
+    c.__SDLG_AUTH_RECHECK__ = true;
+    try {
+      c.auth.onAuthStateChange(function (event, session) {
+        log('auth event', event, session && session.user && session.user.email);
+        applySessionFlags(c, session);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+          readyPromise = null;
+        }
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          try {
+            root.dispatchEvent(new CustomEvent('sdlg-session-ready', {
+              detail: { email: session && session.user && session.user.email, event: event }
+            }));
+          } catch (_) {}
+        }
+      });
+    } catch (_) {}
   }
 
   root.getSdlgSupabase = function getSdlgSupabase() {
@@ -187,10 +219,8 @@
   root.waitForSupabaseReady = function waitForSupabaseReady(timeoutMs) {
     timeoutMs = timeoutMs || 15000;
     if (readyPromise) return readyPromise;
-
     readyPromise = new Promise(function (resolve, reject) {
       var started = Date.now();
-
       function attempt() {
         patchCreateClient();
         var c = ensureClient();
@@ -202,17 +232,18 @@
           setTimeout(attempt, 50);
           return;
         }
-        checkSession(c).then(function (result) {
-          c.__SDLG_LAST_SESSION__ = result.session;
-          c.__SDLG_AUTHENTICATED__ = !!(result.session && result.session.user);
-          resolve(c);
-        }).catch(reject);
+        checkSession(c).then(function () { resolve(c); }).catch(reject);
       }
-
       attempt();
     });
-
     return readyPromise;
+  };
+
+  root.sdlgRecheckSession = function sdlgRecheckSession() {
+    readyPromise = null;
+    var c = root.getSdlgSupabase();
+    if (!c) return Promise.resolve(null);
+    return checkSession(c).then(function (r) { return r.session; });
   };
 
   function boot() {
