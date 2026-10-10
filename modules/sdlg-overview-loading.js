@@ -1,12 +1,13 @@
 /**
- * SDLG Overview Loading Architecture v2.0
- * Ensures ALL Overview sections show skeleton/… during hydrate — not just top KPIs.
- * Fail-safe: never crash the app.
+ * SDLG Overview Loading Architecture v2.1
+ * ALL Overview sections show skeleton/… during hydrate.
+ * Also monkey-patches SDLGBossAnalytics periodFilterBar + renderExtraPanels.
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_OVERVIEW_LOADING_V2__) return;
+    if (root.__SDLG_OVERVIEW_LOADING_V21__) return;
+    root.__SDLG_OVERVIEW_LOADING_V21__ = true;
     root.__SDLG_OVERVIEW_LOADING_V2__ = true;
     root.__SDLG_OVERVIEW_LOADING_V1__ = true;
 
@@ -45,9 +46,7 @@
       (document.head || document.documentElement).appendChild(s);
     }
 
-    function isHydrating() {
-      return Date.now() < hydrateUntil;
-    }
+    function isHydrating() { return Date.now() < hydrateUntil; }
 
     function hasClaimData() {
       try {
@@ -70,7 +69,6 @@
             if (el.parentElement) el.parentElement.classList.add('is-loading');
           }
         }
-
         var counts = document.querySelectorAll('.wx-filter-count');
         for (var j = 0; j < counts.length; j++) {
           var c = counts[j];
@@ -79,7 +77,6 @@
             c.textContent = '\u2026 claim dalam periode';
           }
         }
-
         var emptyMsgs = document.querySelectorAll('div, span, p');
         for (var k = 0; k < emptyMsgs.length; k++) {
           var em = emptyMsgs[k];
@@ -114,10 +111,7 @@
     async function earlyCount() {
       try {
         var cached = readCache();
-        if (cached != null) {
-          patchNavCount(cached);
-          return cached;
-        }
+        if (cached != null) { patchNavCount(cached); return cached; }
         var repo = root.SDLG_REPOSITORY;
         if (repo && typeof repo.countClaimsCached === 'function') {
           var n = await repo.countClaimsCached();
@@ -132,6 +126,70 @@
       return null;
     }
 
+    function patchBossAnalytics() {
+      try {
+        var boss = root.SDLGBossAnalytics;
+        if (!boss || boss.__sdlgLoadingPatched) return;
+        var origPeriod = boss.periodFilterBar;
+        var origExtra = boss.renderExtraPanels;
+        if (typeof origPeriod !== 'function') return;
+
+        function isLoading(opts) {
+          if (opts && opts.loading) return true;
+          var claims = (opts && opts.claims) || [];
+          return isHydrating() && (!claims || claims.length === 0);
+        }
+
+        var next = {};
+        Object.keys(boss).forEach(function (k) { next[k] = boss[k]; });
+        next.periodFilterBar = function (opts) {
+          opts = opts || {};
+          if (isLoading(opts)) {
+            var React = opts.React;
+            return React.createElement('div', { className: 'wx-filter is-loading' },
+              React.createElement('div', { className: 'wx-filter-label' }, 'Analisa periode'),
+              React.createElement('select', { disabled: true }, React.createElement('option', null, 'Semua tahun')),
+              React.createElement('select', { disabled: true }, React.createElement('option', null, 'Semua bulan')),
+              React.createElement('div', { className: 'wx-filter-count' }, '\u2026 claim dalam periode')
+            );
+          }
+          return origPeriod(opts);
+        };
+        next.renderExtraPanels = function (opts) {
+          opts = opts || {};
+          if (isLoading(opts) && typeof origExtra === 'function') {
+            var React = opts.React;
+            function skel(w, h) {
+              return React.createElement('div', { className: 'sdlg-skel', style: { width: w || '100%', height: h || 18 } });
+            }
+            return React.createElement('div', { className: 'wx-analytics-shell is-loading', 'aria-busy': 'true' },
+              React.createElement('div', { className: 'wx-insight' },
+                React.createElement('div', { className: 'wx-insight-badge' }, 'EXECUTIVE SNAPSHOT'),
+                React.createElement('div', { style: { marginTop: 8 } }, skel('55%', 16)),
+                React.createElement('div', { className: 'wx-metric-grid', style: { marginTop: 12 } },
+                  [1,2,3,4,5,6].map(function (i) {
+                    return React.createElement('div', { key: i, className: 'wx-metric' },
+                      skel('70%', 10),
+                      React.createElement('div', { style: { marginTop: 8 } }, skel('40%', 22)),
+                      React.createElement('div', { style: { marginTop: 6 } }, skel('50%', 10))
+                    );
+                  })
+                )
+              )
+            );
+          }
+          return origExtra ? origExtra(opts) : null;
+        };
+        next.yearFilterBar = next.periodFilterBar;
+        next.__sdlgLoadingPatched = true;
+        next.version = String(boss.version || '') + '+loading';
+        root.SDLGBossAnalytics = Object.freeze(next);
+        console.info('[SDLG overview-loading] boss analytics patched for loading state');
+      } catch (e) {
+        console.warn('[SDLG overview-loading] boss patch failed', e);
+      }
+    }
+
     function boot() {
       injectCss();
       var c = readCache();
@@ -141,9 +199,11 @@
       function onReady() {
         hydrateUntil = Date.now() + 8000;
         earlyCount();
+        patchBossAnalytics();
         var tries = 0;
         var iv = setInterval(function () {
           suppressLoadingZeros();
+          if (tries % 5 === 0) patchBossAnalytics();
           tries++;
           if (tries > 40 || (!isHydrating() && hasClaimData())) clearInterval(iv);
         }, 120);
@@ -162,6 +222,7 @@
           var c2 = readCache();
           if (c2 != null) patchNavCount(c2);
           suppressLoadingZeros();
+          patchBossAnalytics();
         }, 150);
       });
 
@@ -177,7 +238,7 @@
       try { boot(); } catch (_) {}
     }
 
-    root.SDLGOverviewLoading = { version: '2.0.0', earlyCount: earlyCount, patchNavCount: patchNavCount };
+    root.SDLGOverviewLoading = { version: '2.1.0', earlyCount: earlyCount, patchNavCount: patchNavCount, patchBossAnalytics: patchBossAnalytics };
   } catch (e) {
     try { console.warn('[SDLG overview-loading] init failed (non-fatal)', e); } catch (_) {}
   }
