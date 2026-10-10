@@ -17,6 +17,7 @@ git push origin main --force
 
 | Branch | Notes |
 |--------|--------|
+| **`backup/stable-2026-10-10-no-duplicate-back`** | Route-finish v1.5 nuclear breadcrumb kill; single React ← Kembali on Claim Detail; AGENTS ban on global DOM nav inject |
 | `backup/stable-2026-10-09-antiregression` | Contract + session heal + AGENTS |
 | `backup/stable-2026-10-09-parse-diff` | Diff modal Update Klaim |
 | `backup/stable-2026-10-09-baked-source` | Source bake paths/singleton |
