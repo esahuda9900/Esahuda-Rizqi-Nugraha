@@ -141,6 +141,7 @@
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
       loadScript('./modules/sdlg-input-empty-guard.js?v=20261009-v1', 'data-sdlg-input-empty-guard');
+      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v3', 'data-sdlg-ui-polish-v3');
     }
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
