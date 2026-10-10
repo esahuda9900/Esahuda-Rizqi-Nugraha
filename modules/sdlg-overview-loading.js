@@ -1,12 +1,13 @@
 /**
- * SDLG Overview Loading Architecture v2.2
+ * SDLG Overview Loading Architecture v2.2.1 — stop suppress after real KPI data
  * Priority progressive reveal (top-down), not fastest-first.
  * Tier 1 (KPI) → Tier 2 (Action) → Tier 3 (Analytics)
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_OVERVIEW_LOADING_V22__) return;
+    if (root.__SDLG_OVERVIEW_LOADING_V221__) return;
+    root.__SDLG_OVERVIEW_LOADING_V221__ = true;
     root.__SDLG_OVERVIEW_LOADING_V22__ = true;
     root.__SDLG_OVERVIEW_LOADING_V21__ = true;
     root.__SDLG_OVERVIEW_LOADING_V2__ = true;
@@ -94,13 +95,17 @@
     }
 
     function suppressLoadingZeros() {
-      if (revealed) return;
+      // Once real KPI data is on screen, STOP suppressing — 0 and em-dash are valid final values.
+      if (revealed || hasClaimData()) {
+        if (hasClaimData()) tryReveal();
+        return;
+      }
       try {
         var vals = document.querySelectorAll('.metric-value, .wx-metric-value');
         for (var i = 0; i < vals.length; i++) {
           var el = vals[i];
           var t = String(el.textContent || '').trim();
-          if (t === '0' || t === '0.0%' || t === '0%' || t === 'Rp 0' || t === 'Rp0' || t === '\u2014' || t === '\u2014') {
+          if (t === '0' || t === '0.0%' || t === '0%' || t === 'Rp 0' || t === 'Rp0') {
             var page = el.closest('.page, .wx-analytics-shell, .metric-card, .card');
             if (!page) continue;
             el.textContent = '\u2026';
@@ -110,7 +115,10 @@
         var counts = document.querySelectorAll('.wx-filter-count');
         for (var j = 0; j < counts.length; j++) {
           var c = counts[j];
-          if (!revealed) c.textContent = '\u2026 claim dalam periode';
+          var ct = String(c.textContent || '').trim();
+          if (/^0\s+claim/i.test(ct) || ct === '' || /^\u2026/.test(ct) || /^\.\.\./.test(ct)) {
+            c.textContent = '\u2026 claim dalam periode';
+          }
         }
         var emptyMsgs = document.querySelectorAll('div, span, p');
         for (var k = 0; k < emptyMsgs.length; k++) {
@@ -224,7 +232,7 @@
         next.__sdlgLoadingPatchedV22 = true;
         next.version = String(boss.version || '') + '+priority';
         root.SDLGBossAnalytics = Object.freeze(next);
-        console.info('[SDLG overview-loading] v2.2 priority reveal + collapsed snapshot');
+        console.info('[SDLG overview-loading] v2.2.1 stop-suppress-after-data');
       } catch (e) {
         console.warn('[SDLG overview-loading] boss patch failed', e);
       }
@@ -245,7 +253,7 @@
           var nodes = document.querySelectorAll('.is-loading');
           for (var i = 0; i < nodes.length; i++) nodes[i].classList.remove('is-loading');
         } catch (_) {}
-        console.info('[SDLG overview-loading] progressive reveal triggered (tier 1\u21922\u21923)');
+        console.info('[SDLG overview-loading] progressive reveal (tier 1\u21922\u21923)');
       }, wait);
     }
 
@@ -313,7 +321,7 @@
     }
 
     root.SDLGOverviewLoading = {
-      version: '2.2.0',
+      version: '2.2.1',
       earlyCount: earlyCount,
       patchNavCount: patchNavCount,
       patchBossAnalytics: patchBossAnalytics,
