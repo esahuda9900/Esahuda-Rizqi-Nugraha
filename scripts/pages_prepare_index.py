@@ -83,76 +83,7 @@ MARKER = 'client.from("claim_ops_boss_v").select("*")'
 if "loadBossAnalytics" in data:
     print("boss analytics session-wait already present")
 elif MARKER in data and "setBossOpsRows" in data:
-    pat = re.compile(
-        r"useEffect\(\(\)\s*=>\s*\{\s*let cancelled = false;\s*"
-        r"\(async \(\)\s*=>\s*\{\s*try\s*\{\s*"
-        r"const client = \(typeof sdlgSupabase[^;]+;\s*"
-        r"if \(!client\?\.from\) return;\s*"
-        r"const \[ops, stages, dwell\] = await Promise\.all\(\[\s*"
-        r"client\.from\(\"claim_ops_boss_v\"\)\.select\(\"\*\"\),\s*"
-        r"client\.from\(\"claim_stage_aging_summary_v\"\)\.select\(\"\*\"\),\s*"
-        r"client\.from\(\"claim_status_dwell_v\"\)\.select\(\"\*\"\)\s*"
-        r"\]\);\s*"
-        r"if \(cancelled\) return;\s*"
-        r"setBossOpsRows\([^;]+;\s*"
-        r"setStageAgingRows\([^;]+;\s*"
-        r"setStatusDwellRows\([^;]+;\s*"
-        r"\}\s*catch\s*\(_\)\s*\{[^}]*\}\s*"
-        r"\}\)\(\);\s*"
-        r"return \(\)\s*=>\s*\{\s*cancelled = true;\s*\};\s*"
-        r"\}, \[\]\);",
-        re.DOTALL,
-    )
-    NEW = """useEffect(() => {
-        let cancelled = false;
-        const loadBossAnalytics = async () => {
-            try {
-                let client = null;
-                try {
-                    if (typeof window.waitForSupabaseReady === "function") {
-                        client = await window.waitForSupabaseReady(12000);
-                    }
-                } catch (_) {}
-                if (!client) {
-                    client = (typeof window.getSdlgSupabase === "function")
-                        ? window.getSdlgSupabase()
-                        : ((typeof sdlgSupabase !== "undefined") ? sdlgSupabase : null);
-                }
-                if (!client || !client.from || !client.auth) return;
-                let session = null;
-                try {
-                    const sr = await client.auth.getSession();
-                    session = sr && sr.data ? sr.data.session : null;
-                    if (!session && typeof window.sdlgRecheckSession === "function") {
-                        session = await window.sdlgRecheckSession();
-                    }
-                } catch (_) {}
-                if (!session || !session.access_token) return;
-                const [ops, stages, dwell] = await Promise.all([
-                    client.from("claim_ops_boss_v").select("*"),
-                    client.from("claim_stage_aging_summary_v").select("*"),
-                    client.from("claim_status_dwell_v").select("*")
-                ]);
-                if (cancelled) return;
-                setBossOpsRows(Array.isArray(ops && ops.data) ? ops.data : []);
-                setStageAgingRows(Array.isArray(stages && stages.data) ? stages.data : []);
-                setStatusDwellRows(Array.isArray(dwell && dwell.data) ? dwell.data : []);
-            } catch (_) {}
-        };
-        loadBossAnalytics();
-        const onReady = function () { if (!cancelled) loadBossAnalytics(); };
-        try { window.addEventListener("sdlg-session-ready", onReady); } catch (_) {}
-        return function () {
-            cancelled = true;
-            try { window.removeEventListener("sdlg-session-ready", onReady); } catch (_) {}
-        };
-    }, []);"""
-    data2, n = pat.subn(NEW, data, count=1)
-    if n:
-        data = data2
-        print("patched boss analytics useEffect via regex:", n)
-    else:
-        print("WARNING: regex did not match boss useEffect")
+    print("boss marker present — session-wait may need manual check")
 else:
     print("WARNING: boss marker not found")
 
@@ -198,6 +129,15 @@ if "sdlg-overview-ux.js" not in data:
         1,
     )
     print("injected overview-ux script before </body>")
+
+# Cache-bust repository so listClaims v2 is always loaded
+if 'sdlg-repository.js' in data:
+    data = data.replace(
+        'src="./modules/sdlg-repository.js"',
+        'src="./modules/sdlg-repository.js?v=20261010-v2"',
+        1,
+    )
+    print("cache-bust sdlg-repository v2")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare post-FOUC + boss analytics + overview UX done")
