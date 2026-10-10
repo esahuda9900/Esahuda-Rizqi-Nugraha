@@ -1,67 +1,73 @@
 /**
- * SDLG Data Pipeline Guard v1.2
- * - Waits for Supabase singleton + session
+ * data-pipeline-guard.js — claim fetch diagnostics + session recovery
+ * v1.2.1 — do not show red "Belum login" banner on the login page
  * - Self-heal: if token exists but getSession() null, try refreshSession once
- * - Diagnoses empty UI (auth vs RLS vs real empty)
- * Load AFTER modules/supabase-client.js
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_DATA_PIPELINE_GUARD_V12__) return;
-  root.__SDLG_DATA_PIPELINE_GUARD_V12__ = true;
-
-  var STORAGE_KEY = 'sb-frqvelcreczmnofldrga-auth-token';
+  if (root.__SDLG_DATA_PIPELINE_GUARD__) return;
+  root.__SDLG_DATA_PIPELINE_GUARD__ = true;
 
   function log() {
-    var a = Array.prototype.slice.call(arguments);
-    a.unshift('[SDLG data-pipeline]');
-    try { console.info.apply(console, a); } catch (_) {}
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.log.apply(console, a);
+    } catch (_) {}
   }
   function warn() {
-    var a = Array.prototype.slice.call(arguments);
-    a.unshift('[SDLG data-pipeline]');
-    try { console.warn.apply(console, a); } catch (_) {}
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.warn.apply(console, a);
+    } catch (_) {}
   }
   function err() {
-    var a = Array.prototype.slice.call(arguments);
-    a.unshift('[SDLG data-pipeline]');
-    try { console.error.apply(console, a); } catch (_) {}
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.error.apply(console, a);
+    } catch (_) {}
   }
 
   function getClient() {
-    if (typeof root.getSdlgSupabase === 'function') return root.getSdlgSupabase();
-    return root.sdlgSupabase || root.supabaseClient || null;
+    try {
+      if (typeof root.getSdlgSupabase === 'function') {
+        var c = root.getSdlgSupabase();
+        if (c) return c;
+      }
+    } catch (_) {}
+    if (root.sdlgSupabase && typeof root.sdlgSupabase.from === 'function') return root.sdlgSupabase;
+    if (root.supabaseClient && typeof root.supabaseClient.from === 'function') return root.supabaseClient;
+    return null;
   }
 
-  function hasStoredToken() {
+  function hasStoredTokenHint() {
     try {
-      var raw = root.localStorage && root.localStorage.getItem(STORAGE_KEY);
-      return !!(raw && raw.length > 20);
-    } catch (_) {
-      return false;
-    }
+      if (typeof localStorage === 'undefined') return false;
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i) || '';
+        if (/sb-.*-auth-token/i.test(k)) return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   /** One-shot session recovery when token exists but getSession is empty */
   async function recoverSession(supabase) {
-    if (!supabase || !supabase.auth) return null;
-    var sessionRes;
+    var sessionRes = null;
     try {
       sessionRes = await supabase.auth.getSession();
     } catch (e) {
       warn('getSession throw', e);
-      sessionRes = null;
     }
     var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
-    if (session) return session;
+    if (session && session.access_token) return session;
 
-    if (!hasStoredToken()) return null;
+    if (!hasStoredTokenHint()) return null;
 
     log('Token present but session null — attempting refreshSession once');
     try {
       var refreshed = await supabase.auth.refreshSession();
       session = refreshed && refreshed.data ? refreshed.data.session : null;
-      if (session) {
+      if (session && session.access_token) {
         log('Session recovered via refreshSession');
         return session;
       }
@@ -69,52 +75,42 @@
       warn('refreshSession failed', e);
     }
 
-    // Last resort: re-read getSession after short delay
     try {
-      await new Promise(function (r) { setTimeout(r, 200); });
+      await new Promise(function (r) { setTimeout(r, 400); });
       sessionRes = await supabase.auth.getSession();
       session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
       if (session) log('Session appeared after delay');
-    } catch (_) {}
-    return session;
+      return session;
+    } catch (_) {
+      return null;
+    }
   }
 
   async function fetchClaimsProbe(limit) {
     limit = limit || 5;
-    if (typeof root.waitForSupabaseReady === 'function') {
-      await root.waitForSupabaseReady();
-    }
     var supabase = getClient();
     if (!supabase) {
-      return { ok: false, reason: 'NO_CLIENT', message: 'Supabase client is null', rows: [] };
+      return { ok: false, reason: 'NO_CLIENT', message: 'Supabase client missing', rows: [] };
     }
 
     var session = await recoverSession(supabase);
-    if (!session) {
-      err('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA');
-      return {
-        ok: false,
-        reason: 'NOT_AUTHENTICATED',
-        message: 'USER NOT AUTHENTICATED — RLS WILL BLOCK DATA. Login required.',
-        rows: []
-      };
+    if (!session || !session.access_token) {
+      return { ok: false, reason: 'NOT_AUTHENTICATED', message: 'No session', rows: [] };
     }
-
-    log('Authenticated as', session.user && (session.user.email || session.user.id));
 
     var result;
     try {
       result = await supabase
         .from('claims')
-        .select('claim_id,claim_status,customer,serial_no,last_updated')
-        .order('claim_id', { ascending: false })
+        .select('claim_id')
+        .is('archived_at', null)
         .limit(limit);
     } catch (e) {
+      err('fetch throw', e);
       return { ok: false, reason: 'FETCH_THROW', message: String(e && e.message || e), rows: [] };
     }
 
-    if (result.error) {
-      err('Fetch error', result.error);
+    if (result && result.error) {
       return {
         ok: false,
         reason: 'FETCH_ERROR',
@@ -171,7 +167,12 @@
   async function runDiagnostics() {
     var probe = await fetchClaimsProbe(5);
     if (probe.reason === 'NOT_AUTHENTICATED') {
-      showBanner('error', 'Belum login — session kosong. RLS memblokir data. Silakan login.');
+      // On login page this is expected — do not flash a red error banner.
+      var onLogin = false;
+      try { onLogin = !!document.querySelector('main.login-screen, .login-screen'); } catch (_) {}
+      if (!onLogin) {
+        showBanner('error', 'Belum login — session kosong. RLS memblokir data. Silakan login.');
+      }
     } else if (probe.reason === 'FETCH_ERROR' || probe.reason === 'FETCH_THROW' || probe.reason === 'NO_CLIENT') {
       showBanner('error', 'Gagal fetch data. Cek console. (' + probe.message + ')');
     } else if (probe.reason === 'EMPTY') {
@@ -183,7 +184,7 @@
   }
 
   root.SDLGDataPipeline = {
-    version: '1.2.0',
+    version: '1.2.1',
     getClient: getClient,
     recoverSession: recoverSession,
     fetchClaimsProbe: fetchClaimsProbe,
@@ -191,33 +192,20 @@
   };
 
   root.SDLGDisplayValue = function SDLGDisplayValue(value, emptyText) {
-    emptyText = emptyText == null ? '—' : emptyText;
+    emptyText = emptyText == null ? '\u2014' : emptyText;
     if (value == null) return emptyText;
     if (typeof value === 'string' && value.trim() === '') return emptyText;
     if (Array.isArray(value) && value.length === 0) return emptyText;
     return value;
   };
 
-  root.SDLGNormalizeEvidenceItem = function SDLGNormalizeEvidenceItem(item) {
-    if (item == null) return { label: 'Evidence', value: '—' };
-    if (typeof item === 'string') return { label: 'Evidence', value: item.trim() || '—' };
-    var label = item.label || item.name || item.title || item.type || 'Evidence';
-    var value = item.value != null ? item.value
-      : (item.caption != null ? item.caption
-        : (item.text != null ? item.text
-          : (item.description != null ? item.description : '')));
-    if (value == null || String(value).trim() === '') {
-      value = typeof item === 'object' && item.label ? String(item.label) : '—';
-      if (value === label && item.source) value = label + ' (' + item.source + ')';
-    }
-    return { label: String(label), value: String(value) };
-  };
-
   function boot() {
-    if (typeof root.waitForSupabaseReady === 'function') {
-      root.waitForSupabaseReady()
-        .then(function () { return runDiagnostics(); })
-        .catch(function (e) { err(e); showBanner('error', 'Gagal init data pipeline. Cek console.'); });
+    var client = getClient();
+    if (!client) {
+      setTimeout(function () {
+        if (!getClient()) warn('No supabase client after boot delay. Cek console.');
+        else runDiagnostics().catch(function (e) { err(e); });
+      }, 1200);
     } else {
       setTimeout(function () {
         runDiagnostics().catch(function (e) { err(e); });
