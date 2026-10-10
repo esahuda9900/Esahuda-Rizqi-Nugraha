@@ -1,11 +1,11 @@
 /**
- * SDLG Route Finish v1.2 — year URL, unit360 serial, breadcrumb, NotFound, sub-tab hashes
- * v1.2: no breadcrumb on SDLG Input (looked like empty/broken page)
+ * SDLG Route Finish v1.3 — year URL, unit360 serial, breadcrumb, NotFound, sub-tab hashes
+ * v1.3: no breadcrumb on Claims list or SDLG Input (nav tab is enough)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_ROUTE_FINISH_V12__) return;
-  root.__SDLG_ROUTE_FINISH_V12__ = true;
+  if (root.__SDLG_ROUTE_FINISH_V13__) return;
+  root.__SDLG_ROUTE_FINISH_V13__ = true;
 
   function R() { return root.SDLGHashRouter || null; }
 
@@ -54,18 +54,18 @@
       return '<a href="' + hash + '" data-sdlg-bc style="color:#2563eb;text-decoration:none;font-weight:700">' + label + '</a>';
     }
     parts.push(link('Overview', '#/overview'));
-    if (route.page === 'claims' || route.page === 'claim') {
+    if (route.page === 'claims') {
+      // Claims list: nav tab already active — breadcrumb is redundant noise.
+      return '';
+    } else if (route.page === 'claim') {
       parts.push(link('Claims', '#/claims'));
-      if (route.page === 'claim' && route.params && route.params.claimId) {
+      if (route.params && route.params.claimId) {
         parts.push('<span style="font-weight:800;color:#0f172a">' + route.params.claimId + '</span>');
         if (route.subTab && route.subTab !== 'overview') {
           parts.push('<span style="color:#64748b">' + route.subTab + '</span>');
         }
-      } else if (route.params && route.params.year) {
-        parts.push('<span style="font-weight:800">' + route.params.year + '</span>');
       }
     } else if (route.page === 'sdlg-input') {
-      // No breadcrumb on SDLG Input — main nav already highlights the tab.
       return '';
     } else if (route.page === 'master-data') {
       parts.push(link('Master Data', '#/master-data/customers'));
@@ -92,7 +92,7 @@
     var id = 'sdlg-route-breadcrumb';
     var existing = document.getElementById(id);
     var html = breadcrumbHtml(route);
-    if (!html || route.page === 'overview' || route.page === 'sdlg-input') {
+    if (!html || route.page === 'overview' || route.page === 'sdlg-input' || route.page === 'claims') {
       if (existing) existing.remove();
       return;
     }
@@ -247,5 +247,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  root.SDLGRouteFinish = { version: '1.2.0', refresh: tick };
+  root.SDLGRouteFinish = { version: '1.3.0', refresh: tick };
 })(window);
