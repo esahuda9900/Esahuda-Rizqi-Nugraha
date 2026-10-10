@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview boss session wait + Overview UX."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview + loading UX."""
 from pathlib import Path
 import re
 import urllib.request
@@ -79,14 +79,6 @@ else:
         data,
     )
 
-MARKER = 'client.from("claim_ops_boss_v").select("*")'
-if "loadBossAnalytics" in data:
-    print("boss analytics session-wait already present")
-elif MARKER in data and "setBossOpsRows" in data:
-    print("boss marker present — session-wait may need manual check")
-else:
-    print("WARNING: boss marker not found")
-
 if '["Approval Rate", approvedRate + "%"]' in data:
     data = data.replace(
         '["Approval Rate", approvedRate + "%"]',
@@ -130,8 +122,7 @@ if "sdlg-overview-ux.js" not in data:
     )
     print("injected overview-ux script before </body>")
 
-# Cache-bust repository so listClaims v2 is always loaded
-if 'sdlg-repository.js' in data:
+if 'src="./modules/sdlg-repository.js"' in data and 'sdlg-repository.js?v=' not in data:
     data = data.replace(
         'src="./modules/sdlg-repository.js"',
         'src="./modules/sdlg-repository.js?v=20261010-v2"',
@@ -139,5 +130,35 @@ if 'sdlg-repository.js' in data:
     )
     print("cache-bust sdlg-repository v2")
 
+# === Loading UX: no 0 → 100 → 538 flash ===
+if "LOAD_UX: single full fetch" not in data and "firstPage && firstPage.length" in data:
+    soft_old = (
+        'const firstPage = typeof SDLG_REPOSITORY.listClaimsPage === "function"\n'
+        '                ? await SDLG_REPOSITORY.listClaimsPage(0)\n'
+        '                : null;\n'
+        '            if (firstPage && firstPage.length) {\n'
+        '                setClaims(firstPage);\n'
+        '                setLoading(false);\n'
+        '            }\n'
+        '            const [all, actionRows] = await Promise.all([\n'
+        '                SDLG_REPOSITORY.listClaims(),'
+    )
+    soft_new = (
+        '/* LOAD_UX: single full fetch — no intermediate 100-row flash */\n'
+        '            const [all, actionRows] = await Promise.all([\n'
+        '                SDLG_REPOSITORY.listClaims(),'
+    )
+    if soft_old in data:
+        data = data.replace(soft_old, soft_new, 1)
+        print("patched loadClaims: single full fetch (no 100-flash)")
+    else:
+        print("WARNING: firstPage block not matched exactly")
+
+OLD_NAV = '["list", `Claims · ${claims.filter(c => !c.archived_at).length}`],'
+NEW_NAV = '["list", loading ? "Claims · …" : `Claims · ${claims.filter(c => !c.archived_at).length}`],'
+if OLD_NAV in data and "Claims · …" not in data:
+    data = data.replace(OLD_NAV, NEW_NAV, 1)
+    print("patched nav Claims count: … while loading")
+
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare post-FOUC + boss analytics + overview UX done")
+print("pages_prepare post-FOUC + loading UX done")
