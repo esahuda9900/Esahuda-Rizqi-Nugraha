@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview boss session wait."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview boss session wait + Overview UX."""
 from pathlib import Path
 import re
 import urllib.request
@@ -157,5 +157,37 @@ elif MARKER in data and "setBossOpsRows" in data:
 else:
     print("WARNING: boss marker not found")
 
+# Overview UX: KPI zero rates → em dash
+if '["Approval Rate", approvedRate + "%"]' in data:
+    data = data.replace(
+        '["Approval Rate", approvedRate + "%"]',
+        '["Approval Rate", (approvedRate === "0.0" || approved === 0) ? "\\u2014" : (approvedRate + "%")]',
+        1,
+    )
+    data = data.replace(
+        '["Rejection Rate", rejectedRate + "%"]',
+        '["Rejection Rate", (rejectedRate === "0.0" || rejected === 0) ? "\\u2014" : (rejectedRate + "%")]',
+        1,
+    )
+    print("patched KPI rate zero → em dash")
+
+if 'x.value ? "ACTION" : "CLEAR"' in data:
+    data = data.replace(
+        'x.value ? "ACTION" : "CLEAR"',
+        'x.priority === "P2" ? (x.value ? "MONITOR" : "CLEAR") : (x.value ? "ACTION" : "CLEAR")',
+        1,
+    )
+    print("patched P2 badge to MONITOR")
+
+_old_st = 'style: { textAlign: "left", padding: "12px 13px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 10, cursor: "pointer" }'
+if _old_st in data and 'P0: "#fecaca"' not in data:
+    _new_st = (
+        'style: (function(){ var border=({P0:"#fecaca",P1:"#fde68a",P2:"#e2e8f0",ACTION:"#bfdbfe"})[x.priority]||"#e2e8f0";'
+        ' var bg=({P0:"#fef2f2",P1:"#fffbeb",P2:"#f9fafb",ACTION:"#eff6ff"})[x.priority]||"#fff";'
+        ' return { textAlign:"left", padding:"12px 13px", border:"1px solid "+border, background:bg, borderRadius:10, cursor:"pointer" }; })()'
+    )
+    data = data.replace(_old_st, _new_st, 1)
+    print("patched My Action Today semantic colors")
+
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare post-FOUC + boss analytics done")
+print("pages_prepare post-FOUC + boss analytics + overview UX done")
