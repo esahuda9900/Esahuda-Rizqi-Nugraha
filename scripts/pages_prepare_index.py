@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview priority loading."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview + Finance."""
 from pathlib import Path
 import re
 import urllib.request
@@ -171,11 +171,14 @@ if "renderExtraPanels({" in data and "loading: loading" not in data.split("rende
 data = re.sub(r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"', 'src="./modules/sdlg-repository.js?v=20261010-v3"', data, count=1)
 data = re.sub(r'sdlg-overview-loading\.js\?v=[^"\s]+', 'sdlg-overview-loading.js?v=20261010-v221', data)
 data = re.sub(r'boss-analytics-dashboard\.js(?:\?v=[^"]*)?', 'boss-analytics-dashboard.js?v=20261010-v42', data)
+data = re.sub(r'sdlg-portal-finance-ux\.js(?:\?v=[^"\s]*)?', 'sdlg-portal-finance-ux.js?v=20261010-v4', data)
 
 if "sdlg-overview-ux.js" not in data:
     data = data.replace("</body>", '  <script src="./modules/sdlg-overview-ux.js?v=20261010-v11" data-sdlg-overview-ux="1"></script>\n</body>', 1)
 if "sdlg-overview-loading.js" not in data:
     data = data.replace("</body>", '  <script src="./modules/sdlg-overview-loading.js?v=20261010-v221" data-sdlg-overview-loading="1"></script>\n</body>', 1)
+if "sdlg-portal-finance-ux.js" not in data:
+    data = data.replace("</body>", '  <script src="./modules/sdlg-portal-finance-ux.js?v=20261010-v4" data-sdlg-portal-finance="1"></script>\n</body>', 1)
 
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare v221 done")
+print("pages_prepare finance-v4 done")

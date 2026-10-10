@@ -17,6 +17,7 @@ git push origin main --force
 
 | Branch | Notes |
 |--------|--------|
+| **`backup/stable-2026-10-10-overview-final`** | Overview DONE: unified KPI reveal, priority tiers, collapsed Executive Snapshot, no 0-flash |
 | **`backup/stable-2026-10-10-overview-architecture`** | Loading architecture: count query + sessionStorage cache, no intermediate 0→100→538, unified loading for nav + KPI, min 300ms skeleton |
 | **`backup/stable-2026-10-10-overview-ux`** | Overview UX: KPI 0%→—, semantic My Action colors, P2 MONITOR, rejection %, thicker bars. Modules `sdlg-overview-ux.js/css` |
 | **`backup/stable-2026-10-10-overview-fix`** | Auth singleton v2.2 + session recheck; auth-guard v1.3; Overview session gate (JWT timing) |
@@ -37,10 +38,8 @@ git push origin main --force
 | Session persist + 401 handling | Done |
 | Overview page render | Done |
 | Overview UX hierarchy | Done |
-| **Loading architecture (3-state / no flicker)** | **Deployed — verify live** |
-
-**Next recommended:** Finance auto-calc, then Claims pagination.
-
-## Emergency
-
-See `RUNBOOK_EMERGENCY.md`.
+| **Loading architecture (3-state / no flicker)** | **DONE** |
+| **Overview chapter** | **CLOSED 2026-10-10** |
+| Finance auto-calc | In progress (v4 defaults 25 / 0.5) |
+| Pagination Claims | Pending |
+| Audit Log | Pending |
