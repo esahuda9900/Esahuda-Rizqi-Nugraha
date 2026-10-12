@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NUCLEAR: repairDate year-safe; inline DOM enforcer; labour hrs*25."""
+"""Bake patches for SDLG portal — live-claim guards, year-safe repair, inline enforcer."""
 from pathlib import Path
 import re
 
@@ -9,7 +9,49 @@ if not INDEX.exists():
 
 data = INDEX.read_text(encoding="utf-8", errors="replace")
 
-# --- LIVE-CLAIM LOCATION + REPORT GUARD ---
+# ---------------------------------------------------------------------------
+# 1) Fix TDZ: ensure _liveR is declared BEFORE any use (reportWo/reportModel)
+# ---------------------------------------------------------------------------
+# Remove any previous broken ordering of _liveR / reportWo / reportModel
+data = data.replace(
+    'const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();\n'
+    '    const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim && window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
+    '    const reportModel = String((_liveR && _liveR.model) || selectedClaim.model || "").trim();',
+    'const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim && window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
+    '    const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();\n'
+    '    const reportModel = String((_liveR && _liveR.model) || selectedClaim.model || "").trim();',
+    1,
+)
+
+# If still unpatched (fresh index), inject _liveR just before reportWo
+if "const _liveR =" not in data:
+    _anchor = 'const reportWo = String(selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();'
+    if _anchor in data:
+        data = data.replace(
+            _anchor,
+            'const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim '
+            '&& window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
+            '    const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();',
+            1,
+        )
+    _old_rm = 'const reportModel = String(selectedClaim.model || "").trim();'
+    if _old_rm in data:
+        data = data.replace(
+            _old_rm,
+            'const reportModel = String((_liveR && _liveR.model) || selectedClaim.model || "").trim();',
+            1,
+        )
+    _old_rh = 'const reportHm = numberText(selectedClaim.hm_failure) || "";'
+    if _old_rh in data:
+        data = data.replace(
+            _old_rh,
+            'const reportHm = numberText((_liveR && _liveR.hm_failure) != null ? _liveR.hm_failure : selectedClaim.hm_failure) || "";',
+            1,
+        )
+
+# ---------------------------------------------------------------------------
+# 2) machineLocation prefers live claim
+# ---------------------------------------------------------------------------
 _old_loc = 'const machineLocation = [wo, branch, customer].map(v => String(v || "").trim()).filter(Boolean).join(" ");'
 _new_loc = (
     'const _liveForLoc = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim '
@@ -22,23 +64,9 @@ _new_loc = (
 if _old_loc in data:
     data = data.replace(_old_loc, _new_loc, 1)
 
-_old_rm = 'const reportModel = String(selectedClaim.model || "").trim();'
-_new_rm = (
-    'const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim '
-    '&& window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
-    '    const reportModel = String((_liveR && _liveR.model) || selectedClaim.model || "").trim();'
-)
-if _old_rm in data:
-    data = data.replace(_old_rm, _new_rm, 1)
-
-_old_rw = 'const reportWo = String(selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();'
-if _old_rw in data:
-    data = data.replace(_old_rw, 'const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();', 1)
-
-_old_rh = 'const reportHm = numberText(selectedClaim.hm_failure) || "";'
-if _old_rh in data:
-    data = data.replace(_old_rh, 'const reportHm = numberText((_liveR && _liveR.hm_failure) != null ? _liveR.hm_failure : selectedClaim.hm_failure) || "";', 1)
-
+# ---------------------------------------------------------------------------
+# 3) Prefer liveClaim over list row
+# ---------------------------------------------------------------------------
 if "const selectedClaim = liveClaim || fromList;" in data:
     data = data.replace(
         "const selectedClaim = liveClaim || fromList;",
@@ -51,6 +79,9 @@ if "const selectedClaim = liveClaim || fromList;" in data:
         1,
     )
 
+# ---------------------------------------------------------------------------
+# 4) Year-safe repairDate
+# ---------------------------------------------------------------------------
 OLD_REPAIR = re.compile(
     r"repairDate:\s*portalDate\(selectedClaim\.dealer_repair_date\s*\|\|\s*selectedClaim\.completion_date\s*\|\|\s*selectedClaim\.repair_date\s*\|\|\s*selectedClaim\.failure_date\)",
     re.M,
@@ -69,11 +100,17 @@ NEW_REPAIR = (
 if OLD_REPAIR.search(data):
     data = OLD_REPAIR.sub(NEW_REPAIR, data, count=1)
 
+# ---------------------------------------------------------------------------
+# 5) autocomplete=off
+# ---------------------------------------------------------------------------
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
+# ---------------------------------------------------------------------------
+# 6) Minimal legacy inline enforcer (location + repair + labour)
+# ---------------------------------------------------------------------------
 INLINE = r'''
 <script data-sdlg-inline-enforcer-legacy="1">
 (function(){
@@ -89,7 +126,7 @@ INLINE = r'''
       var el=document.getElementById('sdlg_repairDate');
       if(el && /19[\/\-]0?7[\/\-]2024/.test(String(el.value||'')) && String(c.claim_id)!=='0429-2024-SDLG-PFR'){
         var fmt=portalDate(c.dealer_repair_date)||portalDate(c.failure_date)||'';
-        if(fmt){setVal(el,fmt);try{console.info('[SDLG inline] repair forced',fmt);}catch(e){}}
+        if(fmt){setVal(el,fmt);}
       }
       var locEl=document.getElementById('sdlg_machineLocation');
       var want=[c.dealer_wo_so||'',c.branch||'',c.customer||''].map(function(x){return String(x||'').trim();}).filter(Boolean).join(' ');
@@ -114,5 +151,6 @@ if "data-sdlg-inline-enforcer-legacy" not in data and "__SDLG_INLINE_LEGACY__" n
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare_index.py done")
+print("has _liveR:", "const _liveR =" in data)
 print("liveForLoc:", "_liveForLoc" in data)
 print("inline legacy:", "__SDLG_INLINE_LEGACY__" in data)
