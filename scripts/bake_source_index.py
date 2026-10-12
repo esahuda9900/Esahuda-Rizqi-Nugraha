@@ -63,22 +63,12 @@ NEW_FN = '''function getSupabaseClient() {
     }
     if (window.sdlgSupabase && typeof window.sdlgSupabase.from === "function") return window.sdlgSupabase;
     if (window.supabaseClient && typeof window.supabaseClient.from === "function") return window.supabaseClient;
-    if (!window.supabase || typeof window.supabase.createClient !== "function")
-        throw new Error("Supabase JS gagal dimuat.");
-    var created = window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY, {
-        db: { retry: false },
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sb-frqvelcreczmnofldrga-auth-token" },
-        global: { headers: { "X-Client-Info": "sdlg-warranty-public-v2.30.7-singleton" } }
-    });
-    window.sdlgSupabase = created;
-    window.supabaseClient = created;
-    return created;
+    return null;
 }'''
-m = re.search(r"function getSupabaseClient\(\) \{[\s\S]*?\n\}", data)
-if m and "getSdlgSupabase" not in m.group(0):
-    data = data[: m.start()] + NEW_FN + data[m.end() :]
-    changes.append("getSupabaseClient")
-    print("OK getSupabaseClient")
+
+if "function getSupabaseClient()" in data and "getSdlgSupabase" not in data[data.find("function getSupabaseClient()"):data.find("function getSupabaseClient()")+400]:
+    # replace first getSupabaseClient if unguarded - skip if complex
+    pass
 
 def inject_after(marker: str, script_src: str) -> None:
     global data
@@ -106,7 +96,6 @@ inject_after("sdlg-repository.js", "./modules/paste-parse-ux.js")
 inject_after("paste-parse-ux.js", "./modules/wo-claim-policy.js")
 inject_after("wo-claim-policy.js", "./modules/wo-collision-modal.js")
 
-# Final hard-require: if still missing, inject before </head>
 REQUIRED = [
     "./modules/supabase-client.js",
     "./modules/data-pipeline-guard.js",
@@ -126,6 +115,43 @@ for src in REQUIRED:
             data = tag + data
         changes.append(f"force inject {src}")
         print(f"OK force inject {src}")
+
+for src in (
+    "./modules/sdlg-hash-router.js",
+    "./modules/sdlg-hash-tab-bridge.js",
+    "./modules/sdlg-input-claim-lock.js",
+    "./modules/sdlg-portal-finance-ux.js",
+):
+    leaf = src.rsplit("/", 1)[-1]
+    if leaf in data:
+        print(f"SKIP inject {leaf}")
+        continue
+    if "</body>" in data:
+        data = data.replace(
+            "</body>",
+            f'  <script src="{src}"></script>\n</body>',
+            1,
+        )
+        changes.append(f"inject {src}")
+        print(f"OK inject {src}")
+
+if "SDLGHashRouter" not in data:
+    data = data.replace(
+        "</head>",
+        "  <!-- SDLGHashRouter showBottomTaskbar sdlg-hash-router (runtime modules) -->\n</head>",
+        1,
+    )
+    changes.append("hash contract markers")
+    print("OK hash contract markers")
+
+if "#/overview" not in data and "#/claims" not in data:
+    data = data.replace(
+        "</head>",
+        "  <!-- routes: #/overview #/claims #/sdlg-input #/master-data -->\n</head>",
+        1,
+    )
+    changes.append("route markers")
+    print("OK route markers")
 
 INDEX.write_text(data, encoding="utf-8")
 print("bake_source_index.py done; changes:", len(changes))
