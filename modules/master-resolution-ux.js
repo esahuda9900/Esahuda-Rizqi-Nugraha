@@ -27,9 +27,9 @@
       return './';
     }
     var b = basePath();
-    inject(b + 'modules/sdlg-policy-repair-hardfix.js?v=20261008-v2.1');
-    inject(b + 'modules/sdlg-portal-enrich.js?v=20261008-v1.4');
-    inject(b + 'modules/sdlg-policy-table-fill.js?v=20261008-v1.1');
+    inject(b + 'modules/sdlg-policy-repair-hardfix.js?v=20261013-claim-integrity-v2');
+    inject(b + 'modules/sdlg-portal-enrich.js?v=20261013-claim-integrity-v2');
+    inject(b + 'modules/sdlg-policy-table-fill.js?v=20261013-claim-integrity-v2');
     inject(b + 'modules/claim-context-resolve.js?v=20261008-v4');
     inject(b + 'modules/sdlg-portal-copy-helper.js?v=20261008-v1.3');
     inject(b + 'modules/sdlg-portal-ux-v2.js?v=20261008-v2.1');
