@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy prepare — unified hydrate + kill competing writers."""
+"""NUCLEAR prepare: strip competing field-writers; inject hydrate-only; React key remount."""
 from pathlib import Path
 import re
 import urllib.request
@@ -60,8 +60,6 @@ if "const selectedClaim = liveClaim || fromList;" in data:
         '    useEffect(() => {\n'
         '        if (liveClaim && window.SDLGInputHydrate && window.SDLGInputHydrate.apply) {\n'
         '            try { window.SDLGInputHydrate.apply(liveClaim); } catch (_e) {}\n'
-        '        } else if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n'
-        '            try { window.SDLGInputClaimLock.applyClaim(liveClaim); } catch (_e) {}\n'
         '        }\n'
         '    }, [liveClaim]);',
         1,
@@ -123,35 +121,69 @@ data = re.sub(
     data,
 )
 
+# Force React remount of portal HTML when claim changes
+data = data.replace(
+    'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })',
+    'React.createElement("div", { key: String(selectedClaimId || selectedClaim && selectedClaim.claim_id || "none"), "data-sdlg-input-helper": "1", "data-claim-id": String(selectedClaimId || (selectedClaim && selectedClaim.claim_id) || ""), dangerouslySetInnerHTML: { __html: html } })',
+    1,
+)
+
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-# Inject hydrate script early in body if missing
+# NUCLEAR: strip competing field-writer script tags from HTML entirely
+data = re.sub(
+    r'[ \t]*<script[^>]*canonical-warranty-helper\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+data = re.sub(
+    r'[ \t]*<script[^>]*sdlg-input-claim-lock\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+data = re.sub(
+    r'[ \t]*<script[^>]*feedback-person-fix\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+data = re.sub(
+    r'[ \t]*<script[^>]*warranty-helper-fastpath\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+data = re.sub(
+    r'[ \t]*<script[^>]*sdlg-input-helper-ux\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+data = re.sub(
+    r'[ \t]*<script[^>]*sdlg-input-empty-guard\.js[^>]*>\s*</script>\s*',
+    '',
+    data,
+    flags=re.I,
+)
+
+# Ensure hydrate is present once
 if "sdlg-input-hydrate.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v10" data-sdlg-input-hydrate="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v11" data-sdlg-input-hydrate="1"></script>\n</body>',
         1,
     )
 else:
     data = re.sub(
         r'sdlg-input-hydrate\.js\?v=[^"\s]+',
-        'sdlg-input-hydrate.js?v=20261012-v10',
+        'sdlg-input-hydrate.js?v=20261012-v11',
         data,
     )
 
-data = re.sub(
-    r'canonical-warranty-helper\.js(?:\?v=[^"\s]*)?',
-    'canonical-warranty-helper.js?v=20261012-v128',
-    data,
-)
-data = re.sub(
-    r'sdlg-input-claim-lock\.js\?v=[^"\s]+',
-    'sdlg-input-claim-lock.js?v=20261012-v16',
-    data,
-)
-
 INDEX.write_text(data, encoding="utf-8")
-print("prepare done — hydrate unified")
+print("NUCLEAR prepare done — competing writers stripped")

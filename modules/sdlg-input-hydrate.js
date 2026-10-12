@@ -1,33 +1,31 @@
 /**
- * SDLG Input Hydrate v1.0 — SINGLE source of truth for portal Home fields.
- *
- * Rules:
- * 1. Only runs on #/sdlg-input/* or when [data-sdlg-input-helper] exists.
- * 2. Claim id from HASH only (never body text, never first <select> option).
- * 3. Fetches ONE row from Supabase by claim_id.
- * 4. Writes ALL home fields in one pass.
- * 5. Guard: refuse if claim_id !== hash claim id.
- * 6. No MutationObserver spam — hashchange + select change + one delayed retry.
+ * SDLG Input Hydrate v1.1 — ONLY writer for portal Home fields.
+ * Hash = source of truth. Logs every write. Drift-heals every 4s.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_INPUT_HYDRATE_V1__) return;
+  if (root.__SDLG_INPUT_HYDRATE_V11__) return;
+  root.__SDLG_INPUT_HYDRATE_V11__ = true;
   root.__SDLG_INPUT_HYDRATE_V1__ = true;
 
   var RE = /^\d{3,4}-\d{4}-SDLG-PFR$/i;
   var busy = false;
-  var lastKey = '';
   var lastValues = null;
+
+  // Kill competing writers permanently
+  root.__SDLG_DISABLE_CLAIM_LOCK_FIELD_WRITES__ = true;
+  root.__SDLG_DISABLE_CANONICAL_PORTAL_WRITES__ = true;
+  root.__SDLG_DISABLE_FB_FIX_WRITES__ = true;
 
   function hashClaimId() {
     try {
       var h = String((root.location && root.location.hash) || '');
       var m = h.match(/(?:sdlg-input|sdlginput)\/([^/?#]+)/i);
       if (!m) {
-        // also allow #/claims/ID when user opened claim detail then jumped — but only if helper DOM present
+        if (!document.querySelector('[data-sdlg-input-helper], #sdlg_repairDate')) return '';
         m = h.match(/(?:claims|claim)\/([^/?#]+)/i);
-        if (!m || !document.querySelector('[data-sdlg-input-helper], #sdlg_repairDate, [data-sdlg-field]')) return '';
       }
+      if (!m) return '';
       var seg = decodeURIComponent(m[1]).trim();
       return RE.test(seg) ? seg : '';
     } catch (_) { return ''; }
@@ -39,33 +37,43 @@
     return m ? m[3] + '/' + m[2] + '/' + m[1] : s;
   }
 
+  function waitFor(id, ms) {
+    return new Promise(function (resolve) {
+      var start = Date.now();
+      (function tick() {
+        var el = document.getElementById(id);
+        if (el) return resolve(el);
+        if (Date.now() - start > (ms || 4000)) return resolve(null);
+        setTimeout(tick, 50);
+      })();
+    });
+  }
+
+  function forceSet(el, v, tag) {
+    if (!el) return;
+    v = v == null ? '' : String(v);
+    try {
+      var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      var desc = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (desc && desc.set) desc.set.call(el, v);
+      else el.value = v;
+    } catch (_) { el.value = v; }
+    try {
+      el.defaultValue = v;
+      el.setAttribute('value', v);
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('data-hydrate', '1');
+    } catch (_) {}
+    try { console.info('[SDLG hydrate] write', tag || el.id, '=', v.slice(0, 60)); } catch (_) {}
+  }
+
   function setVal(id, label, value) {
     var v = value == null ? '' : String(value);
     var el = document.getElementById(id);
-    if (el) {
-      if (String(el.value || '') !== v) {
-        el.value = v;
-        try {
-          el.defaultValue = v;
-          el.setAttribute('value', v);
-          el.setAttribute('autocomplete', 'off');
-          el.setAttribute('data-hydrate', '1');
-        } catch (_) {}
-      }
-    }
+    forceSet(el, v, id);
     if (label) {
       document.querySelectorAll('[data-sdlg-field]').forEach(function (node) {
-        if ((node.getAttribute('data-label') || '') === label) {
-          if (String(node.value || '') !== v) {
-            node.value = v;
-            try {
-              node.defaultValue = v;
-              node.setAttribute('value', v);
-              node.setAttribute('autocomplete', 'off');
-              node.setAttribute('data-hydrate', '1');
-            } catch (_) {}
-          }
-        }
+        if ((node.getAttribute('data-label') || '') === label) forceSet(node, v, label);
       });
     }
   }
@@ -94,21 +102,30 @@
       return;
     }
 
-    // Sync claim selects to this id (prevent first-option 0429 bleed)
     try {
       document.querySelectorAll('select').forEach(function (s) {
         var has = false;
         for (var i = 0; i < s.options.length; i++) {
           if (String(s.options[i].value || '') === c.claim_id) { has = true; break; }
         }
-        if (has && String(s.value || '') !== c.claim_id) s.value = c.claim_id;
+        if (has) s.value = c.claim_id;
       });
     } catch (_) {}
 
     var report = buildReport(c);
     document.querySelectorAll('[data-sdlg-report-body]').forEach(function (el) {
-      if (String(el.textContent || '') !== report) el.textContent = report;
+      el.textContent = report;
       el.setAttribute('data-claim-id', c.claim_id);
+      try { console.info('[SDLG hydrate] write report-body =', report.slice(0, 80)); } catch (_) {}
+    });
+    // also any monospace report dumps without the attr
+    document.querySelectorAll('.sdlg-section-report, [data-sdlg-section-role="report"]').forEach(function (card) {
+      card.querySelectorAll('div').forEach(function (el) {
+        var tx = String(el.textContent || '');
+        if (/^SDLG\s+/i.test(tx) && /Transmission Abnormal|G9138F/i.test(tx) && c.model && tx.indexOf(c.model) < 0) {
+          el.textContent = report;
+        }
+      });
     });
 
     var repairStr = portalDate(c.dealer_repair_date || c.completion_date || c.failure_date);
@@ -134,17 +151,8 @@
     setVal('sdlg_serviceMileage', 'Service Mileage (Km)', c.mileage_km != null ? String(c.mileage_km) : '');
 
     root.__SDLG_LIVE_CLAIM__ = c;
-    lastKey = c.claim_id;
-    lastValues = {
-      claim_id: c.claim_id,
-      repair: repairStr,
-      loc: loc,
-      report: report,
-      person: tech
-    };
-    try {
-      console.info('[SDLG hydrate] OK', c.claim_id, 'repair=', repairStr, 'wo=', c.dealer_wo_so || c.wo_so || '(none)');
-    } catch (_) {}
+    lastValues = { claim_id: c.claim_id, repair: repairStr, loc: loc, report: report, person: tech };
+    try { console.info('[SDLG hydrate] OK', c.claim_id, 'repair=', repairStr); } catch (_) {}
   }
 
   function getClient() {
@@ -158,11 +166,12 @@
     if (!id || !RE.test(id)) return;
     if (!document.querySelector('[data-sdlg-input-helper], #sdlg_repairDate, [data-sdlg-field]')) return;
 
-    // Prefer live claim already loaded by React if it matches hash
+    await waitFor('sdlg_repairDate', 5000);
+
     var live = root.__SDLG_LIVE_CLAIM__;
-    if (live && String(live.claim_id) === id && !forceId) {
+    if (live && String(live.claim_id) === id) {
       apply(live);
-      return;
+      // still re-fetch to beat stale React paint
     }
 
     var client = getClient();
@@ -172,9 +181,7 @@
     try {
       var res = await client.from('claims').select('*').eq('claim_id', id).maybeSingle();
       if (res.error) throw res.error;
-      // re-check hash after await
-      var still = hashClaimId();
-      if (still && still !== id) return;
+      if (hashClaimId() && hashClaimId() !== id) return;
       if (res.data) apply(res.data);
     } catch (e) {
       try { console.warn('[SDLG hydrate] failed', id, e); } catch (_) {}
@@ -186,26 +193,21 @@
   var timer = null;
   function schedule(id) {
     if (timer) clearTimeout(timer);
-    timer = setTimeout(function () { hydrate(id); }, 60);
+    timer = setTimeout(function () { hydrate(id); }, 80);
   }
 
   root.SDLGInputHydrate = {
-    version: '1.0.0',
+    version: '1.1.0',
     hydrate: hydrate,
     apply: apply,
     hashClaimId: hashClaimId,
     lastValues: function () { return lastValues; }
   };
 
-  // Global kill-switches for competing writers
-  root.__SDLG_DISABLE_CLAIM_LOCK_FIELD_WRITES__ = true;
-  root.__SDLG_DISABLE_CANONICAL_PORTAL_WRITES__ = true;
-  root.__SDLG_DISABLE_FB_FIX_WRITES__ = true;
-
-  root.addEventListener('hashchange', function () { lastKey = ''; schedule(); });
-  root.addEventListener('sdlg-route', function () { lastKey = ''; schedule(); });
+  root.addEventListener('hashchange', function () { lastValues = null; schedule(); });
+  root.addEventListener('sdlg-route', function () { lastValues = null; schedule(); });
   root.addEventListener('sdlg-input-claim', function (e) {
-    lastKey = '';
+    lastValues = null;
     schedule(e.detail && e.detail.claimId);
   });
 
@@ -215,33 +217,35 @@
     var v = String(t.value || '').trim();
     if (!RE.test(v)) return;
     try {
-      var h = String(root.location.hash || '');
-      if (/sdlg-input|sdlginput/i.test(h) || document.querySelector('[data-sdlg-input-helper]')) {
+      if (document.querySelector('[data-sdlg-input-helper]') || /sdlg-input/i.test(String(root.location.hash || ''))) {
         if (hashClaimId() !== v) root.location.hash = '#/sdlg-input/' + encodeURIComponent(v);
       }
     } catch (_) {}
-    lastKey = '';
+    lastValues = null;
     schedule(v);
   }, true);
 
-  // Single delayed pass after paint — no setInterval thrash
-  setTimeout(function () { schedule(); }, 200);
-  setTimeout(function () { schedule(); }, 800);
-  setTimeout(function () { schedule(); }, 2000);
+  // Staggered runs AFTER React paint
+  [300, 700, 1200, 2000, 3500].forEach(function (ms) {
+    setTimeout(function () { schedule(); }, ms);
+  });
 
-  // Soft integrity check every 5s — only re-hydrate if repair field drifted to wrong claim signature
+  // Drift heal — if repair/report reverts to 0429 signatures, re-apply
   setInterval(function () {
     var id = hashClaimId();
-    if (!id || !lastValues || lastValues.claim_id !== id) {
-      if (id) schedule(id);
-      return;
-    }
-    var el = document.getElementById('sdlg_repairDate');
-    if (!el) return;
-    var cur = String(el.value || '');
-    if (cur && lastValues.repair && cur !== lastValues.repair) {
-      try { console.warn('[SDLG hydrate] drift detected', cur, '→', lastValues.repair); } catch (_) {}
+    if (!id) return;
+    var repairEl = document.getElementById('sdlg_repairDate');
+    var reportEl = document.querySelector('[data-sdlg-report-body]');
+    var repair = repairEl ? String(repairEl.value || '') : '';
+    var report = reportEl ? String(reportEl.textContent || '') : '';
+    var bad =
+      /19\/07\/2024/.test(repair) ||
+      /Transmission Abnormal/i.test(report) ||
+      /G9138F/i.test(report) && lastValues && lastValues.claim_id === id && lastValues.report && lastValues.report.indexOf('G9138F') < 0 ||
+      (lastValues && lastValues.claim_id === id && lastValues.repair && repair && repair !== lastValues.repair);
+    if (bad) {
+      try { console.warn('[SDLG hydrate] drift → rehydrate', { repair: repair, report: report.slice(0, 40) }); } catch (_) {}
       schedule(id);
     }
-  }, 5000);
+  }, 4000);
 })(typeof window !== 'undefined' ? window : this);
