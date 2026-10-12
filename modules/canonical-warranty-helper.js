@@ -82,7 +82,7 @@
   function isPortalInputPage() {
     try {
       if (document.querySelector('[data-sdlg-input-helper]')) return true;
-      if (/(?:^#?\\/?sdlg-input|^#?\\/?sdlginput)/i.test(String(location.hash || ''))) return true;
+      if (/sdlg-input|sdlginput/i.test(String(location.hash || ''))) return true;
     } catch (_) {}
     return false;
   }
