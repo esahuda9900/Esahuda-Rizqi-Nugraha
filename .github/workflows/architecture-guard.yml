@@ -33,10 +33,11 @@ jobs:
           failed=0
           allowed='.github/workflows/bake-boss-analytics.yml'
           allowed_production_bake='.github/workflows/bake-production-index.yml'
+          allowed_pages_deploy='.github/workflows/static.yml'
           for f in .github/workflows/*.{yml,yaml}; do
             [ -f "$f" ] || continue
             [ "$f" = '.github/workflows/architecture-guard.yml' ] && continue
-            if [ "$f" = "$allowed" ] || [ "$f" = "$allowed_production_bake" ]; then
+            if [ "$f" = "$allowed" ] || [ "$f" = "$allowed_production_bake" ] || [ "$f" = "$allowed_pages_deploy" ]; then
               echo "Reviewed repository-mutating workflow allowed: $f"
               continue
             fi
