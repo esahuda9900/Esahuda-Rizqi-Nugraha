@@ -78,6 +78,8 @@ ok "portal mapping not regressed"
 # SDLG Input must use the fetched live claim only; never fall back to list cache.
 for needle in \
   'function useLiveClaim(claimId, retryToken)' \
+  'const routeClaimId =' \
+  'const requestedId = String(routeClaimId || claimId || "").trim().toUpperCase();' \
   'const selectedClaim = live.claim;' \
   'data-sdlg-live-loading' \
   'data-sdlg-live-error' \

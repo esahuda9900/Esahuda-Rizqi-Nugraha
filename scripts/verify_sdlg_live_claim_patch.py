@@ -35,6 +35,8 @@ with tempfile.TemporaryDirectory(prefix="sdlg-live-claim-") as tmp:
     html = generated.read_text(encoding="utf-8", errors="replace")
     required = [
         "function useLiveClaim(claimId, retryToken)",
+        "const routeClaimId =",
+        'const requestedId = String(routeClaimId || claimId || "").trim().toUpperCase();',
         "const selectedClaim = live.claim;",
         "data-sdlg-live-loading",
         "data-sdlg-live-error",

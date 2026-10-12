@@ -21,9 +21,10 @@ done
 ok "no createClient outside supabase-client.js"
 echo "Module createClient contract passed"
 
-# SDLG Input DOM writers are disabled; React render owns the form fields.
-if grep -qE "loadScript\\(['\"]\\./modules/sdlg-input-hydrate|loadScript\\(['\"]\\./modules/sdlg-inline-enforcer" "$ROOT/modules/claim-fields.js"; then
-  fail "claim-fields.js must not load legacy DOM-writer modules"
+# React owns form values; hydrate is a read-only compatibility guard only.
+grep -q 'sdlg-input-hydrate.js?v=20261012-readonly' "$ROOT/modules/claim-fields.js" || fail "read-only hydrate guard is not loaded"
+if grep -qE "loadScript\\(['\"]\\./modules/sdlg-inline-enforcer" "$ROOT/modules/claim-fields.js"; then
+  fail "claim-fields.js must not load the competing inline enforcer"
 fi
 if grep -Eq 'setInterval\(|querySelectorAll\(|function forceSet|\.value[[:space:]]*=' "$ROOT/modules/sdlg-input-hydrate.js"; then
   fail "sdlg-input-hydrate.js still mutates form DOM or runs a timer"
