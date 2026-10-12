@@ -90,7 +90,13 @@ NEW_SEL = (
     "    const selectedClaim = liveClaim && String(liveClaim.claim_id || '').trim() === requestedClaimId ? liveClaim : null;\n"
     "    if (requestedClaimId && !selectedClaim) {\n"
     "        if (!liveReady || liveClaim) return React.createElement('div', { role: 'status', style: { margin: '16px', padding: '16px', border: '1px solid #94a3b8', borderRadius: '10px' } }, 'Loading and verifying claim data...');\n"
-    "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } }, liveError || 'Claim data is not verified. Do not copy or submit.');\n"
+    "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } },\n"
+    "            React.createElement('p', null, liveError || 'Claim data is not verified. Do not copy or submit.'),\n"
+    "            React.createElement('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },\n"
+    "                React.createElement('button', { type: 'button', onClick: () => window.location.reload(), style: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #7f1d1d', cursor: 'pointer' } }, 'Muat ulang'),\n"
+    "                React.createElement('button', { type: 'button', onClick: () => { if (typeof onBack === 'function') onBack(); }, style: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #7f1d1d', cursor: 'pointer' } }, 'Kembali ke Claims')\n"
+    "            )\n"
+    "        );\n"
     "    }\n"
 )
 OLD_LIVE_RE = re.compile(
