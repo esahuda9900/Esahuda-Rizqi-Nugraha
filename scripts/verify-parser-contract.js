@@ -67,7 +67,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-if (!/<script\\b[^>]*\\bsrc=["'](?:\\.\\/)?\\/?modules\\/claim-parser-helpers\\.js(?:\\?[^"']*)?["'][^>]*>\\s*<\\/script>/i.test(source)) {
+if (!/<script\b[^>]*\bsrc=["'](?:\.\/)?\/?modules\/claim-parser-helpers\.js(?:\?[^"']*)?["'][^>]*>\s*<\/script>/i.test(source)) {
   console.error('PARSER CONTRACT: FAIL');
   console.error('- Parser helper script tag missing from index.html');
   process.exit(1);
