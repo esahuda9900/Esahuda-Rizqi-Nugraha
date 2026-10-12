@@ -1,6 +1,6 @@
 # SDLG Warranty Claim Web App — Permanent Project Context
 
-Last updated: 2026-09-23 (expert pass — Vercel retired; Cloudflare sole host)
+Last updated: 2026-10-13 (GitHub Pages is production. RLS helpers moved off the Data API.)
 
 ## Purpose
 Internal web application for monitoring and managing SDLG warranty claims, replacing repetitive Excel/manual tracking while preserving the existing warranty business rules.
@@ -9,15 +9,15 @@ Internal web application for monitoring and managing SDLG warranty claims, repla
 
 | Layer | Value |
 |-------|-------|
-| Production frontend host | Cloudflare Workers — https://sdlg-warranty-backup.esahuda9900.workers.dev |
+| Production frontend host | GitHub Pages — https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/ |
 | Git branch | main |
-| Repository | esahuda9900/sdlg-warranty-backup |
+| Repository | esahuda9900/Esahuda-Rizqi-Nugraha |
 | Supabase project | frqvelcreczmnofldrga (SDLG Warranty Claim, ap-southeast-2) |
 
 ## Technology
 - Frontend: monolithic index.html + extracted modules/*.js
 - Database / Auth / RPC: Supabase (Postgres 17, RLS, SECURITY DEFINER claim RPCs)
-- Hosting: Cloudflare Workers (static assets via wrangler.jsonc) — sole production surface
+- Hosting: **GitHub Pages only**. Cloudflare Workers and Vercel are retired. `.github/workflows/deploy-cloudflare.yml` is archived and does not deploy.
 - Source control: GitHub
 
 ## Core business workflow
@@ -71,23 +71,38 @@ Do not automatically set machines.branch_id unless that field is explicitly defi
 - public.sdlg_warranty_resolve_claim(claim_id) — canonical warranty resolver
 - public.app_user_roles — application role mapping used by claims RLS policies
 - public.free_tier_db_health — read-only size/volume monitor (authenticated only)
+- private.private_has_active_app_role() and private.private_is_global_reader() — RLS helpers, not Data API endpoints
+- private.is_admin() — used by app_user_roles policies, also not a Data API endpoint
 
 ## Security model
 Claims access is authenticated and role/branch controlled through RLS policies. Admin/Warranty Admin can write; Viewer can read; Branch User is restricted by branch. Database authorization is the security boundary; UI visibility is not sufficient authorization.
 
-## Current build system warning
-Production currently uses a sequence of scripts/apply-*.js injectors against the monolithic index.html. This is legacy technical debt and a primary regression risk. New fixes must avoid broad/global source rewriting and should be isolated whenever possible. See INJECTOR_ROADMAP.md and the freeze rule in DEPLOYMENT.md.
+Intentional public RPCs, each gated by private_is_warranty_claim_writer():
+- create_sdlg_claim
+- update_sdlg_claim
+- resolve_sdlg_claim_context
+- sdlg_resolve_or_create_branch
 
-## Expert operating posture (locked 2026-09-23)
-- Stabilization phase is complete.
-- Cloudflare is the sole production surface (Vercel retired).
-- No new injectors for routine fixes; prefer modules/*.js.
+Do not revoke EXECUTE on those four. The app calls them. The linter warning is expected.
+
+Do not drop unused indexes just because the performance linter lists them. The database is about 72 MB; those indexes are cheap and several match real lookup paths.
+
+Leaked-password protection is a Supabase Auth dashboard setting (Authentication → Email → Password security). It cannot be migrated in SQL.
+
+## Current build system warning
+Production currently uses scripts/pages_prepare_index.py against the monolithic index.html at deploy time. This is legacy technical debt and a primary regression risk. New fixes must avoid broad/global source rewriting and should be isolated whenever possible.
+
+Portal input has one writer: the React liveClaim fetch injected by pages_prepare. Do not load modules/sdlg-input-hydrate.js or modules/sdlg-inline-enforcer.js. Both write the same fields on a timer.
+
+## Expert operating posture (updated 2026-10-13)
+- Production host is GitHub Pages. Verify on https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/ — not on workers.dev.
+- No new regex injectors for routine fixes.
 - Domain logic stays in Supabase.
-- Remaining material gate: authenticated browser E2E (issue #12) using a dedicated test account.
 - Free-tier headroom is protected.
+- Branch users are not invented here. Add a real person before testing the branch_user RLS path.
 
 ## Engineering rule
-Never fix one visible error by changing unrelated behavior. Every change must identify root cause, apply the smallest safe fix, run regression checks, and verify production afterward on the Cloudflare URL.
+Never fix one visible error by changing unrelated behavior. Every change must identify root cause, apply the smallest safe fix, run regression checks, and verify production afterward on the GitHub Pages URL.
 
 ## Latest Production State — 2026-09-23
 Claim `0241-2026-SDLG-PFR` now resolves through the canonical warranty engine as **SDLG OUT_OF_WARRANTY → Marketing IN_WARRANTY → final route MARKETING**. Exact AX WO `WO26044098` enrichment remains active (machine/customer/branch links populated while source customer text is preserved). Exact part `SLG-4120016088001` is classified as Excavator / Other parts through a controlled `MANUAL_APPROVAL` mapping with HIGH confidence; this is an application routing classification, not an assertion that SDLG's policy explicitly names the part category.

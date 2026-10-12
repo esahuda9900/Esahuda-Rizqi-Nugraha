@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""SDLG pages_prepare — liveClaim, year-safe repairDate, location guard."""
+"""SDLG pages_prepare — liveClaim is the only portal field writer.
+
+Do not add modules/sdlg-input-hydrate.js or sdlg-inline-enforcer.js.
+Both force DOM fields on a timer and fight the React liveClaim state.
+"""
 from pathlib import Path
 import re
 
@@ -14,6 +18,7 @@ GOOD = (
     "selectedClaim.fault_description || \"\").trim()"
     ".replace(/[\\r\\n]+/g, \" \").replace(/\\s{2,}/g, \" \");"
 )
+
 
 def _fix_broken(s):
     pat = re.compile(
@@ -35,7 +40,17 @@ def _fix_broken(s):
         print("lone class fixes:", n2)
     return s2
 
+
 data = _fix_broken(data)
+
+# React owns portal fields. A second DOM writer is how the flicker started.
+DEAD_HYDRATE = (
+    "try { if (window.SDLGInputHydrate && window.SDLGInputHydrate.apply) "
+    "window.SDLGInputHydrate.apply(row); } catch (_e) {}"
+)
+if DEAD_HYDRATE in data:
+    data = data.replace(DEAD_HYDRATE, "")
+    print("removed dead SDLGInputHydrate.apply")
 
 # 1) liveClaim
 OLD_SEL = (
@@ -63,7 +78,6 @@ NEW_SEL = (
     "                else if (row) {\n"
     "                    setLiveClaim(row);\n"
     "                    try { window.__SDLG_LIVE_CLAIM__ = row; } catch (_e) {}\n"
-    "                    try { if (window.SDLGInputHydrate && window.SDLGInputHydrate.apply) window.SDLGInputHydrate.apply(row); } catch (_e) {}\n"
     "                } else { setLiveClaim(fromList); }\n"
     "            } catch (e) { if (alive) { console.warn('[SDLG portal] live fetch', e); setLiveClaim(fromList); } }\n"
     "            finally { if (alive) setLiveReady(true); }\n"
@@ -146,6 +160,8 @@ if "const _liveR =" not in data:
 # Sanity
 if re.search(r"replace\(/\[[\r\n]", data):
     raise SystemExit("FATAL: newline still inside regex character class")
+if "sdlg-input-hydrate.js" in data or "sdlg-inline-enforcer.js" in data:
+    raise SystemExit("FATAL: timer DOM writer must not be loaded")
 print("sanity: OK")
 
 INDEX.write_text(data, encoding="utf-8")
