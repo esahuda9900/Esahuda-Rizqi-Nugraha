@@ -54,6 +54,22 @@ jobs:
           python3 -m compileall -q scripts
           echo 'Python patch scripts compile successfully.'
 
+      - name: Validate production GitHub Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
+          cp -R modules _site/modules
+          if [ -d styles ]; then cp -R styles _site/styles; fi
+          touch _site/.nojekyll
+          python3 scripts/pages_prepare_index.py
+          bash scripts/regression_contract.sh _site/index.html
+          bash scripts/regression_contract_modules.sh _site
+          echo 'Production Pages artifact and SDLG claim safety contracts passed.'
+
       - name: Validate external module syntax
         shell: bash
         run: |
