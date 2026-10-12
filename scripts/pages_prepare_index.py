@@ -168,9 +168,10 @@ NEW_REPAIR = (
     "        })(),"
 )
 
+# IMPORTANT: use lambda so \\d in NEW_REPAIR is not treated as re replacement escape
 data = re.sub(
     r"repairDate:\s*\(function\(\)\{[\s\S]*?\}\)\(\),",
-    NEW_REPAIR,
+    lambda _m: NEW_REPAIR,
     data,
     count=1,
 )
@@ -183,13 +184,6 @@ data = data.replace(
     'fieldHtml("labourAmount","Labour Amount",(function(){ const db=selectedClaim.labour_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const hrs=Number(selectedClaim.labour_hrs||0); return (hrs*25).toFixed(2); })(),false,false)',
     'fieldHtml("labourAmount","Labour Amount",(Number(selectedClaim.labour_hrs||0)*25).toFixed(2),false,false)',
 )
-if 'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount' in data:
-    data = re.sub(
-        r'fieldHtml\("labourAmount","Labour Amount",[^)]+\),false,false\)',
-        'fieldHtml("labourAmount","Labour Amount",(Number(selectedClaim.labour_hrs||0)*25).toFixed(2),false,false)',
-        data,
-        count=1,
-    )
 
 data = data.replace(
     'fieldHtml("mileageAmount","Mileage Amount",(function(){ const db=selectedClaim.mileage_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const km=Number(selectedClaim.mileage_km||0); return (km*0.5).toFixed(2); })(),false,false)',
@@ -314,25 +308,18 @@ data = data.replace(
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-for pat in [
-    r"[ \\t]*<script[^>]*canonical-warranty-helper\\.js[^>]*>\\s*</script>\\s*",
-    r"[ \\t]*<script[^>]*sdlg-input-claim-lock\\.js[^>]*>\\s*</script>\\s*",
-    r"[ \\t]*<script[^>]*feedback-person-fix\\.js[^>]*>\\s*</script>\\s*",
-    r"[ \\t]*<script[^>]*warranty-helper-fastpath\\.js[^>]*>\\s*</script>\\s*",
-    r"[ \\t]*<script[^>]*sdlg-input-helper-ux\\.js[^>]*>\\s*</script>\\s*",
-    r"[ \\t]*<script[^>]*sdlg-input-empty-guard\\.js[^>]*>\\s*</script>\\s*",
-]:
-    data = re.sub(pat, "", data, flags=re.I)
-
-data = re.sub(r"sdlg-input-hydrate\\.js\\?v=[^\"\\s]+", "sdlg-input-hydrate.js?v=20261012-v13", data)
-data = re.sub(r"sdlg-portal-finance-ux\\.js\\?v=[^\"\\s]+", "sdlg-portal-finance-ux.js?v=20261012-v52", data)
-data = re.sub(
-    r'src="\\./modules/sdlg-portal-finance-ux\\.js"',
-    'src="./modules/sdlg-portal-finance-ux.js?v=20261012-v52"',
-    data,
-)
-
 INDEX.write_text(data, encoding="utf-8")
+
+# Force labour amount in final HTML
+data2 = INDEX.read_text(encoding="utf-8", errors="replace")
+data2 = re.sub(
+    r'fieldHtml\("labourAmount","Labour Amount",[^\)]+\),false,false\)',
+    lambda _m: 'fieldHtml("labourAmount","Labour Amount",(Number(selectedClaim.labour_hrs||0)*25).toFixed(2),false,false)',
+    data2,
+    count=1,
+)
+INDEX.write_text(data2, encoding="utf-8")
+print("labour force applied", "(Number(selectedClaim.labour_hrs||0)*25)" in data2)
 print("prepare done — inline enforcer + year-safe repair + labour hrs*25")
-print("inline:", "data-sdlg-inline-enforcer" in data)
-print("ok(selectedClaim:", "ok(selectedClaim.dealer_repair_date)" in data)
+print("inline:", "data-sdlg-inline-enforcer" in data2)
+print("ok(selectedClaim:", "ok(selectedClaim.dealer_repair_date)" in data2)
