@@ -233,6 +233,25 @@ if CLAIM_LOCK.exists():
 
 print("sanity: OK")
 
+# Bust browser caches for modules whose claim-safety behavior changed.
+CACHE_BUSTS = {
+    "modules/claim-fields.js": "20261013-claim-integrity-v4",
+    "modules/sdlg-input-claim-lock.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-portal-enrich.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-policy-repair-hardfix.js": "20261013-claim-integrity-v2",
+    "modules/canonical-warranty-helper.js": "20261013-claim-integrity-v2",
+}
+for script_path, version in CACHE_BUSTS.items():
+    src_pattern = re.compile(
+        r'(<script\b[^>]*\bsrc=["\'][^"\']*?'
+        + re.escape(script_path)
+        + r')(?:\?[^"\']*)?(["\'])',
+        re.IGNORECASE,
+    )
+    data, count = src_pattern.subn(lambda m: m.group(1) + "?v=" + version + m.group(2), data)
+    if count:
+        print("cache-busted", script_path, count)
+
 # Normalize the root canonical helper tag in the actual Pages artifact.
 # The source build script also enforces this, but GitHub Pages deploys _site directly.
 data = re.sub(
