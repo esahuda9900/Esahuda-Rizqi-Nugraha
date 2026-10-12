@@ -86,9 +86,12 @@ NEW_SEL = (
     "        })();\n"
     "        return () => { alive = false; };\n"
     "    }, [selectedClaimId]);\n"
-    "    const selectedClaim = liveClaim;\n"
-    "    if (String(selectedClaimId || '').trim() && liveReady && !selectedClaim) {\n"
+    "    const requestedClaimId = String(selectedClaimId || '').trim();\n"
+    "    const selectedClaim = liveClaim && String(liveClaim.claim_id || '').trim() === requestedClaimId ? liveClaim : null;\n"
+    "    if (requestedClaimId && !selectedClaim) {\n"
+    "        if (!liveReady || liveClaim) return React.createElement('div', { role: 'status', style: { margin: '16px', padding: '16px', border: '1px solid #94a3b8', borderRadius: '10px' } }, 'Loading and verifying claim data...');\n"
     "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } }, liveError || 'Claim data is not verified. Do not copy or submit.');\n"
+    "    }\n"
     "    }\n"
 )
 if OLD_SEL in data:
