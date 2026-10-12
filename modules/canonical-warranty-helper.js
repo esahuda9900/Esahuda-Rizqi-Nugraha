@@ -79,6 +79,14 @@
     return window.sdlgSupabase || window.supabaseClient || window.__SDLG_SUPABASE_CLIENT || null;
   }
 
+  function isPortalInputPage() {
+    try {
+      if (document.querySelector('[data-sdlg-input-helper]')) return true;
+      if (/(?:^#?\\/?sdlg-input|^#?\\/?sdlginput)/i.test(String(location.hash || ''))) return true;
+    } catch (_) {}
+    return false;
+  }
+
   async function loadClaim(claimId) {
     var c = getClient();
     if (!c) throw new Error('No Supabase client');
@@ -228,19 +236,19 @@
   }
 
   async function run() {
-    if (scheduled) return;
+    if (scheduled || isPortalInputPage()) return;
     scheduled = true;
     try {
       var claimId = findClaimId();
-      if (!claimId) return;
-      var key = claimId + ':' + (++runSequence);
-      if (key === lastAppliedKey) return;
+      if (!claimId || lastAppliedKey === claimId) return;
       var claim = await loadClaim(claimId);
-      if (!claim) return;
+      if (!claim || String(claim.claim_id || '').trim() !== claimId) return;
+      if (isPortalInputPage() || findClaimId() !== claimId) return;
       var resolver = null;
       try { resolver = await loadResolver(claimId); } catch (e) { console.warn('[SDLG Helper] resolver', e); }
+      if (isPortalInputPage() || findClaimId() !== claimId) return;
       applyClaimData(claim, resolver);
-      lastAppliedKey = key;
+      lastAppliedKey = claimId;
     } catch (err) {
       console.warn('[SDLG Helper]', err && err.message ? err.message : err);
     } finally {
@@ -249,7 +257,7 @@
   }
 
   function schedule() {
-    if (scheduled) return;
+    if (scheduled || isPortalInputPage()) return;
     setTimeout(run, 150);
   }
 
