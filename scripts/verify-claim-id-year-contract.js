@@ -36,7 +36,7 @@ for (const path of helperPaths) {
 
   const yearAgnosticPatternPresent =
     helper.includes(yearAgnosticSource) ||
-    /\\\\d\\{(?:3,4|4)\\}-\\\\d\\{4\\}-SDLG-PFR/.test(helper);
+    /\\d\{(?:3,4|4)\}-\\d\{4\}-SDLG-PFR/.test(helper);
   if (!yearAgnosticPatternPresent) {
     console.error(`✗ Claim-ID year contract — ${path} is not year-agnostic.`);
     process.exit(1);
