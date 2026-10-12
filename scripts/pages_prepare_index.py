@@ -181,6 +181,22 @@ if re.search(r"replace\(/\[[\r\n]", data):
     raise SystemExit("FATAL: newline still inside regex character class")
 if "sdlg-input-hydrate.js" in data or "sdlg-inline-enforcer.js" in data:
     raise SystemExit("FATAL: timer DOM writer must not be loaded")
+# Fail the build if the generated SDLG form loses its claim-identity safety gates.
+for needle in (
+    "const requestedClaimId = String(selectedClaimId || '').trim();",
+    "String(liveClaim.claim_id || '').trim() === requestedClaimId",
+    "if (!alive) return;",
+    "Claim ID verification failed",
+):
+    if needle not in data:
+        raise SystemExit("FATAL: generated SDLG claim safety guard missing: " + needle)
+
+FINANCE = Path("modules/sdlg-portal-finance-ux.js")
+if FINANCE.exists():
+    finance_source = FINANCE.read_text(encoding="utf-8", errors="replace")
+    if "function verifiedLiveClaim()" not in finance_source or "var claim = verifiedLiveClaim();" not in finance_source:
+        raise SystemExit("FATAL: SDLG finance calculations must verify the active claim ID")
+
 print("sanity: OK")
 
 INDEX.write_text(data, encoding="utf-8")
