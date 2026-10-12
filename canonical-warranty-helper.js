@@ -1,10 +1,11 @@
 (function () {
   'use strict';
 
-  // Canonical portal helper v1.2.5
+  // Canonical portal helper v1.2.6
   // - Prefer window.SDLG_CLAIM_FIELDS when present (single field registry)
   // - Date of repair report + repair_method mapping
   // - Stable lastAppliedKey (no log spam)
+  // - NEVER resolve claim id from body.innerText (cross-claim contamination)
 
   var DEFAULT_CLAIM_SELECT = [
     'claim_id','model','serial_no','customer','repair_method','technical_personnel',
@@ -59,22 +60,29 @@
 
   function findClaimId() {
     try {
+      if (window.SDLGInputClaimLock && window.SDLGInputClaimLock.activeClaimId) {
+        var locked = window.SDLGInputClaimLock.activeClaimId();
+        if (locked) return clean(locked);
+      }
+    } catch (_) {}
+    try {
       var q = new URLSearchParams(location.search || '');
       var id = q.get('claim_id') || q.get('claimId') || q.get('id');
       if (id) return clean(id);
     } catch (_) {}
     try {
-      var sel = document.querySelector('select');
-      if (sel && sel.value) {
-        var opt = sel.options[sel.selectedIndex];
-        var txt = (opt && (opt.textContent || opt.value)) || sel.value;
-        var m = String(txt).match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
-        if (m) return m[1];
+      var sels = document.querySelectorAll('select');
+      for (var i = 0; i < sels.length; i++) {
+        var v = String(sels[i].value || '').trim();
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(v)) return clean(v);
       }
     } catch (_) {}
-    var body = document.body ? String(document.body.innerText || '') : '';
-    var bm = body.match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
-    return bm ? bm[1] : '';
+    try {
+      var h = String(location.hash || '');
+      var hm = h.match(/(?:claim|claims|sdlg-input)\/(\d{3,4}-\d{4}-SDLG-PFR)/i);
+      if (hm) return clean(hm[1]);
+    } catch (_) {}
+    return '';
   }
 
   function getClient() {
@@ -253,7 +261,9 @@
     setByLabels(['Date of repair report', 'Repair Date', 'Dealer Repair Date'], repairDt);
     setByLabels(['Complaint'], clean(claim.fault_description));
     setByLabels(['Fault Details'], clean(claim.cause_analyze) || clean(claim.comment));
-    setByLabels(['Machine Location'], clean(claim.failure_part_location));
+    // Machine location = WO + branch + customer (not failure_part_location text dump)
+    var loc = [claim.dealer_wo_so, claim.branch, claim.customer].map(clean).filter(Boolean).join(' ');
+    setByLabels(['Machine Location'], loc);
 
     if (claim.mileage_km != null) setByLabels(['Service Mileage (Km)', 'Service Mileage'], String(claim.mileage_km));
     if (claim.labour_amount != null) setByLabels(['Labour Amount'], String(claim.labour_amount));
