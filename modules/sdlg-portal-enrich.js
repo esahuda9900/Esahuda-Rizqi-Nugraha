@@ -38,7 +38,7 @@
       }
     }
     var hash = String(root.location && root.location.hash || '');
-    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)/i);
+    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\/([^/?#]+)/i);
     if (route) {
       try {
         var routeId = decodeURIComponent(route[1]).trim();
@@ -155,7 +155,7 @@
     var repair = formatDateDDMMYYYY(row.dealer_repair_date || row.completion_date || '');
     if (repair) {
       if (!setField('Date of repair report', repair, claimId)) {
-        setTimeout(function () { setField('Date of repair report', repair); }, 600);
+        setTimeout(function () { setField('Date of repair report', repair, claimId); }, 600);
       }
     }
 
