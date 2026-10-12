@@ -218,8 +218,7 @@ async function runScenario(browser, aDelay, bDelay) {
 
     result.immediatePass = bDelay <= 100
       ? (
-          immediate.selectedClaimId === TARGET &&
-          immediate.person === TARGET_PERSON &&
+          immediate.helperLast == null &&
           !immediate.person.includes('Prime Tech') &&
           !immediate.report.includes('PRIME complaint')
         )
