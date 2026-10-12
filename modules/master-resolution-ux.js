@@ -7,8 +7,8 @@
 
 ;(function () {
   try {
-    if (window.__SDLG_CLAIM_CONTEXT_LOADER_V17__) return;
-    window.__SDLG_CLAIM_CONTEXT_LOADER_V17__ = true;
+    if (window.__SDLG_CLAIM_CONTEXT_LOADER_V18__) return;
+    window.__SDLG_CLAIM_CONTEXT_LOADER_V18__ = true;
     window.__SDLG_CLAIM_CONTEXT_LOADER__ = true;
     function inject(src) {
       var s = document.createElement('script');
