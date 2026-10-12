@@ -93,11 +93,22 @@ NEW_SEL = (
     "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } }, liveError || 'Claim data is not verified. Do not copy or submit.');\n"
     "    }\n"
 )
+OLD_LIVE_RE = re.compile(
+    r"function SDLGPortalInputPage\\(\\{ claims, selectedClaimId, onSelectClaim, onBack \\}\\) \\{\\n"
+    r".*?"
+    r"const selectedClaim = liveClaim \\|\\| \\(liveReady \\? fromList : null\\);",
+    re.DOTALL,
+)
 if OLD_SEL in data:
     data = data.replace(OLD_SEL, NEW_SEL, 1)
     print("liveClaim: injected")
+elif "requestedClaimId" in data and "Claim ID verification failed" in data:
+    print("liveClaim: safety guard already present")
 elif "setLiveClaim" in data:
-    print("liveClaim: already present")
+    data, n = OLD_LIVE_RE.subn(lambda _m: NEW_SEL, data, count=1)
+    if n != 1:
+        raise SystemExit("FATAL: old liveClaim block detected but could not be upgraded safely")
+    print("liveClaim: unsafe block upgraded")
 else:
     print("liveClaim: WARN not found")
 
