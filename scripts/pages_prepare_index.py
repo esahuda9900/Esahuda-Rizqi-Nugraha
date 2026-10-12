@@ -94,9 +94,9 @@ NEW_SEL = (
     "    }\n"
 )
 OLD_LIVE_RE = re.compile(
-    r"function SDLGPortalInputPage\\(\\{ claims, selectedClaimId, onSelectClaim, onBack \\}\\) \\{\\n"
+    r"function SDLGPortalInputPage\(\{ claims, selectedClaimId, onSelectClaim, onBack \}\) \{\n"
     r".*?"
-    r"const selectedClaim = liveClaim \\|\\| \\(liveReady \\? fromList : null\\);",
+    r"const selectedClaim = liveClaim \|\| \(liveReady \? fromList : null\);",
     re.DOTALL,
 )
 if OLD_SEL in data:
