@@ -8,7 +8,8 @@ const fail = (message) => {
   process.exitCode = 1;
 };
 
-const index = read('index.html');
+const indexPath = process.argv[2] ? path.resolve(root, process.argv[2]) : path.join(root, 'index.html');
+const index = fs.readFileSync(indexPath, 'utf8');
 const core = read('modules/sdlg-core.js');
 const helper = read('canonical-warranty-helper.js');
 const build = read('scripts/build-production.js');
