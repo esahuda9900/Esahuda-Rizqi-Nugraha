@@ -128,13 +128,13 @@ data = re.sub(
 )
 data = re.sub(
     r'sdlg-input-claim-lock\.js\?v=[^"\s]+',
-    'sdlg-input-claim-lock.js?v=20261012-v13',
+    'sdlg-input-claim-lock.js?v=20261012-v14',
     data,
 )
 if "sdlg-input-claim-lock.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v13" data-sdlg-input-claim-lock="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v14" data-sdlg-input-claim-lock="1"></script>\n</body>',
         1,
     )
 
