@@ -196,6 +196,18 @@ if FINANCE.exists():
     if "function verifiedLiveClaim()" not in finance_source or "var claim = verifiedLiveClaim();" not in finance_source:
         raise SystemExit("FATAL: SDLG finance calculations must verify the active claim ID")
 
+ENRICH = Path("modules/sdlg-portal-enrich.js")
+if ENRICH.exists():
+    enrich_source = ENRICH.read_text(encoding="utf-8", errors="replace")
+    if "getSelectedClaimId() !== expectedClaimId" not in enrich_source or "getSelectedClaimId() !== claimId" not in enrich_source:
+        raise SystemExit("FATAL: async SDLG enrichment must verify the active claim before writing")
+
+POLICY_REPAIR = Path("modules/sdlg-policy-repair-hardfix.js")
+if POLICY_REPAIR.exists():
+    policy_source = POLICY_REPAIR.read_text(encoding="utf-8", errors="replace")
+    if "claimIdFromPage() !== id" not in policy_source:
+        raise SystemExit("FATAL: async SDLG policy/repair data must verify the active claim before writing")
+
 print("sanity: OK")
 
 INDEX.write_text(data, encoding="utf-8")
