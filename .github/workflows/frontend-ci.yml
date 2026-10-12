@@ -77,12 +77,20 @@ jobs:
           node scripts/verify-module-syntax.js
           echo 'All extracted frontend modules parse successfully.'
 
-      - name: Run production build and regression gate
+      - name: Run Pages-relevant source contracts
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/build-production.js
-          echo 'Production build + regression gate passed.'
+          # Production is GitHub Pages; validate the same artifact above rather than
+          # the legacy Cloudflare patch chain, whose source-lock baseline currently
+          # requires unrelated missing docs and domain mappings.
+          node scripts/apply-warranty-helper-canonical.js
+          node scripts/verify-production.js
+          node scripts/verify-parser-contract.js
+          node scripts/verify-dual-warranty-routing.js
+          node scripts/verify-claim-id-year-contract.js
+          node scripts/verify-public-release.js
+          echo 'Pages-relevant source contracts passed.'
 
       - name: Enable pnpm
         shell: bash
