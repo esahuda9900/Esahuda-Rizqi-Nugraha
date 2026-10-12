@@ -45,6 +45,7 @@
         (document.head || document.documentElement).appendChild(s);
       }
       loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v13', 'data-sdlg-input-hydrate');
+      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v2', 'data-sdlg-inline-enforcer');
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
