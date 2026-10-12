@@ -110,7 +110,7 @@ elif "setLiveClaim" in data:
         raise SystemExit("FATAL: old liveClaim block detected but could not be upgraded safely")
     print("liveClaim: unsafe block upgraded")
 else:
-    print("liveClaim: WARN not found")
+    raise SystemExit("FATAL: could not locate SDLGPortalInputPage claim selector; refusing an unverified build")
 
 # 2) year-safe repairDate
 OLD_RD = "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
