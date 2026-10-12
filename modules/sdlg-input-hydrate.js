@@ -1,16 +1,17 @@
 /**
- * SDLG Input Hydrate v1.2 — ONLY writer for portal Home fields.
- * Refuse cross-claim repair dates (e.g. 19/07/2024 on 2026 claims).
+ * SDLG Input Hydrate v1.3 — ONLY writer + nuclear enforcer for repair date.
+ * Every 500ms: if #sdlg_repairDate is 19/07/2024 on non-0429 claim → force correct date.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_INPUT_HYDRATE_V12__) return;
-  root.__SDLG_INPUT_HYDRATE_V12__ = true;
+  if (root.__SDLG_INPUT_HYDRATE_V13__) return;
+  root.__SDLG_INPUT_HYDRATE_V13__ = true;
   root.__SDLG_INPUT_HYDRATE_V1__ = true;
 
   var RE = /^\d{3,4}-\d{4}-SDLG-PFR$/i;
   var busy = false;
   var lastValues = null;
+  var lastGoodRepair = {}; // claimId → repairStr
 
   root.__SDLG_DISABLE_CLAIM_LOCK_FIELD_WRITES__ = true;
   root.__SDLG_DISABLE_CANONICAL_PORTAL_WRITES__ = true;
@@ -35,8 +36,12 @@
     if (!s) return '';
     var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) return m[3] + '/' + m[2] + '/' + m[1];
-    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) return s;
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (m) {
+      var dd = m[1].length === 1 ? '0' + m[1] : m[1];
+      var mm = m[2].length === 1 ? '0' + m[2] : m[2];
+      return dd + '/' + mm + '/' + m[3];
+    }
     return s;
   }
 
@@ -50,10 +55,18 @@
     return m ? Number(m[1]) : null;
   }
 
-  /** Pick repair date; never allow a year far from claim year (blocks 0429 bleed). */
+  function isForbiddenRepair(formatted, claimId) {
+    if (!formatted) return false;
+    if (String(claimId) === '0429-2024-SDLG-PFR') return false;
+    if (/19[\/\-]0?7[\/\-]2024/.test(formatted)) return true;
+    var cy = claimYear(claimId);
+    var dy = dateYear(formatted);
+    if (cy && dy && Math.abs(cy - dy) > 1) return true;
+    return false;
+  }
+
   function pickRepairDate(c) {
     if (!c) return '';
-    var cy = claimYear(c.claim_id);
     var candidates = [
       c.dealer_repair_date,
       c.completion_date,
@@ -64,14 +77,9 @@
       var raw = candidates[i];
       if (raw == null || String(raw).trim() === '') continue;
       var formatted = portalDate(raw);
-      var dy = dateYear(formatted);
-      // refuse classic 0429 signature on non-0429 claims
-      if (/^19\/07\/2024$/.test(formatted) && String(c.claim_id) !== '0429-2024-SDLG-PFR') continue;
-      // refuse year mismatch > 1 year from claim id year
-      if (cy && dy && Math.abs(cy - dy) > 1) continue;
+      if (isForbiddenRepair(formatted, c.claim_id)) continue;
       return formatted;
     }
-    // last resort: failure_date even if year odd
     return portalDate(c.failure_date || '');
   }
 
@@ -101,13 +109,19 @@
       el.setAttribute('value', v);
       el.setAttribute('autocomplete', 'off');
       el.setAttribute('data-hydrate', '1');
+      el.setAttribute('data-lpignore', 'true');
     } catch (_) {}
     try { console.info('[SDLG hydrate] write', tag || el.id, '=', v.slice(0, 80)); } catch (_) {}
   }
 
   function setVal(id, label, value) {
     var v = value == null ? '' : String(value);
-    forceSet(document.getElementById(id), v, id);
+    // set ALL matching elements (duplicate roots possible)
+    var byId = document.getElementById(id);
+    forceSet(byId, v, id);
+    document.querySelectorAll('[id="' + id + '"]').forEach(function (el) {
+      forceSet(el, v, id);
+    });
     if (label) {
       document.querySelectorAll('[data-sdlg-field]').forEach(function (node) {
         if ((node.getAttribute('data-label') || '') === label) forceSet(node, v, label);
@@ -159,10 +173,11 @@
     document.querySelectorAll('[data-sdlg-report-body]').forEach(function (el) {
       el.textContent = report;
       el.setAttribute('data-claim-id', c.claim_id);
-      try { console.info('[SDLG hydrate] write report-body =', report.slice(0, 80)); } catch (_) {}
     });
 
     var repairStr = pickRepairDate(c);
+    lastGoodRepair[c.claim_id] = repairStr;
+
     var loc = [c.dealer_wo_so || c.wo_so || '', c.branch || '', c.customer || '']
       .map(function (x) { return String(x || '').trim(); }).filter(Boolean).join(' ');
     var tech = String(c.technical_personnel || c.feedback_person || '')
@@ -183,7 +198,24 @@
     setVal('sdlg_repairLabor', 'Repair Labor (Hrs)', c.labour_hrs != null ? String(c.labour_hrs) : '');
     setVal('sdlg_serviceMileage', 'Service Mileage (Km)', c.mileage_km != null ? String(c.mileage_km) : '');
 
-    // Empty-state badges: remove "Kosong", show em-dash markers
+    scrubKosong();
+
+    root.__SDLG_LIVE_CLAIM__ = c;
+    lastValues = { claim_id: c.claim_id, repair: repairStr, loc: loc, report: report, person: tech };
+    try {
+      console.info('[SDLG hydrate] OK', c.claim_id, 'repair=', repairStr,
+        'raw=', c.dealer_repair_date, c.completion_date, c.failure_date);
+    } catch (_) {}
+
+    try {
+      if (root.SDLGPortalFinance && typeof root.SDLGPortalFinance.recompute === 'function') {
+        setTimeout(function () { root.SDLGPortalFinance.recompute(); }, 30);
+        setTimeout(function () { root.SDLGPortalFinance.recompute(); }, 300);
+      }
+    } catch (_) {}
+  }
+
+  function scrubKosong() {
     try {
       document.querySelectorAll('[data-sdlg-input-helper] *').forEach(function (n) {
         if (n.childNodes && n.childNodes.length === 1 && n.childNodes[0].nodeType === 3) {
@@ -191,17 +223,31 @@
         }
       });
     } catch (_) {}
+  }
 
-    root.__SDLG_LIVE_CLAIM__ = c;
-    lastValues = { claim_id: c.claim_id, repair: repairStr, loc: loc, report: report, person: tech };
-    try { console.info('[SDLG hydrate] OK', c.claim_id, 'repair=', repairStr, 'raw_dealer_repair=', c.dealer_repair_date); } catch (_) {}
-
-    // Kick finance after fields are set
-    try {
-      if (root.SDLGPortalFinance && typeof root.SDLGPortalFinance.recompute === 'function') {
-        setTimeout(function () { root.SDLGPortalFinance.recompute(); }, 50);
+  function enforceRepairDate() {
+    var id = hashClaimId();
+    if (!id || id === '0429-2024-SDLG-PFR') return;
+    var good = lastGoodRepair[id];
+    if (!good && root.__SDLG_LIVE_CLAIM__ && String(root.__SDLG_LIVE_CLAIM__.claim_id) === id) {
+      good = pickRepairDate(root.__SDLG_LIVE_CLAIM__);
+      if (good) lastGoodRepair[id] = good;
+    }
+    var nodes = document.querySelectorAll('#sdlg_repairDate, [data-label="Date of repair report"]');
+    nodes.forEach(function (el) {
+      var cur = String(el.value || el.getAttribute('value') || '').trim();
+      if (isForbiddenRepair(cur, id)) {
+        var next = good || (root.__SDLG_LIVE_CLAIM__ && String(root.__SDLG_LIVE_CLAIM__.claim_id) === id
+          ? pickRepairDate(root.__SDLG_LIVE_CLAIM__)
+          : '');
+        if (!next && root.__SDLG_LIVE_CLAIM__ && String(root.__SDLG_LIVE_CLAIM__.claim_id) === id) {
+          next = portalDate(root.__SDLG_LIVE_CLAIM__.failure_date || '');
+        }
+        if (next && next !== cur) {
+          forceSet(el, next, 'ENFORCE repairDate');
+        }
       }
-    } catch (_) {}
+    });
   }
 
   function getClient() {
@@ -221,7 +267,10 @@
     if (live && String(live.claim_id) === id) apply(live);
 
     var client = getClient();
-    if (!client || !client.from) return;
+    if (!client || !client.from) {
+      enforceRepairDate();
+      return;
+    }
 
     busy = true;
     try {
@@ -233,21 +282,23 @@
       try { console.warn('[SDLG hydrate] failed', id, e); } catch (_) {}
     } finally {
       busy = false;
+      enforceRepairDate();
     }
   }
 
   var timer = null;
   function schedule(id) {
     if (timer) clearTimeout(timer);
-    timer = setTimeout(function () { hydrate(id); }, 80);
+    timer = setTimeout(function () { hydrate(id); }, 60);
   }
 
   root.SDLGInputHydrate = {
-    version: '1.2.0',
+    version: '1.3.0',
     hydrate: hydrate,
     apply: apply,
     hashClaimId: hashClaimId,
-    lastValues: function () { return lastValues; }
+    lastValues: function () { return lastValues; },
+    enforceRepairDate: enforceRepairDate
   };
 
   root.addEventListener('hashchange', function () { lastValues = null; schedule(); });
@@ -256,6 +307,7 @@
     lastValues = null;
     schedule(e.detail && e.detail.claimId);
   });
+  root.addEventListener('sdlg-session-ready', function () { schedule(); });
 
   document.addEventListener('change', function (e) {
     var t = e.target;
@@ -271,35 +323,21 @@
     schedule(v);
   }, true);
 
-  [200, 500, 900, 1500, 2500, 4000].forEach(function (ms) {
+  [100, 400, 800, 1200, 2000, 3500, 5000].forEach(function (ms) {
     setTimeout(function () { schedule(); }, ms);
   });
 
-  // Aggressive drift heal for the classic 0429 signature
+  // Nuclear enforcer — wins over any late writer
   setInterval(function () {
+    enforceRepairDate();
+    scrubKosong();
+    // if repair still forbidden and we have live claim, full re-apply
     var id = hashClaimId();
     if (!id) return;
-    var repairEl = document.getElementById('sdlg_repairDate');
-    var reportEl = document.querySelector('[data-sdlg-report-body]');
-    var repair = repairEl ? String(repairEl.value || '') : '';
-    var report = reportEl ? String(reportEl.textContent || '') : '';
-    var bad =
-      (/19\/07\/2024/.test(repair) && id !== '0429-2024-SDLG-PFR') ||
-      (/Transmission Abnormal/i.test(report) && !/Transmission/i.test((lastValues && lastValues.report) || '')) ||
-      (/G9138F/i.test(report) && lastValues && lastValues.claim_id === id && lastValues.report && lastValues.report.indexOf('G9138F') < 0) ||
-      (lastValues && lastValues.claim_id === id && lastValues.repair && repair && repair !== lastValues.repair);
-    if (bad) {
-      try { console.warn('[SDLG hydrate] drift → rehydrate', { id: id, repair: repair, expected: lastValues && lastValues.repair }); } catch (_) {}
-      lastValues = null;
-      schedule(id);
+    var el = document.getElementById('sdlg_repairDate');
+    var cur = el ? String(el.value || '') : '';
+    if (isForbiddenRepair(cur, id) && root.__SDLG_LIVE_CLAIM__ && String(root.__SDLG_LIVE_CLAIM__.claim_id) === id) {
+      apply(root.__SDLG_LIVE_CLAIM__);
     }
-    // also scrub Kosong badges
-    try {
-      document.querySelectorAll('[data-sdlg-input-helper] *').forEach(function (n) {
-        if (n.childNodes && n.childNodes.length === 1 && n.childNodes[0].nodeType === 3) {
-          if (/^\s*Kosong\s*$/i.test(n.textContent || '')) n.textContent = '\u2014';
-        }
-      });
-    } catch (_) {}
-  }, 2500);
+  }, 500);
 })(typeof window !== 'undefined' ? window : this);

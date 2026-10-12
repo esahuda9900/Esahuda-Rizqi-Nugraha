@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NUCLEAR prepare + repair-date/finance/empty-state patches."""
+"""NUCLEAR prepare + nav count + repair/finance patches."""
 from pathlib import Path
 import re
 import urllib.request
@@ -121,14 +121,13 @@ data = re.sub(
     data,
 )
 
-# React remount key
 data = data.replace(
     'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })',
     'React.createElement("div", { key: String(selectedClaimId || selectedClaim && selectedClaim.claim_id || "none"), "data-sdlg-input-helper": "1", "data-claim-id": String(selectedClaimId || (selectedClaim && selectedClaim.claim_id) || ""), dangerouslySetInnerHTML: { __html: html } })',
     1,
 )
 
-# portalDate: accept ISO timestamps
+# portalDate ISO
 data = data.replace(
     'const portalDate = (value) => {\n'
     '        const s = String(value || "").trim();\n'
@@ -144,13 +143,11 @@ data = data.replace(
     '    };',
 )
 
-# feedbackContact: empty → "" (not xxx); badge handled by hydrate
 data = data.replace(
     'const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "xxx";',
     'const feedbackContact = (selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "").replace(/^kosong$/i, "").replace(/^xxx+$/i, "");',
 )
 
-# repairDate: refuse 19/07/2024 for non-0429 at React layer too
 old_repair = 'repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),'
 new_repair = (
     'repairDate: (function(){\n'
@@ -159,7 +156,7 @@ new_repair = (
     '          for (const _raw of _cand) {\n'
     '            if (_raw == null || String(_raw).trim()==="") continue;\n'
     '            const _fmt = portalDate(_raw);\n'
-    '            if (/^19\\/07\\/2024$/.test(_fmt) && String(selectedClaim.claim_id)!=="0429-2024-SDLG-PFR") continue;\n'
+    '            if (/19[\\/\\-]0?7[\\/\\-]2024/.test(_fmt) && String(selectedClaim.claim_id)!=="0429-2024-SDLG-PFR") continue;\n'
     '            const _dy = (_fmt.match(/(\\d{4})$/)||[])[1];\n'
     '            if (_cy && _dy && Math.abs(Number(_cy)-Number(_dy))>1) continue;\n'
     '            return _fmt;\n'
@@ -167,10 +164,13 @@ new_repair = (
     '          return portalDate(selectedClaim.failure_date||"");\n'
     '        })(),'
 )
+# replace both possible forms
 if old_repair in data:
     data = data.replace(old_repair, new_repair, 1)
+elif 'repairDate: (function(){' not in data:
+    pass  # already patched with different form
 
-# labour amount: compute from hrs × 25 if DB empty
+# labour/mileage computed
 data = data.replace(
     'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)',
     'fieldHtml("labourAmount","Labour Amount",(function(){ const db=selectedClaim.labour_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const hrs=Number(selectedClaim.labour_hrs||0); return (hrs*25).toFixed(2); })(),false,false)',
@@ -180,18 +180,48 @@ data = data.replace(
     'fieldHtml("mileageAmount","Mileage Amount",(function(){ const db=selectedClaim.mileage_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const km=Number(selectedClaim.mileage_km||0); return (km*0.5).toFixed(2); })(),false,false)',
 )
 
-# unit price / amount in parts table: compute amount = qty × unit_price
 data = data.replace(
     'const unitPrice = p.unit_price ?? p.unitPrice ?? "";\n        const amount = p.amount ?? "";',
     'const unitPrice = p.unit_price ?? p.unitPrice ?? 0;\n        const amount = p.amount ?? ((Number(p.quantity ?? p.qty ?? 1) || 1) * (Number(unitPrice) || 0));',
 )
+
+# NAV COUNT: use repository exact count when available, not page length
+old_nav = '["list", `Claims · ${claims.filter(c => !c.archived_at).length}`]'
+new_nav = '["list", `Claims · ${typeof window.__SDLG_CLAIMS_COUNT__ === "number" ? window.__SDLG_CLAIMS_COUNT__ : claims.filter(c => !c.archived_at).length}`]'
+if old_nav in data:
+    data = data.replace(old_nav, new_nav, 1)
+
+# Inject count bootstrap after setClaims patterns — lightweight: poll repository
+if 'window.__SDLG_CLAIMS_COUNT__' not in data or data.count('__SDLG_CLAIMS_COUNT__') < 2:
+    bootstrap = (
+        "<script>(function(){\n"
+        "async function refreshClaimsCount(){\n"
+        "  try{\n"
+        "    var repo=window.SDLGRepository||window.sdlgRepository;\n"
+        "    if(repo&&repo.countClaimsCached){\n"
+        "      var n=await repo.countClaimsCached(false);\n"
+        "      if(typeof n==='number'){ window.__SDLG_CLAIMS_COUNT__=n;\n"
+        "        document.querySelectorAll('a,button,span,div').forEach(function(el){\n"
+        "          var t=el.childNodes.length===1&&el.childNodes[0].nodeType===3?el.textContent:'';\n"
+        "          if(/^Claims\\s*·\\s*\\d+$/.test(t.trim())) el.textContent='Claims · '+n;\n"
+        "        });\n"
+        "      }\n"
+        "    }\n"
+        "  }catch(e){}\n"
+        "}\n"
+        "setTimeout(refreshClaimsCount,800);\n"
+        "setTimeout(refreshClaimsCount,2500);\n"
+        "setInterval(refreshClaimsCount,60000);\n"
+        "})();</script>\n"
+    )
+    if 'refreshClaimsCount' not in data:
+        data = data.replace('</body>', bootstrap + '</body>', 1)
 
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-# Strip competing writers
 for pat in [
     r'[ \t]*<script[^>]*canonical-warranty-helper\.js[^>]*>\s*</script>\s*',
     r'[ \t]*<script[^>]*sdlg-input-claim-lock\.js[^>]*>\s*</script>\s*',
@@ -205,13 +235,19 @@ for pat in [
 if "sdlg-input-hydrate.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v12" data-sdlg-input-hydrate="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v13" data-sdlg-input-hydrate="1"></script>\n</body>',
         1,
     )
 else:
-    data = re.sub(r'sdlg-input-hydrate\.js\?v=[^"\s]+', 'sdlg-input-hydrate.js?v=20261012-v12', data)
+    data = re.sub(r'sdlg-input-hydrate\.js\?v=[^"\s]+', 'sdlg-input-hydrate.js?v=20261012-v13', data)
 
-data = re.sub(r'sdlg-portal-finance-ux\.js\?v=[^"\s]+', 'sdlg-portal-finance-ux.js?v=20261012-v51', data)
+data = re.sub(r'sdlg-portal-finance-ux\.js\?v=[^"\s]+', 'sdlg-portal-finance-ux.js?v=20261012-v52', data)
+# also unversioned static tag
+data = re.sub(
+    r'src="\./modules/sdlg-portal-finance-ux\.js"',
+    'src="./modules/sdlg-portal-finance-ux.js?v=20261012-v52"',
+    data,
+)
 
 INDEX.write_text(data, encoding="utf-8")
-print("prepare done — repair-date guard + finance + empty state")
+print("prepare done — hydrate v13 enforcer + finance v52 + nav count")
