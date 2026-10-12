@@ -52,26 +52,12 @@
     repairDate: {
       labels: ['Date of repair report', 'Repair Date', 'Dealer Repair Date'],
       id: 'sdlg_repairDate',
-      fromClaim: function (c) {
-        if (!c) return '';
-        var v = c.dealer_repair_date || c.completion_date || c.failure_date;
-        if (!v) return '';
-        var s = String(v);
-        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (m) return m[3] + '/' + m[2] + '/' + m[1];
-        return s;
-      }
+      fromClaim: function (c) { if (!c) return ''; var v = c.dealer_repair_date || c.completion_date || c.failure_date; if (!v) return ''; var s = String(v); var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[3] + '/' + m[2] + '/' + m[1]; return s; }
     },
     failureDate: {
       labels: ['Failure Date'],
       id: 'sdlg_failureDate',
-      fromClaim: function (c) {
-        if (!c || !c.failure_date) return '';
-        var s = String(c.failure_date);
-        var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (m) return m[3] + '/' + m[2] + '/' + m[1];
-        return s;
-      }
+      fromClaim: function (c) { if (!c || !c.failure_date) return ''; var s = String(c.failure_date); var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[3] + '/' + m[2] + '/' + m[1]; return s; }
     },
     complaint: {
       labels: ['Complaint'],
@@ -93,10 +79,7 @@
       id: 'sdlg_feedbackPerson',
       fromClaim: function (c) {
         if (!c) return '';
-        return stripTechPrefix(pickFirst(
-          c.technical_personnel, c.feedback_person, c.pic_name, c.person_in_charge,
-          c.technician_name, c.technician, c.service_advisor, c.reported_by
-        ));
+        return stripTechPrefix(pickFirst(c.technical_personnel, c.feedback_person, c.pic_name, c.person_in_charge, c.technician_name, c.technician, c.service_advisor, c.reported_by));
       }
     },
     feedbackContact: {
@@ -104,10 +87,7 @@
       id: 'sdlg_feedbackContact',
       fromClaim: function (c) {
         if (!c) return '';
-        return pickFirst(
-          c.feedback_contact, c.feedback_phone, c.technician_contact, c.technical_personnel_phone,
-          c.contact, c.phone, c.customer_phone, c.mobile
-        );
+        return pickFirst(c.feedback_contact, c.feedback_phone, c.technician_contact, c.technical_personnel_phone, c.contact, c.phone, c.customer_phone, c.mobile);
       }
     }
   };
