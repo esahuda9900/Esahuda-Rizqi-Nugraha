@@ -84,8 +84,6 @@ jobs:
           # Production is GitHub Pages; validate the same artifact above rather than
           # the legacy Cloudflare patch chain, whose source-lock baseline currently
           # requires unrelated missing docs and domain mappings.
-          node scripts/apply-warranty-helper-canonical.js
-          node scripts/verify-production.js
           node scripts/verify-parser-contract.js
           node scripts/verify-dual-warranty-routing.js
           node scripts/verify-claim-id-year-contract.js
