@@ -130,36 +130,8 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         String(liveClaim.claim_id || "").trim().toUpperCase() === effectiveClaimId
         ? liveClaim : null;
 
-    useEffect(() => {
-        const statusId = "sdlg-live-claim-status";
-        let node = document.getElementById(statusId);
-        if (!effectiveClaimId || !/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) || (selectedClaim && !liveError)) {
-            if (node) node.remove();
-            return undefined;
-        }
+    // Loading and error states render directly from React below.
 
-        if (!node) {
-            node = document.createElement("div");
-            node.id = statusId;
-        }
-        node.setAttribute("role", liveReady && liveError ? "alert" : "status");
-        node.setAttribute("aria-live", "polite");
-        node.style.cssText = "position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:2147483647;max-width:calc(100vw - 32px);width:480px;box-sizing:border-box;padding:13px 16px;border:1px solid " +
-            (liveReady && liveError ? "#fecaca" : "#e5e7eb") +
-            ";border-radius:10px;background:#fff;color:#1f2937;box-shadow:0 8px 28px rgba(15,23,42,.12);font:500 13px/1.5 system-ui,sans-serif;";
-        if (liveReady && liveError) {
-            node.textContent = "Data claim " + effectiveClaimId + " gagal dimuat. Jangan salin data dari halaman ini. " + liveError;
-        } else {
-            node.innerHTML = '<div style="font-weight:650;margin-bottom:8px">Memuat data klaim terbaru…</div><div style="height:8px;width:72%;border-radius:5px;background:#e5e7eb;margin:6px 0"></div><div style="height:8px;width:48%;border-radius:5px;background:#f1f5f9"></div>';
-        }
-        if (!node.parentNode) document.body.appendChild(node);
-        return undefined;
-    }, [effectiveClaimId, liveReady, liveError, selectedClaim]);
-
-    useEffect(() => () => {
-        const node = document.getElementById("sdlg-live-claim-status");
-        if (node) node.remove();
-    }, []);
 '''
 if OLD_SEL in data:
     data = data.replace(OLD_SEL, NEW_SEL, 1)
@@ -178,6 +150,64 @@ else:
         print("liveClaim: route-bound fetch already present")
     else:
         raise SystemExit("FATAL: cannot secure SDLG Input claim selection; refusing unsafe deploy")
+
+
+# 1b) Render a real skeleton while the route-bound claim fetch is pending.
+OLD_EMPTY_CLAIM = (
+    "if (!selectedClaim) {\\n"
+    "        const activeClaims = (claims || []).filter(c => !c.archived_at);"
+)
+NEW_EMPTY_CLAIM = r'''
+if (!selectedClaim) {
+        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && !liveReady) {
+            const skeleton = (height, width) => React.createElement("div", {
+                style: { height, width, maxWidth: "100%", borderRadius: 8, background: "#e9edf2", margin: "10px 0" }
+            });
+            return React.createElement("div", {
+                className: "page",
+                role: "status",
+                "aria-live": "polite",
+                style: { maxWidth: 960, margin: "0 auto", padding: "24px 16px" }
+            }, React.createElement("div", { className: "card card-pad", style: { border: "1px solid #e5e7eb", borderRadius: 14, padding: 22 } },
+                React.createElement("div", { className: "eyebrow" }, "SDLG Dealer Portal"),
+                React.createElement("div", { className: "page-title" }, "SDLG Input Helper"),
+                React.createElement("p", { style: { fontSize: 13, color: "#64748b", margin: "8px 0 20px" } },
+                    "Memuat data terbaru untuk " + effectiveClaimId + "…"),
+                skeleton(16, "42%"),
+                skeleton(42, "100%"),
+                skeleton(42, "100%"),
+                skeleton(80, "100%"),
+                React.createElement("p", { style: { fontSize: 12, color: "#64748b" } }, "Form belum ditampilkan sampai claim terverifikasi dari Supabase.")
+            ));
+        }
+        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && liveReady && liveError) {
+            return React.createElement("div", {
+                className: "page",
+                style: { maxWidth: 760, margin: "0 auto", padding: "24px 16px" }
+            }, React.createElement("div", {
+                className: "card card-pad",
+                role: "alert",
+                style: { border: "1px solid #fecaca", borderRadius: 14, padding: 22, background: "#fff" }
+            },
+                React.createElement("div", { className: "eyebrow", style: { color: "#b91c1c" } }, "SDLG Dealer Portal"),
+                React.createElement("div", { className: "page-title" }, "Data claim gagal dimuat"),
+                React.createElement("p", { style: { fontSize: 13, lineHeight: 1.6, color: "#475569" } },
+                    "Claim " + effectiveClaimId + " belum dapat diverifikasi. Jangan salin data dari halaman ini."),
+                React.createElement("p", { style: { fontSize: 12, lineHeight: 1.6, color: "#991b1b", overflowWrap: "anywhere" } }, liveError),
+                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 } },
+                    React.createElement("button", { className: "primary-btn", onClick: () => window.location.reload() }, "Coba lagi"),
+                    React.createElement("button", { className: "secondary-btn", onClick: () => onSelectClaim("") }, "Pilih claim lain")
+                )
+            ));
+        }
+        const activeClaims = (claims || []).filter(c => !c.archived_at);'''
+if OLD_EMPTY_CLAIM in data:
+    data = data.replace(OLD_EMPTY_CLAIM, NEW_EMPTY_CLAIM, 1)
+    print("liveClaim: real skeleton/error rendering injected")
+elif 'Memuat data terbaru untuk " + effectiveClaimId' in data and 'Data claim gagal dimuat' in data:
+    print("liveClaim: skeleton/error rendering already present")
+else:
+    raise SystemExit("FATAL: cannot insert fail-closed React loading/error states")
 
 # 2) year-safe repairDate
 OLD_RD = "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
@@ -283,6 +313,10 @@ if re.search(r"replace\(/\[[\r\n]", data):
     raise SystemExit("FATAL: newline still inside regex character class")
 if "const effectiveClaimId =" not in data or "sdlg-live-claim-ready" not in data:
     raise SystemExit("FATAL: route-bound live claim guard missing")
+if 'Memuat data terbaru untuk " + effectiveClaimId' not in data:
+    raise SystemExit("FATAL: actual React loading skeleton missing")
+if 'Data claim gagal dimuat' not in data:
+    raise SystemExit("FATAL: fail-closed React error state missing")
 print("sanity: OK")
 
 INDEX.write_text(data, encoding="utf-8")
