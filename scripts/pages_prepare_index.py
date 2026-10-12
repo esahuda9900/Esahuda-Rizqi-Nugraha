@@ -266,6 +266,13 @@ for script_path, version in CACHE_BUSTS.items():
     if count:
         print("cache-busted", script_path, count)
 
+# If an older inline claim-context loader remains in the shell, move it to the
+# same generation as the external loader so it cannot suppress the patched module.
+data = data.replace("__SDLG_CLAIM_CONTEXT_LOADER_V17__", "__SDLG_CLAIM_CONTEXT_LOADER_V18__")
+data = data.replace("sdlg-policy-repair-hardfix.js?v=20261008-v2.1", "sdlg-policy-repair-hardfix.js?v=20261013-claim-integrity-v2")
+data = data.replace("sdlg-portal-enrich.js?v=20261008-v1.4", "sdlg-portal-enrich.js?v=20261013-claim-integrity-v2")
+data = data.replace("sdlg-policy-table-fill.js?v=20261008-v1.1", "sdlg-policy-table-fill.js?v=20261013-claim-integrity-v2")
+
 # Normalize helper script wiring in the actual Pages artifact.
 # GitHub Pages deploys _site directly; it does not run the legacy Cloudflare injector chain.
 data = re.sub(
