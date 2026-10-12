@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy prepare — claim integrity + finance single panel + autocomplete off."""
+"""Deploy prepare — unified hydrate + kill competing writers."""
 from pathlib import Path
 import re
 import urllib.request
@@ -58,7 +58,9 @@ if "const selectedClaim = liveClaim || fromList;" in data:
         "const selectedClaim = liveClaim || fromList;",
         'const selectedClaim = liveClaim;\n'
         '    useEffect(() => {\n'
-        '        if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n'
+        '        if (liveClaim && window.SDLGInputHydrate && window.SDLGInputHydrate.apply) {\n'
+        '            try { window.SDLGInputHydrate.apply(liveClaim); } catch (_e) {}\n'
+        '        } else if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n'
         '            try { window.SDLGInputClaimLock.applyClaim(liveClaim); } catch (_e) {}\n'
         '        }\n'
         '    }, [liveClaim]);',
@@ -91,8 +93,8 @@ if "const [liveClaim, setLiveClaim]" not in data:
         "        return () => { alive = false; };\n"
         "    }, [selectedClaimId]);\n"
         "    useEffect(() => {\n"
-        "        if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n"
-        "            try { window.SDLGInputClaimLock.applyClaim(liveClaim); } catch (_e) {}\n"
+        "        if (liveClaim && window.SDLGInputHydrate && window.SDLGInputHydrate.apply) {\n"
+        "            try { window.SDLGInputHydrate.apply(liveClaim); } catch (_e) {}\n"
         "        }\n"
         "    }, [liveClaim]);\n"
         "    const selectedClaim = liveClaim;"
@@ -115,7 +117,6 @@ NEW_EMPTY = (
 if OLD_EMPTY in data and "Memuat data klaim" not in data:
     data = data.replace(OLD_EMPTY, NEW_EMPTY, 1)
 
-# Force single-line claim select (no size=12 listbox that shows 0429 first)
 data = re.sub(
     r"size:\s*Math\.min\(Math\.max\(filteredClaims\.length,\s*1\),\s*12\),\s*",
     "",
@@ -127,22 +128,30 @@ data = data.replace(
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
+# Inject hydrate script early in body if missing
+if "sdlg-input-hydrate.js" not in data:
+    data = data.replace(
+        "</body>",
+        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v10" data-sdlg-input-hydrate="1"></script>\n</body>',
+        1,
+    )
+else:
+    data = re.sub(
+        r'sdlg-input-hydrate\.js\?v=[^"\s]+',
+        'sdlg-input-hydrate.js?v=20261012-v10',
+        data,
+    )
+
 data = re.sub(
     r'canonical-warranty-helper\.js(?:\?v=[^"\s]*)?',
-    'canonical-warranty-helper.js?v=20261012-v127',
+    'canonical-warranty-helper.js?v=20261012-v128',
     data,
 )
 data = re.sub(
     r'sdlg-input-claim-lock\.js\?v=[^"\s]+',
-    'sdlg-input-claim-lock.js?v=20261012-v15',
+    'sdlg-input-claim-lock.js?v=20261012-v16',
     data,
 )
-if "sdlg-input-claim-lock.js" not in data:
-    data = data.replace(
-        "</body>",
-        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v15" data-sdlg-input-claim-lock="1"></script>\n</body>',
-        1,
-    )
 
 INDEX.write_text(data, encoding="utf-8")
-print("prepare done")
+print("prepare done — hydrate unified")

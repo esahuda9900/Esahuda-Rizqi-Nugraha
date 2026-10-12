@@ -1,5 +1,6 @@
 /**
  * SDLG Claim field registry + module loader.
+ * Hydrate loads FIRST so kill-switches are set before competing writers.
  */
 (function (global) {
   'use strict';
@@ -46,11 +47,13 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
+      // Hydrate FIRST
+      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v10', 'data-sdlg-input-hydrate');
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
-      loadScript('./modules/sdlg-input-claim-lock.js?v=20261012-v15', 'data-sdlg-input-claim-lock');
-      loadScript('./modules/feedback-person-fix.js?v=20261012-v14', 'data-sdlg-fb-fix');
+      loadScript('./modules/sdlg-input-claim-lock.js?v=20261012-v16', 'data-sdlg-input-claim-lock');
+      loadScript('./modules/feedback-person-fix.js?v=20261012-v15', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v5', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
       loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
