@@ -45,9 +45,8 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v13', 'data-sdlg-input-hydrate');
-      // use distinct attr so baked legacy inline enforcer does NOT block this module
-      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v3', 'data-sdlg-inline-enforcer-mod');
+      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v14', 'data-sdlg-input-hydrate');
+      // Inline enforcer removed: React owns report, repair date, and machine location.
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
