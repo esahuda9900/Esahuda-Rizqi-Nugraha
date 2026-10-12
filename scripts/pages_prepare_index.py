@@ -243,6 +243,17 @@ if CLAIM_LOCK.exists():
     if "root.SDLGInputHydrate.apply(c)" in lock_source or "root.SDLGInputHydrate.hydrate(" in lock_source:
         raise SystemExit("FATAL: claim-lock must not delegate portal writes to legacy hydration")
 
+MASTER_LOADER = Path("modules/master-resolution-ux.js")
+if MASTER_LOADER.exists():
+    master_source = MASTER_LOADER.read_text(encoding="utf-8", errors="replace")
+    for needle in (
+        "sdlg-policy-repair-hardfix.js?v=20261013-claim-integrity-v2",
+        "sdlg-portal-enrich.js?v=20261013-claim-integrity-v2",
+        "sdlg-policy-table-fill.js?v=20261013-claim-integrity-v2",
+    ):
+        if needle not in master_source:
+            raise SystemExit("FATAL: claim-context loader has stale cache key: " + needle)
+
 print("sanity: OK")
 
 # Bust browser caches for modules whose claim-safety behavior changed.
