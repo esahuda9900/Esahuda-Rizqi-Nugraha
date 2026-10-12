@@ -1,19 +1,22 @@
 /**
  * Fast-path for Warranty Assessment panel + boot nav-claim-restore.
  * Paths are relative so GitHub Project Pages resolves under /repo/.
+ * v1.4: always pin canonical helper to v126 — never re-inject pathfix.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_HELPER_FASTPATH__) return;
+  if (window.__SDLG_HELPER_FASTPATH_V14__) return;
+  window.__SDLG_HELPER_FASTPATH_V14__ = true;
   window.__SDLG_HELPER_FASTPATH__ = true;
 
-  var FAST_HELPER = './canonical-warranty-helper.js?v=20261008-pathfix';
+  var FAST_HELPER = './canonical-warranty-helper.js?v=20261012-v126';
 
   function loadScript(src, marker) {
     if (document.querySelector('script[' + marker + ']')) return;
+    var base = src.split('?')[0];
     var existing = document.querySelectorAll('script[src]');
     for (var i = 0; i < existing.length; i++) {
-      if ((existing[i].getAttribute('src') || '').indexOf(src.split('?')[0]) >= 0) return;
+      if ((existing[i].getAttribute('src') || '').indexOf(base) >= 0) return;
     }
     var s = document.createElement('script');
     s.src = src;
@@ -22,20 +25,13 @@
     (document.head || document.documentElement).appendChild(s);
   }
 
-  loadScript('./modules/nav-claim-restore.js?v=20261008-pathfix', 'data-sdlg-nav-claim-restore');
+  loadScript('./modules/nav-claim-restore.js?v=20261012-v14', 'data-sdlg-nav-claim-restore');
 
   function ensureFastHelperScript() {
     try {
-      var scripts = document.querySelectorAll('script[src*="canonical-warranty-helper"]');
-      var hasFast = false;
-      for (var i = 0; i < scripts.length; i++) {
-        var src = scripts[i].getAttribute('src') || '';
-        if (src.indexOf('pathfix') >= 0 || src.indexOf('20261001-fast') >= 0 || src.indexOf('v1.2') >= 0) hasFast = true;
-      }
-      if (hasFast) return;
-      try { delete window.__SDLG_CANONICAL_HELPER_BOOTED__; } catch (_) {
-        window.__SDLG_CANONICAL_HELPER_BOOTED__ = false;
-      }
+      // If ANY canonical helper already present (any version), do NOT inject another.
+      if (document.querySelector('script[src*="canonical-warranty-helper"]')) return;
+      if (window.__SDLG_CANONICAL_HELPER_BOOTED__) return;
       var s = document.createElement('script');
       s.src = FAST_HELPER;
       s.async = true;
@@ -53,7 +49,7 @@
   function claimIdFromDom() {
     var root = findRoot();
     if (!root) return '';
-    var m = (root.innerText || '').match(/\b\d{4}-\d{4}-SDLG-PFR\b/);
+    var m = (root.innerText || '').match(/\b\d{3,4}-\d{4}-SDLG-PFR\b/);
     return m ? m[0] : '';
   }
 
@@ -63,20 +59,17 @@
     var claimId = claimIdFromDom();
     if (!claimId) return;
     var existing = document.querySelector('[data-sdlg-warranty-routing][data-sdlg-loading="1"]');
-    if (existing && existing.getAttribute('data-claim') === claimId) return;
-    if (existing) existing.remove();
+    if (existing) return;
     var panel = document.createElement('div');
     panel.setAttribute('data-sdlg-warranty-routing', '1');
     panel.setAttribute('data-sdlg-loading', '1');
-    panel.setAttribute('data-claim', claimId);
-    panel.className = 'card card-pad';
-    panel.style.marginBottom = '14px';
+    panel.style.cssText = 'margin:12px 0;padding:14px 16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff';
     panel.innerHTML =
-      '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
       '<div><div style="font-size:10px;font-weight:850;color:#6366f1;text-transform:uppercase">Warranty Engine · Live DB</div>' +
       '<div style="font-size:16px;font-weight:850;color:#0f172a;margin-top:2px">Warranty Assessment</div></div>' +
       '<div style="padding:6px 12px;border-radius:999px;background:#fffbeb;border:1px solid #fde68a;font-size:12px;font-weight:850;color:#b45309">LOADING</div></div>' +
-      '<div style="margin-top:12px;font-size:12px;color:#64748b">Menghitung FINAL ROUTE & matrix (RPC)… <b>' + claimId + '</b></div>';
+      '<div style="margin-top:12px;font-size:12px;color:#64748b">Menghitung FINAL ROUTE & matrix (RPC)\u2026 <b>' + claimId + '</b></div>';
     var root = findRoot();
     var before = root.children && root.children.length > 1 ? root.children[1] : root.firstChild;
     root.insertBefore(panel, before);
@@ -123,5 +116,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
   else schedule();
 
-  window.SDLGHelperFastpath = { version: '1.3-pathfix', refresh: onMaybeDetail };
+  window.SDLGHelperFastpath = { version: '1.4.0', refresh: onMaybeDetail };
 })();

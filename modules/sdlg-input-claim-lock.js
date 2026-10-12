@@ -1,11 +1,13 @@
 /**
- * SDLG Input claim-lock v1.3
+ * SDLG Input claim-lock v1.4
  * ONLY trust select[value*=SDLG-PFR] or data-claim-id. Never body.innerText.
+ * Null-safe activeClaimId (no crash when body/helper root missing).
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_INPUT_CLAIM_LOCK_V13__) return;
+    if (root.__SDLG_INPUT_CLAIM_LOCK_V14__) return;
+    root.__SDLG_INPUT_CLAIM_LOCK_V14__ = true;
     root.__SDLG_INPUT_CLAIM_LOCK_V13__ = true;
     root.__SDLG_INPUT_CLAIM_LOCK_V12__ = true;
 
@@ -19,6 +21,7 @@
       var el = document.getElementById(id);
       if (!el) return;
       var v = value == null ? '' : String(value);
+      if (String(el.value || '') === v) return;
       el.value = v;
       try {
         el.defaultValue = v;
@@ -32,6 +35,7 @@
       var v = value == null ? '' : String(value);
       document.querySelectorAll('[data-sdlg-field]').forEach(function (el) {
         if ((el.getAttribute('data-label') || '') === label) {
+          if (String(el.value || '') === v) return;
           el.value = v;
           try {
             el.defaultValue = v;
@@ -60,29 +64,38 @@
     }
 
     function activeClaimId() {
-      var page = document.querySelector('[data-sdlg-input-helper]') || document.body;
-      var sels = document.querySelectorAll('select');
-      for (var i = 0; i < sels.length; i++) {
-        var v = String(sels[i].value || '').trim();
-        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(v)) return v;
-      }
-      var rootClaim = page.getAttribute && page.getAttribute('data-claim-id');
-      if (rootClaim && /^\d{3,4}-\d{4}-SDLG-PFR$/i.test(rootClaim)) return rootClaim.trim();
-      var nodes = page.querySelectorAll('[data-claim-id]');
-      for (var j = 0; j < nodes.length; j++) {
-        var id = String(nodes[j].getAttribute('data-claim-id') || '').trim();
-        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(id)) return id;
-      }
-      var divs = page.querySelectorAll('div');
-      for (var k = 0; k < divs.length; k++) {
-        if (/^CLAIM$/i.test(String(divs[k].textContent || '').trim())) {
-          var next = divs[k].nextElementSibling;
-          var t = String((next && next.textContent) || '').trim();
-          if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(t)) return t;
-          var m = t.match(/^(\d{3,4}-\d{4}-SDLG-PFR)/i);
-          if (m) return m[1];
+      try {
+        var sels = document.querySelectorAll('select');
+        for (var i = 0; i < sels.length; i++) {
+          var v = String(sels[i].value || '').trim();
+          if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(v)) return v;
         }
-      }
+        var page = document.querySelector('[data-sdlg-input-helper]') || document.body || document.documentElement;
+        if (!page) return '';
+        var rootClaim = (page.getAttribute && page.getAttribute('data-claim-id')) || '';
+        if (rootClaim && /^\d{3,4}-\d{4}-SDLG-PFR$/i.test(rootClaim)) return rootClaim.trim();
+        var nodes = page.querySelectorAll ? page.querySelectorAll('[data-claim-id]') : [];
+        for (var j = 0; j < nodes.length; j++) {
+          var id = String(nodes[j].getAttribute('data-claim-id') || '').trim();
+          if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(id)) return id;
+        }
+        var divs = page.querySelectorAll ? page.querySelectorAll('div') : [];
+        for (var k = 0; k < divs.length; k++) {
+          if (/^CLAIM$/i.test(String(divs[k].textContent || '').trim())) {
+            var next = divs[k].nextElementSibling;
+            var t = String((next && next.textContent) || '').trim();
+            if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(t)) return t;
+            var m = t.match(/^(\d{3,4}-\d{4}-SDLG-PFR)/i);
+            if (m) return m[1];
+          }
+        }
+        var hash = String((root.location && root.location.hash) || '');
+        var hm = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\/([^/?#]+)/i);
+        if (hm) {
+          var seg = decodeURIComponent(hm[1]);
+          if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(seg)) return seg;
+        }
+      } catch (_) {}
       return '';
     }
 
@@ -95,17 +108,8 @@
       }
       var report = buildReportName(c);
       document.querySelectorAll('[data-sdlg-report-body]').forEach(function (el) {
-        el.textContent = report;
+        if (String(el.textContent || '') !== report) el.textContent = report;
         el.setAttribute('data-claim-id', c.claim_id);
-      });
-      document.querySelectorAll('div').forEach(function (el) {
-        var tx = String(el.textContent || '').trim();
-        if (/^SDLG\s+/i.test(tx) && tx.length > 20 && tx.length < 500) {
-          var parent = el.closest('.card, [class*="card"], section, div');
-          if (parent && /Nama Report|Report Naming/i.test(parent.innerText || '')) {
-            if (c.model && tx.indexOf(c.model) < 0) el.textContent = report;
-          }
-        }
       });
       setInput('sdlg_serviceType', 'Repair');
       setInput('sdlg_serviceMethod', c.repair_method || c.service_method || '');
@@ -150,7 +154,7 @@
       timer = setTimeout(function () { hydrate(id || activeClaimId()); }, 50);
     }
 
-    root.SDLGInputClaimLock = { version: '1.3.0', hydrate: hydrate, applyClaim: applyClaim, activeClaimId: activeClaimId };
+    root.SDLGInputClaimLock = { version: '1.4.0', hydrate: hydrate, applyClaim: applyClaim, activeClaimId: activeClaimId };
 
     root.addEventListener('hashchange', function () { schedule(activeClaimId()); });
     root.addEventListener('sdlg-route', function () { schedule(activeClaimId()); });
@@ -169,7 +173,7 @@
       var live = root.__SDLG_LIVE_CLAIM__;
       if (live && live.claim_id === id) applyClaim(live);
       else hydrate(id);
-    }, 1200);
+    }, 2000);
 
     setTimeout(function () { schedule(activeClaimId()); }, 200);
     setTimeout(function () { schedule(activeClaimId()); }, 800);
