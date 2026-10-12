@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy prepare — claim safety: fresh Supabase hydrate + no LS auto-select."""
+"""Deploy prepare — claim data integrity: liveClaim ONLY."""
 from pathlib import Path
 import re
 import urllib.request
@@ -53,73 +53,108 @@ for frag in (
 ):
     data = data.replace(frag, "")
 
-OLD_SEL = "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n    const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;"
-NEW_SEL = (
-    "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
-    "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
-    "    const [liveClaim, setLiveClaim] = useState(null);\n"
-    "    useEffect(() => {\n"
-    "        let alive = true;\n"
-    "        setLiveClaim(null);\n"
-    "        const id = String(selectedClaimId || \"\").trim();\n"
-    "        if (!id || typeof sdlgSupabase === \"undefined\" || !sdlgSupabase) return undefined;\n"
-    "        (async () => {\n"
-    "            try {\n"
-    "                const { data, error } = await sdlgSupabase.from(\"claims\").select(\"*\").eq(\"claim_id\", id).maybeSingle();\n"
-    "                if (!alive) return;\n"
-    "                if (error) { console.warn(\"[SDLG] live claim fetch\", error); return; }\n"
-    "                if (data) setLiveClaim(data);\n"
-    "            } catch (e) { console.warn(\"[SDLG] live claim fetch\", e); }\n"
-    "        })();\n"
-    "        return () => { alive = false; };\n"
-    "    }, [selectedClaimId]);\n"
-    "    const selectedClaim = liveClaim || fromList;"
-)
-if OLD_SEL in data and "const [liveClaim, setLiveClaim]" not in data:
-    data = data.replace(OLD_SEL, NEW_SEL, 1)
-    print("injected liveClaim Supabase fetch")
-else:
-    print("WARN liveClaim inject", OLD_SEL in data)
-
-OLD_HTML = 'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })'
-NEW_HTML = 'React.createElement("div", { key: "portal-html-" + String(selectedClaimId || (selectedClaim && selectedClaim.claim_id) || "none"), "data-sdlg-input-helper": "1", dangerouslySetInnerHTML: { __html: html } })'
-if OLD_HTML in data and 'key: "portal-html-"' not in data:
-    data = data.replace(OLD_HTML, NEW_HTML, 1)
-    print("keyed portal html host")
-
-old_sel = 'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));'
-if old_sel in data and "SDLGInputClaimLock" not in data[data.find("onSelectClaim: (id)"): data.find("onSelectClaim: (id)")+350]:
+# Upgrade: liveClaim only (no fromList for form body)
+if "const selectedClaim = liveClaim || fromList;" in data:
     data = data.replace(
-        old_sel,
-        'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { if (window.SDLGInputClaimLock) window.SDLGInputClaimLock.hydrate(id); if (window.SDLGInputClaimSync && window.SDLGInputClaimSync.lockUrl) window.SDLGInputClaimSync.lockUrl(id); else if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: id }, { replace: true }); localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));',
+        "const selectedClaim = liveClaim || fromList;",
+        'const selectedClaim = liveClaim;\n'
+        '    useEffect(() => {\n'
+        '        if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n'
+        '            try { window.SDLGInputClaimLock.applyClaim(liveClaim); } catch (_e) {}\n'
+        '        }\n'
+        '    }, [liveClaim]);',
         1,
     )
-    print("onSelectClaim hydrates + locks URL")
+    print("selectedClaim = liveClaim only")
 
-for src, tag in [
-    ("sdlg-input-claim-sync.js?v=20261012-v11", "data-sdlg-input-claim-sync"),
-    ("sdlg-input-claim-lock.js?v=20261012-v1", "data-sdlg-input-claim-lock"),
-]:
-    base = src.split("?")[0]
-    if base not in data:
-        data = data.replace(
-            "</body>",
-            f'  <script src="./modules/{src}" {tag}="1"></script>\n</body>',
-            1,
-        )
-        print("injected", src)
-    else:
-        data = re.sub(re.escape(base) + r"\?v=[^\"\s]+", src, data)
+if "const [liveClaim, setLiveClaim]" not in data:
+    OLD_SEL = (
+        "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
+        "    const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;"
+    )
+    NEW_SEL = (
+        "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
+        "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
+        "    const [liveClaim, setLiveClaim] = useState(null);\n"
+        "    const [liveErr, setLiveErr] = useState(\"\");\n"
+        "    useEffect(() => {\n"
+        "        let alive = true; setLiveClaim(null); setLiveErr(\"\");\n"
+        "        const id = String(selectedClaimId || \"\").trim();\n"
+        "        if (!id) return undefined;\n"
+        "        const client = (typeof sdlgSupabase !== \"undefined\" && sdlgSupabase) || (window.getSdlgSupabase && window.getSdlgSupabase()) || null;\n"
+        "        if (!client) { setLiveErr(\"Supabase client not ready\"); return undefined; }\n"
+        "        (async () => {\n"
+        "            try {\n"
+        "                const { data: row, error } = await client.from(\"claims\").select(\"*\").eq(\"claim_id\", id).maybeSingle();\n"
+        "                if (!alive) return;\n"
+        "                if (error) { setLiveErr(String(error.message || error)); return; }\n"
+        "                if (row) setLiveClaim(row); else setLiveErr(\"Claim not found: \" + id);\n"
+        "            } catch (e) { if (alive) setLiveErr(String(e && e.message || e)); }\n"
+        "        })();\n"
+        "        return () => { alive = false; };\n"
+        "    }, [selectedClaimId]);\n"
+        "    useEffect(() => {\n"
+        "        if (liveClaim && window.SDLGInputClaimLock && window.SDLGInputClaimLock.applyClaim) {\n"
+        "            try { window.SDLGInputClaimLock.applyClaim(liveClaim); } catch (_e) {}\n"
+        "        }\n"
+        "    }, [liveClaim]);\n"
+        "    const selectedClaim = liveClaim;"
+    )
+    if OLD_SEL in data:
+        data = data.replace(OLD_SEL, NEW_SEL, 1)
+        print("full liveClaim inject")
 
-data = re.sub(
-    r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"',
-    'src="./modules/sdlg-repository.js?v=20261010-v3"',
-    data,
-    count=1,
+OLD_EMPTY = "if (!selectedClaim) {\n        const activeClaims = (claims || []).filter(c => !c.archived_at);"
+NEW_EMPTY = (
+    "if (!selectedClaim) {\n"
+    "        if (selectedClaimId) {\n"
+    "            return React.createElement(\"div\", { className: \"page\", \"data-sdlg-input-helper\": \"1\", style: { padding: 24 } },\n"
+    "                React.createElement(\"div\", { style: { fontWeight: 800, marginBottom: 8 } }, \"Memuat data klaim\u2026\"),\n"
+    "                React.createElement(\"div\", { style: { color: \"#64748b\", fontSize: 13 } }, String(selectedClaimId)),\n"
+    "                (typeof liveErr !== \"undefined\" && liveErr) ? React.createElement(\"div\", { style: { color: \"#b91c1c\", marginTop: 8 } }, liveErr) : null,\n"
+    "                React.createElement(\"button\", { className: \"secondary-btn\", style: { marginTop: 12 }, onClick: onBack }, \"\u2190 Kembali\"));\n"
+    "        }\n"
+    "        const activeClaims = (claims || []).filter(c => !c.archived_at);"
 )
+if OLD_EMPTY in data and "Memuat data klaim" not in data:
+    data = data.replace(OLD_EMPTY, NEW_EMPTY, 1)
+    print("loading gate")
+
+NEW_HTML = (
+    'React.createElement("div", { key: "portal-html-" + String((selectedClaim && selectedClaim.claim_id) || selectedClaimId || "none"), '
+    '"data-sdlg-input-helper": "1", "data-claim-id": String((selectedClaim && selectedClaim.claim_id) || ""), '
+    'dangerouslySetInnerHTML: { __html: html } })'
+)
+if 'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })' in data:
+    data = data.replace(
+        'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })',
+        NEW_HTML,
+        1,
+    )
+elif 'key: "portal-html-"' in data:
+    data = re.sub(
+        r'React\.createElement\("div", \{ key: "portal-html-"[^)]+__html: html \} \}\)',
+        NEW_HTML,
+        data,
+        count=1,
+    )
+
+old_sel = 'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));'
+if old_sel in data:
+    data = data.replace(
+        old_sel,
+        'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { if (window.SDLGInputClaimSync && window.SDLGInputClaimSync.lockUrl) window.SDLGInputClaimSync.lockUrl(id); if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: id }, { replace: true }); localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));',
+        1,
+    )
+
+data = re.sub(r"sdlg-input-claim-lock\.js\?v=[^\"\s]+", "sdlg-input-claim-lock.js?v=20261012-v11", data)
+data = re.sub(r"sdlg-input-claim-sync\.js\?v=[^\"\s]+", "sdlg-input-claim-sync.js?v=20261012-v11", data)
+if "sdlg-input-claim-lock.js" not in data:
+    data = data.replace(
+        "</body>",
+        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v11" data-sdlg-input-claim-lock="1"></script>\n</body>',
+        1,
+    )
 
 INDEX.write_text(data, encoding="utf-8")
-print("SAFETY live-claim lock done")
-print(" liveClaim:", "setLiveClaim" in data)
-print(" portal-html key:", "portal-html-" in data)
-print(" claim-lock script:", "sdlg-input-claim-lock.js" in data)
+print("SAFETY liveClaim-only prepare done")
