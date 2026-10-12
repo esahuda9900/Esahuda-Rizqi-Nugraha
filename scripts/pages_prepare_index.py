@@ -294,18 +294,31 @@ canonical_tag_pattern = re.compile(
     re.IGNORECASE,
 )
 data = canonical_tag_pattern.sub('', data)
+if "</head>" not in data:
+    raise SystemExit("FATAL: cannot insert helper modules; </head> missing")
 if "</body>" not in data:
-    raise SystemExit("FATAL: cannot insert helper tags; </body> missing")
+    raise SystemExit("FATAL: cannot insert canonical helper; </body> missing")
 
-required_tags = [
-    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
+required_module_tags = [
     '<script src="modules/claim-parser-helpers.js?v=20261013-v1"></script>',
+    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
     '<script src="modules/master-resolution-ux.js?v=20261013-v1"></script>',
-    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>',
 ]
-data = data.replace("</body>", "\n".join(required_tags) + "\n</body>", 1)
+data = data.replace("</head>", "\n".join(required_module_tags) + "\n</head>", 1)
+data = data.replace(
+    "</body>",
+    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>\n</body>',
+    1,
+)
 
 for script_path, _version in required_module_tags:
+    pass
+
+for script_path, _version in [
+    ("modules/claim-parser-helpers.js", "20261013-v1"),
+    ("modules/export-table-helper.js", "20261013-v1"),
+    ("modules/master-resolution-ux.js", "20261013-v1"),
+]:
     if len(re.findall(r'<script\b[^>]*\bsrc=["\'][^"\']*?' + re.escape(script_path) + r'(?:\?[^"\']*)?["\'][^>]*>\s*</script>', data, re.IGNORECASE)) != 1:
         raise SystemExit("FATAL: helper tag must appear exactly once: " + script_path)
 if len(canonical_tag_pattern.findall(data)) != 1:
