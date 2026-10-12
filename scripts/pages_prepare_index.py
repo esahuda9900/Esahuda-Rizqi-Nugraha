@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy prepare — claim data integrity: liveClaim ONLY."""
+"""Deploy prepare — claim integrity + finance single panel + autocomplete off."""
 from pathlib import Path
 import re
 import urllib.request
@@ -53,7 +53,6 @@ for frag in (
 ):
     data = data.replace(frag, "")
 
-# Upgrade: liveClaim only (no fromList for form body)
 if "const selectedClaim = liveClaim || fromList;" in data:
     data = data.replace(
         "const selectedClaim = liveClaim || fromList;",
@@ -65,7 +64,6 @@ if "const selectedClaim = liveClaim || fromList;" in data:
         '    }, [liveClaim]);',
         1,
     )
-    print("selectedClaim = liveClaim only")
 
 if "const [liveClaim, setLiveClaim]" not in data:
     OLD_SEL = (
@@ -74,7 +72,6 @@ if "const [liveClaim, setLiveClaim]" not in data:
     )
     NEW_SEL = (
         "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
-        "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
         "    const [liveClaim, setLiveClaim] = useState(null);\n"
         "    const [liveErr, setLiveErr] = useState(\"\");\n"
         "    useEffect(() => {\n"
@@ -102,7 +99,6 @@ if "const [liveClaim, setLiveClaim]" not in data:
     )
     if OLD_SEL in data:
         data = data.replace(OLD_SEL, NEW_SEL, 1)
-        print("full liveClaim inject")
 
 OLD_EMPTY = "if (!selectedClaim) {\n        const activeClaims = (claims || []).filter(c => !c.archived_at);"
 NEW_EMPTY = (
@@ -118,43 +114,27 @@ NEW_EMPTY = (
 )
 if OLD_EMPTY in data and "Memuat data klaim" not in data:
     data = data.replace(OLD_EMPTY, NEW_EMPTY, 1)
-    print("loading gate")
 
-NEW_HTML = (
-    'React.createElement("div", { key: "portal-html-" + String((selectedClaim && selectedClaim.claim_id) || selectedClaimId || "none"), '
-    '"data-sdlg-input-helper": "1", "data-claim-id": String((selectedClaim && selectedClaim.claim_id) || ""), '
-    'dangerouslySetInnerHTML: { __html: html } })'
+# autocomplete off
+data = data.replace(
+    'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
+    'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
-if 'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })' in data:
-    data = data.replace(
-        'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })',
-        NEW_HTML,
-        1,
-    )
-elif 'key: "portal-html-"' in data:
-    data = re.sub(
-        r'React\.createElement\("div", \{ key: "portal-html-"[^)]+__html: html \} \}\)',
-        NEW_HTML,
-        data,
-        count=1,
-    )
 
-old_sel = 'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));'
-if old_sel in data:
-    data = data.replace(
-        old_sel,
-        'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { if (window.SDLGInputClaimSync && window.SDLGInputClaimSync.lockUrl) window.SDLGInputClaimSync.lockUrl(id); if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: id }, { replace: true }); localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));',
-        1,
-    )
-
-data = re.sub(r"sdlg-input-claim-lock\.js\?v=[^\"\s]+", "sdlg-input-claim-lock.js?v=20261012-v11", data)
-data = re.sub(r"sdlg-input-claim-sync\.js\?v=[^\"\s]+", "sdlg-input-claim-sync.js?v=20261012-v11", data)
+data = re.sub(r"sdlg-input-claim-lock\.js\?v=[^\"\s]+", "sdlg-input-claim-lock.js?v=20261012-v12", data)
+data = re.sub(r"sdlg-portal-finance-ux\.js\?v=[^\"\s]+", "sdlg-portal-finance-ux.js?v=20261012-v5", data)
 if "sdlg-input-claim-lock.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v11" data-sdlg-input-claim-lock="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v12" data-sdlg-input-claim-lock="1"></script>\n</body>',
+        1,
+    )
+if "sdlg-portal-finance-ux.js" not in data:
+    data = data.replace(
+        "</body>",
+        '  <script src="./modules/sdlg-portal-finance-ux.js?v=20261012-v5" data-sdlg-finance="1"></script>\n</body>',
         1,
     )
 
 INDEX.write_text(data, encoding="utf-8")
-print("SAFETY liveClaim-only prepare done")
+print("prepare done")
