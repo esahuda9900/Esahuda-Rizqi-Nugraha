@@ -266,26 +266,48 @@ for script_path, version in CACHE_BUSTS.items():
     if count:
         print("cache-busted", script_path, count)
 
-# Normalize the root canonical helper tag in the actual Pages artifact.
-# The source build script also enforces this, but GitHub Pages deploys _site directly.
+# Normalize helper script wiring in the actual Pages artifact.
+# GitHub Pages deploys _site directly; it does not run the legacy Cloudflare injector chain.
 data = re.sub(
     r'<script>\s*/\* SDLG_WARRANTY_HELPER_CANONICAL_V\d+ \*/\s*[\s\S]*?</script>\s*',
     '',
     data,
     flags=re.IGNORECASE,
 )
+
+required_module_tags = [
+    ("modules/export-table-helper.js", "20261013-v1"),
+    ("modules/claim-parser-helpers.js", "20261013-v1"),
+    ("modules/master-resolution-ux.js", "20261013-v1"),
+]
+for script_path, _version in required_module_tags:
+    module_tag_pattern = re.compile(
+        r'<script\b[^>]*\bsrc=["\'][^"\']*?'
+        + re.escape(script_path)
+        + r'(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
+        re.IGNORECASE,
+    )
+    data = module_tag_pattern.sub('', data)
+
 canonical_tag_pattern = re.compile(
     r'<script\b[^>]*\bsrc=["\']/?canonical-warranty-helper\.js(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
     re.IGNORECASE,
 )
 data = canonical_tag_pattern.sub('', data)
 if "</body>" not in data:
-    raise SystemExit("FATAL: cannot insert canonical helper tag; </body> missing")
-data = data.replace(
-    "</body>",
-    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>\n</body>',
-    1,
-)
+    raise SystemExit("FATAL: cannot insert helper tags; </body> missing")
+
+required_tags = [
+    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
+    '<script src="modules/claim-parser-helpers.js?v=20261013-v1"></script>',
+    '<script src="modules/master-resolution-ux.js?v=20261013-v1"></script>',
+    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>',
+]
+data = data.replace("</body>", "\n".join(required_tags) + "\n</body>", 1)
+
+for script_path, _version in required_module_tags:
+    if len(re.findall(r'<script\b[^>]*\bsrc=["\'][^"\']*?' + re.escape(script_path) + r'(?:\?[^"\']*)?["\'][^>]*>\s*</script>', data, re.IGNORECASE)) != 1:
+        raise SystemExit("FATAL: helper tag must appear exactly once: " + script_path)
 if len(canonical_tag_pattern.findall(data)) != 1:
     raise SystemExit("FATAL: canonical helper tag must appear exactly once in Pages artifact")
 
