@@ -311,9 +311,6 @@ data = data.replace(
     1,
 )
 
-for script_path, _version in required_module_tags:
-    pass
-
 for script_path, _version in [
     ("modules/claim-parser-helpers.js", "20261013-v1"),
     ("modules/export-table-helper.js", "20261013-v1"),
