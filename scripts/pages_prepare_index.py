@@ -219,6 +219,12 @@ if POLICY_REPAIR.exists():
     if "claimIdFromPage() !== id" not in policy_source:
         raise SystemExit("FATAL: async SDLG policy/repair data must verify the active claim before writing")
 
+CANONICAL_MODULE = Path("modules/canonical-warranty-helper.js")
+if CANONICAL_MODULE.exists():
+    canonical_source = CANONICAL_MODULE.read_text(encoding="utf-8", errors="replace")
+    if "if (scheduled || isPortalInputPage()) return;" not in canonical_source or "findClaimId() !== claimId" not in canonical_source:
+        raise SystemExit("FATAL: legacy canonical helper must not write portal fields or stale claim data")
+
 print("sanity: OK")
 
 # Normalize the root canonical helper tag in the actual Pages artifact.
