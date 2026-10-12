@@ -132,7 +132,7 @@
         (document.head || document.documentElement).appendChild(s);
       }
       loadScript('./modules/sdlg-hash-router.js?v=20261010-v21', 'data-sdlg-hash-router');
-      loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261010-v21', 'data-sdlg-hash-tab-bridge');
+      loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261010-v22', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/feedback-person-fix.js?v=20261009-v13', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261009-v3', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');

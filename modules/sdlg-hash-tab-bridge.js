@@ -1,13 +1,15 @@
 /**
- * SDLG Hash→Tab bridge v2.1
- * - Hash change → React tab (via __SDLG_APPLY_ROUTE or one-shot nav click)
+ * SDLG Hash→Tab bridge v2.2
+ * - Never force-apply 'list' while on #/claim/:id (was killing claim detail)
+ * - Hash change → React tab only for top-level pages
  * - Nav click → hash update (capture)
- * - No periodic re-apply (prevents Overview flicker)
+ * - No periodic re-apply
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_HASH_TAB_BRIDGE_V21__) return;
+    if (root.__SDLG_HASH_TAB_BRIDGE_V22__) return;
+    root.__SDLG_HASH_TAB_BRIDGE_V22__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V21__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V2__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V1__ = true;
@@ -16,6 +18,20 @@
     var applying = false;
     var userNavUntil = 0;
 
+    function rawHash() {
+      return String(root.location.hash || '');
+    }
+
+    function isClaimDetailHash(h) {
+      h = String(h || rawHash()).replace(/^#/, '');
+      return /^\/?claim\//i.test(h);
+    }
+
+    function isSdlgInputHash(h) {
+      h = String(h || rawHash()).replace(/^#/, '');
+      return /^\/?sdlg-input/i.test(h);
+    }
+
     function parseTabFromHash() {
       try {
         if (root.SDLGHashRouter && typeof root.SDLGHashRouter.tabForRoute === 'function') {
@@ -23,7 +39,7 @@
           if (t) return t;
         }
       } catch (_) {}
-      var h = String(root.location.hash || '').replace(/^#/, '');
+      var h = rawHash().replace(/^#/, '');
       var parts = h.split('/').filter(Boolean);
       var head = (parts[0] || '').toLowerCase();
       if (!head || head === 'overview') return 'dashboard';
@@ -34,11 +50,14 @@
       if (head === 'master-data') return 'masters';
       if (head === 'data-quality') return 'quality';
       if (head === 'unit360') return 'unit360';
-      if (head === 'claim') return 'list';
+      // claim detail is NOT a top-level tab — handled separately
+      if (head === 'claim') return '';
       return '';
     }
 
     function setHashFromTab(tab) {
+      // Never overwrite an open claim detail URL when syncing from generic list tab
+      // (only explicit Claims nav should leave detail — that path passes through onNavClick)
       try {
         if (root.SDLGHashRouter && typeof root.SDLGHashRouter.setFromTab === 'function') {
           root.SDLGHashRouter.setFromTab(tab, null, { replace: true });
@@ -56,7 +75,7 @@
       };
       var next = map[tab];
       if (!next) return;
-      if (String(root.location.hash || '') === next) return;
+      if (rawHash() === next) return;
       try {
         root.history.replaceState(null, '', root.location.pathname + root.location.search + next);
       } catch (_) {
@@ -92,8 +111,28 @@
     function applyHashToTab() {
       if (applying) return;
       if (Date.now() < userNavUntil) return;
-      var hash = String(root.location.hash || '');
+      var hash = rawHash();
       if (hash === lastHash) return;
+
+      // CRITICAL: claim detail URL must not trigger Claims-nav click (clears detailId)
+      if (isClaimDetailHash(hash)) {
+        lastHash = hash;
+        return;
+      }
+      // SDLG Input with/without claimId: let React own the page; only set tab if needed
+      if (isSdlgInputHash(hash)) {
+        lastHash = hash;
+        // soft-set tab without wiping claim context if possible
+        applying = true;
+        try {
+          if (typeof root.__SDLG_APPLY_ROUTE === 'function') {
+            root.__SDLG_APPLY_ROUTE('sdlginput');
+          }
+        } catch (_) {}
+        applying = false;
+        return;
+      }
+
       lastHash = hash;
       var tab = parseTabFromHash();
       if (!tab || tab === 'login') return;
@@ -127,7 +166,7 @@
         if (!tab) return;
         userNavUntil = Date.now() + 900;
         setHashFromTab(tab);
-        lastHash = String(root.location.hash || '');
+        lastHash = rawHash();
       } catch (_) {}
     }
 
@@ -146,7 +185,7 @@
     }
 
     root.SDLGHashTabBridge = {
-      version: '2.1.0',
+      version: '2.2.0',
       apply: applyHashToTab,
       parseTab: parseTabFromHash,
       setHashFromTab: setHashFromTab
