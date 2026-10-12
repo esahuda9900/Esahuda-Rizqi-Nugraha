@@ -1,14 +1,13 @@
 /**
- * SDLG Hash→Tab bridge v2.2
- * - Never force-apply 'list' while on #/claim/:id (was killing claim detail)
- * - Hash change → React tab only for top-level pages
- * - Nav click → hash update (capture)
- * - No periodic re-apply
+ * SDLG Hash→Tab bridge v2.3
+ * - #/claims/:claimId is DETAIL — never force Claims list click
+ * - Supports hierarchical URLs from router v2.2
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_HASH_TAB_BRIDGE_V22__) return;
+    if (root.__SDLG_HASH_TAB_BRIDGE_V23__) return;
+    root.__SDLG_HASH_TAB_BRIDGE_V23__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V22__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V21__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V2__ = true;
@@ -24,12 +23,21 @@
 
     function isClaimDetailHash(h) {
       h = String(h || rawHash()).replace(/^#/, '');
-      return /^\/?claim\//i.test(h);
+      if (h.charAt(0) !== '/') h = '/' + h;
+      if (/^\/claim\//i.test(h)) return true;
+      var m = h.match(/^\/claims\/([^/]+)/i);
+      if (m) {
+        var seg = decodeURIComponent(m[1]);
+        if (/^\d{4}$/.test(seg)) return false;
+        return true;
+      }
+      return false;
     }
 
     function isSdlgInputHash(h) {
       h = String(h || rawHash()).replace(/^#/, '');
-      return /^\/?sdlg-input/i.test(h);
+      if (h.charAt(0) !== '/') h = '/' + h;
+      return /^\/sdlg-input/i.test(h);
     }
 
     function parseTabFromHash() {
@@ -40,7 +48,8 @@
         }
       } catch (_) {}
       var h = rawHash().replace(/^#/, '');
-      var parts = h.split('/').filter(Boolean);
+      if (h.charAt(0) !== '/') h = '/' + h;
+      var parts = h.replace(/^\//, '').split('/').filter(Boolean);
       var head = (parts[0] || '').toLowerCase();
       if (!head || head === 'overview') return 'dashboard';
       if (head === 'claims' || head === 'list') return 'list';
@@ -50,14 +59,11 @@
       if (head === 'master-data') return 'masters';
       if (head === 'data-quality') return 'quality';
       if (head === 'unit360') return 'unit360';
-      // claim detail is NOT a top-level tab — handled separately
       if (head === 'claim') return '';
       return '';
     }
 
     function setHashFromTab(tab) {
-      // Never overwrite an open claim detail URL when syncing from generic list tab
-      // (only explicit Claims nav should leave detail — that path passes through onNavClick)
       try {
         if (root.SDLGHashRouter && typeof root.SDLGHashRouter.setFromTab === 'function') {
           root.SDLGHashRouter.setFromTab(tab, null, { replace: true });
@@ -79,7 +85,7 @@
       try {
         root.history.replaceState(null, '', root.location.pathname + root.location.search + next);
       } catch (_) {
-        root.location.hash = next;
+        root.location.hash = next.replace(/^#/, '');
       }
     }
 
@@ -114,15 +120,12 @@
       var hash = rawHash();
       if (hash === lastHash) return;
 
-      // CRITICAL: claim detail URL must not trigger Claims-nav click (clears detailId)
       if (isClaimDetailHash(hash)) {
         lastHash = hash;
         return;
       }
-      // SDLG Input with/without claimId: let React own the page; only set tab if needed
       if (isSdlgInputHash(hash)) {
         lastHash = hash;
-        // soft-set tab without wiping claim context if possible
         applying = true;
         try {
           if (typeof root.__SDLG_APPLY_ROUTE === 'function') {
@@ -185,7 +188,7 @@
     }
 
     root.SDLGHashTabBridge = {
-      version: '2.2.0',
+      version: '2.3.0',
       apply: applyHashToTab,
       parseTab: parseTabFromHash,
       setHashFromTab: setHashFromTab
