@@ -98,7 +98,7 @@ else:
 
 
 # 1b) Loading/error states: a selected claim must never fall back to list cache.
-OLD_EMPTY = "    if (!selectedClaim) {\\n"
+OLD_EMPTY = "    if (!selectedClaim) {\n"
 NEW_EMPTY = (
     "    if (currentClaimId && live.status === 'loading') {\n"
     "        return React.createElement('div', { className: 'page', 'data-sdlg-live-loading': 'true', role: 'status', 'aria-busy': 'true' },\n"
