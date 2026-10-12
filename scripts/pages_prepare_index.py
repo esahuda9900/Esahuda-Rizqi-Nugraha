@@ -267,6 +267,16 @@ if "data-sdlg-inline-enforcer-legacy" in data:
 if "setLiveClaim(fromList)" in data or "liveReady ? fromList : null" in data:
     raise SystemExit("FATAL: stale list fallback remains in SDLG Input")
 
+# Cache-bust the module loader so browsers do not reuse an older claim-fields.js
+# that still loads duplicate DOM writers.
+data = re.sub(
+    r'''((?:\./|/)?modules/claim-fields\.js)(?:\?[^"'\s>]*)?''',
+    r'\1?v=20261012-single-writer-v1',
+    data,
+)
+if "modules/claim-fields.js?v=20261012-single-writer-v1" not in data:
+    raise SystemExit("FATAL: claim-fields cache-bust marker missing")
+
 
 # Sanity
 if re.search(r"replace\(/\[[\r\n]", data):
