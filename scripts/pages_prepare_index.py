@@ -61,6 +61,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     const [liveClaim, setLiveClaim] = useState(null);
     const [liveReady, setLiveReady] = useState(false);
     const [liveError, setLiveError] = useState("");
+    const [liveErrorClaimId, setLiveErrorClaimId] = useState("");
 
     useEffect(() => {
         let alive = true;
@@ -68,6 +69,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         setLiveReady(false);
         setLiveClaim(null);
         setLiveError("");
+        setLiveErrorClaimId("");
         try {
             window.__SDLG_LIVE_CLAIM__ = null;
             window.__SDLG_LIVE_CLAIM_ERROR__ = null;
@@ -75,6 +77,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
 
         if (!/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(id)) {
             setLiveError("Claim ID tidak valid. Pilih claim yang benar lalu buka ulang halaman Input.");
+            setLiveErrorClaimId(id);
             setLiveReady(true);
             return () => { alive = false; };
         }
@@ -83,6 +86,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         if (!client || typeof client.from !== "function") {
             const message = "Koneksi Supabase belum tersedia. Muat ulang halaman setelah login.";
             setLiveError(message);
+            setLiveErrorClaimId(id);
             try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
             setLiveReady(true);
             return () => { alive = false; };
@@ -96,12 +100,14 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
                     const message = String(error.message || error).slice(0, 240);
                     console.warn("[SDLG portal] live claim fetch failed", id, error);
                     setLiveError("Gagal memuat claim " + id + ": " + message);
+                    setLiveErrorClaimId(id);
                     try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
                     return;
                 }
                 if (!row || String(row.claim_id || "").trim().toUpperCase() !== id) {
                     const message = "Claim " + id + " tidak ditemukan di database. Data list lama tidak digunakan.";
                     setLiveError(message);
+                    setLiveErrorClaimId(id);
                     try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
                     return;
                 }
@@ -117,6 +123,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
                 const message = String((e && e.message) || e || "Unknown error").slice(0, 240);
                 console.warn("[SDLG portal] live claim fetch failed", id, e);
                 setLiveError("Gagal memuat claim " + id + ": " + message);
+                setLiveErrorClaimId(id);
                 try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
             } finally {
                 if (alive) setLiveReady(true);
@@ -159,7 +166,7 @@ OLD_EMPTY_CLAIM = (
 )
 NEW_EMPTY_CLAIM = r'''
 if (!selectedClaim) {
-        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && !liveReady) {
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && (!liveReady || (!selectedClaim && liveErrorClaimId !== effectiveClaimId))) {
             const skeleton = (height, width) => React.createElement("div", {
                 style: { height, width, maxWidth: "100%", borderRadius: 8, background: "#e9edf2", margin: "10px 0" }
             });
@@ -180,7 +187,7 @@ if (!selectedClaim) {
                 React.createElement("p", { style: { fontSize: 12, color: "#64748b" } }, "Form belum ditampilkan sampai claim terverifikasi dari Supabase.")
             ));
         }
-        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && liveReady && liveError) {
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && liveReady && liveErrorClaimId === effectiveClaimId && liveError) {
             return React.createElement("div", {
                 className: "page",
                 style: { maxWidth: 760, margin: "0 auto", padding: "24px 16px" }
