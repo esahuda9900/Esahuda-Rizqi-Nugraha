@@ -5820,7 +5820,7 @@ function useLiveClaim(claimId, retryToken) {
         try {
             const match = String(routeHash || "").match(/^#?\/?(?:sdlg-input|sdlginput)\/([^/?#]+)/i);
             const value = match ? decodeURIComponent(match[1]).trim() : "";
-            return /^\d{3,4}-\d{4}-SDLG-PFR$/i.test(value) ? value : "";
+            return value;
         } catch (_e) { return ""; }
     })();
     const requestedId = String(routeClaimId || claimId || "").trim().toUpperCase();
