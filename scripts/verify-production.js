@@ -103,12 +103,12 @@ checkSyntax(parserContract, 'Warranty parser guard');
 checkSyntax(golden, 'Warranty golden verifier');
 checkSyntax(dualWarrantyVerifier, 'Dual warranty routing verifier');
 
-if (helper) {
-  if (helper.includes("rpc('sdlg_warranty_resolve_claim'") || helper.includes('rpc("sdlg_warranty_resolve_claim"')) pass('Canonical warranty runtime source', 'root helper calls canonical warranty RPC');
-  else fail('Canonical warranty runtime source', 'root helper lacks direct canonical warranty RPC');
-  if (helper.includes('claim_warranty_resolution_v')) fail('Canonical warranty runtime source', 'root helper still depends on legacy warranty view');
-  else pass('Canonical warranty legacy view removal', 'root helper does not depend on claim_warranty_resolution_v');
-  if (helper.includes('technical_personnel')) pass('Canonical helper feedback contract', 'reads claims.technical_personnel');
+if (helperModule) {
+  if (helperModule.includes("rpc('sdlg_warranty_resolve_claim'") || helperModule.includes('rpc("sdlg_warranty_resolve_claim"')) pass('Canonical warranty runtime source', 'canonical module calls the warranty resolver RPC');
+  else fail('Canonical warranty runtime source', 'canonical module lacks direct warranty resolver RPC');
+  if (helperModule.includes('claim_warranty_resolution_v') || (helper && helper.includes('claim_warranty_resolution_v'))) fail('Canonical warranty legacy view removal', 'a canonical helper still depends on the legacy warranty view');
+  else pass('Canonical warranty legacy view removal', 'canonical helpers do not depend on claim_warranty_resolution_v');
+  if (helperModule.includes('technical_personnel')) pass('Canonical helper feedback contract', 'reads claims.technical_personnel');
 }
 
 if (exportTableModule) {
