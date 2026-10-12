@@ -107,11 +107,3 @@ jobs:
       - name: Run production root canonical helper race torture test
         run: node scripts/browser-e2e-root-helper-race.js
 
-      - name: Validate historical patch scripts are present
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f scripts/apply_action_center.py
-          test -f scripts/apply_report_naming.py
-          test -f scripts/apply_workflow_catchup.py
-          echo 'Historical patch scripts are present.'
