@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deploy prepare — claim data safety lock (no wrong-claim paste)."""
+"""Deploy prepare — claim safety: fresh Supabase hydrate + no LS auto-select."""
 from pathlib import Path
 import re
 import urllib.request
@@ -20,12 +20,10 @@ exec(compile(code, "pages_prepare_index.py(good)", "exec"), ns, ns)
 INDEX = Path("_site/index.html")
 data = INDEX.read_text(encoding="utf-8", errors="replace")
 
-if "#/claim/' + encodeURIComponent(c.claim_id)" in data:
-    data = data.replace(
-        "#/claim/' + encodeURIComponent(c.claim_id)",
-        "#/claims/' + encodeURIComponent(c.claim_id)",
-    )
-
+data = data.replace(
+    "#/claim/' + encodeURIComponent(c.claim_id)",
+    "#/claims/' + encodeURIComponent(c.claim_id)",
+)
 data = data.replace(
     "(?:sdlg-input|sdlginput|claim)\\/([^/?#]+)",
     "(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)",
@@ -47,63 +45,71 @@ data = re.sub(
     "/* SAFETY: no LS cold-start claim id */",
     data,
 )
-data = data.replace(
-    'var _ls = localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1") || localStorage.getItem("sdlg-warranty:last-claim:v1");  if (_ls) return String(_ls);',
-    "/* SAFETY: no LS cold-start claim id */",
-)
-data = data.replace(
-    'var _ls = localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1"); if (_ls) return String(_ls);',
-    "/* SAFETY: no LS cold-start claim id */",
-)
-
 for frag in (
     ' || (typeof localStorage !== "undefined" && (localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1") || localStorage.getItem("sdlg-warranty:last-claim:v1")))',
     ' || (typeof localStorage !== "undefined" && (localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1")))',
     ' || (typeof localStorage !== "undefined" && localStorage.getItem("sdlg-warranty:last-sdlginput-claim:v1"))',
+    ' || (claims.find(c => !c.archived_at)?.claim_id || "")',
 ):
-    if frag in data:
-        data = data.replace(frag, "")
-        print("stripped LS prop fragment")
+    data = data.replace(frag, "")
 
-data = data.replace(' || (claims.find(c => !c.archived_at)?.claim_id || "")', "")
+OLD_SEL = "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n    const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;"
+NEW_SEL = (
+    "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
+    "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
+    "    const [liveClaim, setLiveClaim] = useState(null);\n"
+    "    useEffect(() => {\n"
+    "        let alive = true;\n"
+    "        setLiveClaim(null);\n"
+    "        const id = String(selectedClaimId || \"\").trim();\n"
+    "        if (!id || typeof sdlgSupabase === \"undefined\" || !sdlgSupabase) return undefined;\n"
+    "        (async () => {\n"
+    "            try {\n"
+    "                const { data, error } = await sdlgSupabase.from(\"claims\").select(\"*\").eq(\"claim_id\", id).maybeSingle();\n"
+    "                if (!alive) return;\n"
+    "                if (error) { console.warn(\"[SDLG] live claim fetch\", error); return; }\n"
+    "                if (data) setLiveClaim(data);\n"
+    "            } catch (e) { console.warn(\"[SDLG] live claim fetch\", e); }\n"
+    "        })();\n"
+    "        return () => { alive = false; };\n"
+    "    }, [selectedClaimId]);\n"
+    "    const selectedClaim = liveClaim || fromList;"
+)
+if OLD_SEL in data and "const [liveClaim, setLiveClaim]" not in data:
+    data = data.replace(OLD_SEL, NEW_SEL, 1)
+    print("injected liveClaim Supabase fetch")
+else:
+    print("WARN liveClaim inject", OLD_SEL in data)
 
-needle = 'setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setEditing(false);'
-if needle in data:
-    pos = data.find(needle)
-    window = data[pos : pos + 450]
-    if 'navigate("sdlg-input"' not in window and "navigate('sdlg-input'" not in window:
-        data = data.replace(
-            needle,
-            needle
-            + ' try { if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: detail.claim_id }, { replace: true }); else { history.replaceState(null,"", location.pathname + location.search + "#/sdlg-input/" + encodeURIComponent(detail.claim_id)); } } catch(_nav){}',
-            1,
-        )
-        print("detail open locks URL")
-
-if "SDLGPortalInputPage, { claims, selectedClaimId:" in data and "key: String(sdlgInputClaimId" not in data:
-    data = data.replace(
-        "SDLGPortalInputPage, { claims, selectedClaimId:",
-        'SDLGPortalInputPage, { key: String(sdlgInputClaimId || (typeof window !== "undefined" && window.SDLGHashRouter && window.SDLGHashRouter.claimId && window.SDLGHashRouter.claimId()) || "none"), claims, selectedClaimId:',
-        1,
-    )
-    print("React key on portal page")
+OLD_HTML = 'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })'
+NEW_HTML = 'React.createElement("div", { key: "portal-html-" + String(selectedClaimId || (selectedClaim && selectedClaim.claim_id) || "none"), "data-sdlg-input-helper": "1", dangerouslySetInnerHTML: { __html: html } })'
+if OLD_HTML in data and 'key: "portal-html-"' not in data:
+    data = data.replace(OLD_HTML, NEW_HTML, 1)
+    print("keyed portal html host")
 
 old_sel = 'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));'
-if old_sel in data:
+if old_sel in data and "SDLGInputClaimLock" not in data[data.find("onSelectClaim: (id)"): data.find("onSelectClaim: (id)")+350]:
     data = data.replace(
         old_sel,
-        'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { if (window.SDLGInputClaimSync && window.SDLGInputClaimSync.lockUrl) window.SDLGInputClaimSync.lockUrl(id); else if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: id }, { replace: true }); localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));',
+        'onSelectClaim: (id) => { setSdlgInputClaimId(id); try { if (window.SDLGInputClaimLock) window.SDLGInputClaimLock.hydrate(id); if (window.SDLGInputClaimSync && window.SDLGInputClaimSync.lockUrl) window.SDLGInputClaimSync.lockUrl(id); else if (window.SDLGHashRouter && window.SDLGHashRouter.navigate) window.SDLGHashRouter.navigate("sdlg-input", { claimId: id }, { replace: true }); localStorage.setItem("sdlg-warranty:last-sdlginput-claim:v1", String(id||""));',
         1,
     )
-    print("onSelectClaim locks URL")
+    print("onSelectClaim hydrates + locks URL")
 
-data = re.sub(r"sdlg-input-claim-sync\.js\?v=[^\"\s]+", "sdlg-input-claim-sync.js?v=20261012-v11", data)
-if "sdlg-input-claim-sync.js" not in data:
-    data = data.replace(
-        "</body>",
-        '  <script src="./modules/sdlg-input-claim-sync.js?v=20261012-v11" data-sdlg-input-claim-sync="1"></script>\n</body>',
-        1,
-    )
+for src, tag in [
+    ("sdlg-input-claim-sync.js?v=20261012-v11", "data-sdlg-input-claim-sync"),
+    ("sdlg-input-claim-lock.js?v=20261012-v1", "data-sdlg-input-claim-lock"),
+]:
+    base = src.split("?")[0]
+    if base not in data:
+        data = data.replace(
+            "</body>",
+            f'  <script src="./modules/{src}" {tag}="1"></script>\n</body>',
+            1,
+        )
+        print("injected", src)
+    else:
+        data = re.sub(re.escape(base) + r"\?v=[^\"\s]+", src, data)
 
 data = re.sub(
     r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"',
@@ -111,15 +117,9 @@ data = re.sub(
     data,
     count=1,
 )
-data = re.sub(
-    r"sdlg-portal-finance-ux\.js(?:\?v=[^\"\s]*)?",
-    "sdlg-portal-finance-ux.js?v=20261010-v4",
-    data,
-)
 
 INDEX.write_text(data, encoding="utf-8")
-print("SAFETY lock done")
-print("  LS cold-start stripped:", "SAFETY: no LS cold-start" in data)
-print("  first-claim gone:", "claims.find(c => !c.archived_at)?.claim_id" not in data)
-print("  sync v11:", "sdlg-input-claim-sync.js?v=20261012-v11" in data)
-print("  react key:", "key: String(sdlgInputClaimId" in data)
+print("SAFETY live-claim lock done")
+print(" liveClaim:", "setLiveClaim" in data)
+print(" portal-html key:", "portal-html-" in data)
+print(" claim-lock script:", "sdlg-input-claim-lock.js" in data)
