@@ -51,3 +51,22 @@ jobs:
           test -s _site/modules/sdlg-input-hydrate.js
           bash scripts/regression_contract.sh _site/index.html
           bash scripts/regression_contract_modules.sh _site
+
+      - name: Parse changed JavaScript
+        run: |
+          set -euo pipefail
+          node --check modules/sdlg-input-hydrate.js
+          node --check modules/sdlg-inline-enforcer.js
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          html = Path("_site/index.html").read_text(encoding="utf-8", errors="replace")
+          pattern = r"function SDLGPortalInputPage\(\{ claims, selectedClaimId, onSelectClaim, onBack \}\) \{[\s\S]*?\n\};"
+          match = re.search(pattern, html)
+          if not match:
+              raise SystemExit("Could not extract built SDLGPortalInputPage for JS syntax check")
+          Path(".sdlg-input-page-check.js").write_text(match.group(0), encoding="utf-8")
+          print("Extracted SDLGPortalInputPage from baked _site/index.html")
+          PY
+          node --check .sdlg-input-page-check.js
