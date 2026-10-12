@@ -103,4 +103,24 @@ if bad:
 print(f"CONTRACT OK: createClient( count={n}, all guarded by getSdlgSupabase")
 PY
 
+# SDLG Input must use the URL-bound live claim; list rows are never a fallback.
+grep -q 'const effectiveClaimId =' "$HTML" || fail "missing URL-bound SDLG claim identity"
+grep -q 'sdlg-live-claim-ready' "$HTML" || fail "missing live-claim handoff to field hydration"
+if grep -q 'setLiveClaim(fromList)\|liveReady ? fromList : null' "$HTML"; then
+  fail "stale list fallback returned in SDLG Input"
+fi
+if grep -q 'data-sdlg-inline-enforcer-legacy' "$HTML"; then
+  fail "legacy inline enforcer still baked into Pages output"
+fi
+test -f "$REPO_ROOT/modules/claim-fields.js" || fail "missing claim-fields.js"
+if grep -q 'sdlg-inline-enforcer\.js' "$REPO_ROOT/modules/claim-fields.js"; then
+  fail "duplicate inline enforcer loader returned"
+fi
+if grep -q 'setInterval' "$REPO_ROOT/modules/sdlg-input-hydrate.js"; then
+  fail "polling loop returned to SDLG input hydrator"
+fi
+if grep -Eq "setVal\\('sdlg_repairDate'|setVal\\('sdlg_machineLocation'|data-sdlg-report-body.*textContent" "$REPO_ROOT/modules/sdlg-input-hydrate.js"; then
+  fail "hydrator writes fields owned by React"
+fi
+ok "URL-bound live claim and single-writer contracts"
 echo "All regression contracts passed for $HTML"
