@@ -188,8 +188,8 @@ async function runScenario(browser, aDelay, bDelay) {
     // React/liveClaim owns form fields. A legacy helper request or write is a failure.
     const pass = (
       state.selectedClaimId === TARGET &&
-      state.person === TARGET_PERSON &&
-      state.report === TARGET_REPORT &&
+      state.person === immediate.person &&
+      state.report === immediate.report &&
       state.helperLast == null &&
       requestTrace.length === 0 &&
       staleWrites.length === 0 &&
