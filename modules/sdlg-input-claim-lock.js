@@ -1,13 +1,12 @@
 /**
- * SDLG Input claim-lock v1.1
- * Source of truth: <select> / CLAIM badge, NEVER stale hash alone.
+ * SDLG Input claim-lock v1.2 — select/CLAIM first; force repair date by label.
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_INPUT_CLAIM_LOCK_V11__) return;
+    if (root.__SDLG_INPUT_CLAIM_LOCK_V12__) return;
+    root.__SDLG_INPUT_CLAIM_LOCK_V12__ = true;
     root.__SDLG_INPUT_CLAIM_LOCK_V11__ = true;
-    root.__SDLG_INPUT_CLAIM_LOCK_V1__ = true;
 
     function portalDate(value) {
       var s = String(value || '').trim();
@@ -21,7 +20,11 @@
       var v = value == null ? '' : String(value);
       if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.tagName === 'SELECT') {
         el.value = v;
-        try { el.defaultValue = v; el.setAttribute('value', v); } catch (_) {}
+        try {
+          el.defaultValue = v;
+          el.setAttribute('value', v);
+          el.setAttribute('autocomplete', 'off');
+        } catch (_) {}
       } else {
         el.textContent = v;
       }
@@ -49,7 +52,7 @@
     }
 
     function activeClaimId() {
-      var page = document.querySelector('[data-sdlg-input-helper]') || document.querySelector('.page') || document.body;
+      var page = document.querySelector('[data-sdlg-input-helper]') || document.body;
       var sels = page.querySelectorAll('select');
       for (var i = 0; i < sels.length; i++) {
         var v = String(sels[i].value || '').trim();
@@ -60,8 +63,6 @@
         if (/^CLAIM$/i.test(String(divs[j].textContent || '').trim())) {
           var next = divs[j].nextElementSibling;
           var id = extractClaimId(next && next.textContent);
-          if (id) return id;
-          id = extractClaimId(divs[j].parentElement && divs[j].parentElement.textContent);
           if (id) return id;
         }
       }
@@ -78,13 +79,13 @@
       if (!c || !c.claim_id) return;
       var uiId = activeClaimId();
       if (uiId && String(uiId).toUpperCase() !== String(c.claim_id).toUpperCase()) {
-        try { console.warn('[SDLG claim-lock] skip apply', c.claim_id, 'ui=', uiId); } catch (_) {}
+        try { console.warn('[SDLG claim-lock] skip', c.claim_id, 'ui=', uiId); } catch (_) {}
         return;
       }
       var report = buildReportName(c);
-      document.querySelectorAll('[data-sdlg-report-body]').forEach(function (reportEl) {
-        reportEl.textContent = report;
-        reportEl.setAttribute('data-claim-id', c.claim_id);
+      document.querySelectorAll('[data-sdlg-report-body]').forEach(function (el) {
+        el.textContent = report;
+        el.setAttribute('data-claim-id', c.claim_id);
       });
       document.querySelectorAll('[data-sdlg-copy-report-name]').forEach(function (el) {
         el.setAttribute('data-value', report);
@@ -93,14 +94,30 @@
       setInput('sdlg_serviceMethod', c.repair_method || c.service_method || '');
       setInput('sdlg_serialNumber', c.serial_no || c.canonical_serial_no || '');
       setInput('sdlg_hourMeter', c.hm_failure != null ? String(c.hm_failure) : '');
-      setInput('sdlg_repairDate', portalDate(c.dealer_repair_date || c.completion_date || c.failure_date));
+      var repairStr = portalDate(c.dealer_repair_date || c.completion_date || c.failure_date);
+      setInput('sdlg_repairDate', repairStr);
+      document.querySelectorAll('input, textarea').forEach(function (el) {
+        var lab = (el.getAttribute('data-label') || '').toLowerCase();
+        var id = (el.id || '').toLowerCase();
+        if (lab.indexOf('repair') >= 0 || id.indexOf('repairdate') >= 0) {
+          el.value = repairStr;
+          try {
+            el.defaultValue = repairStr;
+            el.setAttribute('value', repairStr);
+            el.setAttribute('autocomplete', 'off');
+          } catch (_) {}
+        }
+      });
       setInput('sdlg_failureDate', portalDate(c.failure_date));
       setInput('sdlg_complaint', c.fault_description || '');
       setInput('sdlg_faultDetails', [c.cause_analyze, c.comment].filter(Boolean).join('\n\n'));
       var wo = c.dealer_wo_so || c.wo_so || '';
       var branch = c.branch || '';
       var customer = c.customer || '';
-      setInput('sdlg_machineLocation', [wo, branch, customer].map(function (x) { return String(x || '').trim(); }).filter(Boolean).join(' '));
+      setInput(
+        'sdlg_machineLocation',
+        [wo, branch, customer].map(function (x) { return String(x || '').trim(); }).filter(Boolean).join(' ')
+      );
       setInput('sdlg_repairLabor', c.labour_hrs != null ? String(c.labour_hrs) : '');
       setInput('sdlg_serviceMileage', c.mileage_km != null ? String(c.mileage_km) : '');
       var tech = String(c.technical_personnel || c.feedback_person || '').replace(/^\s*technician\s*[\u2014\u2013\-:]\s*/i, '');
@@ -113,7 +130,11 @@
     async function hydrate(claimId) {
       claimId = String(claimId || activeClaimId() || '').trim();
       if (!claimId || !/SDLG-PFR/i.test(claimId)) return;
-      var client = (typeof root.getSdlgSupabase === 'function' && root.getSdlgSupabase()) || root.supabaseClient || root.sdlgSupabase || null;
+      var client =
+        (typeof root.getSdlgSupabase === 'function' && root.getSdlgSupabase()) ||
+        root.supabaseClient ||
+        root.sdlgSupabase ||
+        null;
       if (!client || !client.from) return;
       try {
         var res = await client.from('claims').select('*').eq('claim_id', claimId).maybeSingle();
@@ -130,20 +151,33 @@
       timer = setTimeout(function () { hydrate(id || activeClaimId()); }, 60);
     }
 
-    root.SDLGInputClaimLock = { version: '1.1.0', hydrate: hydrate, applyClaim: applyClaim, activeClaimId: activeClaimId };
+    root.SDLGInputClaimLock = {
+      version: '1.2.0',
+      hydrate: hydrate,
+      applyClaim: applyClaim,
+      activeClaimId: activeClaimId
+    };
 
     root.addEventListener('hashchange', function () { schedule(activeClaimId()); });
     root.addEventListener('sdlg-route', function () { schedule(activeClaimId()); });
-    root.addEventListener('sdlg-input-claim', function (e) { schedule((e.detail && e.detail.claimId) || activeClaimId()); });
-    document.addEventListener('change', function (e) {
-      var t = e.target;
-      if (!t || t.tagName !== 'SELECT') return;
-      var v = String(t.value || '').trim();
-      if (/SDLG-PFR/i.test(v)) {
-        try { if (root.SDLGInputClaimSync && root.SDLGInputClaimSync.lockUrl) root.SDLGInputClaimSync.lockUrl(v); } catch (_) {}
-        schedule(v);
-      }
-    }, true);
+    root.addEventListener('sdlg-input-claim', function (e) {
+      schedule((e.detail && e.detail.claimId) || activeClaimId());
+    });
+    document.addEventListener(
+      'change',
+      function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'SELECT') return;
+        var v = String(t.value || '').trim();
+        if (/SDLG-PFR/i.test(v)) {
+          try {
+            if (root.SDLGInputClaimSync && root.SDLGInputClaimSync.lockUrl) root.SDLGInputClaimSync.lockUrl(v);
+          } catch (_) {}
+          schedule(v);
+        }
+      },
+      true
+    );
 
     setTimeout(function () { schedule(activeClaimId()); }, 300);
     setTimeout(function () { schedule(activeClaimId()); }, 900);
