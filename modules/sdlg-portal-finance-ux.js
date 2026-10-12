@@ -84,19 +84,44 @@
     return s == null || /^\s*$/.test(s) || s === '\u2014' || s === '-' || s === '\u2013' || /^kosong$/i.test(String(s));
   }
 
+  function currentClaimId() {
+    var r = root();
+    if (r) {
+      var selects = r.querySelectorAll('select');
+      for (var i = 0; i < selects.length; i++) {
+        var value = String(selects[i].value || '').trim();
+        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(value)) return value;
+      }
+    }
+    var hash = String(window.location && window.location.hash || '');
+    var match = hash.match(/(?:sdlg-input|sdlginput)\\/([^/?#]+)/i);
+    if (match) {
+      try { return decodeURIComponent(match[1]).trim(); } catch (_) { return String(match[1]).trim(); }
+    }
+    return '';
+  }
+
+  function verifiedLiveClaim() {
+    var claim = window.__SDLG_LIVE_CLAIM__;
+    var id = currentClaimId();
+    if (!claim || !id || String(claim.claim_id || '').trim().toUpperCase() !== id.toUpperCase()) return null;
+    return claim;
+  }
+
   function readHrsKm() {
     var hrsEl = document.getElementById('sdlg_repairLabor');
     var kmEl = document.getElementById('sdlg_serviceMileage');
     var hrs = num(hrsEl && hrsEl.value);
     var km = num(kmEl && kmEl.value);
-    if (hrs == null && window.__SDLG_LIVE_CLAIM__) hrs = num(window.__SDLG_LIVE_CLAIM__.labour_hrs);
-    if (km == null && window.__SDLG_LIVE_CLAIM__) km = num(window.__SDLG_LIVE_CLAIM__.mileage_km);
+    var claim = verifiedLiveClaim();
+    if (hrs == null && claim) hrs = num(claim.labour_hrs);
+    if (km == null && claim) km = num(claim.mileage_km);
     return { hrs: hrs, km: km };
   }
 
   function partsTotal() {
     var total = 0;
-    var claim = window.__SDLG_LIVE_CLAIM__;
+    var claim = verifiedLiveClaim();
     var parts = claim && Array.isArray(claim.parts) ? claim.parts : [];
     parts.forEach(function (p) {
       var qty = num(p && (p.qty || p.quantity)) || 0;
