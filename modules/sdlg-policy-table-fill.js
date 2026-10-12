@@ -33,14 +33,14 @@
     var selects = document.querySelectorAll('select');
     for (var i = 0; i < selects.length; i++) {
       var value = String(selects[i].value || '').trim();
-      if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(value)) return value;
+      if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(value)) return value;
     }
     var hash = String(root.location && root.location.hash || '');
-    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)/i);
+    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\/([^/?#]+)/i);
     if (route) {
       try {
         var routeId = decodeURIComponent(route[1]).trim();
-        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(routeId)) return routeId;
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(routeId)) return routeId;
       } catch (_) {}
     }
     var text = (document.body && document.body.innerText) || '';
