@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NUCLEAR prepare: strip competing field-writers; inject hydrate-only; React key remount."""
+"""NUCLEAR prepare + repair-date/finance/empty-state patches."""
 from pathlib import Path
 import re
 import urllib.request
@@ -121,11 +121,69 @@ data = re.sub(
     data,
 )
 
-# Force React remount of portal HTML when claim changes
+# React remount key
 data = data.replace(
     'React.createElement("div", { dangerouslySetInnerHTML: { __html: html } })',
     'React.createElement("div", { key: String(selectedClaimId || selectedClaim && selectedClaim.claim_id || "none"), "data-sdlg-input-helper": "1", "data-claim-id": String(selectedClaimId || (selectedClaim && selectedClaim.claim_id) || ""), dangerouslySetInnerHTML: { __html: html } })',
     1,
+)
+
+# portalDate: accept ISO timestamps
+data = data.replace(
+    'const portalDate = (value) => {\n'
+    '        const s = String(value || "").trim();\n'
+    '        const m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);\n'
+    '        return m ? `${m[3]}/${m[2]}/${m[1]}` : s;\n'
+    '    };',
+    'const portalDate = (value) => {\n'
+    '        const s = String(value || "").trim();\n'
+    '        if (!s) return "";\n'
+    '        const m = s.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);\n'
+    '        if (m) return `${m[3]}/${m[2]}/${m[1]}`;\n'
+    '        return s;\n'
+    '    };',
+)
+
+# feedbackContact: empty → "" (not xxx); badge handled by hydrate
+data = data.replace(
+    'const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "xxx";',
+    'const feedbackContact = (selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "").replace(/^kosong$/i, "").replace(/^xxx+$/i, "");',
+)
+
+# repairDate: refuse 19/07/2024 for non-0429 at React layer too
+old_repair = 'repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),'
+new_repair = (
+    'repairDate: (function(){\n'
+    '          const _cand = [selectedClaim.dealer_repair_date, selectedClaim.completion_date, selectedClaim.repair_date, selectedClaim.failure_date];\n'
+    '          const _cy = (String(selectedClaim.claim_id||"").match(/-(\\d{4})-SDLG-PFR/i)||[])[1];\n'
+    '          for (const _raw of _cand) {\n'
+    '            if (_raw == null || String(_raw).trim()==="") continue;\n'
+    '            const _fmt = portalDate(_raw);\n'
+    '            if (/^19\\/07\\/2024$/.test(_fmt) && String(selectedClaim.claim_id)!=="0429-2024-SDLG-PFR") continue;\n'
+    '            const _dy = (_fmt.match(/(\\d{4})$/)||[])[1];\n'
+    '            if (_cy && _dy && Math.abs(Number(_cy)-Number(_dy))>1) continue;\n'
+    '            return _fmt;\n'
+    '          }\n'
+    '          return portalDate(selectedClaim.failure_date||"");\n'
+    '        })(),'
+)
+if old_repair in data:
+    data = data.replace(old_repair, new_repair, 1)
+
+# labour amount: compute from hrs × 25 if DB empty
+data = data.replace(
+    'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)',
+    'fieldHtml("labourAmount","Labour Amount",(function(){ const db=selectedClaim.labour_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const hrs=Number(selectedClaim.labour_hrs||0); return (hrs*25).toFixed(2); })(),false,false)',
+)
+data = data.replace(
+    'fieldHtml("mileageAmount","Mileage Amount",(selectedClaim.mileage_amount == null || selectedClaim.mileage_amount === "") ? "0.00" : selectedClaim.mileage_amount,false,false)',
+    'fieldHtml("mileageAmount","Mileage Amount",(function(){ const db=selectedClaim.mileage_amount; if(db!=null&&db!==""&&Number(db)!==0) return db; const km=Number(selectedClaim.mileage_km||0); return (km*0.5).toFixed(2); })(),false,false)',
+)
+
+# unit price / amount in parts table: compute amount = qty × unit_price
+data = data.replace(
+    'const unitPrice = p.unit_price ?? p.unitPrice ?? "";\n        const amount = p.amount ?? "";',
+    'const unitPrice = p.unit_price ?? p.unitPrice ?? 0;\n        const amount = p.amount ?? ((Number(p.quantity ?? p.qty ?? 1) || 1) * (Number(unitPrice) || 0));',
 )
 
 data = data.replace(
@@ -133,57 +191,27 @@ data = data.replace(
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-# NUCLEAR: strip competing field-writer script tags from HTML entirely
-data = re.sub(
+# Strip competing writers
+for pat in [
     r'[ \t]*<script[^>]*canonical-warranty-helper\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
-data = re.sub(
     r'[ \t]*<script[^>]*sdlg-input-claim-lock\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
-data = re.sub(
     r'[ \t]*<script[^>]*feedback-person-fix\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
-data = re.sub(
     r'[ \t]*<script[^>]*warranty-helper-fastpath\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
-data = re.sub(
     r'[ \t]*<script[^>]*sdlg-input-helper-ux\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
-data = re.sub(
     r'[ \t]*<script[^>]*sdlg-input-empty-guard\.js[^>]*>\s*</script>\s*',
-    '',
-    data,
-    flags=re.I,
-)
+]:
+    data = re.sub(pat, '', data, flags=re.I)
 
-# Ensure hydrate is present once
 if "sdlg-input-hydrate.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v11" data-sdlg-input-hydrate="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-hydrate.js?v=20261012-v12" data-sdlg-input-hydrate="1"></script>\n</body>',
         1,
     )
 else:
-    data = re.sub(
-        r'sdlg-input-hydrate\.js\?v=[^"\s]+',
-        'sdlg-input-hydrate.js?v=20261012-v11',
-        data,
-    )
+    data = re.sub(r'sdlg-input-hydrate\.js\?v=[^"\s]+', 'sdlg-input-hydrate.js?v=20261012-v12', data)
+
+data = re.sub(r'sdlg-portal-finance-ux\.js\?v=[^"\s]+', 'sdlg-portal-finance-ux.js?v=20261012-v51', data)
 
 INDEX.write_text(data, encoding="utf-8")
-print("NUCLEAR prepare done — competing writers stripped")
+print("prepare done — repair-date guard + finance + empty state")
