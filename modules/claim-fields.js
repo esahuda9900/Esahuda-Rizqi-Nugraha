@@ -27,6 +27,12 @@
     return String(s || '').replace(/^\s*technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
   }
 
+  // Guard legacy field writers before any dynamically loaded helper can run.
+  global.__SDLG_DISABLE_CLAIM_LOCK_FIELD_WRITES__ = true;
+  global.__SDLG_DISABLE_CANONICAL_PORTAL_WRITES__ = true;
+  global.__SDLG_DISABLE_FB_FIX_WRITES__ = true;
+  global.__SDLG_DISABLE_INLINE_ENFORCER_WRITES__ = true;
+
   global.SDLG_CLAIM_FIELDS = {
     CLAIM_SELECT: CLAIM_SELECT.join(','),
     CLAIM_SELECT_LIST: CLAIM_SELECT,
@@ -45,9 +51,9 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v13', 'data-sdlg-input-hydrate');
-      // use distinct attr so baked legacy inline enforcer does NOT block this module
-      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v3', 'data-sdlg-inline-enforcer-mod');
+      // Read-only compatibility shim: React renders fields; this module never writes form values.
+      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-readonly', 'data-sdlg-input-hydrate');
+      // The competing interval-based sdlg-inline-enforcer is intentionally not loaded.
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');

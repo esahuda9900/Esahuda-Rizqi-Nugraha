@@ -36,7 +36,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"}))"></script>
   <script src="./modules/supabase-client.js"></script>
   <script src="./modules/data-pipeline-guard.js"></script>
-  <script src="./modules/claim-fields.js"></script>
+  <script src="./modules/claim-fields.js?v=20261012-live-only"></script>
   <script src="./modules/sdlg-repository.js"></script>
   <script src="./modules/paste-parse-ux.js"></script>
   <script>
@@ -5809,8 +5809,85 @@ const PolicyDecisionCard = ({ claim }) => {
     );
 };
 
+function useLiveClaim(claimId, retryToken) {
+    const [routeHash, setRouteHash] = useState(() => String((typeof window !== "undefined" && window.location && window.location.hash) || ""));
+    useEffect(() => {
+        const onHashChange = () => setRouteHash(String((window.location && window.location.hash) || ""));
+        window.addEventListener("hashchange", onHashChange);
+        return () => window.removeEventListener("hashchange", onHashChange);
+    }, []);
+    const routeClaimId = (() => {
+        try {
+            const match = String(routeHash || "").match(/^#?\/?(?:sdlg-input|sdlginput)\/([^/?#]+)/i);
+            const value = match ? decodeURIComponent(match[1]).trim() : "";
+            return value;
+        } catch (_e) { return ""; }
+    })();
+    const requestedId = String(routeClaimId || claimId || "").trim().toUpperCase();
+    const [state, setState] = useState({ claimId: "", status: "idle", row: null, error: "" });
+    useEffect(() => {
+        let alive = true;
+        const id = requestedId;
+        if (!id) {
+            setState({ claimId: "", status: "idle", row: null, error: "" });
+            try { window.__SDLG_LIVE_CLAIM__ = null; window.__SDLG_LIVE_CLAIM_ERROR__ = null; } catch (_e) {}
+            return () => { alive = false; };
+        }
+        setState({ claimId: id, status: "loading", row: null, error: "" });
+        try { window.__SDLG_LIVE_CLAIM__ = null; window.__SDLG_LIVE_CLAIM_ERROR__ = null; } catch (_e) {}
+        if (!/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(id)) {
+            const message = "Claim ID tidak valid. Pilih claim yang benar lalu buka ulang halaman Input.";
+            setState({ claimId: id, status: "error", row: null, error: message });
+            try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
+            return () => { alive = false; };
+        }
+        let client = null;
+        try { client = (typeof window.getSdlgSupabase === "function") ? window.getSdlgSupabase() : null; } catch (_e) {}
+        if (!client || typeof client.from !== "function") {
+            const message = "Koneksi Supabase belum tersedia. Muat ulang halaman setelah login.";
+            setState({ claimId: id, status: "error", row: null, error: message });
+            try { window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: message }; } catch (_e) {}
+            return () => { alive = false; };
+        }
+        (async () => {
+            try {
+                const { data: row, error } = await client.from("claims").select("*").eq("claim_id", id).maybeSingle();
+                if (error) throw error;
+                if (!row || String(row.claim_id || "").trim().toUpperCase() !== id) {
+                    throw new Error("Claim tidak ditemukan atau Claim ID hasil query tidak cocok.");
+                }
+                if (!alive) return;
+                window.__SDLG_LIVE_CLAIM__ = row;
+                window.__SDLG_LIVE_CLAIM_ERROR__ = null;
+                setState({ claimId: id, status: "ready", row: row, error: "" });
+            } catch (error) {
+                if (!alive) return;
+                const detail = String((error && error.message) || error || "Unknown error").slice(0, 180);
+                const message = "Data klaim live gagal dimuat. Periksa koneksi, sesi login, dan izin akses.";
+                console.warn("[SDLG portal] live claim fetch failed", id, detail);
+                window.__SDLG_LIVE_CLAIM__ = null;
+                window.__SDLG_LIVE_CLAIM_ERROR__ = { claimId: id, message: detail };
+                setState({ claimId: id, status: "error", row: null, error: message });
+            }
+        })();
+        return () => { alive = false; };
+    }, [requestedId, retryToken]);
+    const isCurrent = !!requestedId && String(state.claimId || "").toUpperCase() === requestedId;
+    const row = isCurrent && state.status === "ready" && state.row &&
+        String(state.row.claim_id || "").trim().toUpperCase() === requestedId ? state.row : null;
+    return {
+        claim: row,
+        status: requestedId ? (isCurrent ? state.status : "loading") : "idle",
+        error: isCurrent ? state.error : "",
+        claimId: requestedId
+    };
+}
 function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {
-    const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;
+    const [liveRetry, setLiveRetry] = useState(0);
+    const live = useLiveClaim(selectedClaimId, liveRetry);
+    const currentClaimId = live.claimId;
+    const selectedClaim = live.claim;
+
     const [warrantyMatrix, setWarrantyMatrix] = useState(null);
     const [warrantyLoading, setWarrantyLoading] = useState(false);
     const [warrantyError, setWarrantyError] = useState("");
@@ -5954,6 +6031,31 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         };
     }, [selectedClaimId, warrantyMatrix]);
 
+    if (currentClaimId && live.status === "loading") {
+        return React.createElement("div", { className: "page", "data-sdlg-live-loading": "true", role: "status", "aria-busy": "true" },
+            React.createElement("div", { className: "card card-pad", style: { maxWidth: 640, margin: "30px auto", padding: 22 } },
+                React.createElement("div", { className: "eyebrow" }, "SDLG Dealer Portal"),
+                React.createElement("div", { className: "page-title", style: { fontSize: 20 } }, "Memuat data klaim…"),
+                React.createElement("p", { style: { marginTop: 10, fontSize: 13, color: "#64748b", lineHeight: 1.5 } }, "Sedang mengambil data terbaru dari Supabase untuk " + currentClaimId + ". Data dari list tidak ditampilkan sebagai pengganti."),
+                React.createElement("div", { "aria-hidden": "true", style: { height: 8, marginTop: 18, borderRadius: 8, background: "#e2e8f0", overflow: "hidden" } },
+                    React.createElement("div", { style: { height: "100%", width: "42%", borderRadius: 8, background: "#2563eb" } })
+                )
+            )
+        );
+    }
+    if (currentClaimId && live.status === "error") {
+        return React.createElement("div", { className: "page", "data-sdlg-live-error": "true", role: "alert" },
+            React.createElement("div", { className: "card card-pad", style: { maxWidth: 640, margin: "30px auto", padding: 22, borderColor: "#fecaca" } },
+                React.createElement("div", { className: "eyebrow", style: { color: "#b91c1c" } }, "SDLG Dealer Portal"),
+                React.createElement("div", { className: "page-title", style: { fontSize: 20 } }, "Data klaim belum tersedia"),
+                React.createElement("p", { style: { marginTop: 10, fontSize: 13, color: "#475569", lineHeight: 1.5 } }, live.error || "Data dari Supabase belum terverifikasi. Data cache tidak digunakan."),
+                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 } },
+                    React.createElement("button", { type: "button", className: "primary-btn", onClick: () => setLiveRetry(n => n + 1) }, "Coba Lagi"),
+                    React.createElement("button", { type: "button", className: "secondary-btn", onClick: onBack }, "Kembali")
+                )
+            )
+        );
+    }
     if (!selectedClaim) {
         const activeClaims = (claims || []).filter(c => !c.archived_at);
         const q = String(claimSearch || "").trim().toLowerCase();

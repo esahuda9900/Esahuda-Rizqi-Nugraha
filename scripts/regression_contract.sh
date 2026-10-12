@@ -75,6 +75,30 @@ if grep -q 'serviceMethod: selectedClaim.service_method || ""' "$HTML"; then
 fi
 ok "portal mapping not regressed"
 
+# SDLG Input must use the fetched live claim only; never fall back to list cache.
+for needle in \
+  'function useLiveClaim(claimId, retryToken)' \
+  'const routeClaimId =' \
+  'const requestedId = String(routeClaimId || claimId || "").trim().toUpperCase();' \
+  'const selectedClaim = live.claim;' \
+  'data-sdlg-live-loading' \
+  'data-sdlg-live-error' \
+  'claim-fields.js?v=20261012-live-only'
+do
+  grep -q "$needle" "$HTML" || fail "missing live-only SDLG Input contract: $needle"
+  ok "has $needle"
+done
+if grep -q 'selectedClaim = liveClaim || (liveReady ? fromList : null)' "$HTML"; then
+  fail "stale list-cache fallback returned to SDLG Input"
+fi
+if grep -q 'setLiveClaim(fromList)' "$HTML"; then
+  fail "live fetch error/empty row falls back to list cache"
+fi
+if grep -q 'window.SDLGInputHydrate.apply(row)' "$HTML"; then
+  fail "React render still calls direct-DOM hydrate writer"
+fi
+ok "no SDLG Input list fallback or direct hydrate writer"
+
 python3 - "$HTML" <<'PY'
 import sys
 from pathlib import Path
