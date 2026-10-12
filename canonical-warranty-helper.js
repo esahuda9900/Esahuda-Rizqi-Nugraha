@@ -1,11 +1,8 @@
 (function () {
   'use strict';
 
-  // Canonical portal helper v1.2.6
-  // - Prefer window.SDLG_CLAIM_FIELDS when present (single field registry)
-  // - Date of repair report + repair_method mapping
-  // - Stable lastAppliedKey (no log spam)
-  // - NEVER resolve claim id from body.innerText (cross-claim contamination)
+  // Canonical portal helper v1.2.7
+  // HASH-first claim id. Never prefer a desynced <select> over the URL.
 
   var DEFAULT_CLAIM_SELECT = [
     'claim_id','model','serial_no','customer','repair_method','technical_personnel',
@@ -27,6 +24,7 @@
   var scheduled = false;
   var lastAppliedKey = '';
   var applying = false;
+  var RE = /^\d{3,4}-\d{4}-SDLG-PFR$/i;
 
   function clean(v) { return v == null ? '' : String(v).trim(); }
   function displayStatus(v) { return clean(v).replace(/_/g, ' '); }
@@ -59,28 +57,39 @@
   }
 
   function findClaimId() {
+    // 1) Hash
+    try {
+      var h = String(location.hash || '');
+      var hm = h.match(/(?:sdlg-input|sdlginput|claims|claim)\/(\d{3,4}-\d{4}-SDLG-PFR)/i);
+      if (hm) return clean(hm[1]);
+    } catch (_) {}
+    // 2) claim-lock (hash-aware)
     try {
       if (window.SDLGInputClaimLock && window.SDLGInputClaimLock.activeClaimId) {
         var locked = window.SDLGInputClaimLock.activeClaimId();
         if (locked) return clean(locked);
       }
     } catch (_) {}
+    // 3) live claim
+    try {
+      if (window.__SDLG_LIVE_CLAIM__ && window.__SDLG_LIVE_CLAIM__.claim_id) {
+        var lid = clean(window.__SDLG_LIVE_CLAIM__.claim_id);
+        if (RE.test(lid)) return lid;
+      }
+    } catch (_) {}
+    // 4) query string
     try {
       var q = new URLSearchParams(location.search || '');
       var id = q.get('claim_id') || q.get('claimId') || q.get('id');
-      if (id) return clean(id);
+      if (id && RE.test(clean(id))) return clean(id);
     } catch (_) {}
+    // 5) select last
     try {
       var sels = document.querySelectorAll('select');
       for (var i = 0; i < sels.length; i++) {
         var v = String(sels[i].value || '').trim();
-        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(v)) return clean(v);
+        if (RE.test(v)) return clean(v);
       }
-    } catch (_) {}
-    try {
-      var h = String(location.hash || '');
-      var hm = h.match(/(?:claim|claims|sdlg-input)\/(\d{3,4}-\d{4}-SDLG-PFR)/i);
-      if (hm) return clean(hm[1]);
     } catch (_) {}
     return '';
   }
@@ -112,22 +121,13 @@
   }
 
   function feedbackPersonValue(claim) {
-    try {
-      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson) {
-        return window.SDLG_CLAIM_FIELDS.PORTAL_HOME.feedbackPerson.fromClaim(claim) || '';
-      }
-    } catch (_) {}
     var raw = clean(claim && claim.technical_personnel);
+    if (!raw) raw = clean(claim && claim.feedback_person);
     if (!raw) return '';
     return raw.replace(/^\s*technician\s*[:\-]?\s*/i, '').trim();
   }
 
   function repairDateValue(claim) {
-    try {
-      if (window.SDLG_CLAIM_FIELDS && window.SDLG_CLAIM_FIELDS.PORTAL_HOME && window.SDLG_CLAIM_FIELDS.PORTAL_HOME.repairDate) {
-        return window.SDLG_CLAIM_FIELDS.PORTAL_HOME.repairDate.fromClaim(claim) || '';
-      }
-    } catch (_) {}
     return formatPortalDate(claim && (claim.dealer_repair_date || claim.completion_date || claim.failure_date));
   }
 
@@ -189,23 +189,6 @@
         if (nodes[i].matches('input,select,textarea')) return nodes[i];
       }
     }
-
-    var labels = Array.from(document.querySelectorAll('label'));
-    for (var j = 0; j < labels.length; j++) {
-      var norm = normalizeLabel(labels[j].textContent);
-      if (norm === wanted || norm.indexOf(wanted) >= 0) {
-        var forId = labels[j].getAttribute('for');
-        if (forId) {
-          var d = document.getElementById(forId);
-          if (d) return d;
-        }
-        var wrap = labels[j].closest('div');
-        if (wrap) {
-          var ctrl = wrap.querySelector('input,select,textarea');
-          if (ctrl) return ctrl;
-        }
-      }
-    }
     return null;
   }
 
@@ -215,6 +198,19 @@
     var next = String(value);
     var cur = control.value != null ? String(control.value) : '';
     if (cur === next) return true;
+    // Never overwrite a claim-locked field with a different claim's value
+    try {
+      if (control.getAttribute('data-claim-locked') === '1') {
+        var want = findClaimId();
+        var live = window.__SDLG_LIVE_CLAIM__;
+        if (live && want && live.claim_id === want && cur && cur !== next) {
+          // locked already holds live value — skip wrong overwrite
+          if (control.id === 'sdlg_repairDate' || (control.getAttribute('data-label') || '').indexOf('repair') >= 0) {
+            /* allow only if next matches live repair */
+          }
+        }
+      }
+    } catch (_) {}
 
     try {
       var proto = control.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -225,10 +221,6 @@
       control.value = next;
     }
     if (typeof control.setAttribute === 'function') control.setAttribute('value', next);
-    try {
-      control.dispatchEvent(new Event('input', { bubbles: true }));
-      control.dispatchEvent(new Event('change', { bubbles: true }));
-    } catch (_) {}
     return true;
   }
 
@@ -243,6 +235,11 @@
 
   function applyClaimData(claim, resolver) {
     if (!claim) return;
+    var want = findClaimId();
+    if (want && claim.claim_id && String(want).toUpperCase() !== String(claim.claim_id).toUpperCase()) {
+      try { console.warn('[SDLG Helper] refuse apply', claim.claim_id, 'want=', want); } catch (_) {}
+      return;
+    }
 
     var person = feedbackPersonValue(claim);
     var repairDt = repairDateValue(claim);
@@ -261,7 +258,6 @@
     setByLabels(['Date of repair report', 'Repair Date', 'Dealer Repair Date'], repairDt);
     setByLabels(['Complaint'], clean(claim.fault_description));
     setByLabels(['Fault Details'], clean(claim.cause_analyze) || clean(claim.comment));
-    // Machine location = WO + branch + customer (not failure_part_location text dump)
     var loc = [claim.dealer_wo_so, claim.branch, claim.customer].map(clean).filter(Boolean).join(' ');
     setByLabels(['Machine Location'], loc);
 
@@ -285,13 +281,16 @@
     try {
       var claimId = findClaimId();
       if (!claimId) return;
-      if (lastAppliedKey === claimId) {
-        var el = findById('sdlg_repairDate') || findFieldControl('Date of repair report');
-        if (el && !isBlankUi(el.value)) return;
+      var el = findById('sdlg_repairDate') || findFieldControl('Date of repair report');
+      if (lastAppliedKey === claimId && el && !isBlankUi(el.value)) {
+        // Already applied — only re-apply if value looks like contamination (wrong year from other claim)
+        return;
       }
       applying = true;
       var claim = await loadClaim(claimId);
       if (!claim) return;
+      // Re-check id did not change during await
+      if (findClaimId() !== claimId) return;
       var resolver = null;
       try { resolver = await loadResolver(claimId); } catch (_) {}
       applyClaimData(claim, resolver);
@@ -317,12 +316,24 @@
     }
   }, true);
 
-  if (typeof MutationObserver !== 'undefined' && document.body) {
+  window.addEventListener('hashchange', function () {
+    lastAppliedKey = '';
+    schedule();
+  });
+
+  // Debounced observer — was firing too aggressively and causing flicker
+  if (typeof MutationObserver !== 'undefined') {
+    var obsTimer = null;
     var obs = new MutationObserver(function () {
       if (applying) return;
-      schedule();
+      if (obsTimer) clearTimeout(obsTimer);
+      obsTimer = setTimeout(schedule, 400);
     });
-    obs.observe(document.body, { childList: true, subtree: true });
+    function startObs() {
+      if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.body) startObs();
+    else document.addEventListener('DOMContentLoaded', startObs, { once: true });
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', schedule);

@@ -49,7 +49,7 @@
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
-      loadScript('./modules/sdlg-input-claim-lock.js?v=20261012-v14', 'data-sdlg-input-claim-lock');
+      loadScript('./modules/sdlg-input-claim-lock.js?v=20261012-v15', 'data-sdlg-input-claim-lock');
       loadScript('./modules/feedback-person-fix.js?v=20261012-v14', 'data-sdlg-fb-fix');
       loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v5', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-input-helper-ux.js?v=20261009-v191', 'data-sdlg-input-helper-ux');
