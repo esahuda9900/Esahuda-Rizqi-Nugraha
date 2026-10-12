@@ -115,26 +115,32 @@ NEW_EMPTY = (
 if OLD_EMPTY in data and "Memuat data klaim" not in data:
     data = data.replace(OLD_EMPTY, NEW_EMPTY, 1)
 
+# Force single-line claim select (no size=12 listbox that shows 0429 first)
+data = re.sub(
+    r"size:\s*Math\.min\(Math\.max\(filteredClaims\.length,\s*1\),\s*12\),\s*",
+    "",
+    data,
+)
+
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-# cache-bust canonical helper + claim-lock
 data = re.sub(
     r'canonical-warranty-helper\.js(?:\?v=[^"\s]*)?',
-    'canonical-warranty-helper.js?v=20261012-v126',
+    'canonical-warranty-helper.js?v=20261012-v127',
     data,
 )
 data = re.sub(
     r'sdlg-input-claim-lock\.js\?v=[^"\s]+',
-    'sdlg-input-claim-lock.js?v=20261012-v14',
+    'sdlg-input-claim-lock.js?v=20261012-v15',
     data,
 )
 if "sdlg-input-claim-lock.js" not in data:
     data = data.replace(
         "</body>",
-        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v14" data-sdlg-input-claim-lock="1"></script>\n</body>',
+        '  <script src="./modules/sdlg-input-claim-lock.js?v=20261012-v15" data-sdlg-input-claim-lock="1"></script>\n</body>',
         1,
     )
 
