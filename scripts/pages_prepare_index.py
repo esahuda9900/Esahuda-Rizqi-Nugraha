@@ -236,6 +236,7 @@ print("sanity: OK")
 # Bust browser caches for modules whose claim-safety behavior changed.
 CACHE_BUSTS = {
     "modules/claim-fields.js": "20261013-claim-integrity-v4",
+    "modules/sdlg-portal-finance-ux.js": "20261013-v54",
     "modules/sdlg-input-claim-lock.js": "20261013-claim-integrity-v2",
     "modules/sdlg-portal-enrich.js": "20261013-claim-integrity-v2",
     "modules/sdlg-policy-repair-hardfix.js": "20261013-claim-integrity-v2",
