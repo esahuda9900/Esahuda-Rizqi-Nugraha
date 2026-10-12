@@ -221,6 +221,29 @@ if POLICY_REPAIR.exists():
 
 print("sanity: OK")
 
+# Normalize the root canonical helper tag in the actual Pages artifact.
+# The source build script also enforces this, but GitHub Pages deploys _site directly.
+data = re.sub(
+    r'<script>\\s*/\\* SDLG_WARRANTY_HELPER_CANONICAL_V\\d+ \\*/\\s*[\\s\\S]*?</script>\\s*',
+    '',
+    data,
+    flags=re.IGNORECASE,
+)
+canonical_tag_pattern = re.compile(
+    r'<script\\b[^>]*\\bsrc=["\\']/?canonical-warranty-helper\\.js(?:\\?[^"\\']*)?["\\'][^>]*>\\s*</script>',
+    re.IGNORECASE,
+)
+data = canonical_tag_pattern.sub('', data)
+if "</body>" not in data:
+    raise SystemExit("FATAL: cannot insert canonical helper tag; </body> missing")
+data = data.replace(
+    "</body>",
+    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>\\n</body>',
+    1,
+)
+if len(canonical_tag_pattern.findall(data)) != 1:
+    raise SystemExit("FATAL: canonical helper tag must appear exactly once in Pages artifact")
+
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare done", len(data))
 print("setLiveClaim", "setLiveClaim" in data)
