@@ -217,6 +217,18 @@ elif 'Memuat data terbaru untuk " + effectiveClaimId' in data and 'Data claim ga
 else:
     raise SystemExit("FATAL: cannot insert fail-closed React loading/error states")
 
+# The form mount is delayed until the live row arrives. Rebind copy controls on
+# verified row arrival/claim switch, otherwise the original effect can run too early.
+OLD_HANDLER_DEP = "    }, [selectedClaimId, warrantyMatrix]);"
+NEW_HANDLER_DEP = "    }, [effectiveClaimId, selectedClaim?.claim_id, warrantyMatrix]);"
+if OLD_HANDLER_DEP in data:
+    data = data.replace(OLD_HANDLER_DEP, NEW_HANDLER_DEP, 1)
+    print("copy handlers: depend on live claim identity")
+elif NEW_HANDLER_DEP in data:
+    print("copy handlers: dependency already patched")
+else:
+    raise SystemExit("FATAL: cannot secure SDLG Input copy handlers for delayed live row")
+
 # 2) year-safe repairDate
 OLD_RD = "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
 NEW_RD = (
@@ -325,6 +337,8 @@ if 'Memuat data terbaru untuk " + effectiveClaimId' not in data:
     raise SystemExit("FATAL: actual React loading skeleton missing")
 if 'Data claim gagal dimuat' not in data:
     raise SystemExit("FATAL: fail-closed React error state missing")
+if "effectiveClaimId, selectedClaim?.claim_id, warrantyMatrix" not in data:
+    raise SystemExit("FATAL: copy handler lifecycle is not bound to the live claim")
 print("sanity: OK")
 
 INDEX.write_text(data, encoding="utf-8")
