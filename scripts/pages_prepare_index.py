@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bake: liveClaim fetch for SDLG Input + year-safe repair + location guard + enforcer."""
+"""Bake: liveClaim fetch + year-safe repair + fix broken regex + enforcer."""
 from pathlib import Path
 import re
 
@@ -10,7 +10,40 @@ if not INDEX.exists():
 data = INDEX.read_text(encoding="utf-8", errors="replace")
 
 # ============================================================================
-# 1) CRITICAL: selectedClaim MUST come from live Supabase row, not list cache
+# 0) FIX BROKEN reportComplaintRaw regex (literal newline inside /[...]/ )
+#     Was: .replace(/[\n]+/g  spanning two lines → SyntaxError: missing /
+# ============================================================================
+# Match any broken multi-line character-class form of [\\r\\n] or real CR/LF inside []
+data = re.sub(
+    r"\.replace\(/\[[\r\n\\r\\n]+\]\+?/g,\s*\" \"\)",
+    r'.replace(/[\r\n]+/g, " ")',
+    data,
+)
+# Broader fix: reportComplaintRaw line that got split
+data = re.sub(
+    r"(const reportComplaintRaw = String\([^;]*?)\.replace\(/\[[^\]]*\r?\n[^\]]*\]\+?/g,\s*\" \"\)",
+    r'\1.replace(/[\r\n]+/g, " ")',
+    data,
+    count=1,
+)
+# Ultimate safety: if still broken pattern with newline inside replace(/[
+GOOD_COMPLAINT = (
+    'const reportComplaintRaw = String((_liveR && _liveR.fault_description) || '
+    'selectedClaim.fault_description || "").trim()'
+    '.replace(/[\\r\\n]+/g, " ").replace(/\\s{2,}/g, " ");'
+)
+# Detect broken form (has newline between replace(/[ and ]+/g)
+if re.search(r"reportComplaintRaw[\s\S]{0,120}?replace\(/\[[\s\S]*?\n[\s\S]*?\]\+/g", data):
+    data = re.sub(
+        r"const reportComplaintRaw = String\([\s\S]*?\)\.trim\(\)\.replace\(/\[[\s\S]*?\]\+?/g,\s*\" \"\)\.replace\(/\\s\{2,\}/g,\s*\" \"\);",
+        GOOD_COMPLAINT,
+        data,
+        count=1,
+    )
+    print("fixed broken reportComplaintRaw regex")
+
+# ============================================================================
+# 1) selectedClaim from live Supabase row
 # ============================================================================
 OLD_SEL = (
     "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
@@ -49,11 +82,13 @@ NEW_SEL = (
 if OLD_SEL in data:
     data = data.replace(OLD_SEL, NEW_SEL, 1)
     print("injected liveClaim fetch")
+elif "setLiveClaim" in data:
+    print("liveClaim already present")
 else:
-    print("WARN: OLD_SEL not found — check source")
+    print("WARN: OLD_SEL not found")
 
 # ============================================================================
-# 2) Year-safe repairDate (refuse 19/07/2024 on non-0429)
+# 2) Year-safe repairDate
 # ============================================================================
 OLD_RD = (
     "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
@@ -74,13 +109,14 @@ NEW_RD = (
 if OLD_RD in data:
     data = data.replace(OLD_RD, NEW_RD, 1)
     print("year-safe repairDate")
+elif "ok=function" in data:
+    print("year-safe already present")
 else:
     print("WARN: repairDate pattern not found")
 
 # ============================================================================
-# 3) _liveR before reportWo (TDZ-safe)
+# 3) _liveR before reportWo (TDZ-safe) — do NOT touch reportComplaintRaw regex here
 # ============================================================================
-# Fix any broken order first
 data = data.replace(
     'const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();\n'
     '    const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim && window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
@@ -114,18 +150,22 @@ if "const _liveR =" not in data:
             'const reportHm = numberText((_liveR && _liveR.hm_failure) != null ? _liveR.hm_failure : selectedClaim.hm_failure) || "";',
             1,
         )
-    _old_rc = None
-    for cand in [
-        'const reportComplaintRaw = String(selectedClaim.fault_description || "").trim().replace(/[\\r\\n]+/g, " ").replace(/\\s{2,}/g, " ");',
-        'const reportComplaintRaw = String(selectedClaim.fault_description || "").trim().replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ");',
-    ]:
-        if cand in data:
-            data = data.replace(
-                cand,
-                'const reportComplaintRaw = String((_liveR && _liveR.fault_description) || selectedClaim.fault_description || "").trim().replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ");',
-                1,
-            )
-            break
+    # Safe complaint patch: use String.fromCharCode style OR explicit \\r\\n in output
+    _old_rc = (
+        'const reportComplaintRaw = String(selectedClaim.fault_description || "").trim()'
+        '.replace(/[\\r\\n]+/g, " ").replace(/\\s{2,}/g, " ");'
+    )
+    # Match original source form with backslash-r backslash-n as two-char sequences in file
+    if 'const reportComplaintRaw = String(selectedClaim.fault_description' in data and '_liveR && _liveR.fault_description' not in data:
+        data = re.sub(
+            r'const reportComplaintRaw = String\(selectedClaim\.fault_description \|\| ""\)\.trim\(\)'
+            r'\.replace\(/\[\\r\\n\]\+/g, " "\)\.replace\(/\\s\{2,\}/g, " "\);',
+            'const reportComplaintRaw = String((_liveR && _liveR.fault_description) || selectedClaim.fault_description || "").trim()'
+            '.replace(/[\\r\\n]+/g, " ").replace(/\\s{2,}/g, " ");',
+            data,
+            count=1,
+        )
+        print("patched reportComplaintRaw safely")
 
 # ============================================================================
 # 4) machineLocation from live
@@ -144,19 +184,7 @@ if _old_loc in data:
     )
 
 # ============================================================================
-# 5) Remount key when live claim arrives (forces clean inputs)
-# ============================================================================
-# Add key on the helper root if missing
-if 'data-sdlg-input-helper' in data and 'key={selectedClaim' not in data and "key={'sdlg-'+" not in data:
-    # try to key the outer portal div
-    data = data.replace(
-        'data-sdlg-input-helper',
-        'data-sdlg-input-helper data-claim-id={(selectedClaim && selectedClaim.claim_id) || selectedClaimId || ""}',
-        1,
-    )
-
-# ============================================================================
-# 6) autocomplete off
+# 5) autocomplete off
 # ============================================================================
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
@@ -164,7 +192,24 @@ data = data.replace(
 )
 
 # ============================================================================
-# 7) Legacy inline enforcer (light)
+# 6) Final regex safety pass — never leave a newline inside /[...]/n# ============================================================================
+data = re.sub(
+    r"\.replace\(/\[\s*[\r\n]+\s*\]\+?/g,\s*[\"'] [\"']\)",
+    ".replace(/[\\r\\n]+/g, \" \")",
+    data,
+)
+# Also collapse the specific broken two-line form seen in production
+data = data.replace(
+    ".replace(/[\n]+/g, \" \")",
+    ".replace(/[\\r\\n]+/g, \" \")",
+)
+data = data.replace(
+    ".replace(/[\r\n]+/g, \" \")",
+    ".replace(/[\\r\\n]+/g, \" \")",
+)
+
+# ============================================================================
+# 7) Legacy inline enforcer
 # ============================================================================
 INLINE = r'''
 <script data-sdlg-inline-enforcer-legacy="1">
@@ -181,9 +226,7 @@ INLINE = r'''
       var el=document.getElementById('sdlg_repairDate');
       var want=portalDate(c.dealer_repair_date)||portalDate(c.failure_date)||'';
       if(el && want && String(el.value||'')!==want){
-        if(/19[\/\-]0?7[\/\-]2024/.test(String(el.value||'')) || !el.value){
-          setVal(el,want);
-        }
+        if(/19[\/\-]0?7[\/\-]2024/.test(String(el.value||'')) || !el.value) setVal(el,want);
       }
       var locEl=document.getElementById('sdlg_machineLocation');
       var locWant=[c.dealer_wo_so||'',c.branch||'',c.customer||''].map(function(x){return String(x||'').trim();}).filter(Boolean).join(' ');
@@ -208,5 +251,7 @@ if "__SDLG_INLINE_LEGACY__" not in data:
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare done")
 print("liveClaim:", "setLiveClaim" in data)
-print("year-safe:", "ok=function" in data or "19" in data and "repairDate" in data)
 print("_liveR:", "const _liveR" in data)
+# sanity: no newline inside replace(/[  ... ]+/g
+bad = re.search(r"replace\(/\[[^\]]*\n[^\]]*\]", data)
+print("broken regex remaining:", bool(bad))
