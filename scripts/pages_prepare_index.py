@@ -225,6 +225,12 @@ if CANONICAL_MODULE.exists():
     if "if (scheduled || isPortalInputPage()) return;" not in canonical_source or "findClaimId() !== claimId" not in canonical_source:
         raise SystemExit("FATAL: legacy canonical helper must not write portal fields or stale claim data")
 
+CLAIM_LOCK = Path("modules/sdlg-input-claim-lock.js")
+if CLAIM_LOCK.exists():
+    lock_source = CLAIM_LOCK.read_text(encoding="utf-8", errors="replace")
+    if "root.SDLGInputHydrate.apply(c)" in lock_source or "root.SDLGInputHydrate.hydrate(" in lock_source:
+        raise SystemExit("FATAL: claim-lock must not delegate portal writes to legacy hydration")
+
 print("sanity: OK")
 
 # Normalize the root canonical helper tag in the actual Pages artifact.
