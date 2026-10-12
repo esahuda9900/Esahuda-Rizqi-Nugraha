@@ -1,12 +1,12 @@
 /**
- * SDLG Hash Router v2.2 — hierarchical routes for GitHub Pages
+ * SDLG Hash Router v2.2.1 — hierarchical routes for GitHub Pages
  *
  * Canonical:
  *   #/overview
  *   #/login
  *   #/claims
- *   #/claims/2026                         (year filter)
- *   #/claims/0250-2026-SDLG-PFR           (claim detail — continues from list)
+ *   #/claims/2026
+ *   #/claims/0250-2026-SDLG-PFR
  *   #/claims/0250-2026-SDLG-PFR/assessment
  *   #/sdlg-input[/claimId]
  *   #/master-data[/type]
@@ -14,13 +14,12 @@
  *   #/data-quality
  *   #/new-claim
  *
- * Legacy (still parsed):
- *   #/claim/:id
- *   #claim/:id   (missing slash — normalized)
+ * Legacy: #/claim/:id  #claim/:id
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_HASH_ROUTER_V22__) return;
+  if (root.__SDLG_HASH_ROUTER_V221__) return;
+  root.__SDLG_HASH_ROUTER_V221__ = true;
   root.__SDLG_HASH_ROUTER_V22__ = true;
   root.__SDLG_HASH_ROUTER_V21__ = true;
 
@@ -258,7 +257,7 @@
   }
 
   root.SDLGHashRouter = {
-    version: '2.2.0',
+    version: '2.2.1',
     parse: parse,
     get: parse,
     build: build,
@@ -291,6 +290,16 @@
   root.SDLGNavState.setSdlgInputClaim = function (id) {
     navigate('sdlg-input', { claimId: id }, { replace: true });
   };
+  root.SDLGNavState.restoreDetailId = function () {
+    try {
+      var r = parse();
+      if (r && r.page === 'claim' && r.params && r.params.claimId) {
+        return normClaim(r.params.claimId);
+      }
+    } catch (_) {}
+    return null;
+  };
+  root.SDLGNavState.persist = root.SDLGNavState.persist || function () {};
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', wireClicks, { once: true });
