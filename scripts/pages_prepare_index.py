@@ -279,6 +279,8 @@ required_module_tags = [
     ("modules/export-table-helper.js", "20261013-v1"),
     ("modules/claim-parser-helpers.js", "20261013-v1"),
     ("modules/master-resolution-ux.js", "20261013-v1"),
+    ("modules/wo-collision-modal.js", "20261013-v1"),
+    ("modules/wo-claim-policy.js", "20261013-v1"),
 ]
 for script_path, _version in required_module_tags:
     module_tag_pattern = re.compile(
@@ -301,8 +303,10 @@ if "</body>" not in data:
 
 required_module_tags = [
     '<script src="modules/claim-parser-helpers.js?v=20261013-v1"></script>',
-    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
+    '<script src="modules/wo-collision-modal.js?v=20261013-v1"></script>',
+    '<script src="modules/wo-claim-policy.js?v=20261013-v1"></script>',
     '<script src="modules/master-resolution-ux.js?v=20261013-v1"></script>',
+    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
 ]
 data = data.replace("</head>", "\n".join(required_module_tags) + "\n</head>", 1)
 data = data.replace(
@@ -313,6 +317,8 @@ data = data.replace(
 
 for script_path, _version in [
     ("modules/claim-parser-helpers.js", "20261013-v1"),
+    ("modules/wo-collision-modal.js", "20261013-v1"),
+    ("modules/wo-claim-policy.js", "20261013-v1"),
     ("modules/export-table-helper.js", "20261013-v1"),
     ("modules/master-resolution-ux.js", "20261013-v1"),
 ]:
