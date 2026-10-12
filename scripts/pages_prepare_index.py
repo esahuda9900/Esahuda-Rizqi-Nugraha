@@ -219,6 +219,12 @@ if POLICY_REPAIR.exists():
     if "claimIdFromPage() !== id" not in policy_source:
         raise SystemExit("FATAL: async SDLG policy/repair data must verify the active claim before writing")
 
+POLICY_TABLE = Path("modules/sdlg-policy-table-fill.js")
+if POLICY_TABLE.exists():
+    policy_table_source = POLICY_TABLE.read_text(encoding="utf-8", errors="replace")
+    if "if (getClaimId() !== claimId) return;" not in policy_table_source:
+        raise SystemExit("FATAL: async SDLG policy-table results must verify the active claim before writing")
+
 CANONICAL_MODULE = Path("modules/canonical-warranty-helper.js")
 if CANONICAL_MODULE.exists():
     canonical_source = CANONICAL_MODULE.read_text(encoding="utf-8", errors="replace")
@@ -240,6 +246,7 @@ CACHE_BUSTS = {
     "modules/sdlg-input-claim-lock.js": "20261013-claim-integrity-v2",
     "modules/sdlg-portal-enrich.js": "20261013-claim-integrity-v2",
     "modules/sdlg-policy-repair-hardfix.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-policy-table-fill.js": "20261013-claim-integrity-v2",
     "modules/canonical-warranty-helper.js": "20261013-claim-integrity-v2",
 }
 for script_path, version in CACHE_BUSTS.items():
