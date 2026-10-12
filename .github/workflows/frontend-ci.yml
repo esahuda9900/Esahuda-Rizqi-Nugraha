@@ -84,10 +84,11 @@ jobs:
           # Production is GitHub Pages; validate the same artifact above rather than
           # the legacy Cloudflare patch chain, whose source-lock baseline currently
           # requires unrelated missing docs and domain mappings.
-          node scripts/verify-parser-contract.js
+          node scripts/verify-production.js _site/index.html
+          node scripts/verify-parser-contract.js _site/index.html
           node scripts/verify-dual-warranty-routing.js
           node scripts/verify-claim-id-year-contract.js
-          node scripts/verify-public-release.js
+          node scripts/verify-public-release.js _site/index.html
           echo 'Pages-relevant source contracts passed.'
 
       - name: Enable pnpm
