@@ -94,7 +94,7 @@
       }
     }
     var hash = String(window.location && window.location.hash || '');
-    var match = hash.match(/(?:sdlg-input|sdlginput)\\/([^/?#]+)/i);
+    var match = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)/i);
     if (match) {
       try { return decodeURIComponent(match[1]).trim(); } catch (_) { return String(match[1]).trim(); }
     }
