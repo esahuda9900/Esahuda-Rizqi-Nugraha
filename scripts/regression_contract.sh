@@ -103,6 +103,7 @@ if bad:
 print(f"CONTRACT OK: createClient( count={n}, all guarded by getSdlgSupabase")
 PY
 
+if [[ "$(basename "$ROOT")" == "_site" ]]; then
 # SDLG Input must use the URL-bound live claim; list rows are never a fallback.
 grep -q 'const effectiveClaimId =' "$HTML" || fail "missing URL-bound SDLG claim identity"
 grep -q 'sdlg-live-claim-ready' "$HTML" || fail "missing live-claim handoff to field hydration"
@@ -124,4 +125,7 @@ if grep -Eq "setVal\\('sdlg_repairDate'|setVal\\('sdlg_machineLocation'|data-sdl
   fail "hydrator writes fields owned by React"
 fi
 ok "URL-bound live claim and single-writer contracts"
+else
+  warn "baked-output-only SDLG Input checks skipped for source index.html; Pages build runs them on _site/index.html"
+fi
 echo "All regression contracts passed for $HTML"
