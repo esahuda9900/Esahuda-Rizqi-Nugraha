@@ -1,13 +1,14 @@
 /**
- * SDLG Hash→Tab bridge v2
- * - Sync hash → React tab ONLY when hash actually changes
- * - Sync React tab → hash when user clicks nav (via capture)
- * - NO periodic re-apply (was causing Overview flicker loop)
+ * SDLG Hash→Tab bridge v2.1
+ * - Hash change → React tab (via __SDLG_APPLY_ROUTE or one-shot nav click)
+ * - Nav click → hash update (capture)
+ * - No periodic re-apply (prevents Overview flicker)
  */
 (function (root) {
   'use strict';
   try {
-    if (root.__SDLG_HASH_TAB_BRIDGE_V2__) return;
+    if (root.__SDLG_HASH_TAB_BRIDGE_V21__) return;
+    root.__SDLG_HASH_TAB_BRIDGE_V21__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V2__ = true;
     root.__SDLG_HASH_TAB_BRIDGE_V1__ = true;
 
@@ -55,13 +56,37 @@
       };
       var next = map[tab];
       if (!next) return;
-      var cur = String(root.location.hash || '');
-      if (cur === next) return;
+      if (String(root.location.hash || '') === next) return;
       try {
         root.history.replaceState(null, '', root.location.pathname + root.location.search + next);
       } catch (_) {
         root.location.hash = next;
       }
+    }
+
+    function clickNavOnce(tab) {
+      try {
+        var labels = {
+          dashboard: /^overview/i,
+          list: /^claims/i,
+          paste: /new claim/i,
+          sdlginput: /sdlg input/i,
+          masters: /master data/i,
+          quality: /data quality/i
+        };
+        var re = labels[tab];
+        if (!re) return false;
+        var btns = document.querySelectorAll('button.nav-btn');
+        for (var i = 0; i < btns.length; i++) {
+          var text = String(btns[i].textContent || '').trim();
+          if (re.test(text)) {
+            userNavUntil = Date.now() + 100;
+            btns[i].click();
+            return true;
+          }
+        }
+      } catch (_) {}
+      return false;
     }
 
     function applyHashToTab() {
@@ -76,6 +101,8 @@
       try {
         if (typeof root.__SDLG_APPLY_ROUTE === 'function') {
           root.__SDLG_APPLY_ROUTE(tab);
+        } else {
+          clickNavOnce(tab);
         }
       } catch (e) {
         console.warn('[SDLG hash-tab-bridge] apply', e);
@@ -98,7 +125,7 @@
         else if (/data quality/.test(label)) tab = 'quality';
         else if (/unit/.test(label)) tab = 'unit360';
         if (!tab) return;
-        userNavUntil = Date.now() + 800;
+        userNavUntil = Date.now() + 900;
         setHashFromTab(tab);
         lastHash = String(root.location.hash || '');
       } catch (_) {}
@@ -109,7 +136,7 @@
       root.addEventListener('hashchange', function () {
         setTimeout(applyHashToTab, 30);
       });
-      setTimeout(applyHashToTab, 200);
+      setTimeout(applyHashToTab, 250);
     }
 
     if (document.readyState === 'loading') {
@@ -119,7 +146,7 @@
     }
 
     root.SDLGHashTabBridge = {
-      version: '2.0.0',
+      version: '2.1.0',
       apply: applyHashToTab,
       parseTab: parseTabFromHash,
       setHashFromTab: setHashFromTab
