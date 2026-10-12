@@ -1,5 +1,6 @@
 /**
- * SDLG Inline Enforcer v2 — force report/location/repair from __SDLG_LIVE_CLAIM__ when drift detected.
+ * SDLG Inline Enforcer v3 — force report/location/repair from __SDLG_LIVE_CLAIM__ on drift.
+ * Loads via claim-fields (attr data-sdlg-inline-enforcer-mod) so baked legacy does not block it.
  */
 (function () {
   'use strict';
@@ -99,20 +100,12 @@
       !/Transmission/i.test(String(c.fault_description || ''))
     )
       return true;
-    if (/PAPUA/i.test(loc) && !/PAPUA/i.test(String(c.customer || '') + String(c.branch || '')))
+    if (/PAPUA|INDOTRUCK/i.test(loc) && !/PAPUA|INDOTRUCK/i.test(String(c.customer || '') + String(c.branch || '')))
       return true;
     if (/19[\/\-]0?7[\/\-]2024/.test(repair) && String(c.claim_id) !== '0429-2024-SDLG-PFR')
       return true;
-    var serialEl = document.getElementById('sdlg_serialNumber');
-    var serialUI = serialEl ? String(serialEl.value || '') : '';
-    var serialDB = String(c.serial_no || c.canonical_serial_no || '');
-    if (
-      serialDB &&
-      serialUI &&
-      serialUI.slice(-6) !== serialDB.replace(/\s+/g, '').slice(-6)
-    )
-      return true;
-    // report model mismatch
+    var expectedLoc = buildLoc(c);
+    if (expectedLoc && loc && loc !== expectedLoc) return true;
     if (model && report && report.indexOf(model) < 0 && /SDLG\s+\w+/.test(report)) return true;
     return false;
   }
@@ -120,6 +113,7 @@
   function forceFromLive(c) {
     if (!c || !c.claim_id) return;
     var report = buildReport(c);
+    var loc = buildLoc(c);
     document.querySelectorAll('[data-sdlg-report-body]').forEach(function (el) {
       el.textContent = report;
       el.setAttribute('data-claim-id', c.claim_id);
@@ -129,18 +123,9 @@
     });
 
     setVal(document.getElementById('sdlg_serviceType'), 'Repair');
-    setVal(
-      document.getElementById('sdlg_serviceMethod'),
-      c.repair_method || c.service_method || ''
-    );
-    setVal(
-      document.getElementById('sdlg_serialNumber'),
-      c.serial_no || c.canonical_serial_no || ''
-    );
-    setVal(
-      document.getElementById('sdlg_hourMeter'),
-      c.hm_failure != null ? String(c.hm_failure) : ''
-    );
+    setVal(document.getElementById('sdlg_serviceMethod'), c.repair_method || c.service_method || '');
+    setVal(document.getElementById('sdlg_serialNumber'), c.serial_no || c.canonical_serial_no || '');
+    setVal(document.getElementById('sdlg_hourMeter'), c.hm_failure != null ? String(c.hm_failure) : '');
     var tech = String(c.technical_personnel || c.feedback_person || '')
       .replace(/^\s*technician\s*[\u2014\u2013\-:]\s*/i, '')
       .trim();
@@ -152,15 +137,9 @@
       document.getElementById('sdlg_faultDetails'),
       [c.cause_analyze, c.comment].filter(Boolean).join('\n\n')
     );
-    setVal(document.getElementById('sdlg_machineLocation'), buildLoc(c));
-    setVal(
-      document.getElementById('sdlg_repairLabor'),
-      c.labour_hrs != null ? String(c.labour_hrs) : ''
-    );
-    setVal(
-      document.getElementById('sdlg_serviceMileage'),
-      c.mileage_km != null ? String(c.mileage_km) : ''
-    );
+    setVal(document.getElementById('sdlg_machineLocation'), loc);
+    setVal(document.getElementById('sdlg_repairLabor'), c.labour_hrs != null ? String(c.labour_hrs) : '');
+    setVal(document.getElementById('sdlg_serviceMileage'), c.mileage_km != null ? String(c.mileage_km) : '');
 
     var h = Number(c.labour_hrs) || Number((document.getElementById('sdlg_repairLabor') || {}).value) || 0;
     var k = Number(c.mileage_km) || Number((document.getElementById('sdlg_serviceMileage') || {}).value) || 0;
@@ -171,20 +150,16 @@
     var ot = Number((document.getElementById('sdlg_otherAmount') || {}).value) || 0;
     setVal(document.getElementById('sdlg_totalAmount'), (la + ma + ot).toFixed(2));
 
-    document.querySelectorAll('[data-sdlg-input-helper] *').forEach(function (n) {
-      if (n.childNodes && n.childNodes.length === 1 && n.childNodes[0].nodeType === 3) {
-        if (/^\s*Kosong\s*$/i.test(n.textContent || '')) n.textContent = '\u2014';
-      }
-    });
-
     try {
       console.info(
-        '[SDLG inline-v2] forced',
+        '[SDLG inline-v3] forced',
         c.claim_id,
         'repair=',
         pickRepair(c),
+        'loc=',
+        loc.slice(0, 50),
         'report=',
-        report.slice(0, 70)
+        report.slice(0, 50)
       );
     } catch (e) {}
   }
@@ -203,16 +178,8 @@
       var k = kmEl ? Number(String(kmEl.value).replace(/[^0-9.]/g, '')) : 0;
       if (!(k > 0) && c.mileage_km != null) k = Number(c.mileage_km) || 0;
       if (k > 0) setVal(document.getElementById('sdlg_mileageAmount'), (k * 0.5).toFixed(2));
-      var la = Number((document.getElementById('sdlg_labourAmount') || {}).value) || 0;
-      var ma = Number((document.getElementById('sdlg_mileageAmount') || {}).value) || 0;
-      var ot = Number((document.getElementById('sdlg_otherAmount') || {}).value) || 0;
-      setVal(document.getElementById('sdlg_totalAmount'), (la + ma + ot).toFixed(2));
 
-      var repairNow = String((document.getElementById('sdlg_repairDate') || {}).value || '');
-      if (
-        drift(c) ||
-        (/19[\/\-]0?7[\/\-]2024/.test(repairNow) && String(c.claim_id) !== '0429-2024-SDLG-PFR')
-      ) {
+      if (drift(c)) {
         forceFromLive(c);
         try {
           if (window.SDLGInputHydrate && typeof window.SDLGInputHydrate.apply === 'function') {
@@ -223,9 +190,9 @@
     } catch (e) {}
   }
 
-  setInterval(tick, 500);
-  [200, 600, 1200, 2000, 3500, 5000].forEach(function (ms) {
+  setInterval(tick, 600);
+  [300, 800, 1500, 2500, 4000].forEach(function (ms) {
     setTimeout(tick, ms);
   });
-  console.info('[SDLG inline-enforcer] v2 loaded');
+  console.info('[SDLG inline-enforcer] v3 loaded');
 })();

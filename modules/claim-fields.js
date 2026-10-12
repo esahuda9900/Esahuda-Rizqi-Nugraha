@@ -7,7 +7,8 @@
     'causing_part_no', 'causing_part_desc', 'failure_part_location', 'fault_description',
     'cause_analyze', 'comment', 'parts', 'hm_failure', 'hm_completion', 'sales_date',
     'failure_date', 'dealer_repair_date', 'completion_date', 'dealer_claim_date',
-    'labour_amount', 'mileage_amount', 'other_amount', 'total_amount', 'mileage_km', 'labour_hrs'
+    'labour_amount', 'mileage_amount', 'other_amount', 'total_amount', 'mileage_km', 'labour_hrs',
+    'dealer_wo_so', 'branch', 'customer'
   ];
 
   function pickFirst() {
@@ -45,11 +46,12 @@
         (document.head || document.documentElement).appendChild(s);
       }
       loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v13', 'data-sdlg-input-hydrate');
-      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v2', 'data-sdlg-inline-enforcer');
+      // use distinct attr so baked legacy inline enforcer does NOT block this module
+      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v3', 'data-sdlg-inline-enforcer-mod');
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
-      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v52', 'data-sdlg-finance-ux');
+      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v53', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');

@@ -1,10 +1,10 @@
 /**
- * SDLG Portal Finance v5.2 — force labour/mileage by ID + label; total includes parts.
+ * SDLG Portal Finance v5.3 — never use labourRate<=0; force hrs*25 when amount stuck at 0.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_PORTAL_FINANCE_UX_V52__) return;
-  window.__SDLG_PORTAL_FINANCE_UX_V52__ = true;
+  if (window.__SDLG_PORTAL_FINANCE_UX_V53__) return;
+  window.__SDLG_PORTAL_FINANCE_UX_V53__ = true;
   window.__SDLG_PORTAL_FINANCE_UX_V5__ = true;
 
   var STORAGE_KEY = 'sdlg:finance-rates:v1';
@@ -22,15 +22,21 @@
     return n.toFixed(2);
   }
 
+  function safeRate(v, fallback) {
+    var n = num(v);
+    if (n == null || n <= 0) return fallback;
+    return n;
+  }
+
   function loadRates() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return { labourRate: DEFAULT_LABOUR, mileageRate: DEFAULT_MILEAGE, otherRate: 0, partPrices: {} };
       var o = JSON.parse(raw);
       return {
-        labourRate: num(o.labourRate) != null ? num(o.labourRate) : DEFAULT_LABOUR,
-        mileageRate: num(o.mileageRate) != null ? num(o.mileageRate) : DEFAULT_MILEAGE,
-        otherRate: num(o.otherRate) != null ? num(o.otherRate) : 0,
+        labourRate: safeRate(o.labourRate, DEFAULT_LABOUR),
+        mileageRate: safeRate(o.mileageRate, DEFAULT_MILEAGE),
+        otherRate: num(o.otherRate) != null && num(o.otherRate) >= 0 ? num(o.otherRate) : 0,
         partPrices: o.partPrices && typeof o.partPrices === 'object' ? o.partPrices : {}
       };
     } catch (_) {
@@ -39,6 +45,9 @@
   }
 
   var state = loadRates();
+  // heal bad rates from previous sessions
+  if (!(state.labourRate > 0)) state.labourRate = DEFAULT_LABOUR;
+  if (!(state.mileageRate > 0)) state.mileageRate = DEFAULT_MILEAGE;
 
   function saveRates() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
@@ -57,7 +66,7 @@
       if (desc && desc.set) desc.set.call(el, next);
       else el.value = next;
     } catch (_) { el.value = next; }
-    try { el.setAttribute('value', next); } catch (_) {}
+    try { el.setAttribute('value', next); el.defaultValue = next; } catch (_) {}
   }
 
   function setByIdOrLabel(id, label, value) {
@@ -72,7 +81,7 @@
   }
 
   function isDash(s) {
-    return s == null || s === '' || s === '\u2014' || s === '-' || /^kosong$/i.test(String(s));
+    return s == null || /^\s*$/.test(s) || s === '\u2014' || s === '-' || s === '\u2013' || /^kosong$/i.test(String(s));
   }
 
   function readHrsKm() {
@@ -80,7 +89,6 @@
     var kmEl = document.getElementById('sdlg_serviceMileage');
     var hrs = num(hrsEl && hrsEl.value);
     var km = num(kmEl && kmEl.value);
-    // fallback live claim
     if (hrs == null && window.__SDLG_LIVE_CLAIM__) hrs = num(window.__SDLG_LIVE_CLAIM__.labour_hrs);
     if (km == null && window.__SDLG_LIVE_CLAIM__) km = num(window.__SDLG_LIVE_CLAIM__.mileage_km);
     return { hrs: hrs, km: km };
@@ -90,34 +98,15 @@
     var total = 0;
     var claim = window.__SDLG_LIVE_CLAIM__;
     var parts = claim && Array.isArray(claim.parts) ? claim.parts : [];
-    var r = root();
-    if (r) {
-      var rows = r.querySelectorAll('table tbody tr');
-      rows.forEach(function (tr, idx) {
-        var cells = tr.querySelectorAll('td');
-        if (cells.length < 7) return;
-        var p = parts[idx] || {};
-        var qty = num(p.quantity != null ? p.quantity : p.qty);
-        if (qty == null) qty = num(cells[4] && cells[4].textContent) || 1;
-        var unit = num(p.unit_price != null ? p.unit_price : p.unitPrice);
-        if (unit == null) {
-          var pn = String(p.failure_part || p.part_no || p.replace_part || (cells[1] && cells[1].textContent) || '').trim();
-          if (pn && state.partPrices[pn] != null) unit = num(state.partPrices[pn]);
-        }
-        if (unit == null) unit = num(cells[5] && cells[5].textContent) || 0;
-        var amt = qty * unit;
-        total += amt;
-        if (cells[5]) cells[5].textContent = money(unit);
-        if (cells[6]) cells[6].textContent = money(amt);
-      });
-    }
-    if (!total && parts.length) {
-      parts.forEach(function (p) {
-        var qty = num(p.quantity != null ? p.quantity : p.qty) || 1;
-        var unit = num(p.unit_price != null ? p.unit_price : p.unitPrice) || 0;
-        total += qty * unit;
-      });
-    }
+    parts.forEach(function (p) {
+      var qty = num(p && (p.qty || p.quantity)) || 0;
+      var price = num(p && (p.unit_price || p.price || p.amount));
+      if (price == null) {
+        var pn = p && (p.part_no || p.failure_part || p.replace_part);
+        if (pn && state.partPrices[pn] != null) price = num(state.partPrices[pn]);
+      }
+      if (price != null && qty > 0) total += price * qty;
+    });
     return total;
   }
 
@@ -128,9 +117,14 @@
     var hrs = hk.hrs != null ? hk.hrs : 0;
     var km = hk.km != null ? hk.km : 0;
 
-    var labour = hrs * (state.labourRate != null ? state.labourRate : DEFAULT_LABOUR);
-    var mileage = km * (state.mileageRate != null ? state.mileageRate : DEFAULT_MILEAGE);
-    var other = state.otherRate != null ? state.otherRate : 0;
+    var labourRate = safeRate(state.labourRate, DEFAULT_LABOUR);
+    var mileageRate = safeRate(state.mileageRate, DEFAULT_MILEAGE);
+    state.labourRate = labourRate;
+    state.mileageRate = mileageRate;
+
+    var labour = hrs * labourRate;
+    var mileage = km * mileageRate;
+    var other = state.otherRate != null && state.otherRate >= 0 ? state.otherRate : 0;
     var partsAmt = partsTotal();
 
     setByIdOrLabel('sdlg_labourAmount', 'Labour Amount', money(labour));
@@ -144,49 +138,35 @@
     var total = partsAmt + labour + mileage + otherVal;
     setByIdOrLabel('sdlg_totalAmount', 'Total Amount Claimed', money(total));
 
-    var summary = document.getElementById('sdlg-finance-summary');
-    if (summary) {
-      summary.innerHTML =
-        '<b>Parts</b> ' + money(partsAmt) +
-        ' &nbsp;·&nbsp; <b>Labour</b> ' + money(labour) +
-        ' (' + hrs + 'h × ' + (state.labourRate != null ? state.labourRate : DEFAULT_LABOUR) + ')' +
-        ' &nbsp;·&nbsp; <b>Mileage</b> ' + money(mileage) +
-        ' &nbsp;·&nbsp; <b>Total</b> ' + money(total);
-    }
-
     try {
-      console.info('[SDLG finance] labour=', money(labour), 'hrs=', hrs, 'mileage=', money(mileage), 'total=', money(total));
+      console.info('[SDLG finance] labour=', money(labour), 'hrs=', hrs, 'rate=', labourRate, 'mileage=', money(mileage), 'total=', money(total));
     } catch (_) {}
   }
 
   function purgeExtraPanels() {
-    var all = document.querySelectorAll('#sdlg-finance-calc-panel, [data-sdlg-finance-panel]');
-    if (all.length <= 1) return;
-    for (var i = 1; i < all.length; i++) {
-      if (all[i].parentNode) all[i].parentNode.removeChild(all[i]);
+    var panels = document.querySelectorAll('[data-sdlg-finance-panel]');
+    if (panels.length > 1) {
+      for (var i = 1; i < panels.length; i++) {
+        try { panels[i].remove(); } catch (_) {}
+      }
     }
   }
 
   function ensureCalcPanel(r) {
-    purgeExtraPanels();
-    if (document.getElementById('sdlg-finance-calc-panel')) return;
-
+    if (r.querySelector('[data-sdlg-finance-panel]')) return;
     var box = document.createElement('div');
-    box.id = 'sdlg-finance-calc-panel';
     box.setAttribute('data-sdlg-finance-panel', '1');
-    box.style.cssText = 'margin:12px 0;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:12px;color:#0f172a';
+    box.style.cssText = 'margin:12px 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:12px;';
     box.innerHTML =
-      '<div style="font-weight:800;margin-bottom:6px">Kalkulasi finansial (lokal)</div>' +
-      '<div style="margin-bottom:8px;line-height:1.45;color:#64748b">Labour = jam × rate (default 25). Mileage = km × 0.5. Tidak menulis DB.</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px">' +
-      '<label style="display:flex;flex-direction:column;gap:4px;font-weight:700">Labour Rate / jam<input data-sdlg-rate="labour" type="number" step="0.01" value="' +
-      (state.labourRate != null ? state.labourRate : '') + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px"></label>' +
-      '<label style="display:flex;flex-direction:column;gap:4px;font-weight:700">Mileage Rate / km<input data-sdlg-rate="mileage" type="number" step="0.01" value="' +
-      (state.mileageRate != null ? state.mileageRate : '') + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px"></label>' +
-      '<label style="display:flex;flex-direction:column;gap:4px;font-weight:700">Other Amount<input data-sdlg-rate="other" type="number" step="0.01" value="' +
-      (state.otherRate != null ? state.otherRate : 0) + '" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px"></label>' +
-      '</div><div id="sdlg-finance-summary" style="font-size:12px;color:#0f172a"></div>';
-
+      '<div style="font-weight:700;margin-bottom:6px;color:#0f172a">Rate Calculator</div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+      '<label>Labour rate <input data-sdlg-rate="labour" type="number" step="0.01" value="' +
+      state.labourRate +
+      '" style="width:80px;margin-left:4px"/></label>' +
+      '<label>Mileage rate <input data-sdlg-rate="mileage" type="number" step="0.01" value="' +
+      state.mileageRate +
+      '" style="width:80px;margin-left:4px"/></label>' +
+      '</div>';
     var anchor = null;
     r.querySelectorAll('div').forEach(function (d) {
       if (/^Other Cost Details$/i.test(String(d.textContent || '').trim()) && !anchor) anchor = d;
@@ -200,9 +180,8 @@
       var kind = t.getAttribute('data-sdlg-rate');
       if (!kind) return;
       var v = num(t.value);
-      if (kind === 'labour') state.labourRate = v;
-      else if (kind === 'mileage') state.mileageRate = v;
-      else if (kind === 'other') state.otherRate = v;
+      if (kind === 'labour') state.labourRate = safeRate(v, DEFAULT_LABOUR);
+      else if (kind === 'mileage') state.mileageRate = safeRate(v, DEFAULT_MILEAGE);
       saveRates();
       recompute();
     });
@@ -236,7 +215,7 @@
       recompute();
       scrubKosong(r);
     } catch (e) {
-      try { console.warn('[SDLG finance-ux v5.2]', e); } catch (_) {}
+      try { console.warn('[SDLG finance-ux v5.3]', e); } catch (_) {}
     }
   }
 
@@ -260,11 +239,11 @@
   else boot();
 
   window.SDLGPortalFinance = {
-    version: '5.2.0',
+    version: '5.3.0',
     recompute: recompute,
     getRates: function () {
       return { labourRate: state.labourRate, mileageRate: state.mileageRate, otherRate: state.otherRate };
     }
   };
-  console.info('[SDLG finance-ux] v5.2 force labour');
+  console.info('[SDLG finance-ux] v5.3 safe rates');
 })();
