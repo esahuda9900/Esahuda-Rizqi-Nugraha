@@ -1,18 +1,86 @@
 #!/usr/bin/env python3
-"""Bake patches for SDLG portal — live-claim guards, year-safe repair, inline enforcer."""
+"""Bake: liveClaim fetch for SDLG Input + year-safe repair + location guard + enforcer."""
 from pathlib import Path
 import re
 
 INDEX = Path("_site/index.html")
 if not INDEX.exists():
-    raise SystemExit("missing _site/index.html — run after copy of index.html")
+    raise SystemExit("missing _site/index.html")
 
 data = INDEX.read_text(encoding="utf-8", errors="replace")
 
-# ---------------------------------------------------------------------------
-# 1) Fix TDZ: ensure _liveR is declared BEFORE any use (reportWo/reportModel)
-# ---------------------------------------------------------------------------
-# Remove any previous broken ordering of _liveR / reportWo / reportModel
+# ============================================================================
+# 1) CRITICAL: selectedClaim MUST come from live Supabase row, not list cache
+# ============================================================================
+OLD_SEL = (
+    "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
+    "    const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;"
+)
+NEW_SEL = (
+    "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
+    "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
+    "    const [liveClaim, setLiveClaim] = useState(null);\n"
+    "    const [liveReady, setLiveReady] = useState(false);\n"
+    "    useEffect(() => {\n"
+    "        let alive = true;\n"
+    "        setLiveReady(false);\n"
+    "        setLiveClaim(null);\n"
+    "        const id = String(selectedClaimId || '').trim();\n"
+    "        if (!id) { setLiveReady(true); return undefined; }\n"
+    "        const client = (typeof window !== 'undefined' && window.getSdlgSupabase && window.getSdlgSupabase()) || null;\n"
+    "        if (!client) { setLiveClaim(fromList); setLiveReady(true); return undefined; }\n"
+    "        (async () => {\n"
+    "            try {\n"
+    "                const { data: row, error } = await client.from('claims').select('*').eq('claim_id', id).maybeSingle();\n"
+    "                if (!alive) return;\n"
+    "                if (error) { console.warn('[SDLG portal] live fetch', error); setLiveClaim(fromList); }\n"
+    "                else if (row) {\n"
+    "                    setLiveClaim(row);\n"
+    "                    try { window.__SDLG_LIVE_CLAIM__ = row; } catch (_e) {}\n"
+    "                    try { if (window.SDLGInputHydrate && window.SDLGInputHydrate.apply) window.SDLGInputHydrate.apply(row); } catch (_e) {}\n"
+    "                } else { setLiveClaim(fromList); }\n"
+    "            } catch (e) { if (alive) { console.warn('[SDLG portal] live fetch', e); setLiveClaim(fromList); } }\n"
+    "            finally { if (alive) setLiveReady(true); }\n"
+    "        })();\n"
+    "        return () => { alive = false; };\n"
+    "    }, [selectedClaimId]);\n"
+    "    const selectedClaim = liveClaim || (liveReady ? fromList : null);"
+)
+if OLD_SEL in data:
+    data = data.replace(OLD_SEL, NEW_SEL, 1)
+    print("injected liveClaim fetch")
+else:
+    print("WARN: OLD_SEL not found — check source")
+
+# ============================================================================
+# 2) Year-safe repairDate (refuse 19/07/2024 on non-0429)
+# ============================================================================
+OLD_RD = (
+    "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
+)
+NEW_RD = (
+    "repairDate: (function(){"
+    "var id=String(selectedClaim.claim_id||'');"
+    "var ok=function(v){if(v==null||String(v).trim()==='')return null;"
+    "var fmt=portalDate(v);if(!fmt)return null;"
+    "if(/19[\\/\\-]0?7[\\/\\-]2024/.test(fmt)&&id!=='0429-2024-SDLG-PFR')return null;"
+    "var cy=(id.match(/-(\\d{4})-SDLG-PFR/i)||[])[1];"
+    "var dy=(fmt.match(/(\\d{4})$/)||[])[1];"
+    "if(cy&&dy&&Math.abs(Number(cy)-Number(dy))>1)return null;"
+    "return fmt;};"
+    "return ok(selectedClaim.dealer_repair_date)||ok(selectedClaim.completion_date)||ok(selectedClaim.repair_date)||ok(selectedClaim.failure_date)||'';"
+    "})(),"
+)
+if OLD_RD in data:
+    data = data.replace(OLD_RD, NEW_RD, 1)
+    print("year-safe repairDate")
+else:
+    print("WARN: repairDate pattern not found")
+
+# ============================================================================
+# 3) _liveR before reportWo (TDZ-safe)
+# ============================================================================
+# Fix any broken order first
 data = data.replace(
     'const reportWo = String((_liveR && (_liveR.dealer_wo_so || _liveR.wo_so)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();\n'
     '    const _liveR = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim && window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
@@ -22,8 +90,6 @@ data = data.replace(
     '    const reportModel = String((_liveR && _liveR.model) || selectedClaim.model || "").trim();',
     1,
 )
-
-# If still unpatched (fresh index), inject _liveR just before reportWo
 if "const _liveR =" not in data:
     _anchor = 'const reportWo = String(selectedClaim.dealer_wo_so || selectedClaim.wo_so || "").trim();'
     if _anchor in data:
@@ -48,69 +114,58 @@ if "const _liveR =" not in data:
             'const reportHm = numberText((_liveR && _liveR.hm_failure) != null ? _liveR.hm_failure : selectedClaim.hm_failure) || "";',
             1,
         )
+    _old_rc = None
+    for cand in [
+        'const reportComplaintRaw = String(selectedClaim.fault_description || "").trim().replace(/[\\r\\n]+/g, " ").replace(/\\s{2,}/g, " ");',
+        'const reportComplaintRaw = String(selectedClaim.fault_description || "").trim().replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ");',
+    ]:
+        if cand in data:
+            data = data.replace(
+                cand,
+                'const reportComplaintRaw = String((_liveR && _liveR.fault_description) || selectedClaim.fault_description || "").trim().replace(/[\r\n]+/g, " ").replace(/\s{2,}/g, " ");',
+                1,
+            )
+            break
 
-# ---------------------------------------------------------------------------
-# 2) machineLocation prefers live claim
-# ---------------------------------------------------------------------------
+# ============================================================================
+# 4) machineLocation from live
+# ============================================================================
 _old_loc = 'const machineLocation = [wo, branch, customer].map(v => String(v || "").trim()).filter(Boolean).join(" ");'
-_new_loc = (
-    'const _liveForLoc = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim '
-    '&& window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
-    '    const _woL = String((_liveForLoc && (_liveForLoc.dealer_wo_so || _liveForLoc.wo_so)) || wo || "").trim();\n'
-    '    const _brL = String((_liveForLoc && _liveForLoc.branch) || branch || "").trim();\n'
-    '    const _cuL = String((_liveForLoc && _liveForLoc.customer) || customer || "").trim();\n'
-    '    const machineLocation = [_woL, _brL, _cuL].filter(Boolean).join(" ");'
-)
 if _old_loc in data:
-    data = data.replace(_old_loc, _new_loc, 1)
-
-# ---------------------------------------------------------------------------
-# 3) Prefer liveClaim over list row
-# ---------------------------------------------------------------------------
-if "const selectedClaim = liveClaim || fromList;" in data:
     data = data.replace(
-        "const selectedClaim = liveClaim || fromList;",
-        "const selectedClaim = liveClaim;\n"
-        "    useEffect(() => {\n"
-        "        if (liveClaim && window.SDLGInputHydrate && window.SDLGInputHydrate.apply) {\n"
-        "            try { window.SDLGInputHydrate.apply(liveClaim); } catch (_e) {}\n"
-        "        }\n"
-        "    }, [liveClaim]);",
+        _old_loc,
+        'const _liveForLoc = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim '
+        '&& window.__SDLG_LIVE_CLAIM__.claim_id === selectedClaim.claim_id) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;\n'
+        '    const _woL = String((_liveForLoc && (_liveForLoc.dealer_wo_so || _liveForLoc.wo_so)) || wo || "").trim();\n'
+        '    const _brL = String((_liveForLoc && _liveForLoc.branch) || branch || "").trim();\n'
+        '    const _cuL = String((_liveForLoc && _liveForLoc.customer) || customer || "").trim();\n'
+        '    const machineLocation = [_woL, _brL, _cuL].filter(Boolean).join(" ");',
         1,
     )
 
-# ---------------------------------------------------------------------------
-# 4) Year-safe repairDate
-# ---------------------------------------------------------------------------
-OLD_REPAIR = re.compile(
-    r"repairDate:\s*portalDate\(selectedClaim\.dealer_repair_date\s*\|\|\s*selectedClaim\.completion_date\s*\|\|\s*selectedClaim\.repair_date\s*\|\|\s*selectedClaim\.failure_date\)",
-    re.M,
-)
-NEW_REPAIR = (
-    "repairDate: (function(){"
-    "var ok=function(v){if(v==null||String(v).trim()==='')return null;"
-    "var fmt=portalDate(v);if(!fmt)return null;"
-    "if(/19[\\/\\-]0?7[\\/\\-]2024/.test(fmt)&&String(selectedClaim.claim_id||'')!=='0429-2024-SDLG-PFR')return null;"
-    "var cy=(String(selectedClaim.claim_id||'').match(/-(\\d{4})-SDLG-PFR/i)||[])[1];"
-    "var dy=(fmt.match(/(\\d{4})$/)||[])[1];"
-    "if(cy&&dy&&Math.abs(Number(cy)-Number(dy))>1)return null;return fmt;};"
-    "return ok(selectedClaim.dealer_repair_date)||ok(selectedClaim.completion_date)||ok(selectedClaim.repair_date)||ok(selectedClaim.failure_date)||'';"
-    "})()"
-)
-if OLD_REPAIR.search(data):
-    data = OLD_REPAIR.sub(NEW_REPAIR, data, count=1)
+# ============================================================================
+# 5) Remount key when live claim arrives (forces clean inputs)
+# ============================================================================
+# Add key on the helper root if missing
+if 'data-sdlg-input-helper' in data and 'key={selectedClaim' not in data and "key={'sdlg-'+" not in data:
+    # try to key the outer portal div
+    data = data.replace(
+        'data-sdlg-input-helper',
+        'data-sdlg-input-helper data-claim-id={(selectedClaim && selectedClaim.claim_id) || selectedClaimId || ""}',
+        1,
+    )
 
-# ---------------------------------------------------------------------------
-# 5) autocomplete=off
-# ---------------------------------------------------------------------------
+# ============================================================================
+# 6) autocomplete off
+# ============================================================================
 data = data.replace(
     'type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
     'type="text" value="${esc(value)}" autocomplete="off" data-lpignore="true" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc"',
 )
 
-# ---------------------------------------------------------------------------
-# 6) Minimal legacy inline enforcer (location + repair + labour)
-# ---------------------------------------------------------------------------
+# ============================================================================
+# 7) Legacy inline enforcer (light)
+# ============================================================================
 INLINE = r'''
 <script data-sdlg-inline-enforcer-legacy="1">
 (function(){
@@ -124,33 +179,34 @@ INLINE = r'''
       if(!document.querySelector('[data-sdlg-input-helper]'))return;
       var c=window.__SDLG_LIVE_CLAIM__;if(!c||!c.claim_id)return;
       var el=document.getElementById('sdlg_repairDate');
-      if(el && /19[\/\-]0?7[\/\-]2024/.test(String(el.value||'')) && String(c.claim_id)!=='0429-2024-SDLG-PFR'){
-        var fmt=portalDate(c.dealer_repair_date)||portalDate(c.failure_date)||'';
-        if(fmt){setVal(el,fmt);}
+      var want=portalDate(c.dealer_repair_date)||portalDate(c.failure_date)||'';
+      if(el && want && String(el.value||'')!==want){
+        if(/19[\/\-]0?7[\/\-]2024/.test(String(el.value||'')) || !el.value){
+          setVal(el,want);
+        }
       }
       var locEl=document.getElementById('sdlg_machineLocation');
-      var want=[c.dealer_wo_so||'',c.branch||'',c.customer||''].map(function(x){return String(x||'').trim();}).filter(Boolean).join(' ');
-      if(locEl && want && /PAPUA|INDOTRUCK/i.test(String(locEl.value||'')) && !/PAPUA|INDOTRUCK/i.test(want)){
-        setVal(locEl,want);
+      var locWant=[c.dealer_wo_so||'',c.branch||'',c.customer||''].map(function(x){return String(x||'').trim();}).filter(Boolean).join(' ');
+      if(locEl && locWant && String(locEl.value||'')!==locWant){
+        if(/PAPUA|INDOTRUCK|G9138F/i.test(String(locEl.value||'')) || !locEl.value) setVal(locEl,locWant);
       }
       var hrs=Number((document.getElementById('sdlg_repairLabor')||{}).value)||Number(c.labour_hrs)||0;
-      if(hrs>0){var la=document.getElementById('sdlg_labourAmount');if(la)setVal(la,(hrs*25).toFixed(2));}
+      if(hrs>0){var la=document.getElementById('sdlg_labourAmount');if(la && Number(la.value)!==hrs*25)setVal(la,(hrs*25).toFixed(2));}
     }catch(e){}
   }
-  setInterval(tick,700);
-  [400,1200,2500].forEach(function(ms){setTimeout(tick,ms);});
+  setInterval(tick,1000);
+  [500,1500,3000].forEach(function(ms){setTimeout(tick,ms);});
 })();
 </script>
 '''
-
-if "data-sdlg-inline-enforcer-legacy" not in data and "__SDLG_INLINE_LEGACY__" not in data:
+if "__SDLG_INLINE_LEGACY__" not in data:
     if "</body>" in data:
         data = data.replace("</body>", INLINE + "\n</body>", 1)
     else:
         data += INLINE
 
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare_index.py done")
-print("has _liveR:", "const _liveR =" in data)
-print("liveForLoc:", "_liveForLoc" in data)
-print("inline legacy:", "__SDLG_INLINE_LEGACY__" in data)
+print("pages_prepare done")
+print("liveClaim:", "setLiveClaim" in data)
+print("year-safe:", "ok=function" in data or "19" in data and "repairDate" in data)
+print("_liveR:", "const _liveR" in data)
