@@ -154,12 +154,12 @@ else:
 
 # 1b) Render a real skeleton while the route-bound claim fetch is pending.
 OLD_EMPTY_CLAIM = (
-    "if (!selectedClaim) {\\n"
+    "if (!selectedClaim) {\n"
     "        const activeClaims = (claims || []).filter(c => !c.archived_at);"
 )
 NEW_EMPTY_CLAIM = r'''
 if (!selectedClaim) {
-        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && !liveReady) {
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && !liveReady) {
             const skeleton = (height, width) => React.createElement("div", {
                 style: { height, width, maxWidth: "100%", borderRadius: 8, background: "#e9edf2", margin: "10px 0" }
             });
@@ -180,7 +180,7 @@ if (!selectedClaim) {
                 React.createElement("p", { style: { fontSize: 12, color: "#64748b" } }, "Form belum ditampilkan sampai claim terverifikasi dari Supabase.")
             ));
         }
-        if (/^\\d{3,4}-\\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && liveReady && liveError) {
+        if (/^\d{3,4}-\d{4}-SDLG-PFR$/i.test(effectiveClaimId) && liveReady && liveError) {
             return React.createElement("div", {
                 className: "page",
                 style: { maxWidth: 760, margin: "0 auto", padding: "24px 16px" }
@@ -201,6 +201,7 @@ if (!selectedClaim) {
             ));
         }
         const activeClaims = (claims || []).filter(c => !c.archived_at);'''
+
 if OLD_EMPTY_CLAIM in data:
     data = data.replace(OLD_EMPTY_CLAIM, NEW_EMPTY_CLAIM, 1)
     print("liveClaim: real skeleton/error rendering injected")
