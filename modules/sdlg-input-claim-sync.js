@@ -59,6 +59,26 @@
       } catch (_) {}
     }
 
+    function lockUrl(id) {
+      id = String(id || '').trim();
+      if (!isClaimId(id)) return;
+      remember(id);
+      try {
+        if (root.SDLGHashRouter && root.SDLGHashRouter.navigate) {
+          root.SDLGHashRouter.navigate('sdlg-input', { claimId: id }, { replace: true });
+          return;
+        }
+      } catch (_) {}
+      try {
+        var target =
+          root.location.pathname +
+          root.location.search +
+          '#/sdlg-input/' +
+          encodeURIComponent(id);
+        root.history.replaceState(null, '', target);
+      } catch (_) {}
+    }
+
     function extractClaimFromText(t) {
       var m = String(t || '').match(/(\d{3,4}-\d{4}-SDLG-PFR)/i);
       return m ? m[1].toUpperCase() : '';
@@ -107,9 +127,9 @@
           'position:sticky;top:0;z-index:9999;background:#7f1d1d;color:#fff;padding:10px 14px;' +
           'font:700 13px/1.4 system-ui,sans-serif;border-bottom:3px solid #fecaca';
         bar.textContent =
-          '\u26a0 CLAIM MISMATCH \u2014 jangan copy ke portal. Terdeteksi lebih dari satu claim id: ' +
+          '\u26a0 CLAIM MISMATCH \u2014 JANGAN copy ke portal. ID bentrok: ' +
           uniq.join(' \u00b7 ') +
-          '. Pilih ulang claim di list, atau buka dari detail claim.';
+          '. Pilih ulang claim atau buka dari detail.';
         var host = document.querySelector('[data-sdlg-input-helper]') || document.body;
         host.insertBefore(bar, host.firstChild);
       } catch (e) {
@@ -129,11 +149,24 @@
       setTimeout(integrityCheck, 400);
     }
 
+    document.addEventListener(
+      'change',
+      function (e) {
+        var t = e.target;
+        if (!t || t.tagName !== 'SELECT') return;
+        var v = String(t.value || '').trim();
+        if (isClaimId(v)) lockUrl(v);
+        setTimeout(integrityCheck, 100);
+      },
+      true
+    );
+
     root.SDLGInputClaimSync = {
       version: '1.1.0',
       fromHash: fromHash,
       resolve: resolvePreferredClaimId,
       remember: remember,
+      lockUrl: lockUrl,
       integrityCheck: integrityCheck
     };
 
