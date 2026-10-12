@@ -157,6 +157,17 @@ if "const _liveR =" not in data:
             1,
         )
 
+# Regression guard: these legacy timer scripts must not be dynamically loaded by claim-fields.
+# The generated HTML check below cannot catch runtime script injection from another module.
+CLAIM_FIELDS = Path("modules/claim-fields.js")
+if CLAIM_FIELDS.exists():
+    claim_fields_source = CLAIM_FIELDS.read_text(encoding="utf-8", errors="replace")
+    if re.search(
+        r"loadScript\(\s*['\"]\.\/modules\/sdlg-(?:input-hydrate|inline-enforcer)\.js",
+        claim_fields_source,
+    ):
+        raise SystemExit("FATAL: claim-fields must not load timer-based SDLG DOM writers")
+
 # Sanity
 if re.search(r"replace\(/\[[\r\n]", data):
     raise SystemExit("FATAL: newline still inside regex character class")
