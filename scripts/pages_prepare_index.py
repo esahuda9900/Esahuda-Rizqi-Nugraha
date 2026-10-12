@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap pages_prepare + FOUC + auth + Overview stable + Finance auto-calc."""
+"""Bootstrap pages_prepare + FOUC + auth + Overview stable + Finance auto-calc + claim hash sync."""
 from pathlib import Path
 import re
 import urllib.request
@@ -168,7 +168,6 @@ if "renderExtraPanels({" in data and "loading: loading" not in data.split("rende
         1,
     )
 
-# Finance: Other Cost Details auto-calc when DB amount is 0 but hrs/km exist
 _old_la = 'fieldHtml("labourAmount","Labour Amount",(selectedClaim.labour_amount == null || selectedClaim.labour_amount === "") ? "0.00" : selectedClaim.labour_amount,false,false)'
 _new_la = (
     'fieldHtml("labourAmount","Labour Amount",(function(){'
@@ -183,8 +182,6 @@ _new_la = (
 if _old_la in data:
     data = data.replace(_old_la, _new_la, 1)
     print("patched labourAmount auto-calc display")
-else:
-    print("WARNING: labourAmount pattern not found")
 
 _old_ma = 'fieldHtml("mileageAmount","Mileage Amount",(selectedClaim.mileage_amount == null || selectedClaim.mileage_amount === "") ? "0.00" : selectedClaim.mileage_amount,false,false)'
 _new_ma = (
@@ -200,8 +197,6 @@ _new_ma = (
 if _old_ma in data:
     data = data.replace(_old_ma, _new_ma, 1)
     print("patched mileageAmount auto-calc display")
-else:
-    print("WARNING: mileageAmount pattern not found")
 
 _old_ta = 'fieldHtml("totalAmount","Total Amount Claimed",(selectedClaim.total_amount == null || selectedClaim.total_amount === "") ? "0.00" : selectedClaim.total_amount,false,false)'
 _new_ta = (
@@ -222,8 +217,6 @@ _new_ta = (
 if _old_ta in data:
     data = data.replace(_old_ta, _new_ta, 1)
     print("patched totalAmount auto-calc display")
-else:
-    print("WARNING: totalAmount pattern not found")
 
 data = re.sub(r'src="\./modules/sdlg-repository\.js(?:\?v=[^"]*)?"', 'src="./modules/sdlg-repository.js?v=20261010-v3"', data, count=1)
 data = re.sub(r'sdlg-overview-loading\.js\?v=[^"\s]+', 'sdlg-overview-loading.js?v=20261010-v30', data)
@@ -237,5 +230,68 @@ if "sdlg-overview-loading.js" not in data:
 if "sdlg-portal-finance-ux.js" not in data:
     data = data.replace("</body>", '  <script src="./modules/sdlg-portal-finance-ux.js?v=20261010-v4" data-sdlg-portal-finance="1"></script>\n</body>', 1)
 
+# === P1: hierarchical claim URL + hash→detailId sync ===
+if "#/claim/' + encodeURIComponent(c.claim_id)" in data:
+    data = data.replace(
+        "#/claim/' + encodeURIComponent(c.claim_id)",
+        "#/claims/' + encodeURIComponent(c.claim_id)",
+    )
+    print("patched claim URL fallback → #/claims/:id")
+
+SYNC_MARK = "/* SDLG_CLAIM_HASH_SYNC_V1 */"
+if SYNC_MARK not in data:
+    old_chain = (
+        '}, [user, loadClaims]);\n'
+        '    useEffect(() => { if (user && !isAdmin && tab === "paste")'
+    )
+    new_chain = (
+        '}, [user, loadClaims]);\n'
+        '    /* SDLG_CLAIM_HASH_SYNC_V1 */\n'
+        '    useEffect(() => {\n'
+        '        function applyRouteFromHash() {\n'
+        '            try {\n'
+        '                var r = (window.SDLGHashRouter && typeof window.SDLGHashRouter.parse === "function")\n'
+        '                    ? window.SDLGHashRouter.parse() : null;\n'
+        '                if (!r) return;\n'
+        '                if (r.page === "claim" && r.params && r.params.claimId) {\n'
+        '                    setTab("list");\n'
+        '                    setDetailId(r.params.claimId);\n'
+        '                    setEditing(false);\n'
+        '                    return;\n'
+        '                }\n'
+        '                if (r.page === "claims" && !(r.params && r.params.claimId)) {\n'
+        '                    setDetailId(null);\n'
+        '                }\n'
+        '            } catch (_e) {}\n'
+        '        }\n'
+        '        applyRouteFromHash();\n'
+        '        window.addEventListener("hashchange", applyRouteFromHash);\n'
+        '        window.addEventListener("sdlg-route", applyRouteFromHash);\n'
+        '        return () => {\n'
+        '            window.removeEventListener("hashchange", applyRouteFromHash);\n'
+        '            window.removeEventListener("sdlg-route", applyRouteFromHash);\n'
+        '        };\n'
+        '    }, []);\n'
+        '    useEffect(() => { if (user && !isAdmin && tab === "paste")'
+    )
+    if old_chain in data:
+        data = data.replace(old_chain, new_chain, 1)
+        print("injected SDLG_CLAIM_HASH_SYNC_V1 useEffect")
+    else:
+        print("WARNING: loadClaims→paste chain not found")
+
+data = data.replace(
+    "sdlg-hash-router.js?v=20261012-v22",
+    "sdlg-hash-router.js?v=20261012-v221",
+)
+data = data.replace(
+    "sdlg-hash-router.js?v=20261010-v21",
+    "sdlg-hash-router.js?v=20261012-v221",
+)
+data = data.replace(
+    "sdlg-hash-router.js?v=20261009-v20",
+    "sdlg-hash-router.js?v=20261012-v221",
+)
+
 INDEX.write_text(data, encoding="utf-8")
-print("pages_prepare finance-display-calc done")
+print("pages_prepare finance + claim-hash-sync done")
