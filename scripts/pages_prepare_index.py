@@ -92,7 +92,6 @@ NEW_SEL = (
     "        if (!liveReady || liveClaim) return React.createElement('div', { role: 'status', style: { margin: '16px', padding: '16px', border: '1px solid #94a3b8', borderRadius: '10px' } }, 'Loading and verifying claim data...');\n"
     "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } }, liveError || 'Claim data is not verified. Do not copy or submit.');\n"
     "    }\n"
-    "    }\n"
 )
 if OLD_SEL in data:
     data = data.replace(OLD_SEL, NEW_SEL, 1)
