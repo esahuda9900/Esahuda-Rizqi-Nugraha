@@ -10,6 +10,7 @@
   var RE_CLAIM_HEADER = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\s*[\u00B7\u2022|]`);
   var RE_CLAIM_CARD = new RegExp(String.raw`\bCLAIM\s*\n?\s*(\d{4}-\d{4}-SDLG-PFR)\b`, 'i');
   var RE_CLAIM_ANY = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\b`);
+  var RE_CLAIM_EXACT = new RegExp(String.raw`^\d{3,4}-\d{4}-SDLG-PFR$`);
 
   function portalDate(value) {
     if (value == null || value === '') return '';
@@ -32,7 +33,7 @@
       if (RE_CLAIM_EXACT.test(value)) return value;
     }
     var hash = String(root.location && root.location.hash || '');
-    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)/i);
+    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\/([^/?#]+)/i);
     if (route) {
       try {
         var routeId = decodeURIComponent(route[1]).trim();
