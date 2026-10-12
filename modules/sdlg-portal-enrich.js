@@ -26,6 +26,25 @@
   }
 
   function getSelectedClaimId() {
+    // Prefer the actual picker value over rendered header text, which may lag during a switch.
+    var sel = document.querySelectorAll('select');
+    for (var i = 0; i < sel.length; i++) {
+      var v = String(sel[i].value || '').trim();
+      if (RE_CLAIM_EXACT.test(v)) return v;
+      var opt = sel[i].selectedOptions && sel[i].selectedOptions[0];
+      if (opt) {
+        var om = String(opt.textContent || '').match(RE_CLAIM_ANY);
+        if (om) return om[1];
+      }
+    }
+    var hash = String(root.location && root.location.hash || '');
+    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\\/([^/?#]+)/i);
+    if (route) {
+      try {
+        var routeId = decodeURIComponent(route[1]).trim();
+        if (RE_CLAIM_EXACT.test(routeId)) return routeId;
+      } catch (_) {}
+    }
     var page = document.querySelector('.sdlg-input-helper-page');
     if (!page) {
       var all = document.querySelector('[data-sdlg-copy-all]');
@@ -37,16 +56,6 @@
     if (m) return m[1];
     m = text.match(RE_CLAIM_CARD);
     if (m) return m[1];
-    var sel = document.querySelectorAll('select');
-    for (var i = 0; i < sel.length; i++) {
-      var v = String(sel[i].value || '').trim();
-      if (RE_CLAIM_EXACT.test(v)) return v;
-      var opt = sel[i].selectedOptions && sel[i].selectedOptions[0];
-      if (opt) {
-        var om = String(opt.textContent || '').match(RE_CLAIM_ANY);
-        if (om) return om[1];
-      }
-    }
     m = text.match(RE_CLAIM_ANY);
     return m ? m[1] : '';
   }
@@ -59,7 +68,8 @@
     return null;
   }
 
-  function setField(label, value) {
+  function setField(label, value, expectedClaimId) {
+    if (expectedClaimId && getSelectedClaimId() !== expectedClaimId) return false;
     var el = findFieldByLabel(label);
     if (!el || value == null || value === '') return false;
     if (String(el.value || '').trim() === String(value).trim()) return true;
@@ -85,7 +95,7 @@
         console.warn('[SDLG enrich] select error', res.error);
         return null;
       }
-      if (res && res.data) {
+      if (res && res.data && String(res.data.claim_id || '').trim() === claimId) {
         cache[claimId] = res.data;
         return res.data;
       }
@@ -115,8 +125,8 @@
     return parts.filter(Boolean).join(', ');
   }
 
-  function applyReportName(full) {
-    if (!full) return;
+  function applyReportName(full, expectedClaimId) {
+    if (!full || (expectedClaimId && getSelectedClaimId() !== expectedClaimId)) return;
     var page = document.querySelector('.sdlg-input-helper-page') || document.body;
     var cards = page.querySelectorAll('.card, [class*="card"]');
     for (var c = 0; c < cards.length; c++) {
@@ -140,11 +150,11 @@
     var claimId = getSelectedClaimId();
     if (!claimId) return;
     var row = await loadClaim(claimId);
-    if (!row) return;
+    if (!row || String(row.claim_id || '').trim() !== claimId || getSelectedClaimId() !== claimId) return;
 
     var repair = formatDateDDMMYYYY(row.dealer_repair_date || row.completion_date || '');
     if (repair) {
-      if (!setField('Date of repair report', repair)) {
+      if (!setField('Date of repair report', repair, claimId)) {
         setTimeout(function () { setField('Date of repair report', repair); }, 600);
       }
     }
@@ -153,12 +163,12 @@
     var branch = String(row.branch || '').trim();
     var customer = String(row.customer || '').trim();
     var loc = [wo, branch, customer].filter(Boolean).join(' ');
-    if (loc) setField('Machine Location', loc);
+    if (loc) setField('Machine Location', loc, claimId);
 
     var tech = String(row.technical_personnel || '').trim();
-    if (tech && !/^unknown$/i.test(tech)) setField('Feedback Person', tech);
+    if (tech && !/^unknown$/i.test(tech)) setField('Feedback Person', tech, claimId);
 
-    applyReportName(buildReportName(row));
+    applyReportName(buildReportName(row), claimId);
   }
 
   function boot() {
