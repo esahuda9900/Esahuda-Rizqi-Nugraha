@@ -20,7 +20,8 @@ function readRequired(file, label) {
   catch (err) { fail(label, 'cannot read file: ' + err.message); return null; }
 }
 
-const html = readRequired(path.join(root, 'index.html'), 'Production HTML');
+const htmlPath = process.argv[2] ? path.resolve(root, process.argv[2]) : path.join(root, 'index.html');
+const html = readRequired(htmlPath, 'Production HTML');
 // Canonical helper URLs may carry a cache-busting query string (?v=...).
 // Validate the helper resource identity without rejecting the deterministic cache key.
 const helper = readRequired(path.join(root, 'canonical-warranty-helper.js'), 'Canonical warranty helper');
@@ -67,11 +68,11 @@ if (html) {
   function countSrc(re) { return (html.match(re) || []).length; }
   if (countSrc(/<script[^>]+src=["']\/?canonical-warranty-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Canonical helper wiring', 'exactly one external helper tag (query-string cache bust allowed)');
   else fail('Canonical helper wiring', 'expected exactly 1 canonical helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/export-table-helper\.js["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/export-table-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
   else fail('Excel export helper wiring', 'expected exactly 1 export helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/claim-parser-helpers\.js["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/claim-parser-helpers\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
   else fail('Claim parser helper wiring', 'expected exactly 1 parser helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/master-resolution-ux\.js["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/master-resolution-ux\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
   else fail('Master resolution UX wiring', 'expected exactly 1 resolution UX helper tag');
 
   if (html.includes('const styleTable = window.SDLGExportTableHelper.styleTable;')) pass('Excel export helper integration', 'inline exporter delegates styleTable');
