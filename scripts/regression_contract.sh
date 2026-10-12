@@ -106,6 +106,7 @@ PY
 # SDLG Input must use the URL-bound live claim; list rows are never a fallback.
 grep -q 'const effectiveClaimId =' "$HTML" || fail "missing URL-bound SDLG claim identity"
 grep -q 'sdlg-live-claim-ready' "$HTML" || fail "missing live-claim handoff to field hydration"
+grep -q 'modules/claim-fields.js?v=20261012-single-writer-v1' "$HTML" || fail "claim-fields cache-bust marker missing"
 if grep -q 'setLiveClaim(fromList)\|liveReady ? fromList : null' "$HTML"; then
   fail "stale list fallback returned in SDLG Input"
 fi
