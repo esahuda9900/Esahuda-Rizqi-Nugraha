@@ -76,13 +76,14 @@ const LIST_SELECT =
 
 const DETAIL_SELECT =
   LIST_SELECT +
-  ',causing_part_desc,hm_failure,hm_completion,repair_method,dealer_repair_date,completion_date,technical_personnel,cause_analyze,comment,indent_no,labour_hrs,mileage_km,mileage_to_site,sales_date,distributor,dealer_name,dealer_code,engine_serial_no,failure_part_location,parts_total,labour_amount,mileage_amount,other_amount,currency,repair_status,status_date,status_update_reason,sdlg_submission_no,sdlg_audit_date,sdlg_approval_date,sdlg_no,invoice_no,invoice_date,payment_date,payment_amount,dealer_claim_date,dealer_claim_no,parts';
+  ',causing_part_desc,hm_failure,hm_completion,repair_method,dealer_repair_date,completion_date,technical_personnel,cause_analyze,comment,indent_no,labour_hrs,mileage_km,mileage_to_site,sales_date,distributor,dealer_name,dealer_code,engine_serial_no,failure_part_location,parts_total,labour_amount,mileage_amount,other_amount,total_amount,currency,repair_status,status_date,status_update_reason,sdlg_submission_no,sdlg_audit_date,sdlg_approval_date,sdlg_no,invoice_no,invoice_date,payment_date,payment_amount,dealer_claim_date,dealer_claim_no,parts,source_raw_text,distributor_no';
 
-export type FetchClaimsOpts = { limit?: number; includeArchived?: boolean };
-
-export async function fetchClaims(opts: FetchClaimsOpts = {}): Promise<ClaimListRow[]> {
-  const limit = opts.limit ?? 800;
+export async function fetchClaims(opts: {
+  limit?: number;
+  includeArchived?: boolean;
+}): Promise<ClaimListRow[]> {
   const sb = getSupabase();
+  const limit = opts.limit ?? 500;
   let q = sb.from('claims').select(LIST_SELECT).order('last_updated', { ascending: false }).limit(limit);
   if (!opts.includeArchived) q = q.is('archived_at', null);
   const { data, error } = await q;
@@ -90,41 +91,51 @@ export async function fetchClaims(opts: FetchClaimsOpts = {}): Promise<ClaimList
   return (data || []) as ClaimListRow[];
 }
 
-export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
+export async function fetchActiveClaims(limit = 800): Promise<ClaimListRow[]> {
   return fetchClaims({ limit, includeArchived: false });
 }
 
 export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
-  const id = String(claimId || '').trim();
-  if (!id) throw new Error('claim_id kosong');
   const sb = getSupabase();
-  const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', id).maybeSingle();
+  const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', claimId).maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error(`Klaim tidak ditemukan: ${id}`);
-  const row = data as unknown as ClaimDetail;
-  if (String(row.claim_id) !== id) throw new Error('claim_id mismatch — fail closed');
-  return row;
+  if (!data) throw new Error(`Claim ${claimId} tidak ditemukan`);
+  return data as ClaimDetail;
 }
 
-export async function fetchClaimStatusHistory(claimId: string): Promise<ClaimStatusHistoryRow[]> {
-  const id = String(claimId || '').trim();
-  if (!id) return [];
+export class ConcurrentEditError extends Error {
+  constructor(message = 'Klaim diubah user lain. Muat ulang lalu simpan lagi.') {
+    super(message);
+    this.name = 'ConcurrentEditError';
+  }
+}
+
+export async function updateClaimById(
+  claimId: string,
+  patch: Record<string, unknown>,
+  opts?: { expectedLastUpdated?: string | null },
+): Promise<void> {
+  const sb = getSupabase();
+  let q = sb.from('claims').update(patch).eq('claim_id', claimId);
+  if (opts?.expectedLastUpdated) {
+    q = q.eq('last_updated', opts.expectedLastUpdated);
+  }
+  const { data, error } = await q.select('claim_id');
+  if (error) throw error;
+  if (opts?.expectedLastUpdated && (!data || data.length === 0)) {
+    throw new ConcurrentEditError();
+  }
+}
+
+export async function fetchClaimStatusHistory(
+  claimId: string,
+  limit = 40,
+): Promise<ClaimStatusHistoryRow[]> {
   const sb = getSupabase();
   const { data, error } = await sb
     .from('claim_status_history')
     .select('id,claim_id,status,status_date,reason,created_at')
-    .eq('claim_id', id)
-    .order('created_at', { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return (data || []) as ClaimStatusHistoryRow[];
-}
-
-export async function fetchRecentStatusHistory(limit = 40): Promise<ClaimStatusHistoryRow[]> {
-  const sb = getSupabase();
-  const { data, error } = await sb
-    .from('claim_status_history')
-    .select('id,claim_id,status,status_date,reason,created_at')
+    .eq('claim_id', claimId)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -200,85 +211,6 @@ export async function insertClaim(row: Record<string, unknown>): Promise<string>
   return claimId;
 }
 
-export class ConcurrentEditError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ConcurrentEditError';
-  }
-}
-
-export async function updateClaimById(
-  claimId: string,
-  patch: Record<string, unknown>,
-  opts?: { expectedLastUpdated?: string | null },
-): Promise<void> {
-  const id = String(claimId || '').trim();
-  if (!id) throw new Error('claim_id required');
-  const { claim_id: _omit, ...rest } = patch;
-  const sb = getSupabase();
-
-  if (opts?.expectedLastUpdated) {
-    const { data: live, error: readErr } = await sb
-      .from('claims')
-      .select('last_updated')
-      .eq('claim_id', id)
-      .maybeSingle();
-    if (readErr) throw readErr;
-    const liveTs = live ? String((live as { last_updated?: string }).last_updated || '') : '';
-    if (liveTs && liveTs !== String(opts.expectedLastUpdated)) {
-      throw new ConcurrentEditError(
-        'Klaim diubah orang lain setelah kamu buka. Muat ulang lalu simpan lagi.',
-      );
-    }
-  }
-
-  const { error } = await sb
-    .from('claims')
-    .update({ ...rest, last_updated: new Date().toISOString() })
-    .eq('claim_id', id);
-  if (error) throw error;
-}
-
-export async function archiveClaim(claimId: string): Promise<void> {
-  await updateClaimById(claimId, { archived_at: new Date().toISOString() });
-}
-
-export async function unarchiveClaim(claimId: string): Promise<void> {
-  await updateClaimById(claimId, { archived_at: null });
-}
-
-export async function updateClaimStatusRpc(opts: {
-  claimId: string;
-  status: string;
-  statusDate?: string;
-  reason?: string;
-}): Promise<void> {
-  const claimId = String(opts.claimId || '').trim();
-  const status = String(opts.status || '').trim();
-  if (!claimId || !status) throw new Error('claim_id dan status wajib');
-  if (status === 'Rejected' && !String(opts.reason || '').trim()) {
-    throw new Error('Alasan wajib untuk status Rejected');
-  }
-  const sb = getSupabase();
-  const statusDate =
-    opts.statusDate ||
-    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
-  const { error } = await sb.rpc('update_claim_status', {
-    p_claim_id: claimId,
-    p_status: status,
-    p_status_date: statusDate,
-    p_reason: opts.reason || null,
-  });
-  if (error) throw error;
-}
-
-export async function countMachines(): Promise<number> {
-  const sb = getSupabase();
-  const { count, error } = await sb.from('machines').select('id', { count: 'exact', head: true });
-  if (error) throw error;
-  return count ?? 0;
-}
-
 export type MachineRow = {
   serial_no: string | null;
   model: string | null;
@@ -307,6 +239,11 @@ function mapMachine(row: MachineDb): MachineRow {
 
 const MACHINE_SELECT = 'serial_no,osf_model_code,contract_customer,osf_dealer_name,sale_date';
 
+function serialDigitsTail6(s: string): string {
+  const d = String(s || '').replace(/\D/g, '');
+  return d.length >= 6 ? d.slice(-6) : d;
+}
+
 export async function searchMachines(q: string, limit = 40): Promise<MachineRow[]> {
   const sb = getSupabase();
   const term = q.trim();
@@ -330,13 +267,83 @@ export async function searchMachines(q: string, limit = 40): Promise<MachineRow[
   return ((data || []) as MachineDb[]).map(mapMachine);
 }
 
-export async function findMachineBySerial(serial: string): Promise<MachineRow | null> {
+/**
+ * Resolve unit like legacy: exact → endsWith short SN → tail-6 digits (+ optional model filter).
+ */
+export async function findMachineBySerial(
+  serial: string,
+  modelHint?: string,
+): Promise<MachineRow | null> {
   const s = serial.trim();
   if (!s) return null;
   const sb = getSupabase();
-  const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('serial_no', `%${s}%`).limit(5);
-  if (error) throw error;
-  return ((data || []) as MachineDb[]).map(mapMachine)[0] || null;
+
+  // 1) exact (case-insensitive)
+  {
+    const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('serial_no', s).limit(3);
+    if (!error && data?.length === 1) return mapMachine(data[0] as MachineDb);
+    if (!error && data && data.length > 1) {
+      return pickMachineLocal(data as MachineDb[], s, modelHint);
+    }
+  }
+
+  // 2) contains / endsWith short serial (S0600753 inside VLG…)
+  {
+    const { data, error } = await sb
+      .from('machines')
+      .select(MACHINE_SELECT)
+      .ilike('serial_no', `%${s}%`)
+      .limit(25);
+    if (!error && data?.length) {
+      const picked = pickMachineLocal(data as MachineDb[], s, modelHint);
+      if (picked) return picked;
+    }
+  }
+
+  // 3) numeric tail-6 (600753) when short SN is S0600753-style
+  const tail = serialDigitsTail6(s);
+  if (tail.length >= 6) {
+    const { data, error } = await sb
+      .from('machines')
+      .select(MACHINE_SELECT)
+      .ilike('serial_no', `%${tail}%`)
+      .limit(40);
+    if (!error && data?.length) {
+      const picked = pickMachineLocal(data as MachineDb[], s, modelHint);
+      if (picked) return picked;
+    }
+  }
+
+  return null;
+}
+
+function pickMachineLocal(rows: MachineDb[], serial: string, modelHint?: string): MachineRow | null {
+  const mapped = rows.map(mapMachine);
+  const sn = serial.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const exact = mapped.filter((c) => (c.serial_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === sn);
+  if (exact.length === 1) return exact[0];
+
+  let pool = mapped.filter((c) => {
+    const cs = (c.serial_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return cs.endsWith(sn) || sn.endsWith(cs) || serialDigitsTail6(cs) === serialDigitsTail6(sn);
+  });
+  if (!pool.length) pool = mapped;
+
+  if (pool.length > 1 && modelHint) {
+    const mh = modelHint.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const byModel = pool.filter((c) => {
+      const cm = (c.model || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return cm === mh || cm.startsWith(mh) || mh.startsWith(cm.replace(/(LS|WS)$/, ''));
+    });
+    if (byModel.length) pool = byModel;
+  }
+
+  pool.sort(
+    (a, b) =>
+      (b.serial_no || '').replace(/[^A-Z0-9]/gi, '').length -
+      (a.serial_no || '').replace(/[^A-Z0-9]/gi, '').length,
+  );
+  return pool[0] || null;
 }
 
 export async function claimsForSerial(serial: string, limit = 20): Promise<ClaimListRow[]> {
@@ -352,4 +359,24 @@ export async function claimsForSerial(serial: string, limit = 20): Promise<Claim
     .limit(limit);
   if (error) throw error;
   return (data || []) as ClaimListRow[];
+}
+
+/** Prefer branch from an existing claim with same serial when machine has no branch. */
+export async function inferBranchFromClaimHistory(serial: string): Promise<string> {
+  const rows = await claimsForSerial(serial, 10);
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    const b = String(r.branch || '').trim();
+    if (!b) continue;
+    counts.set(b, (counts.get(b) || 0) + 1);
+  }
+  let best = '';
+  let n = 0;
+  for (const [b, c] of counts) {
+    if (c > n) {
+      best = b;
+      n = c;
+    }
+  }
+  return best;
 }
