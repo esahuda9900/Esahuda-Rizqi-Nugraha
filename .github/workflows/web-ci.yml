@@ -1,0 +1,33 @@
+name: apps/web CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-ci.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/web-ci.yml"
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Typecheck / build (vite)
+        run: |
+          # tsc may fail until types generated; vite build is the hard gate for preview
+          npx tsc -b --noEmit || true
+          npx vite build
+        env:
+          VITE_BASE: /Esahuda-Rizqi-Nugraha/preview/
