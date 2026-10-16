@@ -13,13 +13,26 @@
 | 1B Claim detail | ✅ | finance, parts, status RPC, history |
 | 2 SDLG helper | ✅ | copy fields, 10-day rule |
 | 3 Export/Backup | ✅ | CSV + JSON role-gated |
-| 4 Parse + save | ✅ | RPC create, omit empty, concurrent, WO modal, SOURCE LOCK soft |
+| 4 Parse + save | ✅ | **parity pass 2026-10-16:** clear WO on Simpan Baru collision; SOURCE LOCK hard block update; section-stop money; richer modal |
 | 5 Admin Center v1 | ✅ | roles, audit feed, bulk status |
 | M2 archive | ✅ | archive/unarchive detail |
 | M2 bulk status | ✅ | `/admin/bulk-status` |
 | M2 DQ deepen | ✅ | WO dup + gaps |
 | M2 Unit 360 / Masters | 🟡 | usable basic; not full legacy depth |
 | M3 cutover | ⏸ | **not started — forbidden for now** |
+
+## Parse parity (vs web lama) — 2026-10-16
+
+| Rule | Status |
+|------|--------|
+| 1 WO ≈ 1 claim (clear WO on Simpan Baru + collision) | ✅ `applyNewClaimWoPolicy` |
+| Allowlist multi-claim WO (`WO26040309`) | ✅ |
+| SOURCE LOCK soft (key sama) / hard (key beda → block update) | ✅ |
+| Money placeholder + reject SN leak | ✅ port `money.ts` |
+| PARTS TOTAL section-stop (jangan ambil labour) | ✅ |
+| WO collision modal + diff | ✅ richer (customer/fault/part/serial) |
+| Multi-row parts table | 🟡 still single causing-part |
+| Full legacy parser suite | 🟡 heuristic TSV; needs golden samples |
 
 ## Owner gates (block formal “close M1”)
 
@@ -32,12 +45,12 @@
 
 ## Known parity gaps vs web lama (why cutover waits)
 
-- SOURCE LOCK is **warn**, not hard block on save
 - Parser still heuristic (not full legacy module suite)
 - No full Command Center / boss analytics
 - No payment evidence workflow (if still used)
 - Master matching is soft (unit enrich + customer key), not full legacy resolver
 - Admin cannot edit roles from UI (Dashboard only)
+- Multi-row parts JSON still single-entry
 
 ## Rule
 
