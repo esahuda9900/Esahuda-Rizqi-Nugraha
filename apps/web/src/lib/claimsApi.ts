@@ -152,13 +152,12 @@ export async function updateClaimById(
 
 export async function countMachines(): Promise<number> {
   const sb = getSupabase();
-  const { count, error } = await sb
-    .from('machines')
-    .select('id', { count: 'exact', head: true });
+  const { count, error } = await sb.from('machines').select('id', { count: 'exact', head: true });
   if (error) throw error;
   return count ?? 0;
 }
 
+/** Mapped view of public.machines (normalized ids + OSF text fields). */
 export type MachineRow = {
   id?: string;
   serial_no: string | null;
@@ -168,27 +167,48 @@ export type MachineRow = {
   sales_date?: string | null;
 };
 
+type MachineDb = {
+  serial_no: string | null;
+  osf_model_code: string | null;
+  contract_customer: string | null;
+  osf_dealer_name: string | null;
+  sale_date: string | null;
+};
+
+function mapMachine(row: MachineDb): MachineRow {
+  return {
+    serial_no: row.serial_no,
+    model: row.osf_model_code,
+    customer: row.contract_customer,
+    branch: row.osf_dealer_name,
+    sales_date: row.sale_date,
+  };
+}
+
+const MACHINE_SELECT =
+  'serial_no,osf_model_code,contract_customer,osf_dealer_name,sale_date';
+
 export async function searchMachines(q: string, limit = 40): Promise<MachineRow[]> {
   const sb = getSupabase();
   const term = q.trim();
   if (!term) {
     const { data, error } = await sb
       .from('machines')
-      .select('serial_no,model,customer,branch,sales_date')
+      .select(MACHINE_SELECT)
       .order('serial_no', { ascending: true })
       .limit(limit);
     if (error) throw error;
-    return (data || []) as MachineRow[];
+    return ((data || []) as MachineDb[]).map(mapMachine);
   }
   const { data, error } = await sb
     .from('machines')
-    .select('serial_no,model,customer,branch,sales_date')
+    .select(MACHINE_SELECT)
     .or(
-      `serial_no.ilike.%${term}%,model.ilike.%${term}%,customer.ilike.%${term}%,branch.ilike.%${term}%`,
+      `serial_no.ilike.%${term}%,osf_model_code.ilike.%${term}%,contract_customer.ilike.%${term}%,osf_dealer_name.ilike.%${term}%`,
     )
     .limit(limit);
   if (error) throw error;
-  return (data || []) as MachineRow[];
+  return ((data || []) as MachineDb[]).map(mapMachine);
 }
 
 export async function findMachineBySerial(serial: string): Promise<MachineRow | null> {
@@ -197,11 +217,11 @@ export async function findMachineBySerial(serial: string): Promise<MachineRow | 
   const sb = getSupabase();
   const { data, error } = await sb
     .from('machines')
-    .select('serial_no,model,customer,branch,sales_date')
+    .select(MACHINE_SELECT)
     .ilike('serial_no', `%${s}%`)
     .limit(5);
   if (error) throw error;
-  const rows = (data || []) as MachineRow[];
+  const rows = ((data || []) as MachineDb[]).map(mapMachine);
   return rows[0] || null;
 }
 
