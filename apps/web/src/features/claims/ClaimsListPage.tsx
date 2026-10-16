@@ -80,13 +80,11 @@ export function ClaimsListPage() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-
   const statuses = useMemo(() => Object.keys(statusCounts).sort(), [statusCounts]);
 
   function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
       setSortKey(key);
       setSortDir(key === 'last_updated' || key === 'failure_date' ? 'desc' : 'asc');
     }
@@ -172,11 +170,7 @@ export function ClaimsListPage() {
         </label>
       </div>
 
-      {listQ.isError ? (
-        <div className="alert error">{(listQ.error as Error).message}</div>
-      ) : null}
-
-      {listQ.isLoading ? <p className="muted">Memuat klaim…</p> : null}
+      {listQ.isError ? <div className="alert error">{(listQ.error as Error).message}</div> : null}
 
       <div className="table-wrap">
         <table className="data-table">
@@ -205,7 +199,15 @@ export function ClaimsListPage() {
                   <StatusBadge status={c.claim_status} />
                 </td>
                 <td>{c.model || '—'}</td>
-                <td className="mono">{c.serial_no || '—'}</td>
+                <td className="mono">
+                  {c.serial_no ? (
+                    <Link to={`/unit?serial=${encodeURIComponent(c.serial_no)}`}>
+                      {c.serial_no}
+                    </Link>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td>{c.customer || '—'}</td>
                 <td className="mono">{c.dealer_wo_so || '—'}</td>
                 <td>{c.branch || '—'}</td>

@@ -1,12 +1,21 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { claimsForSerial, findMachineBySerial } from '@/lib/claimsApi';
 import { StatusBadge } from '@/shared/StatusBadge';
 
 export function Unit360Page() {
-  const [input, setInput] = useState('');
-  const [serial, setSerial] = useState('');
+  const [params] = useSearchParams();
+  const fromUrl = params.get('serial') || '';
+  const [input, setInput] = useState(fromUrl);
+  const [serial, setSerial] = useState(fromUrl);
+
+  useEffect(() => {
+    if (fromUrl) {
+      setInput(fromUrl);
+      setSerial(fromUrl);
+    }
+  }, [fromUrl]);
 
   const machineQ = useQuery({
     queryKey: ['unit', 'machine', serial],
@@ -54,11 +63,26 @@ export function Unit360Page() {
             ) : null}
             {machineQ.data ? (
               <dl className="detail-grid">
-                <div><dt>Serial</dt><dd className="mono">{machineQ.data.serial_no || '—'}</dd></div>
-                <div><dt>Model</dt><dd>{machineQ.data.model || '—'}</dd></div>
-                <div><dt>Customer</dt><dd>{machineQ.data.customer || '—'}</dd></div>
-                <div><dt>Branch</dt><dd>{machineQ.data.branch || '—'}</dd></div>
-                <div><dt>Sales</dt><dd className="mono">{machineQ.data.sales_date || '—'}</dd></div>
+                <div>
+                  <dt>Serial</dt>
+                  <dd className="mono">{machineQ.data.serial_no || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Model</dt>
+                  <dd>{machineQ.data.model || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Customer</dt>
+                  <dd>{machineQ.data.customer || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Branch</dt>
+                  <dd>{machineQ.data.branch || '—'}</dd>
+                </div>
+                <div>
+                  <dt>Sales</dt>
+                  <dd className="mono">{machineQ.data.sales_date || '—'}</dd>
+                </div>
               </dl>
             ) : machineQ.isFetched ? (
               <p className="muted">Tidak ketemu di master machines (masih bisa ada klaim).</p>
