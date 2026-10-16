@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { fetchClaimById, updateClaimById } from '@/lib/claimsApi';
+import { formatDateDisplay } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
 
 const STATUSES = ['Draft', 'SDLG Audit', 'Paid', 'Rejected'] as const;
@@ -57,9 +58,14 @@ export function ClaimDetailPage() {
           <h1 className="mono">{id || '—'}</h1>
           {q.data ? <StatusBadge status={q.data.claim_status} /> : null}
         </div>
-        <Link className="btn-link ghost-link" to="/parse">
-          Parse form
-        </Link>
+        <div className="header-actions">
+          <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
+            Submit ke SDLG
+          </Link>
+          <Link className="btn-link ghost-link" to="/parse">
+            Parse form
+          </Link>
+        </div>
       </header>
 
       {q.isLoading ? <p className="center-state">Memuat klaim dari Supabase…</p> : null}
@@ -97,6 +103,7 @@ export function ClaimDetailPage() {
             </div>
             {statusMsg ? <div className="alert info">{statusMsg}</div> : null}
             {statusErr ? <div className="alert error">{statusErr}</div> : null}
+            <p className="muted small">Prefer RPC status di Fase 4; ini update langsung sementara.</p>
           </section>
 
           <section className="panel">
@@ -133,10 +140,18 @@ export function ClaimDetailPage() {
           <section className="panel">
             <h2 className="section-title">Tanggal & HM</h2>
             <dl className="detail-grid">
-              <Field label="Sales" value={q.data.sales_date} mono />
-              <Field label="Failure" value={q.data.failure_date} mono />
-              <Field label="Dealer repair" value={q.data.dealer_repair_date} mono />
-              <Field label="Completion" value={q.data.completion_date} mono />
+              <Field label="Sales" value={formatDateDisplay(q.data.sales_date) || q.data.sales_date} mono />
+              <Field label="Failure" value={formatDateDisplay(q.data.failure_date) || q.data.failure_date} mono />
+              <Field
+                label="Dealer repair"
+                value={formatDateDisplay(q.data.dealer_repair_date) || q.data.dealer_repair_date}
+                mono
+              />
+              <Field
+                label="Completion"
+                value={formatDateDisplay(q.data.completion_date) || q.data.completion_date}
+                mono
+              />
               <Field label="HM failure" value={q.data.hm_failure} />
               <Field label="HM completion" value={q.data.hm_completion} />
               <Field label="Labour hrs" value={q.data.labour_hrs} />
