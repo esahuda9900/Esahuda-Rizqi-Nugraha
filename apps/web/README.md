@@ -1,44 +1,32 @@
-# SDLG Warranty — Web (v0.1 scaffold)
+# SDLG Warranty — Web
 
-Clean frontend rebuild. **Keeps** Supabase `frqvelcreczmnofldrga`.
+Clean frontend rebuild. Backend: Supabase `frqvelcreczmnofldrga`.
 
-See:
+Docs: `docs/PRD.md` · `docs/FRONTEND_REBUILD_PLAN.md`
 
-- `docs/PRD.md`
-- `docs/FRONTEND_REBUILD_PLAN.md`
+## Status
+
+| Phase | Status |
+|-------|--------|
+| 1 Scaffold + auth | Done |
+| 2 Claims read (list + detail by id) | Done |
+| 3 Parse + WO modal | Done (heuristic parser) |
+| 4 Create / update claim | Done |
+| 5 Full smoke F1–F8 on prod host | Manual |
+| 6 Pages cutover | Not yet — monolith still production |
 
 ## Dev
 
 ```bash
 cd apps/web
-cp .env.example .env.local   # optional; anon key has public default for this project
 npm install
+echo 'VITE_BASE=/' > .env.local
 npm run dev
 ```
 
-Open http://localhost:5173/Esahuda-Rizqi-Nugraha/  
-(or set `VITE_BASE=/` in `.env.local` for root path locally)
-
-## Scripts
-
-| Command | Purpose |
-|---------|--------|
-| `npm run dev` | Vite dev server |
-| `npm run build` | Production build → `dist/` |
-| `npm run typecheck` | `tsc` |
-
-## Phase status
-
-| Phase | Status |
-|-------|--------|
-| 1 Scaffold + auth shell | **This branch** |
-| 2 Read path polish | Claims list + detail by id (basic) |
-| 3 Parse port | Pending |
-| 4 Write path | Pending |
-| 5–6 Smoke + cutover | Pending |
-
 ## Rules
 
-- One Supabase client: `src/lib/supabase.ts`
-- Claim detail: `fetchClaimById` only — no list-cache fallback
-- No DOM interval writers
+- One Supabase client only (`src/lib/supabase.ts`)
+- Claim detail / editor body: fetch by exact `claim_id` only
+- No interval DOM writers
+- WO allowlist: `WO26040309`
