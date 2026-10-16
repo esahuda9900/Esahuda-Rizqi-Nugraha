@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { fetchClaimById, updateClaimStatusRpc } from '@/lib/claimsApi';
+import { fetchClaimById, fetchClaimStatusHistory, updateClaimStatusRpc } from '@/lib/claimsApi';
 import { dash, formatDateDisplay, formatMoney } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
 
@@ -71,6 +71,13 @@ export function ClaimDetailPage() {
     retry: 1,
   });
 
+  const histQ = useQuery({
+    queryKey: ['claim-history', id],
+    queryFn: () => fetchClaimStatusHistory(id),
+    enabled: Boolean(id),
+    staleTime: 15_000,
+  });
+
   const statusMut = useMutation({
     mutationFn: async () => {
       await updateClaimStatusRpc({
@@ -85,6 +92,7 @@ export function ClaimDetailPage() {
       setStatusErr(null);
       setShowStatus(false);
       await qc.invalidateQueries({ queryKey: ['claim', id] });
+      await qc.invalidateQueries({ queryKey: ['claim-history', id] });
       await qc.invalidateQueries({ queryKey: ['claims'] });
     },
     onError: (err) => {
@@ -144,7 +152,7 @@ export function ClaimDetailPage() {
             <div className="modal-accent" />
             <div className="modal-body">
               <h2>Ubah status klaim</h2>
-              <p className="muted small">Lewat RPC <code>update_claim_status</code> (audit + guard DB).</p>
+              <p className="muted small">RPC <code>update_claim_status</code>.</p>
               <label>
                 Status
                 <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)}>
@@ -168,11 +176,7 @@ export function ClaimDetailPage() {
               <button type="button" className="ghost" onClick={() => setShowStatus(false)}>
                 Batal
               </button>
-              <button
-                type="button"
-                disabled={statusMut.isPending}
-                onClick={() => statusMut.mutate()}
-              >
+              <button type="button" disabled={statusMut.isPending} onClick={() => statusMut.mutate()}>
                 {statusMut.isPending ? 'Menyimpan…' : 'Simpan status'}
               </button>
             </div>
@@ -190,6 +194,42 @@ export function ClaimDetailPage() {
               <Field label="Status reason" value={q.data.status_update_reason} />
               <Field label="Repair status" value={q.data.repair_status} />
             </dl>
+          </section>
+
+          <section className="panel">
+            <h2 className="section-title">Riwayat status</h2>
+            {histQ.isLoading ? <p className="muted">Memuat history…</p> : null}
+            {histQ.isError ? (
+              <div className="alert error">{(histQ.error as Error).message}</div>
+            ) : null}
+            {(histQ.data || []).length === 0 && histQ.isFetched ? (
+              <p className="muted">Belum ada baris di claim_status_history.</p>
+            ) : (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Tanggal</th>
+                      <th>Alasan</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(histQ.data || []).map((h) => (
+                      <tr key={h.id}>
+                        <td>
+                          <StatusBadge status={h.status} />
+                        </td>
+                        <td className="mono">{formatDateDisplay(h.status_date) || '—'}</td>
+                        <td>{h.reason || '—'}</td>
+                        <td className="mono small">{h.created_at || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
 
           <section className="panel">
