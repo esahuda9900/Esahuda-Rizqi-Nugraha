@@ -131,6 +131,8 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   border: 1px solid var(--border);
   color: var(--text) !important;
 }
+.header-meta { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+.header-actions { display: flex; gap: 8px; }
 .section-title { margin: 0 0 12px; font-size: 15px; }
 .panel {
   background: rgba(30, 41, 59, 0.72);
@@ -159,9 +161,21 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
 .bar-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); border-radius: 999px; }
 .quick-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-weight: 600; font-size: 14px; }
 
-.toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
 .toolbar input { flex: 1; min-width: 200px; }
 .toolbar select { width: auto; min-width: 160px; }
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.check-inline input { width: auto; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.chip-row button { padding: 8px 12px; font-size: 12.5px; }
 
 .tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .file-label input[type="file"] {
@@ -189,8 +203,29 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   white-space: nowrap;
 }
 .data-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; position: sticky; top: 0; background: #1e293b; }
+.th-sort {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
 .data-table tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
+.row-archived { opacity: 0.65; }
 .empty-cell { text-align: center !important; color: var(--muted); padding: 24px !important; }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
 
 .detail-grid {
   display: grid;
