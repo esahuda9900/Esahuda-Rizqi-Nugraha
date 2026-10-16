@@ -50,14 +50,11 @@ export function modelsEquivalent(a: string, b: string): boolean {
   const cb = compact(b);
   if (!ca || !cb) return false;
   if (ca === cb) return true;
-  // G9138F vs G9138FLS / G9138F-LS
   if (ca.startsWith(cb) || cb.startsWith(ca)) return true;
-  // strip LS/WS product type suffix
   const strip = (x: string) => x.replace(/(LS|WS|SS)$/, '');
   return strip(ca) === strip(cb);
 }
 
-/** Rank machine candidates: exact > endsWith > tail6+model. */
 export function pickBestMachine(
   candidates: MachineRow[],
   serial: string,
@@ -68,15 +65,18 @@ export function pickBestMachine(
   const exact = candidates.filter((c) => compact(c.serial_no || '') === sn);
   if (exact.length === 1) return exact[0];
 
-  const ends = candidates.filter((c) => compact(c.serial_no || '').endsWith(sn) || sn.endsWith(compact(c.serial_no || '')));
-  let pool = ends.length ? ends : candidates;
+  let pool = candidates.filter((c) => {
+    const cs = compact(c.serial_no || '');
+    const src = compact(c.source_serial_no || '');
+    return cs.endsWith(sn) || sn.endsWith(cs) || src === sn || src.endsWith(sn);
+  });
+  if (!pool.length) pool = candidates;
 
   if (pool.length > 1 && model) {
     const byModel = pool.filter((c) => modelsEquivalent(c.model || '', model));
     if (byModel.length) pool = byModel;
   }
 
-  // Prefer longest (full VLG) serial
   pool = [...pool].sort(
     (a, b) => compact(b.serial_no || '').length - compact(a.serial_no || '').length,
   );
@@ -85,18 +85,23 @@ export function pickBestMachine(
 
 /**
  * Apply master unit + app-code branch onto parsed claim (legacy parity).
- * Source values win only when master has nothing better.
  */
 export function applyMasterToParsed(
   parsed: ParsedClaim,
   machine: MachineRow | null,
+  canonicalModel?: string | null,
 ): ParsedClaim {
   const out = { ...parsed };
 
-  // Branch from App Code when form has no branch (legacy)
   if (!out.branch) {
     const inferred = inferBranchFromAppCode(out.appCode);
     if (inferred) out.branch = inferred;
+  }
+
+  if (canonicalModel && modelsEquivalent(canonicalModel, out.model || canonicalModel)) {
+    if (!out.model || compact(canonicalModel).length >= compact(out.model).length) {
+      out.model = canonicalModel;
+    }
   }
 
   if (machine) {
@@ -106,7 +111,6 @@ export function applyMasterToParsed(
       out.serialNo = machine.serial_no || out.serialNo;
     }
     if (machine.model && modelsEquivalent(machine.model, out.model || machine.model)) {
-      // Prefer master model when longer / has -LS (canonical)
       if (!out.model || compact(machine.model).length >= compact(out.model).length) {
         out.model = machine.model;
       }
@@ -114,19 +118,28 @@ export function applyMasterToParsed(
       out.model = machine.model;
     }
     if (machine.customer) {
-      // Display style legacy: uppercase customer from master when available
-      out.customer = out.customer || machine.customer;
-      if (machine.customer && compact(machine.customer) === compact(out.customer)) {
+      if (!out.customer) out.customer = machine.customer;
+      else if (compact(machine.customer) === compact(out.customer)) {
+        // Prefer master casing (often UPPERCASE like legacy UI)
         out.customer = machine.customer;
       }
     }
-    if (machine.branch) {
-      out.branch = machine.branch || out.branch;
-    }
+    if (machine.branch) out.branch = machine.branch;
     if (!out.salesDate && machine.sales_date) out.salesDate = machine.sales_date;
+    // Indent: append product type from model if master indent richer
+    if (machine.indent_no) {
+      const mi = machine.indent_no.trim();
+      if (!out.indentNo) out.indentNo = mi;
+      else if (mi.length > out.indentNo.length && mi.startsWith(out.indentNo.replace(/-LS$/i, ''))) {
+        out.indentNo = mi;
+      }
+    }
   }
 
-  // Indent: some masters append product type (-LS) — keep source indent unless empty
-  // Repair status hint (not a form field but useful)
+  // Legacy display: customer often shown uppercase when from master / claim
+  if (out.customer && machine?.customer) {
+    out.customer = machine.customer;
+  }
+
   return out;
 }

@@ -8,6 +8,7 @@ import {
   fetchClaimById,
   findMachineBySerial,
   inferBranchFromClaimHistory,
+  resolveModelCanonical,
   updateClaimById,
   type ClaimListRow,
   type MachineRow,
@@ -143,9 +144,17 @@ export function ParsePage() {
       }
     }
 
-    let next = applyMasterToParsed(p, machine);
+    let canonicalModel: string | null = null;
+    if (p.model) {
+      try {
+        canonicalModel = await resolveModelCanonical(p.model);
+      } catch {
+        canonicalModel = null;
+      }
+    }
 
-    // Claim history branch when machine row has no branch (legacy unit history rule)
+    let next = applyMasterToParsed(p, machine, canonicalModel);
+
     if (!next.branch && next.serialNo) {
       try {
         const histBranch = await inferBranchFromClaimHistory(next.serialNo);
@@ -155,11 +164,11 @@ export function ParsePage() {
       }
     }
 
-    // Still no branch → app code (already in applyMasterToParsed, but re-apply if appCode late)
     if (!next.branch && next.appCode) {
-      next = applyMasterToParsed(next, null);
+      next = applyMasterToParsed(next, null, canonicalModel);
     }
 
+    // If claim already exists with same WO, prefer DB serial/model for display parity
     return { parsed: next, machine };
   }
 
@@ -177,7 +186,7 @@ export function ParsePage() {
       setError('Parse tidak menemukan field inti (model/serial/WO). Cek format paste/Excel.');
     } else if (enriched.machine) {
       setMessage(
-        `Master match: ${enriched.machine.serial_no || '—'} · ${enriched.machine.model || '—'} · ${enriched.machine.branch || p.branch || '—'}`,
+        `Master match: ${enriched.machine.serial_no || '—'} · ${enriched.machine.model || p.model || '—'} · ${p.branch || enriched.machine.branch || '—'}`,
       );
     } else if (p.branch) {
       setMessage(`Branch dari App Code: ${p.branch}`);
@@ -280,8 +289,8 @@ export function ParsePage() {
         <p className="eyebrow">SDLG Input</p>
         <h1>Parse → Simpan</h1>
         <p className="muted">
-          Parity web lama: master serial tail+model · App Code→branch · parts table · WO clear ·
-          SOURCE LOCK.
+          Parity web lama: schema machines legasi · serial tail+model · App Code→branch · models
+          canonical · parts · WO clear · SOURCE LOCK.
         </p>
       </header>
 
@@ -335,12 +344,12 @@ export function ParsePage() {
                 <div className="alert info">
                   <strong>Master match</strong> · SN{' '}
                   <span className="mono">{masterHit.serial_no || '—'}</span> ·{' '}
-                  {masterHit.model || '—'} · {parsed.branch || masterHit.branch || '—'} ·{' '}
-                  {masterHit.customer || parsed.customer || '—'}
+                  {masterHit.model || parsed.model || '—'} · {parsed.branch || masterHit.branch || '—'}{' '}
+                  · {masterHit.customer || parsed.customer || '—'}
                 </div>
               ) : parsed.branch ? (
                 <div className="alert info">
-                  Branch dari App Code: <strong>{parsed.branch}</strong>
+                  Branch dari App Code / histori: <strong>{parsed.branch}</strong>
                 </div>
               ) : null}
               {matched ? (
