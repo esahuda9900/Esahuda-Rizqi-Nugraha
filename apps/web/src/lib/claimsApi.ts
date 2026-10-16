@@ -211,64 +211,151 @@ export async function insertClaim(row: Record<string, unknown>): Promise<string>
   return claimId;
 }
 
+/** Resolved unit row for parse enrich (legacy getMasterMatches shape). */
 export type MachineRow = {
   serial_no: string | null;
   model: string | null;
   customer: string | null;
   branch: string | null;
   sales_date?: string | null;
+  indent_no?: string | null;
+  source_serial_no?: string | null;
 };
 
+/** Legacy machines columns (not osf_model_code / contract_customer). */
 type MachineDb = {
   serial_no: string | null;
-  osf_model_code: string | null;
-  contract_customer: string | null;
-  osf_dealer_name: string | null;
-  sale_date: string | null;
+  source_serial_no?: string | null;
+  model_id?: string | null;
+  customer_id?: string | null;
+  branch_id?: string | null;
+  osf_model?: string | null;
+  indent_no?: string | null;
+  customer_name_source?: string | null;
+  osf_sales_date?: string | null;
+  is_active?: boolean | null;
 };
 
-function mapMachine(row: MachineDb): MachineRow {
-  return {
-    serial_no: row.serial_no,
-    model: row.osf_model_code,
-    customer: row.contract_customer,
-    branch: row.osf_dealer_name,
-    sales_date: row.sale_date,
-  };
-}
-
-const MACHINE_SELECT = 'serial_no,osf_model_code,contract_customer,osf_dealer_name,sale_date';
+const MACHINE_SELECT =
+  'serial_no,source_serial_no,model_id,customer_id,branch_id,osf_model,indent_no,customer_name_source,osf_sales_date,is_active';
 
 function serialDigitsTail6(s: string): string {
   const d = String(s || '').replace(/\D/g, '');
   return d.length >= 6 ? d.slice(-6) : d;
 }
 
+function compact(s: string): string {
+  return String(s || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+async function hydrateMachine(row: MachineDb): Promise<MachineRow> {
+  const sb = getSupabase();
+  let model = row.osf_model || null;
+  let customer = row.customer_name_source || null;
+  let branch: string | null = null;
+
+  if (row.model_id) {
+    const { data } = await sb
+      .from('models')
+      .select('model_code,model_name')
+      .eq('id', row.model_id)
+      .maybeSingle();
+    if (data) {
+      model = (data as { model_name?: string; model_code?: string }).model_name
+        || (data as { model_code?: string }).model_code
+        || model;
+    }
+  }
+  if (row.customer_id) {
+    const { data } = await sb
+      .from('customers')
+      .select('customer_name')
+      .eq('id', row.customer_id)
+      .maybeSingle();
+    if (data?.customer_name) customer = data.customer_name as string;
+  }
+  if (row.branch_id) {
+    const { data } = await sb
+      .from('branches')
+      .select('branch_name,branch_code')
+      .eq('id', row.branch_id)
+      .maybeSingle();
+    if (data) {
+      branch =
+        (data as { branch_name?: string }).branch_name
+        || (data as { branch_code?: string }).branch_code
+        || null;
+    }
+  }
+
+  return {
+    serial_no: row.serial_no,
+    source_serial_no: row.source_serial_no || null,
+    model,
+    customer,
+    branch,
+    sales_date: row.osf_sales_date || null,
+    indent_no: row.indent_no || null,
+  };
+}
+
+function pickMachineDb(rows: MachineDb[], serial: string, modelHint?: string): MachineDb | null {
+  const active = rows.filter((r) => r.is_active !== false);
+  const pool0 = active.length ? active : rows;
+  const sn = compact(serial);
+
+  const exact = pool0.filter((c) => compact(c.serial_no || '') === sn);
+  if (exact.length === 1) return exact[0];
+
+  let pool = pool0.filter((c) => {
+    const cs = compact(c.serial_no || '');
+    const src = compact(c.source_serial_no || '');
+    return (
+      cs.endsWith(sn)
+      || sn.endsWith(cs)
+      || src === sn
+      || src.endsWith(sn)
+      || serialDigitsTail6(cs) === serialDigitsTail6(sn)
+    );
+  });
+  if (!pool.length) pool = pool0;
+
+  if (pool.length > 1 && modelHint) {
+    const mh = compact(modelHint);
+    const byModel = pool.filter((c) => {
+      const cm = compact(c.osf_model || '');
+      return cm === mh || cm.startsWith(mh) || mh.startsWith(cm.replace(/(LS|WS)$/, ''));
+    });
+    if (byModel.length) pool = byModel;
+  }
+
+  pool.sort((a, b) => compact(b.serial_no || '').length - compact(a.serial_no || '').length);
+  return pool[0] || null;
+}
+
 export async function searchMachines(q: string, limit = 40): Promise<MachineRow[]> {
   const sb = getSupabase();
   const term = q.trim();
-  if (!term) {
-    const { data, error } = await sb
-      .from('machines')
-      .select(MACHINE_SELECT)
-      .order('serial_no', { ascending: true })
-      .limit(limit);
-    if (error) throw error;
-    return ((data || []) as MachineDb[]).map(mapMachine);
+  let query = sb.from('machines').select(MACHINE_SELECT).limit(limit);
+  if (term) {
+    query = query.or(
+      `serial_no.ilike.%${term}%,source_serial_no.ilike.%${term}%,osf_model.ilike.%${term}%,customer_name_source.ilike.%${term}%`,
+    );
+  } else {
+    query = query.order('serial_no', { ascending: true });
   }
-  const { data, error } = await sb
-    .from('machines')
-    .select(MACHINE_SELECT)
-    .or(
-      `serial_no.ilike.%${term}%,osf_model_code.ilike.%${term}%,contract_customer.ilike.%${term}%,osf_dealer_name.ilike.%${term}%`,
-    )
-    .limit(limit);
+  const { data, error } = await query;
   if (error) throw error;
-  return ((data || []) as MachineDb[]).map(mapMachine);
+  const rows = (data || []) as MachineDb[];
+  return Promise.all(rows.map(hydrateMachine));
 }
 
 /**
- * Resolve unit like legacy: exact → endsWith short SN → tail-6 digits (+ optional model filter).
+ * Resolve unit like legacy getMasterMatches:
+ * exact → source_serial → endsWith short SN → tail-6 + model filter,
+ * then hydrate model/customer/branch from FK tables.
  */
 export async function findMachineBySerial(
   serial: string,
@@ -278,29 +365,44 @@ export async function findMachineBySerial(
   if (!s) return null;
   const sb = getSupabase();
 
-  // 1) exact (case-insensitive)
+  const tryPick = async (data: MachineDb[] | null) => {
+    if (!data?.length) return null;
+    const picked = pickMachineDb(data, s, modelHint);
+    return picked ? hydrateMachine(picked) : null;
+  };
+
+  // 1) exact serial_no
   {
-    const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('serial_no', s).limit(3);
-    if (!error && data?.length === 1) return mapMachine(data[0] as MachineDb);
-    if (!error && data && data.length > 1) {
-      return pickMachineLocal(data as MachineDb[], s, modelHint);
+    const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('serial_no', s).limit(5);
+    if (!error) {
+      const hit = await tryPick(data as MachineDb[]);
+      if (hit) return hit;
     }
   }
 
-  // 2) contains / endsWith short serial (S0600753 inside VLG…)
+  // 2) source_serial_no exact
+  {
+    const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('source_serial_no', s).limit(5);
+    if (!error) {
+      const hit = await tryPick(data as MachineDb[]);
+      if (hit) return hit;
+    }
+  }
+
+  // 3) contains short serial
   {
     const { data, error } = await sb
       .from('machines')
       .select(MACHINE_SELECT)
-      .ilike('serial_no', `%${s}%`)
-      .limit(25);
-    if (!error && data?.length) {
-      const picked = pickMachineLocal(data as MachineDb[], s, modelHint);
-      if (picked) return picked;
+      .or(`serial_no.ilike.%${s}%,source_serial_no.ilike.%${s}%`)
+      .limit(30);
+    if (!error) {
+      const hit = await tryPick(data as MachineDb[]);
+      if (hit) return hit;
     }
   }
 
-  // 3) numeric tail-6 (600753) when short SN is S0600753-style
+  // 4) numeric tail-6
   const tail = serialDigitsTail6(s);
   if (tail.length >= 6) {
     const { data, error } = await sb
@@ -308,42 +410,13 @@ export async function findMachineBySerial(
       .select(MACHINE_SELECT)
       .ilike('serial_no', `%${tail}%`)
       .limit(40);
-    if (!error && data?.length) {
-      const picked = pickMachineLocal(data as MachineDb[], s, modelHint);
-      if (picked) return picked;
+    if (!error) {
+      const hit = await tryPick(data as MachineDb[]);
+      if (hit) return hit;
     }
   }
 
   return null;
-}
-
-function pickMachineLocal(rows: MachineDb[], serial: string, modelHint?: string): MachineRow | null {
-  const mapped = rows.map(mapMachine);
-  const sn = serial.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const exact = mapped.filter((c) => (c.serial_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === sn);
-  if (exact.length === 1) return exact[0];
-
-  let pool = mapped.filter((c) => {
-    const cs = (c.serial_no || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return cs.endsWith(sn) || sn.endsWith(cs) || serialDigitsTail6(cs) === serialDigitsTail6(sn);
-  });
-  if (!pool.length) pool = mapped;
-
-  if (pool.length > 1 && modelHint) {
-    const mh = modelHint.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const byModel = pool.filter((c) => {
-      const cm = (c.model || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      return cm === mh || cm.startsWith(mh) || mh.startsWith(cm.replace(/(LS|WS)$/, ''));
-    });
-    if (byModel.length) pool = byModel;
-  }
-
-  pool.sort(
-    (a, b) =>
-      (b.serial_no || '').replace(/[^A-Z0-9]/gi, '').length -
-      (a.serial_no || '').replace(/[^A-Z0-9]/gi, '').length,
-  );
-  return pool[0] || null;
 }
 
 export async function claimsForSerial(serial: string, limit = 20): Promise<ClaimListRow[]> {
@@ -363,7 +436,7 @@ export async function claimsForSerial(serial: string, limit = 20): Promise<Claim
 
 /** Prefer branch from an existing claim with same serial when machine has no branch. */
 export async function inferBranchFromClaimHistory(serial: string): Promise<string> {
-  const rows = await claimsForSerial(serial, 10);
+  const rows = await claimsForSerial(serial, 15);
   const counts = new Map<string, number>();
   for (const r of rows) {
     const b = String(r.branch || '').trim();
@@ -379,4 +452,33 @@ export async function inferBranchFromClaimHistory(serial: string): Promise<strin
     }
   }
   return best;
+}
+
+/** Lookup model name from models table by code (G9138F → G9138F-LS). */
+export async function resolveModelCanonical(modelHint: string): Promise<string | null> {
+  const h = modelHint.trim();
+  if (!h) return null;
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('models')
+    .select('model_code,model_name')
+    .or(`model_code.ilike.%${h}%,model_name.ilike.%${h}%`)
+    .limit(20);
+  if (error || !data?.length) return null;
+  const mh = compact(h);
+  const rows = data as { model_code?: string; model_name?: string }[];
+  const scored = rows
+    .map((r) => {
+      const code = compact(r.model_code || '');
+      const name = compact(r.model_name || '');
+      let score = 0;
+      if (code === mh || name === mh) score = 100;
+      else if (code.startsWith(mh) || name.startsWith(mh)) score = 80;
+      else if (code.includes(mh) || name.includes(mh)) score = 50;
+      return { r, score, len: (r.model_name || r.model_code || '').length };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || b.len - a.len);
+  const best = scored[0]?.r;
+  return best?.model_name || best?.model_code || null;
 }
