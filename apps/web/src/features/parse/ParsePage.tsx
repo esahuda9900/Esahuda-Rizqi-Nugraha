@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   allocateNextClaimId,
   fetchActiveClaims,
+  findMachineBySerial,
   insertClaim,
   updateClaimById,
   type ClaimListRow,
 } from '@/lib/claimsApi';
 import { parsedToClaimRow } from './claimMapper';
+import { excelFileToText } from './excelImport';
 import { parseWarrantyText } from './parseWarrantyText';
 import type { ParsedClaim } from './types';
 import { classifyMatch, findMatchedClaim } from './woPolicy';
@@ -22,6 +24,7 @@ export function ParsePage() {
   const [pending, setPending] = useState<PendingAction>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -42,14 +45,54 @@ export function ParsePage() {
     [parsed, matched],
   );
 
-  function runParse() {
+  async function enrichFromUnit(p: ParsedClaim): Promise<ParsedClaim> {
+    if (!p.serialNo) return p;
+    try {
+      const m = await findMachineBySerial(p.serialNo);
+      if (!m) return p;
+      return {
+        ...p,
+        customer: p.customer || m.customer || '',
+        model: p.model || m.model || '',
+        branch: p.branch || m.branch || '',
+        salesDate: p.salesDate || m.sales_date || '',
+      };
+    } catch {
+      return p;
+    }
+  }
+
+  async function runParse(sourceText?: string) {
     setError(null);
     setMessage(null);
-    const p = parseWarrantyText(raw);
+    const text = sourceText ?? raw;
+    let p = parseWarrantyText(text);
+    p = await enrichFromUnit(p);
     setParsed(p);
     if (!p.model && !p.serialNo && !p.dealerWoSo) {
-      setError('Parse tidak menemukan field inti (model/serial/WO). Cek format paste.');
+      setError('Parse tidak menemukan field inti (model/serial/WO). Cek format paste/Excel.');
     }
+  }
+
+  async function onExcel(file: File | null) {
+    if (!file) return;
+    setImporting(true);
+    setError(null);
+    try {
+      const text = await excelFileToText(file);
+      setRaw(text);
+      await runParse(text);
+      setMessage(`Excel diimpor: ${file.name}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal baca Excel');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function patchParsed(key: keyof ParsedClaim, value: string) {
+    if (!parsed) return;
+    setParsed({ ...parsed, [key]: value });
   }
 
   const saveMut = useMutation({
@@ -98,24 +141,34 @@ export function ParsePage() {
   return (
     <div className="page">
       <header className="page-header">
-        <h1>Parse</h1>
-        <p className="muted">Paste form warranty dari Excel → parse → simpan ke Supabase.</p>
+        <p className="eyebrow">SDLG Input</p>
+        <h1>Parse → Simpan</h1>
+        <p className="muted">Paste form atau Import Excel. AI tidak dipakai; parser + unit master autofill.</p>
       </header>
 
       <div className="parse-layout">
         <section className="parse-panel">
+          <label className="file-label">
+            Import Excel (.xlsx / .xls)
+            <input
+              type="file"
+              accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              disabled={importing}
+              onChange={(e) => void onExcel(e.target.files?.[0] || null)}
+            />
+          </label>
           <label>
             Source text
             <textarea
-              rows={16}
+              rows={14}
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
-              placeholder="Tempel isi form Technical Service Information (Warranty Claim) di sini…"
+              placeholder="Tempel isi form Technical Service Information (Warranty Claim)…"
             />
           </label>
           <div className="btn-row">
-            <button type="button" onClick={runParse} disabled={!raw.trim()}>
-              Parse
+            <button type="button" onClick={() => void runParse()} disabled={!raw.trim() || importing}>
+              {importing ? 'Import…' : 'Parse'}
             </button>
             <button
               type="button"
@@ -133,9 +186,9 @@ export function ParsePage() {
         </section>
 
         <section className="parse-panel">
-          <h2 className="section-title">Hasil parse</h2>
+          <h2 className="section-title">Hasil parse (bisa diedit)</h2>
           {!parsed ? (
-            <p className="muted">Belum ada hasil. Paste lalu klik Parse.</p>
+            <p className="muted">Belum ada hasil. Paste/Import lalu Parse.</p>
           ) : (
             <>
               {matched ? (
@@ -146,27 +199,35 @@ export function ParsePage() {
                 </div>
               ) : null}
 
-              <dl className="detail-grid compact">
-                <div><dt>WO</dt><dd className="mono">{parsed.dealerWoSo || '—'}</dd></div>
-                <div><dt>Model</dt><dd>{parsed.model || '—'}</dd></div>
-                <div><dt>Serial</dt><dd className="mono">{parsed.serialNo || '—'}</dd></div>
-                <div><dt>Customer</dt><dd>{parsed.customer || '—'}</dd></div>
-                <div><dt>Fault</dt><dd>{parsed.faultDescription || '—'}</dd></div>
-                <div><dt>Part</dt><dd className="mono">{parsed.causingPartNo || '—'}</dd></div>
-                <div><dt>HM fail</dt><dd>{parsed.hmFailure ?? '—'}</dd></div>
-                <div><dt>Labour hrs</dt><dd>{parsed.labourHrs ?? '—'}</dd></div>
-                <div><dt>Sales</dt><dd>{parsed.salesDate || '—'}</dd></div>
-                <div><dt>Failure</dt><dd>{parsed.failureDate || '—'}</dd></div>
-                <div><dt>Parts total</dt><dd>{parsed.partsTotal ?? '—'}</dd></div>
-                <div><dt>Total amount</dt><dd>{parsed.totalAmount ?? '—'}</dd></div>
-              </dl>
+              <div className="edit-grid">
+                {(
+                  [
+                    ['dealerWoSo', 'WO'],
+                    ['model', 'Model'],
+                    ['serialNo', 'Serial'],
+                    ['customer', 'Customer'],
+                    ['branch', 'Branch'],
+                    ['faultDescription', 'Fault'],
+                    ['causingPartNo', 'Part no'],
+                    ['causingPartDesc', 'Part desc'],
+                    ['salesDate', 'Sales date'],
+                    ['failureDate', 'Failure date'],
+                    ['repairMethod', 'Repair method'],
+                    ['technicalPersonnel', 'Tech'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key}>
+                    {label}
+                    <input
+                      value={String(parsed[key] ?? '')}
+                      onChange={(e) => patchParsed(key, e.target.value)}
+                    />
+                  </label>
+                ))}
+              </div>
 
               <div className="btn-row">
-                <button
-                  type="button"
-                  onClick={requestSaveNew}
-                  disabled={saveMut.isPending}
-                >
+                <button type="button" onClick={requestSaveNew} disabled={saveMut.isPending}>
                   Simpan sebagai Baru
                 </button>
                 {matched ? (
@@ -196,9 +257,7 @@ export function ParsePage() {
           parsed={parsed}
           matched={pending.matched}
           onCancel={() => setPending(null)}
-          onConfirm={() =>
-            saveMut.mutate({ mode: pending.type, matched: pending.matched })
-          }
+          onConfirm={() => saveMut.mutate({ mode: pending.type, matched: pending.matched })}
         />
       ) : null}
     </div>

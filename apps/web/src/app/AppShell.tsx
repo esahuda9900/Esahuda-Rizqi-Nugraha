@@ -32,7 +32,7 @@ export function AppShell() {
         </nav>
         <div className="sidebar-foot">
           <p className="muted small">{user?.email || 'Admin'}</p>
-          <p className="muted small">Policy: DB Verified · Preview</p>
+          <p className="muted small">v0.3 · Preview · DB Verified</p>
           <button type="button" className="ghost" onClick={() => void signOut()}>
             Logout
           </button>

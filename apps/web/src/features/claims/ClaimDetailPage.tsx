@@ -1,7 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { fetchClaimById } from '@/lib/claimsApi';
+import { fetchClaimById, updateClaimById } from '@/lib/claimsApi';
 import { StatusBadge } from '@/shared/StatusBadge';
+
+const STATUSES = ['Draft', 'SDLG Audit', 'Paid', 'Rejected'] as const;
 
 function Field({ label, value, mono }: { label: string; value: unknown; mono?: boolean }) {
   const v = value == null || value === '' ? '—' : String(value);
@@ -16,6 +19,9 @@ function Field({ label, value, mono }: { label: string; value: unknown; mono?: b
 export function ClaimDetailPage() {
   const { claimId = '' } = useParams();
   const id = decodeURIComponent(claimId);
+  const qc = useQueryClient();
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [statusErr, setStatusErr] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ['claim', id],
@@ -23,6 +29,22 @@ export function ClaimDetailPage() {
     enabled: Boolean(id),
     staleTime: 10_000,
     retry: 1,
+  });
+
+  const statusMut = useMutation({
+    mutationFn: async (next: string) => {
+      await updateClaimById(id, { claim_status: next });
+      return next;
+    },
+    onSuccess: async (next) => {
+      setStatusMsg(`Status → ${next}`);
+      setStatusErr(null);
+      await qc.invalidateQueries({ queryKey: ['claim', id] });
+      await qc.invalidateQueries({ queryKey: ['claims'] });
+    },
+    onError: (err) => {
+      setStatusErr(err instanceof Error ? err.message : 'Gagal update status');
+    },
   });
 
   return (
@@ -54,6 +76,29 @@ export function ClaimDetailPage() {
 
       {q.data ? (
         <>
+          <section className="panel">
+            <h2 className="section-title">Status workflow</h2>
+            <div className="toolbar">
+              <select
+                value={q.data.claim_status || 'Draft'}
+                disabled={statusMut.isPending}
+                onChange={(e) => statusMut.mutate(e.target.value)}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+                {q.data.claim_status &&
+                !STATUSES.includes(q.data.claim_status as (typeof STATUSES)[number]) ? (
+                  <option value={q.data.claim_status}>{q.data.claim_status}</option>
+                ) : null}
+              </select>
+            </div>
+            {statusMsg ? <div className="alert info">{statusMsg}</div> : null}
+            {statusErr ? <div className="alert error">{statusErr}</div> : null}
+          </section>
+
           <section className="panel">
             <h2 className="section-title">Unit & pihak</h2>
             <dl className="detail-grid">
@@ -101,10 +146,6 @@ export function ClaimDetailPage() {
               <Field label="Currency" value={q.data.currency} />
             </dl>
           </section>
-
-          <p className="muted small">
-            Detail selalu <code>fetchClaimById</code> — tanpa fallback list cache.
-          </p>
         </>
       ) : null}
     </div>
