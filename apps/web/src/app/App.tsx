@@ -10,15 +10,11 @@ import { ParsePage } from '@/features/parse/ParsePage';
 import { MastersPage } from '@/features/masters/MastersPage';
 import { Unit360Page } from '@/features/unit/Unit360Page';
 import { DataQualityPage } from '@/features/quality/DataQualityPage';
+import { SdlgHelperPage } from '@/features/sdlg-helper/SdlgHelperPage';
 import { AppShell } from './AppShell';
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
+  defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
 });
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
@@ -35,6 +31,7 @@ export function App() {
                 <Route index element={<OverviewPage />} />
                 <Route path="claims" element={<ClaimsListPage />} />
                 <Route path="claims/:claimId" element={<ClaimDetailPage />} />
+                <Route path="claims/:claimId/sdlg" element={<SdlgHelperPage />} />
                 <Route path="parse" element={<ParsePage />} />
                 <Route path="masters" element={<MastersPage />} />
                 <Route path="unit" element={<Unit360Page />} />
