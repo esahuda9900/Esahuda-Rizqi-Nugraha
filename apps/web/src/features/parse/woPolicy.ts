@@ -3,6 +3,7 @@ import type { ParsedClaim } from './types';
 
 export type MatchKind = 'none' | 'strong' | 'weak';
 
+/** Ops-approved exception: same WO may have multiple active claims. */
 const MULTI_CLAIM_WO_ALLOWLIST = ['WO26040309'] as const;
 
 export function normalizeWo(value: unknown): string {
@@ -21,13 +22,15 @@ function normalizePart(value: unknown): string {
 
 export function isMultiClaimAllowed(wo: unknown): boolean {
   const key = normalizeWo(wo);
-  return Boolean(key && MULTI_CLAIM_WO_ALLOWLIST.includes(key as (typeof MULTI_CLAIM_WO_ALLOWLIST)[number]));
+  return Boolean(
+    key && MULTI_CLAIM_WO_ALLOWLIST.includes(key as (typeof MULTI_CLAIM_WO_ALLOWLIST)[number]),
+  );
 }
 
 /**
- * Match priority:
+ * Match priority (legacy parity):
  * 1) same dealer WO (1 WO = 1 claim, except allowlist)
- * 2) optional soft hint via distributor claim id (not used alone for "strong")
+ * 2) soft: distributor claim no equals claim_id (update hint only)
  */
 export function findMatchedClaim(
   claims: ClaimListRow[],
@@ -54,7 +57,6 @@ export function findMatchedClaim(
     if (byWo) return byWo;
   }
 
-  // Soft: distributor claim no equals claim_id (update path), only if no WO hit
   const dist = String(parsed.distributorNo || '').trim();
   if (dist) {
     const byId = active.find((c) => String(c.claim_id || '').trim() === dist);
@@ -73,7 +75,6 @@ export function isStrictWoMatch(parsed: ParsedClaim, matched: ClaimListRow | nul
 export function classifyMatch(parsed: ParsedClaim, matched: ClaimListRow | null): MatchKind {
   if (!matched) return 'none';
 
-  // Matched only via claim_id (distributor no) without WO equality → weak update hint
   if (!isStrictWoMatch(parsed, matched)) {
     const dist = String(parsed.distributorNo || '').trim();
     if (dist && String(matched.claim_id).trim() === dist) return 'weak';
@@ -87,6 +88,24 @@ export function classifyMatch(parsed: ParsedClaim, matched: ClaimListRow | null)
   const fB = normalizeKey(matched.fault_description);
   if (fA && fB && (fA === fB || (fA.length > 12 && fB.includes(fA.slice(0, 12))))) return 'strong';
   return 'weak';
+}
+
+/**
+ * PRD F5 / legacy hard rule:
+ * On "Simpan sebagai Baru" when WO already belongs to another active claim,
+ * clear dealer_wo_so on the *new* row so 1 WO ≈ 1 active claim is preserved.
+ * Allowlisted multi-claim WOs keep the WO.
+ */
+export function applyNewClaimWoPolicy(
+  parsed: ParsedClaim,
+  matched: ClaimListRow | null,
+): ParsedClaim {
+  if (!matched) return parsed;
+  const wo = normalizeWo(parsed.dealerWoSo);
+  if (!wo) return parsed;
+  if (isMultiClaimAllowed(wo)) return parsed;
+  if (!isStrictWoMatch(parsed, matched)) return parsed;
+  return { ...parsed, dealerWoSo: '' };
 }
 
 export { MULTI_CLAIM_WO_ALLOWLIST };

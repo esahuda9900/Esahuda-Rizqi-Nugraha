@@ -30,6 +30,17 @@ export function isRejectableAmountToken(value: unknown): boolean {
   return false;
 }
 
+/**
+ * Section boundary: PARTS TOTAL scan must not continue into the Labour table.
+ * Port of claim-parser-helpers isPartsTotalSectionStop.
+ */
+export function isPartsTotalSectionStop(line: unknown): boolean {
+  const x = String(line == null ? '' : line);
+  return /Dealer\s+Distributor\s+Labour|Labour\s+Hrs\s+Rate|TOTAL\s+AMOUNT\s+CLAIMED|Attach\s+rele(?:vant|vent)\s+photos?/i.test(
+    x,
+  );
+}
+
 export function parseCellMoney(value: unknown): number | null {
   const x = cleanSourceCell(value);
   if (!x) return null;

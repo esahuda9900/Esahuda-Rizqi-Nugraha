@@ -21,7 +21,7 @@ export function parsedToClaimRow(parsed: ParsedClaim, claimId: string): Record<s
   return {
     claim_id: claimId,
     claim_type: 'PFR',
-    dealer_wo_so: parsed.dealerWoSo || null,
+    dealer_wo_so: parsed.dealerWoSo ? parsed.dealerWoSo : null,
     model: parsed.model || null,
     serial_no: parsed.serialNo || null,
     indent_no: parsed.indentNo || null,
@@ -54,9 +54,12 @@ export function parsedToClaimRow(parsed: ParsedClaim, claimId: string): Record<s
     parts: parts,
     source_raw_text: parsed.sourceRawText || null,
     source_serial_no: parsed.serialNo || null,
-    source_parse_version: 'web-v0.5-tsv',
+    source_parse_version: 'web-v0.6-parity',
     source_fields: {},
-    source_provenance: { parser: 'apps/web parseWarrantyText tsv-map' },
+    source_provenance: {
+      parser: 'apps/web parseWarrantyText tsv-map',
+      wo_policy: 'clear_wo_on_new_collision',
+    },
     last_updated: new Date().toISOString(),
   };
 }
