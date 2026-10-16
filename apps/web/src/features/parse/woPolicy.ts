@@ -24,36 +24,44 @@ export function isMultiClaimAllowed(wo: unknown): boolean {
   return Boolean(key && MULTI_CLAIM_WO_ALLOWLIST.includes(key as (typeof MULTI_CLAIM_WO_ALLOWLIST)[number]));
 }
 
+/**
+ * Match priority:
+ * 1) same dealer WO (1 WO = 1 claim, except allowlist)
+ * 2) optional soft hint via distributor claim id (not used alone for "strong")
+ */
 export function findMatchedClaim(
   claims: ClaimListRow[],
   parsed: ParsedClaim,
 ): ClaimListRow | null {
   const active = claims.filter((c) => c && !c.archived_at);
 
+  const wo = normalizeWo(parsed.dealerWoSo);
+  if (wo) {
+    if (isMultiClaimAllowed(wo)) {
+      if (!parsed.serialNo) return null;
+      const serial = parsed.serialNo.toUpperCase();
+      return (
+        active.find(
+          (c) =>
+            normalizeWo(c.dealer_wo_so) === wo &&
+            String(c.serial_no || '')
+              .toUpperCase()
+              .includes(serial.slice(-6)),
+        ) || null
+      );
+    }
+    const byWo = active.find((c) => normalizeWo(c.dealer_wo_so) === wo);
+    if (byWo) return byWo;
+  }
+
+  // Soft: distributor claim no equals claim_id (update path), only if no WO hit
   const dist = String(parsed.distributorNo || '').trim();
   if (dist) {
     const byId = active.find((c) => String(c.claim_id || '').trim() === dist);
     if (byId) return byId;
   }
 
-  const wo = normalizeWo(parsed.dealerWoSo);
-  if (!wo) return null;
-
-  if (isMultiClaimAllowed(wo)) {
-    if (!parsed.serialNo) return null;
-    const serial = parsed.serialNo.toUpperCase();
-    return (
-      active.find(
-        (c) =>
-          normalizeWo(c.dealer_wo_so) === wo &&
-          String(c.serial_no || '')
-            .toUpperCase()
-            .includes(serial.slice(-6)),
-      ) || null
-    );
-  }
-
-  return active.find((c) => normalizeWo(c.dealer_wo_so) === wo) || null;
+  return null;
 }
 
 export function isStrictWoMatch(parsed: ParsedClaim, matched: ClaimListRow | null): boolean {
@@ -63,7 +71,15 @@ export function isStrictWoMatch(parsed: ParsedClaim, matched: ClaimListRow | nul
 }
 
 export function classifyMatch(parsed: ParsedClaim, matched: ClaimListRow | null): MatchKind {
-  if (!matched || !isStrictWoMatch(parsed, matched)) return 'none';
+  if (!matched) return 'none';
+
+  // Matched only via claim_id (distributor no) without WO equality → weak update hint
+  if (!isStrictWoMatch(parsed, matched)) {
+    const dist = String(parsed.distributorNo || '').trim();
+    if (dist && String(matched.claim_id).trim() === dist) return 'weak';
+    return 'none';
+  }
+
   const partA = normalizePart(parsed.causingPartNo);
   const partB = normalizePart(matched.causing_part_no);
   if (partA && partB && partA === partB) return 'strong';

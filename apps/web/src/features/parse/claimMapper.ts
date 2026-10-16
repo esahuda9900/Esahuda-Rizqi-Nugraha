@@ -37,9 +37,9 @@ export function parsedToClaimRow(parsed: ParsedClaim, claimId: string) {
     distributor_no: parsed.distributorNo || null,
     source_raw_text: parsed.sourceRawText || null,
     source_serial_no: parsed.serialNo || null,
-    source_parse_version: 'web-v0.1',
+    source_parse_version: 'web-v0.3-tsv',
     source_fields: {},
-    source_provenance: { parser: 'apps/web parseWarrantyText' },
+    source_provenance: { parser: 'apps/web parseWarrantyText tsv-map' },
     last_updated: new Date().toISOString(),
   };
 }
