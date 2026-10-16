@@ -1,7 +1,7 @@
 import type { ParsedClaim } from './types';
 
 /** Map parser output → claims table columns (snake_case). */
-export function parsedToClaimRow(parsed: ParsedClaim, claimId: string) {
+export function parsedToClaimRow(parsed: ParsedClaim, claimId: string): Record<string, unknown> {
   return {
     claim_id: claimId,
     claim_type: 'PFR',
@@ -37,9 +37,25 @@ export function parsedToClaimRow(parsed: ParsedClaim, claimId: string) {
     distributor_no: parsed.distributorNo || null,
     source_raw_text: parsed.sourceRawText || null,
     source_serial_no: parsed.serialNo || null,
-    source_parse_version: 'web-v0.3-tsv',
+    source_parse_version: 'web-v0.4-tsv',
     source_fields: {},
     source_provenance: { parser: 'apps/web parseWarrantyText tsv-map' },
     last_updated: new Date().toISOString(),
   };
+}
+
+/**
+ * PLAN aturan 12: jangan menimpa data terisi dengan kosong/null.
+ * Drop keys whose new value is null, '', or undefined.
+ * Keep explicit 0 / false.
+ */
+export function omitEmptyFields(row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (k === 'claim_id') continue;
+    if (v === null || v === undefined) continue;
+    if (typeof v === 'string' && v.trim() === '') continue;
+    out[k] = v;
+  }
+  return out;
 }

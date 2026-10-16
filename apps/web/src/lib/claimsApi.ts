@@ -45,7 +45,6 @@ export type ClaimDetail = ClaimListRow & {
   total_amount: number | null;
   currency: string | null;
   repair_status: string | null;
-  /** Finance / SDLG */
   status_date: string | null;
   status_update_reason: string | null;
   sdlg_submission_no: string | null;
@@ -70,24 +69,18 @@ const DETAIL_SELECT =
   LIST_SELECT +
   ',causing_part_desc,hm_failure,hm_completion,repair_method,dealer_repair_date,completion_date,technical_personnel,cause_analyze,comment,indent_no,labour_hrs,mileage_km,mileage_to_site,sales_date,distributor,dealer_name,dealer_code,engine_serial_no,failure_part_location,parts_total,labour_amount,mileage_amount,other_amount,currency,repair_status,status_date,status_update_reason,sdlg_submission_no,sdlg_audit_date,sdlg_approval_date,sdlg_no,invoice_no,invoice_date,payment_date,payment_amount,dealer_claim_date,dealer_claim_no,parts';
 
-export type FetchClaimsOpts = {
-  limit?: number;
-  includeArchived?: boolean;
-};
+export type FetchClaimsOpts = { limit?: number; includeArchived?: boolean };
 
 export async function fetchClaims(opts: FetchClaimsOpts = {}): Promise<ClaimListRow[]> {
   const limit = opts.limit ?? 800;
   const sb = getSupabase();
   let q = sb.from('claims').select(LIST_SELECT).order('last_updated', { ascending: false }).limit(limit);
-  if (!opts.includeArchived) {
-    q = q.is('archived_at', null);
-  }
+  if (!opts.includeArchived) q = q.is('archived_at', null);
   const { data, error } = await q;
   if (error) throw error;
   return (data || []) as ClaimListRow[];
 }
 
-/** @deprecated prefer fetchClaims */
 export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
   return fetchClaims({ limit, includeArchived: false });
 }
@@ -95,16 +88,12 @@ export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
 export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
   const id = String(claimId || '').trim();
   if (!id) throw new Error('claim_id kosong');
-
   const sb = getSupabase();
   const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', id).maybeSingle();
-
   if (error) throw error;
   if (!data) throw new Error(`Klaim tidak ditemukan: ${id}`);
   const row = data as unknown as ClaimDetail;
-  if (String(row.claim_id) !== id) {
-    throw new Error('claim_id mismatch — fail closed');
-  }
+  if (String(row.claim_id) !== id) throw new Error('claim_id mismatch — fail closed');
   return row;
 }
 
@@ -128,8 +117,19 @@ export async function fetchStatusBreakdown(): Promise<StatusCounts> {
   return out;
 }
 
+/** Prefer RPC next_sdlg_claim_id; fallback scan table. */
 export async function allocateNextClaimId(year = new Date().getFullYear()): Promise<string> {
   const sb = getSupabase();
+  try {
+    const { data, error } = await sb.rpc('next_sdlg_claim_id');
+    if (!error && data) {
+      const id = String(data).trim();
+      if (/^\d{4}-\d{4}-SDLG-PFR$/i.test(id)) return id;
+    }
+  } catch {
+    /* fallback */
+  }
+
   const suffix = `-${year}-SDLG-PFR`;
   const { data, error } = await sb
     .from('claims')
@@ -137,17 +137,14 @@ export async function allocateNextClaimId(year = new Date().getFullYear()): Prom
     .like('claim_id', `%${suffix}`)
     .order('claim_id', { ascending: false })
     .limit(50);
-
   if (error) throw error;
-
   let max = 0;
   for (const row of data || []) {
     const id = String((row as { claim_id: string }).claim_id || '');
     const m = id.match(/^(\d{4})-\d{4}-SDLG-PFR$/i);
     if (m) max = Math.max(max, Number(m[1]));
   }
-  const next = String(max + 1).padStart(4, '0');
-  return `${next}-${year}-SDLG-PFR`;
+  return `${String(max + 1).padStart(4, '0')}-${year}-SDLG-PFR`;
 }
 
 export async function insertClaim(row: Record<string, unknown>): Promise<string> {
@@ -174,6 +171,32 @@ export async function updateClaimById(
   if (error) throw error;
 }
 
+/** Status change via RPC (triggers audit + guard). */
+export async function updateClaimStatusRpc(opts: {
+  claimId: string;
+  status: string;
+  statusDate?: string;
+  reason?: string;
+}): Promise<void> {
+  const claimId = String(opts.claimId || '').trim();
+  const status = String(opts.status || '').trim();
+  if (!claimId || !status) throw new Error('claim_id dan status wajib');
+  if (status === 'Rejected' && !String(opts.reason || '').trim()) {
+    throw new Error('Alasan wajib untuk status Rejected');
+  }
+  const sb = getSupabase();
+  const statusDate =
+    opts.statusDate ||
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  const { error } = await sb.rpc('update_claim_status', {
+    p_claim_id: claimId,
+    p_status: status,
+    p_status_date: statusDate,
+    p_reason: opts.reason || null,
+  });
+  if (error) throw error;
+}
+
 export async function countMachines(): Promise<number> {
   const sb = getSupabase();
   const { count, error } = await sb.from('machines').select('id', { count: 'exact', head: true });
@@ -182,7 +205,6 @@ export async function countMachines(): Promise<number> {
 }
 
 export type MachineRow = {
-  id?: string;
   serial_no: string | null;
   model: string | null;
   customer: string | null;
@@ -208,8 +230,7 @@ function mapMachine(row: MachineDb): MachineRow {
   };
 }
 
-const MACHINE_SELECT =
-  'serial_no,osf_model_code,contract_customer,osf_dealer_name,sale_date';
+const MACHINE_SELECT = 'serial_no,osf_model_code,contract_customer,osf_dealer_name,sale_date';
 
 export async function searchMachines(q: string, limit = 40): Promise<MachineRow[]> {
   const sb = getSupabase();
@@ -238,14 +259,9 @@ export async function findMachineBySerial(serial: string): Promise<MachineRow | 
   const s = serial.trim();
   if (!s) return null;
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('machines')
-    .select(MACHINE_SELECT)
-    .ilike('serial_no', `%${s}%`)
-    .limit(5);
+  const { data, error } = await sb.from('machines').select(MACHINE_SELECT).ilike('serial_no', `%${s}%`).limit(5);
   if (error) throw error;
-  const rows = ((data || []) as MachineDb[]).map(mapMachine);
-  return rows[0] || null;
+  return ((data || []) as MachineDb[]).map(mapMachine)[0] || null;
 }
 
 export async function claimsForSerial(serial: string, limit = 20): Promise<ClaimListRow[]> {

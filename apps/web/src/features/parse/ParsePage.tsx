@@ -9,7 +9,7 @@ import {
   updateClaimById,
   type ClaimListRow,
 } from '@/lib/claimsApi';
-import { parsedToClaimRow } from './claimMapper';
+import { omitEmptyFields, parsedToClaimRow } from './claimMapper';
 import { excelFileToText } from './excelImport';
 import { parseWarrantyText } from './parseWarrantyText';
 import type { ParsedClaim } from './types';
@@ -17,6 +17,27 @@ import { classifyMatch, findMatchedClaim } from './woPolicy';
 import { WoCollisionModal } from './WoCollisionModal';
 
 type PendingAction = { type: 'new' | 'update'; matched: ClaimListRow | null } | null;
+
+const EDIT_FIELDS = [
+  ['dealerWoSo', 'WO'],
+  ['model', 'Model'],
+  ['serialNo', 'Serial'],
+  ['customer', 'Customer'],
+  ['branch', 'Branch'],
+  ['indentNo', 'Indent'],
+  ['faultDescription', 'Fault'],
+  ['causeAnalyze', 'Cause'],
+  ['causingPartNo', 'Part no'],
+  ['causingPartDesc', 'Part desc'],
+  ['salesDate', 'Sales date'],
+  ['failureDate', 'Failure date'],
+  ['dealerRepairDate', 'Repair date'],
+  ['completionDate', 'Completion'],
+  ['repairMethod', 'Repair method'],
+  ['technicalPersonnel', 'Tech'],
+  ['hmFailure', 'HM failure'],
+  ['hmCompletion', 'HM completion'],
+] as const;
 
 export function ParsePage() {
   const [raw, setRaw] = useState('');
@@ -31,7 +52,7 @@ export function ParsePage() {
 
   const claimsQ = useQuery({
     queryKey: ['claims', 'list'],
-    queryFn: () => fetchActiveClaims(500),
+    queryFn: () => fetchActiveClaims(800),
     staleTime: 20_000,
   });
 
@@ -100,14 +121,14 @@ export function ParsePage() {
       if (!parsed) throw new Error('Belum ada hasil parse');
       if (opts.mode === 'update') {
         if (!opts.matched) throw new Error('Tidak ada klaim untuk di-update');
-        const row = parsedToClaimRow(parsed, opts.matched.claim_id);
-        const { claim_id: _id, ...patch } = row;
+        const full = parsedToClaimRow(parsed, opts.matched.claim_id);
+        const patch = omitEmptyFields(full);
         await updateClaimById(opts.matched.claim_id, patch);
         return opts.matched.claim_id;
       }
       const claimId = await allocateNextClaimId();
       const row = parsedToClaimRow(parsed, claimId);
-      await insertClaim(row);
+      await insertClaim({ ...row, claim_status: 'Draft' });
       return claimId;
     },
     onSuccess: async (claimId) => {
@@ -143,7 +164,10 @@ export function ParsePage() {
       <header className="page-header">
         <p className="eyebrow">SDLG Input</p>
         <h1>Parse → Simpan</h1>
-        <p className="muted">Paste form atau Import Excel. AI tidak dipakai; parser + unit master autofill.</p>
+        <p className="muted">
+          Paste form atau Import Excel. Update tidak menimpa field DB yang sudah terisi dengan
+          kosong.
+        </p>
       </header>
 
       <div className="parse-layout">
@@ -200,30 +224,17 @@ export function ParsePage() {
               ) : null}
 
               <div className="edit-grid">
-                {(
-                  [
-                    ['dealerWoSo', 'WO'],
-                    ['model', 'Model'],
-                    ['serialNo', 'Serial'],
-                    ['customer', 'Customer'],
-                    ['branch', 'Branch'],
-                    ['faultDescription', 'Fault'],
-                    ['causingPartNo', 'Part no'],
-                    ['causingPartDesc', 'Part desc'],
-                    ['salesDate', 'Sales date'],
-                    ['failureDate', 'Failure date'],
-                    ['repairMethod', 'Repair method'],
-                    ['technicalPersonnel', 'Tech'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <label key={key}>
-                    {label}
-                    <input
-                      value={String(parsed[key] ?? '')}
-                      onChange={(e) => patchParsed(key, e.target.value)}
-                    />
-                  </label>
-                ))}
+                {EDIT_FIELDS.map(([key, label]) => {
+                  const val = String(parsed[key] ?? '');
+                  const empty = !val.trim();
+                  return (
+                    <label key={key} className={empty ? 'field-empty' : undefined}>
+                      {label}
+                      {empty ? ' · kosong' : ''}
+                      <input value={val} onChange={(e) => patchParsed(key, e.target.value)} />
+                    </label>
+                  );
+                })}
               </div>
 
               <div className="btn-row">

@@ -1,8 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { fetchClaimById } from '@/lib/claimsApi';
+import { fetchClaimById, updateClaimStatusRpc } from '@/lib/claimsApi';
 import { dash, formatDateDisplay, formatMoney } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
+
+const STATUSES = ['Draft', 'SDLG Audit', 'Paid', 'Rejected'] as const;
 
 function Field({
   label,
@@ -30,8 +33,7 @@ function Field({
 }
 
 function DateField({ label, value }: { label: string; value: unknown }) {
-  const d = formatDateDisplay(value);
-  return <Field label={label} value={d || null} mono />;
+  return <Field label={label} value={formatDateDisplay(value) || null} mono />;
 }
 
 function partsRows(parts: unknown): Array<Record<string, unknown>> {
@@ -51,6 +53,15 @@ function partsRows(parts: unknown): Array<Record<string, unknown>> {
 export function ClaimDetailPage() {
   const { claimId = '' } = useParams();
   const id = decodeURIComponent(claimId);
+  const qc = useQueryClient();
+  const [showStatus, setShowStatus] = useState(false);
+  const [nextStatus, setNextStatus] = useState('SDLG Audit');
+  const [reason, setReason] = useState('');
+  const [statusDate, setStatusDate] = useState(() =>
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }),
+  );
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [statusErr, setStatusErr] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ['claim', id],
@@ -58,6 +69,27 @@ export function ClaimDetailPage() {
     enabled: Boolean(id),
     staleTime: 10_000,
     retry: 1,
+  });
+
+  const statusMut = useMutation({
+    mutationFn: async () => {
+      await updateClaimStatusRpc({
+        claimId: id,
+        status: nextStatus,
+        statusDate,
+        reason: reason.trim() || undefined,
+      });
+    },
+    onSuccess: async () => {
+      setStatusMsg(`Status → ${nextStatus}`);
+      setStatusErr(null);
+      setShowStatus(false);
+      await qc.invalidateQueries({ queryKey: ['claim', id] });
+      await qc.invalidateQueries({ queryKey: ['claims'] });
+    },
+    onError: (err) => {
+      setStatusErr(err instanceof Error ? err.message : 'Gagal update status');
+    },
   });
 
   const rows = partsRows(q.data?.parts);
@@ -78,6 +110,9 @@ export function ClaimDetailPage() {
           ) : null}
         </div>
         <div className="header-actions">
+          <button type="button" className="ghost" onClick={() => setShowStatus(true)}>
+            Ubah status
+          </button>
           <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
             Submit ke SDLG
           </Link>
@@ -86,6 +121,9 @@ export function ClaimDetailPage() {
           </Link>
         </div>
       </header>
+
+      {statusMsg ? <div className="alert info">{statusMsg}</div> : null}
+      {statusErr ? <div className="alert error">{statusErr}</div> : null}
 
       {q.isLoading ? <p className="center-state">Memuat klaim dari Supabase…</p> : null}
 
@@ -99,6 +137,49 @@ export function ClaimDetailPage() {
         </div>
       ) : null}
 
+      {showStatus ? (
+        <div className="modal-root">
+          <div className="modal-backdrop" onClick={() => setShowStatus(false)} />
+          <div className="modal-card">
+            <div className="modal-accent" />
+            <div className="modal-body">
+              <h2>Ubah status klaim</h2>
+              <p className="muted small">Lewat RPC <code>update_claim_status</code> (audit + guard DB).</p>
+              <label>
+                Status
+                <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)}>
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Tanggal status (YYYY-MM-DD)
+                <input value={statusDate} onChange={(e) => setStatusDate(e.target.value)} />
+              </label>
+              <label>
+                Alasan {nextStatus === 'Rejected' ? '(wajib)' : '(opsional)'}
+                <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="ghost" onClick={() => setShowStatus(false)}>
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={statusMut.isPending}
+                onClick={() => statusMut.mutate()}
+              >
+                {statusMut.isPending ? 'Menyimpan…' : 'Simpan status'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {q.data ? (
         <>
           <section className="panel">
@@ -109,7 +190,6 @@ export function ClaimDetailPage() {
               <Field label="Status reason" value={q.data.status_update_reason} />
               <Field label="Repair status" value={q.data.repair_status} />
             </dl>
-            <p className="muted small">Ubah status = Fase 4 PLAN. Halaman ini read-only.</p>
           </section>
 
           <section className="panel">
