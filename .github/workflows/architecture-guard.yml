@@ -10,6 +10,16 @@ on:
       - 'supabase/**'
       - 'scripts/**'
       - 'docs/audits/**'
+      - 'docs/CUTOVER-POLICY.md'
+      - 'AGENTS.md'
+      - 'index.html'
+      - 'apps/web/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/guard-no-cutover.sh'
+      - 'docs/CUTOVER-POLICY.md'
 
 permissions:
   contents: read
@@ -40,7 +50,6 @@ jobs:
               echo "Reviewed repository-mutating workflow allowed: $f"
               continue
             fi
-            # Ordinary push-triggered workflows must not mutate the repository.
             if grep -Eq '^on:|^  on:' "$f" && grep -Eq '^  push:|^push:' "$f"; then
               if grep -Eq 'contents:[[:space:]]*write' "$f" && grep -Eq 'git[[:space:]]+(push|commit)' "$f"; then
                 echo "Forbidden automatic repository mutation workflow: $f"
@@ -62,6 +71,25 @@ jobs:
             echo 'Direct infrastructure mutation from CI is forbidden. Keep deploy authority in the platform integration.'
             exit 1
           fi
+
+      - name: Guard no production cutover in workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SPA must not be published as site root on push without explicit cutover design
+          if grep -RInE 'VITE_BASE=/Esahuda-Rizqi-Nugraha/"|VITE_BASE=/"|cp -R dist/\.?[[:space:]]+_site/([^"]|$)' .github/workflows 2>/dev/null; then
+            echo 'FORBIDDEN: workflow appears to publish Vite dist to production root (cutover).'
+            echo 'See docs/CUTOVER-POLICY.md — requires owner AUTHORIZE CUTOVER.'
+            exit 1
+          fi
+          # static.yml must keep preview path
+          if [ -f .github/workflows/static.yml ]; then
+            grep -q 'preview' .github/workflows/static.yml
+            grep -q 'guard-no-cutover' .github/workflows/static.yml
+          fi
+          test -s docs/CUTOVER-POLICY.md
+          test -s scripts/guard-no-cutover.sh
+          echo 'No-cutover workflow guard passed.'
 
       - name: Guard frontend CI isolation
         shell: bash

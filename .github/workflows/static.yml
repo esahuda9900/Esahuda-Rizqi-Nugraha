@@ -39,25 +39,35 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
+          # PRODUCTION = legacy web only (CUTOVER FORBIDDEN without owner AUTHORIZE CUTOVER)
           cp index.html _site/index.html
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
           cp -R modules _site/modules
           if [ -d styles ]; then cp -R styles _site/styles; fi
           touch _site/.nojekyll
 
-          # Build clean Vite app → /preview (does NOT replace production root)
+          # Build clean Vite app → /preview ONLY (does NOT replace production root)
           if [ -f apps/web/package.json ]; then
             echo "Building apps/web preview SPA…"
             cd apps/web
             npm install --no-audit --no-fund
             export VITE_BASE=/Esahuda-Rizqi-Nugraha/preview/
+            # Hard block accidental root base
+            if [ "$VITE_BASE" = "/" ] || [ "$VITE_BASE" = "/Esahuda-Rizqi-Nugraha/" ]; then
+              echo "FORBIDDEN: VITE_BASE must stay under /preview/ until AUTHORIZE CUTOVER"
+              exit 1
+            fi
             npx vite build
             mkdir -p ../../_site/preview
             cp -R dist/. ../../_site/preview/
-            # Subfolder 404 is ignored by GH Pages; keep for local static servers
             cp dist/index.html ../../_site/preview/404.html
             cd ../..
             test -s _site/preview/index.html
+            # Never allow dist to overwrite production index
+            if cmp -s apps/web/dist/index.html _site/index.html 2>/dev/null; then
+              echo "FORBIDDEN CUTOVER: SPA dist identical to production index"
+              exit 1
+            fi
             echo "Preview SPA ready at /preview/"
           elif [ -d preview ]; then
             mkdir -p _site/preview
@@ -65,7 +75,7 @@ jobs:
             echo "Included checked-in preview/ folder."
           fi
 
-          # Root 404.html — required for SPA deep links (/preview/parse, /preview/claims/…)
+          # Root 404.html — SPA deep-link fallback only (does not replace legacy index)
           if [ -f scripts/pages-preview-404.html ]; then
             cp scripts/pages-preview-404.html _site/404.html
             echo "Installed root SPA 404 fallback."
@@ -85,8 +95,9 @@ jobs:
 
           bash scripts/regression_contract.sh _site/index.html
           bash scripts/regression_contract_modules.sh _site
+          bash scripts/guard-no-cutover.sh _site
 
-          echo "Prepared SDLG static frontend for GitHub Pages (contract OK)."
+          echo "Prepared SDLG static frontend for GitHub Pages (contract OK, no cutover)."
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
