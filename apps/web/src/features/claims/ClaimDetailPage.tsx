@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { fetchClaimById, fetchClaimStatusHistory, updateClaimStatusRpc } from '@/lib/claimsApi';
+import {
+  archiveClaim,
+  fetchClaimById,
+  fetchClaimStatusHistory,
+  unarchiveClaim,
+  updateClaimStatusRpc,
+} from '@/lib/claimsApi';
 import { dash, formatDateDisplay, formatMoney } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
 
@@ -100,7 +106,23 @@ export function ClaimDetailPage() {
     },
   });
 
+  const archMut = useMutation({
+    mutationFn: async (mode: 'archive' | 'unarchive') => {
+      if (mode === 'archive') await archiveClaim(id);
+      else await unarchiveClaim(id);
+    },
+    onSuccess: async (_, mode) => {
+      setStatusMsg(mode === 'archive' ? 'Klaim di-archive' : 'Klaim di-unarchive');
+      await qc.invalidateQueries({ queryKey: ['claim', id] });
+      await qc.invalidateQueries({ queryKey: ['claims'] });
+    },
+    onError: (err) => {
+      setStatusErr(err instanceof Error ? err.message : 'Gagal archive');
+    },
+  });
+
   const rows = partsRows(q.data?.parts);
+  const isArchived = Boolean(q.data?.archived_at);
 
   return (
     <div className="page">
@@ -113,7 +135,7 @@ export function ClaimDetailPage() {
           {q.data ? (
             <div className="header-meta">
               <StatusBadge status={q.data.claim_status} />
-              {q.data.archived_at ? <span className="muted small">Archived</span> : null}
+              {isArchived ? <span className="muted small">Archived</span> : null}
             </div>
           ) : null}
         </div>
@@ -121,6 +143,18 @@ export function ClaimDetailPage() {
           <button type="button" className="ghost" onClick={() => setShowStatus(true)}>
             Ubah status
           </button>
+          {q.data ? (
+            <button
+              type="button"
+              className="ghost"
+              disabled={archMut.isPending}
+              onClick={() =>
+                archMut.mutate(isArchived ? 'unarchive' : 'archive')
+              }
+            >
+              {isArchived ? 'Unarchive' : 'Archive'}
+            </button>
+          ) : null}
           <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
             Submit ke SDLG
           </Link>
@@ -152,7 +186,6 @@ export function ClaimDetailPage() {
             <div className="modal-accent" />
             <div className="modal-body">
               <h2>Ubah status klaim</h2>
-              <p className="muted small">RPC <code>update_claim_status</code>.</p>
               <label>
                 Status
                 <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)}>
@@ -198,12 +231,8 @@ export function ClaimDetailPage() {
 
           <section className="panel">
             <h2 className="section-title">Riwayat status</h2>
-            {histQ.isLoading ? <p className="muted">Memuat history…</p> : null}
-            {histQ.isError ? (
-              <div className="alert error">{(histQ.error as Error).message}</div>
-            ) : null}
             {(histQ.data || []).length === 0 && histQ.isFetched ? (
-              <p className="muted">Belum ada baris di claim_status_history.</p>
+              <p className="muted">Belum ada history.</p>
             ) : (
               <div className="table-wrap">
                 <table className="data-table">
