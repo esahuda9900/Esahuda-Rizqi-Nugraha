@@ -94,7 +94,6 @@ function fieldRegex(text: string, labels: string[]): string {
   return '';
 }
 
-/** Multi-line narrative blocks (Fault / Cause / Comment) — stop at next known section. */
 function blockAfterLabel(text: string, labels: string[]): string {
   for (const label of labels) {
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -123,7 +122,6 @@ function extractPart(text: string, map: Map<string, string>): { no: string; desc
   if (labeled) {
     const m = labeled.match(/([A-Z]{2,5}-?[A-Z0-9.-]+)\s*(?:\(([^)]*)\))?/i);
     if (m) return { no: cleanSourceCell(m[1]), desc: cleanSourceCell(m[2] || '') };
-    // "SLG-7200001740 Solenoid Valve" without parens
     const spaced = labeled.match(/([A-Z]{2,5}-?[A-Z0-9.-]+)\s+(.+)/i);
     if (spaced) return { no: cleanSourceCell(spaced[1]), desc: cleanSourceCell(spaced[2]) };
   }
@@ -137,7 +135,6 @@ function extractPart(text: string, map: Map<string, string>): { no: string; desc
   return { no: '', desc: '' };
 }
 
-/** Part Replacement Record table rows. */
 function extractPartsRows(text: string): ParsedPartRow[] {
   const rows: ParsedPartRow[] = [];
   const lines = text.split(/\r?\n/);
@@ -147,18 +144,12 @@ function extractPartsRows(text: string): ParsedPartRow[] {
       inTable = true;
       continue;
     }
-    if (inTable && (/PARTS\s+TOTAL/i.test(line) || /Dealer\s+Distributor\s+Labour/i.test(line))) {
-      break;
-    }
+    if (inTable && (/PARTS\s+TOTAL/i.test(line) || /Dealer\s+Distributor\s+Labour/i.test(line))) break;
     if (!inTable) continue;
-    // Skip header
-    if (/Failure\s+Parts?\s+Number/i.test(line) || /Replacement\s+Parts?\s+Number/i.test(line)) {
-      continue;
-    }
+    if (/Failure\s+Parts?\s+Number/i.test(line) || /Replacement\s+Parts?\s+Number/i.test(line)) continue;
     const cells = (line.includes('\t') ? line.split('\t') : line.split(/\s{2,}/))
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
-    // Look for SLG- part number in cells
     const partIdx = cells.findIndex((c) => /^[A-Z]{2,5}-[A-Z0-9.-]+$/i.test(c));
     if (partIdx < 0) continue;
     const failure = cells[partIdx];
@@ -171,7 +162,6 @@ function extractPartsRows(text: string): ParsedPartRow[] {
     let unitPrice: number | null = null;
     let amount: number | null = null;
     const rest = cells.slice(partIdx + (replacement !== failure ? 2 : 1));
-    // rest often: Description, Qty, Unit Price, Amount
     const nums: number[] = [];
     for (const c of rest) {
       const money = parseCellMoney(c);
@@ -224,10 +214,8 @@ function extractModel(text: string, map: Map<string, string>): string {
 }
 
 function extractSerial(text: string, map: Map<string, string>): string {
-  // Prefer full VLG plate if present in source/captions
   const vlg = text.match(/\b(VLG[A-Z0-9]{8,})\b/i);
   if (vlg) return vlg[1].toUpperCase();
-
   const labeled =
     fromMap(map, ['serial no.', 'serial no', 'serial number']) ||
     fieldRegex(text, ['Serial No.', 'Serial No', 'Serial Number']);
@@ -235,7 +223,6 @@ function extractSerial(text: string, map: Map<string, string>): string {
     const token = labeled.match(/[A-Z0-9]{6,}/i)?.[0];
     if (token) return token.toUpperCase();
   }
-  // Caption: Machine Name Plate (SN.600753)
   const plate = text.match(/Machine\s+Name\s+Plate\s*\(SN\.?\s*([A-Z0-9]+)\)/i);
   if (plate) return plate[1].toUpperCase();
   const short = text.match(/Serial No\.?[\s\t]+([A-Z0-9]{6,})/i);
@@ -268,7 +255,10 @@ function extractPartsTotal(text: string): number | null {
   return null;
 }
 
-/** Labour Hrs / Mileage Km from Dealer-Distributor-Labour section. */
+/**
+ * Labour Hrs / Mileage Km — form often puts values on next tab cells / next line.
+ * Legacy table: Labour | Hrs | Rate | Amount  with value under Hrs column.
+ */
 function extractLabourMileage(text: string): {
   labourHrs: number | null;
   labourAmount: number | null;
@@ -282,35 +272,56 @@ function extractLabourMileage(text: string): {
   let mileageAmount: number | null = null;
   let otherAmount: number | null = null;
 
-  // "Labour … Hrs … 10" then amount placeholder or number
-  const labourBlock = text.match(
-    /Labour[\s\S]{0,80}?Hrs[\s\t]*(\d+(?:[.,]\d+)?)[\s\S]{0,40}?(USD\s*[-–—]|[¥￥$]?\s*[-–—]|\d+[.,]\d+)?/i,
-  );
-  if (labourBlock) {
-    labourHrs = parseHourMeter(labourBlock[1]);
-    if (labourBlock[2]) labourAmount = parseCellMoney(labourBlock[2]) ?? 0;
+  // Flatten whitespace for section scan
+  const flat = text.replace(/\r/g, '');
+
+  // Pattern A: "Labour" then within 200 chars "Hrs" then number
+  const labourA = flat.match(/Labour[\s\S]{0,200}?\bHrs\b[\s\t:]*(\d+(?:[.,]\d+)?)/i);
+  if (labourA) labourHrs = parseHourMeter(labourA[1]);
+
+  // Pattern B: line containing only a small integer near Labour section (tabular)
+  if (labourHrs == null) {
+    const labourIdx = flat.search(/\bLabour\b/i);
+    if (labourIdx >= 0) {
+      const slice = flat.slice(labourIdx, labourIdx + 300);
+      const nums = [...slice.matchAll(/\b(\d{1,3})\b/g)].map((m) => Number(m[1]));
+      // Prefer small integers typical for hours (1–99)
+      const hr = nums.find((n) => n >= 1 && n <= 99);
+      if (hr != null) labourHrs = hr;
+    }
   }
 
-  const mileageBlock = text.match(
-    /Mileage[\s\S]{0,40}?Km[\s\t]*(\d+(?:[.,]\d+)?)[\s\S]{0,40}?(USD\s*[-–—]|[¥￥$]?\s*[-–—]|\d+[.,]\d+)?/i,
+  const labourAmt = flat.match(
+    /Labour[\s\S]{0,250}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
   );
-  if (mileageBlock) {
-    mileageKm = parseHourMeter(mileageBlock[1]);
-    if (mileageBlock[2]) mileageAmount = parseCellMoney(mileageBlock[2]) ?? 0;
+  if (labourAmt) labourAmount = parseCellMoney(labourAmt[1]) ?? 0;
+
+  const mileageA = flat.match(/Mileage[\s\S]{0,120}?\bKm\b[\s\t:]*(\d+(?:[.,]\d+)?)/i);
+  if (mileageA) mileageKm = parseHourMeter(mileageA[1]);
+
+  if (mileageKm == null) {
+    const mIdx = flat.search(/\bMileage\b(?!\s*To)/i);
+    if (mIdx >= 0) {
+      const slice = flat.slice(mIdx, mIdx + 250);
+      const nums = [...slice.matchAll(/\b(\d{2,5})\b/g)].map((m) => Number(m[1]));
+      const km = nums.find((n) => n >= 10 && n <= 99999);
+      if (km != null) mileageKm = km;
+    }
   }
 
-  const otherBlock = text.match(
-    /Other[\s\S]{0,40}?(USD\s*[-–—]|[¥￥$]?\s*[-–—]|\d+[.,]\d+)/i,
+  const mileageAmt = flat.match(
+    /Mileage[\s\S]{0,200}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
+  );
+  if (mileageAmt) mileageAmount = parseCellMoney(mileageAmt[1]) ?? 0;
+
+  const otherBlock = flat.match(
+    /\bOther\b[\s\S]{0,80}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
   );
   if (otherBlock) otherAmount = parseCellMoney(otherBlock[1]) ?? 0;
 
   return { labourHrs, labourAmount, mileageKm, mileageAmount, otherAmount };
 }
 
-/**
- * Heuristic source parser for SDLG warranty paste (Excel → text / TSV).
- * v0.7 — deep parity with legacy sample (parts table, labour, multi-line, captions).
- */
 export function parseWarrantyText(rawInput: string): ParsedClaim {
   const text = String(rawInput || '').replace(/\u00a0/g, ' ');
   const p = emptyParsed(text);
@@ -397,11 +408,13 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     blockAfterLabel(text, ['Fault Description']);
 
   p.causeAnalyze =
-    blockAfterLabel(text, ['Cause Analyze', 'Cause of Failure', 'Cause Analyze\s*\(Cause of Failure\)']) ||
-    fromMap(map, ['cause analyze', 'cause of failure']);
+    blockAfterLabel(text, [
+      'Cause Analyze',
+      'Cause of Failure',
+      'Cause Analyze\\s*\\(Cause of Failure\\)',
+    ]) || fromMap(map, ['cause analyze', 'cause of failure']);
 
-  p.comment =
-    blockAfterLabel(text, ['Comment']) || fromMap(map, ['comment']);
+  p.comment = blockAfterLabel(text, ['Comment']) || fromMap(map, ['comment']);
 
   p.repairMethod =
     fromMap(map, ['handling result repair method', 'handling result', 'repair method']) ||
@@ -435,7 +448,6 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     p.causingPartDesc = p.partsRows[0].description;
   }
   if (p.partsRows.length && p.causingPartNo) {
-    // Prefer description from table if richer
     const match = p.partsRows.find(
       (r) => r.failurePartNo.toUpperCase() === p.causingPartNo.toUpperCase(),
     );
