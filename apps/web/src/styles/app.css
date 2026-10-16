@@ -163,6 +163,18 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
 .toolbar input { flex: 1; min-width: 200px; }
 .toolbar select { width: auto; min-width: 160px; }
 
+.tab-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.file-label input[type="file"] {
+  padding: 8px;
+  font-size: 12px;
+}
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
 .table-wrap {
   overflow: auto;
   border: 1px solid var(--border);
