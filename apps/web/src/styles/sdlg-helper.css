@@ -1,0 +1,33 @@
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.sdlg-field-list { display: grid; gap: 8px; }
+
+.sdlg-field-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.1fr) minmax(120px, 1.4fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1220;
+}
+
+.sdlg-field-row.sdlg-field-missing {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.sdlg-field-meta { display: grid; gap: 2px; }
+.sdlg-field-label { font-size: 12.5px; font-weight: 700; }
+.sdlg-field-value {
+  font-size: 12.5px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .sdlg-field-row {
+    grid-template-columns: 1fr;
+  }
+}
