@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { canExportClaims, fetchMyRole } from '@/lib/rolesApi';
+import { canAdminCenter, canExportClaims, fetchMyRole } from '@/lib/rolesApi';
 
 const NAV = [
   { to: '/', label: 'Overview', end: true },
@@ -20,7 +20,9 @@ export function AppShell() {
     enabled: Boolean(user?.id),
     staleTime: 60_000,
   });
-  const showExport = canExportClaims(roleQ.data?.role);
+  const role = roleQ.data?.role;
+  const showExport = canExportClaims(role);
+  const showAdmin = canAdminCenter(role);
 
   return (
     <div className="shell">
@@ -39,10 +41,11 @@ export function AppShell() {
             </NavLink>
           ))}
           {showExport ? <NavLink to="/export">Export / Backup</NavLink> : null}
+          {showAdmin ? <NavLink to="/admin">Admin Center</NavLink> : null}
         </nav>
         <div className="sidebar-foot">
           <p className="muted small">{user?.email || 'User'}</p>
-          <p className="muted small">{roleQ.data?.role ? `role: ${roleQ.data.role}` : 'Preview'}</p>
+          <p className="muted small">{role ? `role: ${role}` : 'Preview'}</p>
           <button type="button" className="ghost" onClick={() => void signOut()}>
             Logout
           </button>

@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
-  allocateNextClaimId,
+  ConcurrentEditError,
+  createClaimViaRpc,
   fetchActiveClaims,
+  fetchClaimById,
   findMachineBySerial,
-  insertClaim,
   updateClaimById,
   type ClaimListRow,
 } from '@/lib/claimsApi';
@@ -121,15 +122,17 @@ export function ParsePage() {
       if (!parsed) throw new Error('Belum ada hasil parse');
       if (opts.mode === 'update') {
         if (!opts.matched) throw new Error('Tidak ada klaim untuk di-update');
+        const live = await fetchClaimById(opts.matched.claim_id);
         const full = parsedToClaimRow(parsed, opts.matched.claim_id);
         const patch = omitEmptyFields(full);
-        await updateClaimById(opts.matched.claim_id, patch);
+        await updateClaimById(opts.matched.claim_id, patch, {
+          expectedLastUpdated: live.last_updated,
+        });
         return opts.matched.claim_id;
       }
-      const claimId = await allocateNextClaimId();
-      const row = parsedToClaimRow(parsed, claimId);
-      await insertClaim({ ...row, claim_status: 'Draft' });
-      return claimId;
+      const row = parsedToClaimRow(parsed, 'TEMP');
+      const { claim_id: _c, ...body } = row;
+      return createClaimViaRpc({ ...body, claim_status: 'Draft' });
     },
     onSuccess: async (claimId) => {
       setMessage(`Tersimpan: ${claimId}`);
@@ -138,7 +141,11 @@ export function ParsePage() {
       navigate(`/claims/${encodeURIComponent(claimId)}`);
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Gagal menyimpan');
+      if (err instanceof ConcurrentEditError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Gagal menyimpan');
+      }
       setPending(null);
     },
   });
@@ -165,8 +172,8 @@ export function ParsePage() {
         <p className="eyebrow">SDLG Input</p>
         <h1>Parse → Simpan</h1>
         <p className="muted">
-          Paste form atau Import Excel. Update tidak menimpa field DB yang sudah terisi dengan
-          kosong.
+          Klaim baru lewat RPC <code>create_sdlg_claim</code>. Update aman (tidak timpa kosong +
+          deteksi concurrent edit).
         </p>
       </header>
 

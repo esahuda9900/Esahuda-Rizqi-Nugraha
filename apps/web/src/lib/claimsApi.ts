@@ -62,6 +62,15 @@ export type ClaimDetail = ClaimListRow & {
 
 export type StatusCounts = Record<string, number>;
 
+export type ClaimStatusHistoryRow = {
+  id: string;
+  claim_id: string;
+  status: string | null;
+  status_date: string | null;
+  reason: string | null;
+  created_at: string | null;
+};
+
 const LIST_SELECT =
   'claim_id,serial_no,model,customer,branch,claim_status,dealer_wo_so,failure_date,last_updated,archived_at,fault_description,causing_part_no,total_amount';
 
@@ -97,6 +106,20 @@ export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
   return row;
 }
 
+export async function fetchClaimStatusHistory(claimId: string): Promise<ClaimStatusHistoryRow[]> {
+  const id = String(claimId || '').trim();
+  if (!id) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('claim_status_history')
+    .select('id,claim_id,status,status_date,reason,created_at')
+    .eq('claim_id', id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data || []) as ClaimStatusHistoryRow[];
+}
+
 export async function countActiveClaims(): Promise<number> {
   const sb = getSupabase();
   const { count, error } = await sb
@@ -117,7 +140,6 @@ export async function fetchStatusBreakdown(): Promise<StatusCounts> {
   return out;
 }
 
-/** Prefer RPC next_sdlg_claim_id; fallback scan table. */
 export async function allocateNextClaimId(year = new Date().getFullYear()): Promise<string> {
   const sb = getSupabase();
   try {
@@ -129,7 +151,6 @@ export async function allocateNextClaimId(year = new Date().getFullYear()): Prom
   } catch {
     /* fallback */
   }
-
   const suffix = `-${year}-SDLG-PFR`;
   const { data, error } = await sb
     .from('claims')
@@ -147,6 +168,19 @@ export async function allocateNextClaimId(year = new Date().getFullYear()): Prom
   return `${String(max + 1).padStart(4, '0')}-${year}-SDLG-PFR`;
 }
 
+/** New claim via SECURITY DEFINER RPC (allocates claim_id safely). */
+export async function createClaimViaRpc(payload: Record<string, unknown>): Promise<string> {
+  const sb = getSupabase();
+  const body = { ...payload };
+  delete body.claim_id;
+  if (!body.claim_status) body.claim_status = 'Draft';
+  const { data, error } = await sb.rpc('create_sdlg_claim', { p_claim: body });
+  if (error) throw error;
+  const id = String(data || '').trim();
+  if (!id) throw new Error('create_sdlg_claim tidak mengembalikan claim_id');
+  return id;
+}
+
 export async function insertClaim(row: Record<string, unknown>): Promise<string> {
   const sb = getSupabase();
   const claimId = String(row.claim_id || '').trim();
@@ -156,14 +190,38 @@ export async function insertClaim(row: Record<string, unknown>): Promise<string>
   return claimId;
 }
 
+export class ConcurrentEditError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConcurrentEditError';
+  }
+}
+
 export async function updateClaimById(
   claimId: string,
   patch: Record<string, unknown>,
+  opts?: { expectedLastUpdated?: string | null },
 ): Promise<void> {
   const id = String(claimId || '').trim();
   if (!id) throw new Error('claim_id required');
   const { claim_id: _omit, ...rest } = patch;
   const sb = getSupabase();
+
+  if (opts?.expectedLastUpdated) {
+    const { data: live, error: readErr } = await sb
+      .from('claims')
+      .select('last_updated')
+      .eq('claim_id', id)
+      .maybeSingle();
+    if (readErr) throw readErr;
+    const liveTs = live ? String((live as { last_updated?: string }).last_updated || '') : '';
+    if (liveTs && liveTs !== String(opts.expectedLastUpdated)) {
+      throw new ConcurrentEditError(
+        'Klaim diubah orang lain setelah kamu buka. Muat ulang lalu simpan lagi.',
+      );
+    }
+  }
+
   const { error } = await sb
     .from('claims')
     .update({ ...rest, last_updated: new Date().toISOString() })
@@ -171,7 +229,6 @@ export async function updateClaimById(
   if (error) throw error;
 }
 
-/** Status change via RPC (triggers audit + guard). */
 export async function updateClaimStatusRpc(opts: {
   claimId: string;
   status: string;

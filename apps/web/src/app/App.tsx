@@ -12,6 +12,7 @@ import { Unit360Page } from '@/features/unit/Unit360Page';
 import { DataQualityPage } from '@/features/quality/DataQualityPage';
 import { SdlgHelperPage } from '@/features/sdlg-helper/SdlgHelperPage';
 import { ExportBackupPage } from '@/features/export/ExportBackupPage';
+import { AdminCenterPage } from '@/features/admin/AdminCenterPage';
 import { AppShell } from './AppShell';
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ export function App() {
                 <Route path="unit" element={<Unit360Page />} />
                 <Route path="quality" element={<DataQualityPage />} />
                 <Route path="export" element={<ExportBackupPage />} />
+                <Route path="admin" element={<AdminCenterPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
