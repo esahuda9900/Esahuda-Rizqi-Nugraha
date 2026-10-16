@@ -10,6 +10,7 @@ import {
   updateClaimById,
   type ClaimListRow,
 } from '@/lib/claimsApi';
+import { baseCustomerName, sameCustomerKey } from '@/lib/identity';
 import { omitEmptyFields, parsedToClaimRow } from './claimMapper';
 import { excelFileToText } from './excelImport';
 import { parseWarrantyText } from './parseWarrantyText';
@@ -66,6 +67,18 @@ export function ParsePage() {
     () => (parsed && matched ? classifyMatch(parsed, matched) : 'none'),
     [parsed, matched],
   );
+
+  const sourceLockWarn = useMemo(() => {
+    if (!parsed || !matched) return null;
+    const src = parsed.customer;
+    const db = matched.customer;
+    if (!src || !db) return null;
+    if (String(src).trim() === String(db).trim()) return null;
+    if (sameCustomerKey(src, db)) {
+      return `SOURCE LOCK soft: customer teks beda tapi key sama (“${src}” ≈ “${db}” → ${baseCustomerName(src)}). Aman untuk update.`;
+    }
+    return `SOURCE LOCK warn: customer parse “${src}” ≠ DB “${db}” (key ${baseCustomerName(src)} vs ${baseCustomerName(db)}). Review sebelum update.`;
+  }, [parsed, matched]);
 
   async function enrichFromUnit(p: ParsedClaim): Promise<ParsedClaim> {
     if (!p.serialNo) return p;
@@ -141,11 +154,8 @@ export function ParsePage() {
       navigate(`/claims/${encodeURIComponent(claimId)}`);
     },
     onError: (err) => {
-      if (err instanceof ConcurrentEditError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : 'Gagal menyimpan');
-      }
+      if (err instanceof ConcurrentEditError) setError(err.message);
+      else setError(err instanceof Error ? err.message : 'Gagal menyimpan');
       setPending(null);
     },
   });
@@ -172,8 +182,7 @@ export function ParsePage() {
         <p className="eyebrow">SDLG Input</p>
         <h1>Parse → Simpan</h1>
         <p className="muted">
-          Klaim baru lewat RPC <code>create_sdlg_claim</code>. Update aman (tidak timpa kosong +
-          deteksi concurrent edit).
+          RPC create · update tanpa timpa kosong · SOURCE LOCK soft (PT/CV strip).
         </p>
       </header>
 
@@ -194,7 +203,7 @@ export function ParsePage() {
               rows={14}
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
-              placeholder="Tempel isi form Technical Service Information (Warranty Claim)…"
+              placeholder="Tempel form Technical Service Information…"
             />
           </label>
           <div className="btn-row">
@@ -219,16 +228,16 @@ export function ParsePage() {
         <section className="parse-panel">
           <h2 className="section-title">Hasil parse (bisa diedit)</h2>
           {!parsed ? (
-            <p className="muted">Belum ada hasil. Paste/Import lalu Parse.</p>
+            <p className="muted">Belum ada hasil.</p>
           ) : (
             <>
               {matched ? (
                 <div className={`alert ${matchKind === 'weak' ? 'warn' : 'info'}`}>
-                  Cocok WO dengan klaim <strong className="mono">{matched.claim_id}</strong>
-                  {matched.claim_status ? ` (${matched.claim_status})` : ''} — match{' '}
+                  Cocok WO <strong className="mono">{matched.claim_id}</strong> — match{' '}
                   <strong>{matchKind}</strong>.
                 </div>
               ) : null}
+              {sourceLockWarn ? <div className="alert warn">{sourceLockWarn}</div> : null}
 
               <div className="edit-grid">
                 {EDIT_FIELDS.map(([key, label]) => {
@@ -264,7 +273,6 @@ export function ParsePage() {
 
           {error ? <div className="alert error">{error}</div> : null}
           {message ? <div className="alert info">{message}</div> : null}
-          {saveMut.isPending ? <p className="muted">Menyimpan…</p> : null}
         </section>
       </div>
 
