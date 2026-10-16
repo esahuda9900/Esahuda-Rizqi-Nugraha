@@ -1,0 +1,21 @@
+# PLAN v2.1 Fase 3 — backup otomatis mingguan (skeleton).
+# OFF by default until secrets + private artifact storage are configured by owner.
+# NEVER put service_role in the frontend. This job runs on GitHub Actions only.
+
+name: weekly-db-backup
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "0 17 * * 0"  # Minggu 00:00 WIB ≈ Sabtu 17:00 UTC — enable after secrets OK
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    # if: ${{ secrets.SUPABASE_URL != '' }}
+    steps:
+      - name: Placeholder
+        run: |
+          echo "Enable after owner sets SUPABASE_URL + server-side key in GitHub Secrets."
+          echo "Write JSON to a private repo or encrypted artifact — not public Pages."
+          echo "See docs/RUNBOOK.md section backup."

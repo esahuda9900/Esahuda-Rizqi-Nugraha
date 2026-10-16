@@ -10,6 +10,7 @@ import { ParsePage } from '@/features/parse/ParsePage';
 import { MastersPage } from '@/features/masters/MastersPage';
 import { Unit360Page } from '@/features/unit/Unit360Page';
 import { DataQualityPage } from '@/features/quality/DataQualityPage';
+import { ExportBackupPage } from '@/features/export/ExportBackupPage';
 import { AppShell } from './AppShell';
 
 const queryClient = new QueryClient({
@@ -39,6 +40,7 @@ export function App() {
                 <Route path="masters" element={<MastersPage />} />
                 <Route path="unit" element={<Unit360Page />} />
                 <Route path="quality" element={<DataQualityPage />} />
+                <Route path="export" element={<ExportBackupPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
