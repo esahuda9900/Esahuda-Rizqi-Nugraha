@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { countActiveClaims, fetchStatusBreakdown } from '@/lib/claimsApi';
+import {
+  countActiveClaims,
+  fetchRecentStatusHistory,
+  fetchStatusBreakdown,
+} from '@/lib/claimsApi';
 import { canAdminCenter, fetchAllRoles, fetchMyRole } from '@/lib/rolesApi';
+import { formatDateDisplay } from '@/lib/format';
+import { StatusBadge } from '@/shared/StatusBadge';
 
 export function AdminCenterPage() {
   const { user } = useAuth();
@@ -31,6 +37,12 @@ export function AdminCenterPage() {
     enabled: allow,
     staleTime: 30_000,
   });
+  const auditQ = useQuery({
+    queryKey: ['admin', 'audit'],
+    queryFn: () => fetchRecentStatusHistory(30),
+    enabled: allow,
+    staleTime: 20_000,
+  });
 
   if (roleQ.isLoading) return <p className="muted page">Memuat role…</p>;
   if (!allow) {
@@ -46,18 +58,27 @@ export function AdminCenterPage() {
       <header className="page-header">
         <p className="eyebrow">Fase 5 · Admin</p>
         <h1>Admin Center</h1>
-        <p className="muted">User & role · ringkasan data. Tanpa ubah schema. Web lama tidak disentuh.</p>
+        <p className="muted">Roles · audit status · shortcut. Web lama tidak disentuh. Cutover dilarang.</p>
       </header>
 
       <div className="kpi-grid">
         <div className="kpi-card accent">
           <span className="kpi-label">Klaim aktif</span>
-          <span className="kpi-value">{countQ.isLoading ? '…' : (countQ.data || 0).toLocaleString('id-ID')}</span>
+          <span className="kpi-value">
+            {countQ.isLoading ? '…' : (countQ.data || 0).toLocaleString('id-ID')}
+          </span>
         </div>
         <div className="kpi-card">
-          <span className="kpi-label">User role rows</span>
+          <span className="kpi-label">User roles</span>
           <span className="kpi-value">{rolesQ.isLoading ? '…' : (rolesQ.data || []).length}</span>
         </div>
+      </div>
+
+      <div className="quick-links">
+        <Link to="/admin/bulk-status">Bulk ubah status →</Link>
+        <Link to="/export">Export / Backup →</Link>
+        <Link to="/quality">Data Quality →</Link>
+        <Link to="/claims">Claims →</Link>
       </div>
 
       <section className="panel">
@@ -71,17 +92,47 @@ export function AdminCenterPage() {
               </li>
             ))}
         </ul>
-        <p className="muted small">
-          <Link to="/claims">Buka daftar klaim</Link> · <Link to="/export">Export / Backup</Link> ·{' '}
-          <Link to="/quality">Data Quality</Link>
-        </p>
       </section>
 
       <section className="panel">
-        <h2 className="section-title">Users & roles (read-only v1)</h2>
-        {rolesQ.isError ? (
-          <div className="alert error">{(rolesQ.error as Error).message}</div>
+        <h2 className="section-title">Audit status terbaru</h2>
+        {auditQ.isError ? (
+          <div className="alert error">{(auditQ.error as Error).message}</div>
         ) : null}
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Claim</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(auditQ.data || []).map((h) => (
+                <tr key={h.id}>
+                  <td>
+                    <Link className="mono" to={`/claims/${encodeURIComponent(h.claim_id)}`}>
+                      {h.claim_id}
+                    </Link>
+                  </td>
+                  <td>
+                    <StatusBadge status={h.status} />
+                  </td>
+                  <td className="mono">{formatDateDisplay(h.status_date) || '—'}</td>
+                  <td>{h.reason || '—'}</td>
+                  <td className="mono small">{h.created_at || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2 className="section-title">Users & roles (read-only)</h2>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -106,7 +157,6 @@ export function AdminCenterPage() {
             </tbody>
           </table>
         </div>
-        <p className="muted small">Ubah role via Supabase Dashboard di M1; form edit role = iterasi berikutnya.</p>
       </section>
     </div>
   );
