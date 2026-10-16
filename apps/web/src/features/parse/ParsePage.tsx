@@ -7,6 +7,7 @@ import {
   fetchActiveClaims,
   fetchClaimById,
   findMachineBySerial,
+  inferBranchFromClaimHistory,
   updateClaimById,
   type ClaimListRow,
   type MachineRow,
@@ -14,6 +15,7 @@ import {
 import { baseCustomerName, sameCustomerKey } from '@/lib/identity';
 import { omitEmptyFields, parsedToClaimRow } from './claimMapper';
 import { excelFileToText } from './excelImport';
+import { applyMasterToParsed } from './masterResolve';
 import { parseWarrantyText } from './parseWarrantyText';
 import type { ParsedClaim } from './types';
 import {
@@ -26,7 +28,6 @@ import { WoCollisionModal } from './WoCollisionModal';
 
 type PendingAction = { type: 'new' | 'update'; matched: ClaimListRow | null } | null;
 
-/** Short text inputs */
 const EDIT_FIELDS = [
   ['dealerWoSo', 'WO'],
   ['distributorNo', 'Distributor no'],
@@ -78,29 +79,6 @@ const NUM_KEYS: (keyof ParsedClaim)[] = [
   'partsTotal',
   'totalAmount',
 ];
-
-/** Prefer longer/canonical serial & model from machines (legacy master match). */
-function mergeMachine(p: ParsedClaim, m: MachineRow): ParsedClaim {
-  const out = { ...p };
-  const srcSerial = (p.serialNo || '').toUpperCase();
-  const dbSerial = (m.serial_no || '').toUpperCase();
-  if (dbSerial && (!srcSerial || dbSerial.includes(srcSerial) || dbSerial.length > srcSerial.length)) {
-    out.serialNo = m.serial_no || p.serialNo;
-  }
-  if (m.model) {
-    const srcModel = (p.model || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const dbModel = m.model.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!srcModel || dbModel.startsWith(srcModel) || dbModel.includes(srcModel)) {
-      out.model = m.model;
-    }
-  }
-  if (!out.customer && m.customer) out.customer = m.customer;
-  if (!out.branch && m.branch) out.branch = m.branch;
-  else if (m.branch && !out.branch) out.branch = m.branch;
-  if (m.branch) out.branch = out.branch || m.branch;
-  if (!out.salesDate && m.sales_date) out.salesDate = m.sales_date;
-  return out;
-}
 
 export function ParsePage() {
   const [raw, setRaw] = useState('');
@@ -156,14 +134,33 @@ export function ParsePage() {
   }, [parsed, matched]);
 
   async function enrichFromUnit(p: ParsedClaim): Promise<{ parsed: ParsedClaim; machine: MachineRow | null }> {
-    if (!p.serialNo) return { parsed: p, machine: null };
-    try {
-      const m = await findMachineBySerial(p.serialNo);
-      if (!m) return { parsed: p, machine: null };
-      return { parsed: mergeMachine(p, m), machine: m };
-    } catch {
-      return { parsed: p, machine: null };
+    let machine: MachineRow | null = null;
+    if (p.serialNo) {
+      try {
+        machine = await findMachineBySerial(p.serialNo, p.model || undefined);
+      } catch {
+        machine = null;
+      }
     }
+
+    let next = applyMasterToParsed(p, machine);
+
+    // Claim history branch when machine row has no branch (legacy unit history rule)
+    if (!next.branch && next.serialNo) {
+      try {
+        const histBranch = await inferBranchFromClaimHistory(next.serialNo);
+        if (histBranch) next = { ...next, branch: histBranch };
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Still no branch → app code (already in applyMasterToParsed, but re-apply if appCode late)
+    if (!next.branch && next.appCode) {
+      next = applyMasterToParsed(next, null);
+    }
+
+    return { parsed: next, machine };
   }
 
   async function runParse(sourceText?: string) {
@@ -180,8 +177,10 @@ export function ParsePage() {
       setError('Parse tidak menemukan field inti (model/serial/WO). Cek format paste/Excel.');
     } else if (enriched.machine) {
       setMessage(
-        `Master match: ${enriched.machine.serial_no || '—'} · ${enriched.machine.model || '—'} · ${enriched.machine.branch || '—'}`,
+        `Master match: ${enriched.machine.serial_no || '—'} · ${enriched.machine.model || '—'} · ${enriched.machine.branch || p.branch || '—'}`,
       );
+    } else if (p.branch) {
+      setMessage(`Branch dari App Code: ${p.branch}`);
     }
   }
 
@@ -281,8 +280,8 @@ export function ParsePage() {
         <p className="eyebrow">SDLG Input</p>
         <h1>Parse → Simpan</h1>
         <p className="muted">
-          Parity web lama: parts table · labour/mileage · master serial/model/branch · clear WO on
-          collision · SOURCE LOCK.
+          Parity web lama: master serial tail+model · App Code→branch · parts table · WO clear ·
+          SOURCE LOCK.
         </p>
       </header>
 
@@ -336,8 +335,12 @@ export function ParsePage() {
                 <div className="alert info">
                   <strong>Master match</strong> · SN{' '}
                   <span className="mono">{masterHit.serial_no || '—'}</span> ·{' '}
-                  {masterHit.model || '—'} · {masterHit.branch || '—'} ·{' '}
-                  {masterHit.customer || '—'}
+                  {masterHit.model || '—'} · {parsed.branch || masterHit.branch || '—'} ·{' '}
+                  {masterHit.customer || parsed.customer || '—'}
+                </div>
+              ) : parsed.branch ? (
+                <div className="alert info">
+                  Branch dari App Code: <strong>{parsed.branch}</strong>
                 </div>
               ) : null}
               {matched ? (
