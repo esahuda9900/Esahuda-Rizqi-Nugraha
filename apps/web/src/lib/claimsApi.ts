@@ -64,10 +64,11 @@ export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
 
   if (error) throw error;
   if (!data) throw new Error(`Klaim tidak ditemukan: ${id}`);
-  if (String((data as ClaimDetail).claim_id) !== id) {
+  const row = data as unknown as ClaimDetail;
+  if (String(row.claim_id) !== id) {
     throw new Error('claim_id mismatch — fail closed');
   }
-  return data as ClaimDetail;
+  return row;
 }
 
 export async function countActiveClaims(): Promise<number> {
@@ -121,14 +122,11 @@ export async function updateClaimById(
   if (!id) throw new Error('claim_id required');
 
   const { claim_id: _omit, ...rest } = patch;
-  const { error, count } = await sbUpdate(id, {
+  const { error } = await sbUpdate(id, {
     ...rest,
     last_updated: new Date().toISOString(),
   });
   if (error) throw error;
-  if (count === 0) {
-    // still ok if RLS hides count — verify by re-fetch optional
-  }
 }
 
 async function sbUpdate(id: string, patch: Record<string, unknown>) {
