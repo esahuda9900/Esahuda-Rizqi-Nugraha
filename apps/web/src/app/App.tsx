@@ -7,6 +7,9 @@ import { OverviewPage } from '@/features/overview/OverviewPage';
 import { ClaimsListPage } from '@/features/claims/ClaimsListPage';
 import { ClaimDetailPage } from '@/features/claims/ClaimDetailPage';
 import { ParsePage } from '@/features/parse/ParsePage';
+import { MastersPage } from '@/features/masters/MastersPage';
+import { Unit360Page } from '@/features/unit/Unit360Page';
+import { DataQualityPage } from '@/features/quality/DataQualityPage';
 import { AppShell } from './AppShell';
 
 const queryClient = new QueryClient({
@@ -18,7 +21,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Must match vite base for GitHub Project Pages
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '';
 
 export function App() {
@@ -34,6 +36,9 @@ export function App() {
                 <Route path="claims" element={<ClaimsListPage />} />
                 <Route path="claims/:claimId" element={<ClaimDetailPage />} />
                 <Route path="parse" element={<ParsePage />} />
+                <Route path="masters" element={<MastersPage />} />
+                <Route path="unit" element={<Unit360Page />} />
+                <Route path="quality" element={<DataQualityPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

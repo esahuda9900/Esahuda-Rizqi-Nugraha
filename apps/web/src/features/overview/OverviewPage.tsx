@@ -1,35 +1,90 @@
 import { useQuery } from '@tanstack/react-query';
-import { countActiveClaims } from '@/lib/claimsApi';
+import { Link } from 'react-router-dom';
+import {
+  countActiveClaims,
+  countMachines,
+  fetchStatusBreakdown,
+} from '@/lib/claimsApi';
 
 export function OverviewPage() {
-  const q = useQuery({
-    queryKey: ['claims', 'count-active'],
-    queryFn: countActiveClaims,
-    staleTime: 30_000,
-  });
+  const totalQ = useQuery({ queryKey: ['claims', 'count-active'], queryFn: countActiveClaims, staleTime: 30_000 });
+  const statusQ = useQuery({ queryKey: ['claims', 'status-breakdown'], queryFn: fetchStatusBreakdown, staleTime: 30_000 });
+  const machinesQ = useQuery({ queryKey: ['machines', 'count'], queryFn: countMachines, staleTime: 60_000 });
+
+  const statuses = statusQ.data || {};
+  const paid = statuses['Paid'] || 0;
+  const audit = statuses['SDLG Audit'] || 0;
+  const draft = statuses['Draft'] || 0;
+  const rejected = statuses['Rejected'] || 0;
+  const total = totalQ.data || 0;
 
   return (
     <div className="page">
-      <header className="page-header">
-        <h1>Overview</h1>
-        <p className="muted">Hitungan langsung dari Supabase (active claims).</p>
+      <header className="page-header row">
+        <div>
+          <p className="eyebrow">Dashboard</p>
+          <h1>Overview</h1>
+          <p className="muted">Ringkasan klaim aktif dari Supabase (live).</p>
+        </div>
+        <Link className="btn-link" to="/parse">
+          + New Claim / Parse
+        </Link>
       </header>
 
       <div className="kpi-grid">
-        <div className="kpi-card">
+        <div className="kpi-card accent">
           <span className="kpi-label">Klaim aktif</span>
-          <span className="kpi-value">
-            {q.isLoading ? '…' : q.isError ? '—' : q.data?.toLocaleString('id-ID')}
-          </span>
-          {q.isError ? (
-            <p className="alert error">{(q.error as Error).message}</p>
-          ) : null}
+          <span className="kpi-value">{totalQ.isLoading ? '…' : total.toLocaleString('id-ID')}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">Paid</span>
+          <span className="kpi-value ok">{statusQ.isLoading ? '…' : paid.toLocaleString('id-ID')}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">SDLG Audit</span>
+          <span className="kpi-value warn">{statusQ.isLoading ? '…' : audit.toLocaleString('id-ID')}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">Draft / Rejected</span>
+          <span className="kpi-value">{statusQ.isLoading ? '…' : `${draft} / ${rejected}`}</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">Machines (master)</span>
+          <span className="kpi-value">{machinesQ.isLoading ? '…' : (machinesQ.data || 0).toLocaleString('id-ID')}</span>
         </div>
       </div>
 
-      <p className="muted small">
-        Phase 1 scaffold — chart & hierarchy Overview legacy belum di-port (PRD F2 minimal).
-      </p>
+      <section className="panel">
+        <h2 className="section-title">Status breakdown</h2>
+        {statusQ.isError ? (
+          <div className="alert error">{(statusQ.error as Error).message}</div>
+        ) : (
+          <div className="status-bars">
+            {Object.entries(statuses)
+              .sort((a, b) => b[1] - a[1])
+              .map(([name, n]) => {
+                const pct = total ? Math.round((n / total) * 100) : 0;
+                return (
+                  <div key={name} className="status-row">
+                    <div className="status-row-top">
+                      <span>{name}</span>
+                      <span className="mono">{n.toLocaleString('id-ID')} · {pct}%</span>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </section>
+
+      <div className="quick-links">
+        <Link to="/claims">Lihat semua claims →</Link>
+        <Link to="/unit">Unit 360 →</Link>
+        <Link to="/quality">Data quality →</Link>
+      </div>
     </div>
   );
 }
