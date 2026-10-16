@@ -255,10 +255,7 @@ function extractPartsTotal(text: string): number | null {
   return null;
 }
 
-/**
- * Labour Hrs / Mileage Km — form often puts values on next tab cells / next line.
- * Legacy table: Labour | Hrs | Rate | Amount  with value under Hrs column.
- */
+/** Labour Hrs / Mileage Km — values often on the *next* table row under Hrs/Km. */
 function extractLabourMileage(text: string): {
   labourHrs: number | null;
   labourAmount: number | null;
@@ -272,37 +269,34 @@ function extractLabourMileage(text: string): {
   let mileageAmount: number | null = null;
   let otherAmount: number | null = null;
 
-  // Flatten whitespace for section scan
   const flat = text.replace(/\r/g, '');
 
-  // Pattern A: "Labour" then within 200 chars "Hrs" then number
-  const labourA = flat.match(/Labour[\s\S]{0,200}?\bHrs\b[\s\t:]*(\d+(?:[.,]\d+)?)/i);
+  // Cross-line: Labour … Hrs … (maybe Rate Amount headers) … 10
+  const labourA = flat.match(/Labour[\s\S]{0,200}?\bHrs\b[\s\S]{0,80}?(\d+(?:[.,]\d+)?)/i);
   if (labourA) labourHrs = parseHourMeter(labourA[1]);
 
-  // Pattern B: line containing only a small integer near Labour section (tabular)
   if (labourHrs == null) {
     const labourIdx = flat.search(/\bLabour\b/i);
     if (labourIdx >= 0) {
-      const slice = flat.slice(labourIdx, labourIdx + 300);
+      const slice = flat.slice(labourIdx, labourIdx + 400);
       const nums = [...slice.matchAll(/\b(\d{1,3})\b/g)].map((m) => Number(m[1]));
-      // Prefer small integers typical for hours (1–99)
       const hr = nums.find((n) => n >= 1 && n <= 99);
       if (hr != null) labourHrs = hr;
     }
   }
 
   const labourAmt = flat.match(
-    /Labour[\s\S]{0,250}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
+    /Labour[\s\S]{0,300}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
   );
   if (labourAmt) labourAmount = parseCellMoney(labourAmt[1]) ?? 0;
 
-  const mileageA = flat.match(/Mileage[\s\S]{0,120}?\bKm\b[\s\t:]*(\d+(?:[.,]\d+)?)/i);
+  const mileageA = flat.match(/Mileage[\s\S]{0,120}?\bKm\b[\s\S]{0,80}?(\d+(?:[.,]\d+)?)/i);
   if (mileageA) mileageKm = parseHourMeter(mileageA[1]);
 
   if (mileageKm == null) {
     const mIdx = flat.search(/\bMileage\b(?!\s*To)/i);
     if (mIdx >= 0) {
-      const slice = flat.slice(mIdx, mIdx + 250);
+      const slice = flat.slice(mIdx, mIdx + 350);
       const nums = [...slice.matchAll(/\b(\d{2,5})\b/g)].map((m) => Number(m[1]));
       const km = nums.find((n) => n >= 10 && n <= 99999);
       if (km != null) mileageKm = km;
@@ -310,12 +304,12 @@ function extractLabourMileage(text: string): {
   }
 
   const mileageAmt = flat.match(
-    /Mileage[\s\S]{0,200}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
+    /Mileage[\s\S]{0,250}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
   );
   if (mileageAmt) mileageAmount = parseCellMoney(mileageAmt[1]) ?? 0;
 
   const otherBlock = flat.match(
-    /\bOther\b[\s\S]{0,80}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
+    /\bOther\b[\s\S]{0,100}?(?:USD\s*)?([¥￥$]?\s*[-–—]|\d+[.,]\d{2})/i,
   );
   if (otherBlock) otherAmount = parseCellMoney(otherBlock[1]) ?? 0;
 
@@ -408,11 +402,8 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     blockAfterLabel(text, ['Fault Description']);
 
   p.causeAnalyze =
-    blockAfterLabel(text, [
-      'Cause Analyze',
-      'Cause of Failure',
-      'Cause Analyze\\s*\\(Cause of Failure\\)',
-    ]) || fromMap(map, ['cause analyze', 'cause of failure']);
+    blockAfterLabel(text, ['Cause Analyze', 'Cause of Failure']) ||
+    fromMap(map, ['cause analyze', 'cause of failure']);
 
   p.comment = blockAfterLabel(text, ['Comment']) || fromMap(map, ['comment']);
 
