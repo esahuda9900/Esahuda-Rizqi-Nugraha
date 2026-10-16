@@ -32,8 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
 
       - name: Prepare Pages artifact
         shell: bash
@@ -53,8 +51,7 @@ jobs:
             cd apps/web
             npm install --no-audit --no-fund
             export VITE_BASE=/Esahuda-Rizqi-Nugraha/preview/
-            # Prefer vite-only if tsc fails on environment quirks
-            npm run build || npx vite build
+            npx vite build
             mkdir -p ../../_site/preview
             cp -R dist/. ../../_site/preview/
             cp dist/index.html ../../_site/preview/404.html
