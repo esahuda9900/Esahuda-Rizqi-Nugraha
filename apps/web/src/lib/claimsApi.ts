@@ -13,6 +13,7 @@ export type ClaimListRow = {
   archived_at: string | null;
   fault_description?: string | null;
   causing_part_no?: string | null;
+  total_amount?: number | null;
 };
 
 export type ClaimDetail = ClaimListRow & {
@@ -30,6 +31,7 @@ export type ClaimDetail = ClaimListRow & {
   indent_no: string | null;
   labour_hrs: number | null;
   mileage_km: number | null;
+  mileage_to_site: number | null;
   sales_date: string | null;
   distributor: string | null;
   dealer_name: string | null;
@@ -37,31 +39,57 @@ export type ClaimDetail = ClaimListRow & {
   engine_serial_no: string | null;
   failure_part_location: string | null;
   parts_total: number | null;
+  labour_amount: number | null;
+  mileage_amount: number | null;
+  other_amount: number | null;
   total_amount: number | null;
   currency: string | null;
   repair_status: string | null;
+  /** Finance / SDLG */
+  status_date: string | null;
+  status_update_reason: string | null;
+  sdlg_submission_no: string | null;
+  sdlg_audit_date: string | null;
+  sdlg_approval_date: string | null;
+  sdlg_no: string | null;
+  invoice_no: string | null;
+  invoice_date: string | null;
+  payment_date: string | null;
+  payment_amount: number | null;
+  dealer_claim_date: string | null;
+  dealer_claim_no: string | null;
+  parts: unknown;
 };
 
 export type StatusCounts = Record<string, number>;
 
 const LIST_SELECT =
-  'claim_id,serial_no,model,customer,branch,claim_status,dealer_wo_so,failure_date,last_updated,archived_at,fault_description,causing_part_no';
+  'claim_id,serial_no,model,customer,branch,claim_status,dealer_wo_so,failure_date,last_updated,archived_at,fault_description,causing_part_no,total_amount';
 
 const DETAIL_SELECT =
   LIST_SELECT +
-  ',causing_part_desc,hm_failure,hm_completion,repair_method,dealer_repair_date,completion_date,technical_personnel,cause_analyze,comment,indent_no,labour_hrs,mileage_km,sales_date,distributor,dealer_name,dealer_code,engine_serial_no,failure_part_location,parts_total,total_amount,currency,repair_status';
+  ',causing_part_desc,hm_failure,hm_completion,repair_method,dealer_repair_date,completion_date,technical_personnel,cause_analyze,comment,indent_no,labour_hrs,mileage_km,mileage_to_site,sales_date,distributor,dealer_name,dealer_code,engine_serial_no,failure_part_location,parts_total,labour_amount,mileage_amount,other_amount,currency,repair_status,status_date,status_update_reason,sdlg_submission_no,sdlg_audit_date,sdlg_approval_date,sdlg_no,invoice_no,invoice_date,payment_date,payment_amount,dealer_claim_date,dealer_claim_no,parts';
 
-export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
+export type FetchClaimsOpts = {
+  limit?: number;
+  includeArchived?: boolean;
+};
+
+export async function fetchClaims(opts: FetchClaimsOpts = {}): Promise<ClaimListRow[]> {
+  const limit = opts.limit ?? 800;
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('claims')
-    .select(LIST_SELECT)
-    .is('archived_at', null)
-    .order('last_updated', { ascending: false })
-    .limit(limit);
-
+  let q = sb.from('claims').select(LIST_SELECT).order('last_updated', { ascending: false }).limit(limit);
+  if (!opts.includeArchived) {
+    q = q.is('archived_at', null);
+  }
+  const { data, error } = await q;
   if (error) throw error;
   return (data || []) as ClaimListRow[];
+}
+
+/** @deprecated prefer fetchClaims */
+export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
+  return fetchClaims({ limit, includeArchived: false });
 }
 
 export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
@@ -69,11 +97,7 @@ export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
   if (!id) throw new Error('claim_id kosong');
 
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('claims')
-    .select(DETAIL_SELECT)
-    .eq('claim_id', id)
-    .maybeSingle();
+  const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', id).maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error(`Klaim tidak ditemukan: ${id}`);
@@ -95,7 +119,7 @@ export async function countActiveClaims(): Promise<number> {
 }
 
 export async function fetchStatusBreakdown(): Promise<StatusCounts> {
-  const rows = await fetchActiveClaims(2000);
+  const rows = await fetchClaims({ limit: 2000, includeArchived: false });
   const out: StatusCounts = {};
   for (const r of rows) {
     const s = r.claim_status || 'Unknown';
@@ -157,7 +181,6 @@ export async function countMachines(): Promise<number> {
   return count ?? 0;
 }
 
-/** Mapped view of public.machines (normalized ids + OSF text fields). */
 export type MachineRow = {
   id?: string;
   serial_no: string | null;
