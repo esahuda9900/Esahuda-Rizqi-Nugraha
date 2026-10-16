@@ -1,3 +1,12 @@
+export type ParsedPartRow = {
+  failurePartNo: string;
+  replacementPartNo: string;
+  description: string;
+  qty: number | null;
+  unitPrice: number | null;
+  amount: number | null;
+};
+
 export type ParsedClaim = {
   dealerWoSo: string;
   model: string;
@@ -12,6 +21,9 @@ export type ParsedClaim = {
   failureDate: string;
   dealerRepairDate: string;
   completionDate: string;
+  dealerClaimDate: string;
+  dealerClaimNo: string;
+  appCode: string;
   hmFailure: number | null;
   hmCompletion: number | null;
   faultDescription: string;
@@ -24,11 +36,15 @@ export type ParsedClaim = {
   engineSerialNo: string;
   failurePartLocation: string;
   labourHrs: number | null;
+  labourAmount: number | null;
   mileageKm: number | null;
+  mileageAmount: number | null;
   mileageToSite: number | null;
+  otherAmount: number | null;
   partsTotal: number | null;
   totalAmount: number | null;
   distributorNo: string;
+  partsRows: ParsedPartRow[];
   sourceRawText: string;
 };
 
@@ -47,6 +63,9 @@ export function emptyParsed(source = ''): ParsedClaim {
     failureDate: '',
     dealerRepairDate: '',
     completionDate: '',
+    dealerClaimDate: '',
+    dealerClaimNo: '',
+    appCode: '',
     hmFailure: null,
     hmCompletion: null,
     faultDescription: '',
@@ -59,11 +78,15 @@ export function emptyParsed(source = ''): ParsedClaim {
     engineSerialNo: '',
     failurePartLocation: '',
     labourHrs: null,
+    labourAmount: null,
     mileageKm: null,
+    mileageAmount: null,
     mileageToSite: null,
+    otherAmount: null,
     partsTotal: null,
     totalAmount: null,
     distributorNo: '',
+    partsRows: [],
     sourceRawText: source,
   };
 }
