@@ -120,6 +120,17 @@ export async function fetchClaimStatusHistory(claimId: string): Promise<ClaimSta
   return (data || []) as ClaimStatusHistoryRow[];
 }
 
+export async function fetchRecentStatusHistory(limit = 40): Promise<ClaimStatusHistoryRow[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('claim_status_history')
+    .select('id,claim_id,status,status_date,reason,created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data || []) as ClaimStatusHistoryRow[];
+}
+
 export async function countActiveClaims(): Promise<number> {
   const sb = getSupabase();
   const { count, error } = await sb
@@ -168,7 +179,6 @@ export async function allocateNextClaimId(year = new Date().getFullYear()): Prom
   return `${String(max + 1).padStart(4, '0')}-${year}-SDLG-PFR`;
 }
 
-/** New claim via SECURITY DEFINER RPC (allocates claim_id safely). */
 export async function createClaimViaRpc(payload: Record<string, unknown>): Promise<string> {
   const sb = getSupabase();
   const body = { ...payload };
@@ -227,6 +237,14 @@ export async function updateClaimById(
     .update({ ...rest, last_updated: new Date().toISOString() })
     .eq('claim_id', id);
   if (error) throw error;
+}
+
+export async function archiveClaim(claimId: string): Promise<void> {
+  await updateClaimById(claimId, { archived_at: new Date().toISOString() });
+}
+
+export async function unarchiveClaim(claimId: string): Promise<void> {
+  await updateClaimById(claimId, { archived_at: null });
 }
 
 export async function updateClaimStatusRpc(opts: {
