@@ -2,55 +2,45 @@
 
 **Updated:** 2026-10-16  
 **Preview:** https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/preview/  
-**Cutover (Milestone 3):** **DEFERRED** — owner forbids until new web feature parity accepted.
+**Cutover (Milestone 3):** **DEFERRED**
 
-## Coding status (apps/web only)
+## Parse / New Claim parity (focus 2026-10-16)
 
-| Fase | Status | Notes |
-|------|--------|-------|
-| 0 inventaris + CI + AGENTS/DECISIONS | ✅ | Staging/backup/sample = pemilik |
-| 1A Claims list | ✅ | search, chips, sort, page, archived |
-| 1B Claim detail | ✅ | finance, parts, status RPC, history |
-| 2 SDLG helper | ✅ | copy fields, 10-day rule |
-| 3 Export/Backup | ✅ | CSV + JSON role-gated |
-| 4 Parse + save | ✅ | **parity pass 2026-10-16:** clear WO on Simpan Baru collision; SOURCE LOCK hard block update; section-stop money; richer modal |
-| 5 Admin Center v1 | ✅ | roles, audit feed, bulk status |
-| M2 archive | ✅ | archive/unarchive detail |
-| M2 bulk status | ✅ | `/admin/bulk-status` |
-| M2 DQ deepen | ✅ | WO dup + gaps |
-| M2 Unit 360 / Masters | 🟡 | usable basic; not full legacy depth |
-| M3 cutover | ⏸ | **not started — forbidden for now** |
+| Capability | Web lama | Web baru | Status |
+|------------|----------|----------|--------|
+| Paste + Excel import | ✅ | ✅ | done |
+| Core fields (WO, model, serial, customer, dates, HM, fault, part) | ✅ | ✅ | done |
+| App Code, Dealer Claim No/Date | ✅ | ✅ | v0.7 |
+| Multi-line Fault / Cause / Comment | ✅ | ✅ | v0.7 |
+| Parts table (qty, unit price, amount) | ✅ | ✅ | `partsRows` |
+| Labour Hrs + Mileage Km (tabular) | ✅ | ✅ | cross-line fix |
+| Mileage to site, Finish HM | ✅ | ✅ | done |
+| Engine SN + Failure part location (captions) | ✅ | ✅ | v0.7 |
+| Money harden (¥-/USD -, reject SN leak) | ✅ | ✅ | `money.ts` |
+| PARTS TOTAL section-stop | ✅ | ✅ | done |
+| 1 WO ≈ 1 claim; clear WO on Simpan Baru | ✅ | ✅ | `applyNewClaimWoPolicy` |
+| WO allowlist multi-claim | ✅ | ✅ | WO26040309 |
+| SOURCE LOCK soft/hard | ✅ | ✅ | hard blocks update |
+| WO collision modal + diff | ✅ | ✅ | richer fields |
+| Master match serial → full VLG / model / branch | ✅ | ✅ | `mergeMachine` |
+| omit empty on update | ✅ | ✅ | done |
+| RPC create | ✅ | ✅ | done |
+| Evidence photo captions UI | ✅ | ❌ | out of scope M1 (no Storage) |
+| Field provenance / SOURCE CAPTURE debug UI | ✅ | ❌ | defer |
+| Sticky footer polish | ✅ | 🟡 | actions row only |
 
-## Parse parity (vs web lama) — 2026-10-16
+## Coding status
 
-| Rule | Status |
+| Fase | Status |
 |------|--------|
-| 1 WO ≈ 1 claim (clear WO on Simpan Baru + collision) | ✅ `applyNewClaimWoPolicy` |
-| Allowlist multi-claim WO (`WO26040309`) | ✅ |
-| SOURCE LOCK soft (key sama) / hard (key beda → block update) | ✅ |
-| Money placeholder + reject SN leak | ✅ port `money.ts` |
-| PARTS TOTAL section-stop (jangan ambil labour) | ✅ |
-| WO collision modal + diff | ✅ richer (customer/fault/part/serial) |
-| Multi-row parts table | 🟡 still single causing-part |
-| Full legacy parser suite | 🟡 heuristic TSV; needs golden samples |
-
-## Owner gates (block formal “close M1”)
-
-- [ ] Backup manual production
-- [ ] Staging Supabase
-- [ ] Role matrix confirmation
-- [ ] 5–10 golden paste samples
-- [ ] Screenshot SDLG portal fields
-- [ ] Accept 13 acceptance scenarios §10A on preview
-
-## Known parity gaps vs web lama (why cutover waits)
-
-- Parser still heuristic (not full legacy module suite)
-- No full Command Center / boss analytics
-- No payment evidence workflow (if still used)
-- Master matching is soft (unit enrich + customer key), not full legacy resolver
-- Admin cannot edit roles from UI (Dashboard only)
-- Multi-row parts JSON still single-entry
+| 0 inventaris + CI | ✅ |
+| 1A Claims list | ✅ |
+| 1B Claim detail | ✅ |
+| 2 SDLG helper | ✅ |
+| 3 Export/Backup | ✅ |
+| 4 Parse + save | ✅ **deep parity v0.7** |
+| 5 Admin Center v1 | ✅ |
+| M3 cutover | ⏸ forbidden until owner accepts |
 
 ## Rule
 
