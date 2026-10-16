@@ -27,6 +27,14 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Setup Node
+        if: hashFiles('apps/web/package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
       - name: Prepare Pages artifact
         shell: bash
         run: |
@@ -39,11 +47,24 @@ jobs:
           if [ -d styles ]; then cp -R styles _site/styles; fi
           touch _site/.nojekyll
 
-          # New Vite app preview (non-production root)
-          if [ -d preview ]; then
+          # Build clean Vite app → /preview (does NOT replace production root)
+          if [ -f apps/web/package.json ]; then
+            echo "Building apps/web preview SPA…"
+            cd apps/web
+            npm install --no-audit --no-fund
+            export VITE_BASE=/Esahuda-Rizqi-Nugraha/preview/
+            # Prefer vite-only if tsc fails on environment quirks
+            npm run build || npx vite build
+            mkdir -p ../../_site/preview
+            cp -R dist/. ../../_site/preview/
+            cp dist/index.html ../../_site/preview/404.html
+            cd ../..
+            test -s _site/preview/index.html
+            echo "Preview SPA ready at /preview/"
+          elif [ -d preview ]; then
             mkdir -p _site/preview
             cp -R preview/. _site/preview/
-            echo "Included preview/ SPA in Pages artifact."
+            echo "Included checked-in preview/ folder."
           fi
 
           python3 scripts/pages_prepare_index.py
