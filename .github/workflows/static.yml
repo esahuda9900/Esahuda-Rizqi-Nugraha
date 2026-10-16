@@ -54,6 +54,7 @@ jobs:
             npx vite build
             mkdir -p ../../_site/preview
             cp -R dist/. ../../_site/preview/
+            # Subfolder 404 is ignored by GH Pages; keep for local static servers
             cp dist/index.html ../../_site/preview/404.html
             cd ../..
             test -s _site/preview/index.html
@@ -62,6 +63,12 @@ jobs:
             mkdir -p _site/preview
             cp -R preview/. _site/preview/
             echo "Included checked-in preview/ folder."
+          fi
+
+          # Root 404.html — required for SPA deep links (/preview/parse, /preview/claims/…)
+          if [ -f scripts/pages-preview-404.html ]; then
+            cp scripts/pages-preview-404.html _site/404.html
+            echo "Installed root SPA 404 fallback."
           fi
 
           python3 scripts/pages_prepare_index.py

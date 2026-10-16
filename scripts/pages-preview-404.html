@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirect…</title>
+    <!--
+      GitHub Pages only serves /404.html from the *site root*.
+      Deep links like /Esahuda-Rizqi-Nugraha/preview/parse hit this file.
+      We stash the full URL and bounce into the SPA index so React Router can route.
+    -->
+    <script>
+      (function () {
+        var path = location.pathname || '';
+        var previewMarker = '/Esahuda-Rizqi-Nugraha/preview';
+        var idx = path.indexOf(previewMarker);
+        if (idx >= 0) {
+          try {
+            sessionStorage.setItem('spa-redirect', location.href);
+          } catch (e) {}
+          location.replace(previewMarker + '/' + location.search + location.hash);
+          return;
+        }
+        // Non-preview missing path → legacy home
+        location.replace('/Esahuda-Rizqi-Nugraha/' + location.search + location.hash);
+      })();
+    </script>
+    <meta http-equiv="refresh" content="0;url=/Esahuda-Rizqi-Nugraha/preview/" />
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
+</html>
