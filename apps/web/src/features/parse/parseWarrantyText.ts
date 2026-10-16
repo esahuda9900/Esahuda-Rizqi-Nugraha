@@ -1,4 +1,9 @@
-import { parseCellMoney, parseHourMeter, cleanSourceCell } from './money';
+import {
+  parseCellMoney,
+  parseHourMeter,
+  cleanSourceCell,
+  isPartsTotalSectionStop,
+} from './money';
 import { emptyParsed, type ParsedClaim } from './types';
 
 /** Normalize common Excel date tokens to YYYY-MM-DD when possible. */
@@ -9,8 +14,18 @@ function normalizeDate(raw: string): string {
   const m = x.match(/^(\d{1,2})[-/\s]([A-Za-z]{3})[-/\s](\d{2,4})$/);
   if (m) {
     const months: Record<string, string> = {
-      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
-      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+      jan: '01',
+      feb: '02',
+      mar: '03',
+      apr: '04',
+      may: '05',
+      jun: '06',
+      jul: '07',
+      aug: '08',
+      sep: '09',
+      oct: '10',
+      nov: '11',
+      dec: '12',
     };
     const mon = months[m[2].toLowerCase().slice(0, 3)];
     if (mon) {
@@ -47,7 +62,6 @@ function buildCellMap(text: string): Map<string, string> {
   const lines = text.split(/\r?\n/);
   for (const line of lines) {
     if (!line.trim()) continue;
-    // Prefer tabs; also split multi-space runs (paste from some UIs)
     const cells = (line.includes('\t') ? line.split('\t') : line.split(/\s{2,}/))
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
@@ -55,19 +69,16 @@ function buildCellMap(text: string): Map<string, string> {
     for (let i = 0; i < cells.length - 1; i++) {
       const label = normalizeLabel(cells[i]);
       if (label.length < 3) continue;
-      // Skip pure values posing as labels
       if (/^wo\d+$/i.test(cells[i])) continue;
       if (/^\d{4}-\d{4}-sdlg/i.test(cells[i])) continue;
       const next = cells[i + 1];
       if (!next) continue;
-      // Don't treat another long label as value
       const nextIsLabel =
-        /^(product name|indent no|serial no|dealer code|fault description|cause analyze|comment|handling result|customer name|sales date|failure date|working hours|distributor|dealer wo)/i.test(
+        /^(product name|indent no|serial no|dealer code|fault description|cause analyze|comment|handling result|customer name|sales date|failure date|working hours|distributor|dealer wo|dealer claim|contact info|repairs completion|causing part)/i.test(
           next,
         );
       if (nextIsLabel) continue;
       if (!map.has(label)) map.set(label, next);
-      // Also store without parenthetical noise already normalized
     }
   }
   return map;
@@ -77,7 +88,6 @@ function fromMap(map: Map<string, string>, candidates: string[]): string {
   for (const c of candidates) {
     const key = normalizeLabel(c);
     if (map.has(key)) return cleanSourceCell(map.get(key));
-    // fuzzy: label starts with candidate or contains it
     for (const [k, v] of map) {
       if (k === key || k.startsWith(key) || key.startsWith(k)) {
         return cleanSourceCell(v);
@@ -91,7 +101,6 @@ function fromMap(map: Map<string, string>, candidates: string[]): string {
 function fieldRegex(text: string, labels: string[]): string {
   for (const label of labels) {
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Capture until tab, double-space, or end of line — not the whole rest of row
     const re = new RegExp(esc + '[\s:]*([^\t\n\r]+?)(?=\t|\s{2,}|$)', 'i');
     const m = text.match(re);
     if (m) {
@@ -107,7 +116,7 @@ function blockAfterLabel(text: string, labels: string[]): string {
     const esc = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(
       esc +
-        '[\s:\"\t]*([\s\S]{0,1500}?)(?=(?:Handling Result|Comment|Causing Part|Part Replacement|Signature of Technical|Dealer WO|TOTAL AMOUNT|Attach rele|$))',
+        '[\s:\"\t]*([\s\S]{0,1500}?)(?=(?:Handling Result|Comment|Causing Part|Part Replacement|Signature of Technical|Dealer WO|TOTAL AMOUNT|Attach rele|Cause Analyze|Fault Description|$))',
       'i',
     );
     const m = text.match(re);
@@ -123,13 +132,11 @@ function extractPart(text: string, map: Map<string, string>): { no: string; desc
   if (labeled) {
     const m = labeled.match(/([A-Z]{2,5}-?[A-Z0-9.-]+)\s*(?:\(([^)]*)\))?/i);
     if (m) return { no: cleanSourceCell(m[1]), desc: cleanSourceCell(m[2] || '') };
-    // "SLG-... (Overflow Valve)" may span cells — try full text near label
   }
   const near =
     text.match(
       /Causing Part Number\s*\(Description\)[\s\t]*([A-Z]{2,5}-?[A-Z0-9.-]+)\s*(?:\(([^)]*)\))?/i,
-    ) ||
-    text.match(/\b(SLG-[A-Z0-9.-]+)\b\s*(?:\(([^)]+)\))?/i);
+    ) || text.match(/\b(SLG-[A-Z0-9.-]+)\b\s*(?:\(([^)]+)\))?/i);
   if (near) return { no: cleanSourceCell(near[1]), desc: cleanSourceCell(near[2] || '') };
   return { no: '', desc: '' };
 }
@@ -139,7 +146,6 @@ function extractModel(text: string, map: Map<string, string>): string {
     fromMap(map, ['product name model', 'product name', 'model']) ||
     fieldRegex(text, ['Product Name (Model)', 'Product Name']);
   raw = cleanSourceCell(raw);
-  // "SDLG E6210F" → E6210F
   const withSdlg = raw.match(/SDLG\s*([A-Z0-9]{3,})/i);
   if (withSdlg) return withSdlg[1].toUpperCase();
   const token = raw.match(/\b([A-Z]?\d{3,4}[A-Z]?\d?[A-Z]?)\b/i);
@@ -159,6 +165,7 @@ function extractSerial(text: string, map: Map<string, string>): string {
   }
   const vlg = text.match(/\b(VLG[A-Z0-9]{8,})\b/i);
   if (vlg) return vlg[1].toUpperCase();
+  // ITU forms often use short serial like S0611152
   const short = text.match(/Serial No\.?[\s\t]+([A-Z0-9]{6,})/i);
   return short ? short[1].toUpperCase() : '';
 }
@@ -173,9 +180,26 @@ function extractWo(text: string, map: Map<string, string>): string {
   return any ? any[1].toUpperCase() : '';
 }
 
+/** Scan lines for PARTS TOTAL value; stop at labour / total section (legacy helper). */
+function extractPartsTotal(text: string): number | null {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!/PARTS\s+TOTAL/i.test(line)) continue;
+    const same = parseCellMoney(line.replace(/PARTS\s+TOTAL/i, ''));
+    if (same != null) return same;
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      if (isPartsTotalSectionStop(lines[j])) break;
+      const m = parseCellMoney(lines[j]);
+      if (m != null) return m;
+    }
+  }
+  return null;
+}
+
 /**
  * Heuristic source parser for SDLG warranty paste (Excel → text / TSV).
- * Tuned against real ITU form rows (Product Name · Serial · WO · Customer …).
+ * Tuned against real ITU form rows. v0.6 parity with legacy money section-stop.
  */
 export function parseWarrantyText(rawInput: string): ParsedClaim {
   const text = String(rawInput || '').replace(/\u00a0/g, ' ');
@@ -193,9 +217,7 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     fieldRegex(text, ['Indent No. (Machine Build No.)', 'Indent No.']);
 
   p.customer =
-    fromMap(map, ['customer name', 'customer']) ||
-    fieldRegex(text, ['Customer Name', 'Customer']);
-  // Stop if we accidentally captured a following label
+    fromMap(map, ['customer name', 'customer']) || fieldRegex(text, ['Customer Name', 'Customer']);
   p.customer = p.customer.replace(/\t.*$/, '').split(/\s{2,}/)[0]?.trim() || p.customer;
 
   p.distributor =
@@ -211,8 +233,7 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     fieldRegex(text, ['Contact Info (Dealer Name)', 'Dealer Name']) ||
     p.distributor;
 
-  p.dealerCode =
-    fromMap(map, ['dealer code']) || fieldRegex(text, ['Dealer Code']);
+  p.dealerCode = fromMap(map, ['dealer code']) || fieldRegex(text, ['Dealer Code']);
 
   p.salesDate = normalizeDate(
     fromMap(map, ['sales date dd/mm/yy', 'sales date']) ||
@@ -259,6 +280,16 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
   p.technicalPersonnel =
     fromMap(map, ['signature of technical personnel']) ||
     fieldRegex(text, ['Signature of Technical Personnel', 'Technical Personnel']);
+  // Form often puts names on same row after colon blank
+  if (!p.technicalPersonnel) {
+    const techRow = text.match(
+      /Signature of Technical Personnel[:\s\t]*([^\n\r]*?)(?:Repairs Completion|PARTS|$)/i,
+    );
+    if (techRow) {
+      const names = cleanSourceCell(techRow[1]).replace(/\t+/g, ' ').trim();
+      if (names && !/^repairs/i.test(names)) p.technicalPersonnel = names;
+    }
+  }
 
   const part = extractPart(text, map);
   p.causingPartNo = part.no;
@@ -272,7 +303,6 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     fromMap(map, ['engine serial no.', 'engine serial']) ||
     fieldRegex(text, ['Engine Serial No.', 'Engine Serial']) ||
     text.match(/Engine Name Plate[^\n]*\(?\s*(SN\.?\s*[A-Z0-9.-]+)/i)?.[1] ||
-    text.match(/Engine PN\.[^\n]*SN\.(\d+)/i)?.[0]?.replace(/^.*SN\./i, 'SN.') ||
     text.match(/\bSN\.(\d{6,})\b/)?.[0] ||
     '';
 
@@ -283,7 +313,6 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     part.desc ||
     '';
 
-  // Labour hrs: form has "Labour … Hrs … 12"
   const labour =
     text.match(/Labour[\s\S]{0,120}?Hrs[\s\t]*(\d+(?:[.,]\d+)?)/i) ||
     text.match(/\bHrs\b[\s\t]*(\d+(?:[.,]\d+)?)/i);
@@ -299,13 +328,15 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     text.match(/Milage To Site\s*=?\s*(\d+(?:[.,]\d+)?)/i);
   p.mileageToSite = toSite ? parseHourMeter(toSite[1]) : null;
 
-  const partsTotalLine = text.match(/PARTS\s+TOTAL[\s\t$]*([^\n\r]+)/i);
-  p.partsTotal = partsTotalLine ? parseCellMoney(partsTotalLine[1]) : null;
+  p.partsTotal = extractPartsTotal(text);
+  if (p.partsTotal == null) {
+    const partsTotalLine = text.match(/PARTS\s+TOTAL[\s\t$]*([^\n\r]+)/i);
+    p.partsTotal = partsTotalLine ? parseCellMoney(partsTotalLine[1]) : null;
+  }
 
   const totalLine = text.match(/TOTAL\s+AMOUNT\s+CLAIMED[\s\t$]*([^\n\r]+)/i);
   p.totalAmount = totalLine ? parseCellMoney(totalLine[1]) : null;
 
-  // Unit price on parts row e.g. 6,93 / $6,93 — if parts total still null
   if (p.partsTotal == null && p.causingPartNo) {
     const rowMoney = text.match(
       new RegExp(
@@ -316,6 +347,10 @@ export function parseWarrantyText(rawInput: string): ParsedClaim {
     );
     if (rowMoney) p.partsTotal = parseCellMoney(rowMoney[1]);
   }
+
+  // If only one money found, mirror to total
+  if (p.totalAmount == null && p.partsTotal != null) p.totalAmount = p.partsTotal;
+  if (p.partsTotal == null && p.totalAmount != null) p.partsTotal = p.totalAmount;
 
   p.distributorNo =
     fromMap(map, ['distributor no', 'distributor no.']) ||
