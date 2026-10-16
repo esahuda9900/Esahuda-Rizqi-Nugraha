@@ -5,7 +5,6 @@ export function formatDateDisplay(value: unknown): string {
   const s = String(value).trim();
   if (!s) return '';
 
-  // Already date-only ISO
   const isoDay = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoDay) {
     return `${isoDay[3]}/${isoDay[2]}/${isoDay[1]}`;
@@ -24,6 +23,24 @@ export function formatDateDisplay(value: unknown): string {
   } catch {
     return s;
   }
+}
+
+export function parseDateOnly(value: unknown): Date | null {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const t = Date.parse(s);
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+export function daysBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / (24 * 60 * 60 * 1000));
 }
 
 export function formatMoney(value: unknown, currency?: string | null): string {
@@ -49,4 +66,8 @@ export function dash(value: unknown): string {
   if (value == null || value === '') return '—';
   const s = String(value).trim();
   return s || '—';
+}
+
+export function stripSlgPrefix(partNo: unknown): string {
+  return String(partNo ?? '').trim().replace(/^SLG-/i, '');
 }

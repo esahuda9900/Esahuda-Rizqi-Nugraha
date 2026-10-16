@@ -78,6 +78,9 @@ export function ClaimDetailPage() {
           ) : null}
         </div>
         <div className="header-actions">
+          <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
+            Submit ke SDLG
+          </Link>
           <Link className="btn-link ghost-link" to="/parse">
             Parse form
           </Link>
@@ -106,9 +109,7 @@ export function ClaimDetailPage() {
               <Field label="Status reason" value={q.data.status_update_reason} />
               <Field label="Repair status" value={q.data.repair_status} />
             </dl>
-            <p className="muted small">
-              Ubah status (modal + alasan + RPC) = Fase 4 PLAN. Halaman ini read-only.
-            </p>
+            <p className="muted small">Ubah status = Fase 4 PLAN. Halaman ini read-only.</p>
           </section>
 
           <section className="panel">
@@ -187,7 +188,7 @@ export function ClaimDetailPage() {
           <section className="panel">
             <h2 className="section-title">Parts lines</h2>
             {rows.length === 0 ? (
-              <p className="muted">Tidak ada baris parts (atau format tidak dikenali).</p>
+              <p className="muted">Tidak ada baris parts.</p>
             ) : (
               <div className="table-wrap">
                 <table className="data-table">
@@ -217,10 +218,6 @@ export function ClaimDetailPage() {
               </div>
             )}
           </section>
-
-          <p className="muted small">
-            Detail selalu <code>fetchClaimById({id})</code> — fail closed, tanpa fallback list cache.
-          </p>
         </>
       ) : null}
     </div>
