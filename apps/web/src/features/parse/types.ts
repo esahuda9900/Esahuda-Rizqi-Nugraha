@@ -24,6 +24,9 @@ export type ParsedClaim = {
   dealerClaimDate: string;
   dealerClaimNo: string;
   appCode: string;
+  sdlgNo: string;
+  claimType: string;
+  repairStatus: string;
   hmFailure: number | null;
   hmCompletion: number | null;
   faultDescription: string;
@@ -66,6 +69,9 @@ export function emptyParsed(source = ''): ParsedClaim {
     dealerClaimDate: '',
     dealerClaimNo: '',
     appCode: '',
+    sdlgNo: '',
+    claimType: '',
+    repairStatus: '',
     hmFailure: null,
     hmCompletion: null,
     faultDescription: '',

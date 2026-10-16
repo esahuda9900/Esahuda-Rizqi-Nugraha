@@ -27,12 +27,21 @@ function buildPartsJson(parsed: ParsedClaim): unknown {
   }));
 }
 
+function mapClaimType(parsed: ParsedClaim): string {
+  const t = String(parsed.claimType || '').trim();
+  if (/warranty/i.test(t)) return 'PFR';
+  if (/pfr|factory/i.test(t)) return 'PFR';
+  const blob = `${parsed.distributorNo} ${parsed.sdlgNo}`;
+  if (/PFR|FACTORY/i.test(blob)) return 'PFR';
+  return t || 'PFR';
+}
+
 /** Map parser output → claims table columns (snake_case). */
 export function parsedToClaimRow(parsed: ParsedClaim, claimId: string): Record<string, unknown> {
   const parts = buildPartsJson(parsed);
   return {
     claim_id: claimId,
-    claim_type: 'PFR',
+    claim_type: mapClaimType(parsed),
     dealer_wo_so: parsed.dealerWoSo ? parsed.dealerWoSo : null,
     model: parsed.model || null,
     serial_no: parsed.serialNo || null,
@@ -68,17 +77,20 @@ export function parsedToClaimRow(parsed: ParsedClaim, claimId: string): Record<s
     parts_total: parsed.partsTotal ?? 0,
     total_amount: parsed.totalAmount ?? 0,
     distributor_no: parsed.distributorNo || null,
+    sdlg_no: parsed.sdlgNo || null,
+    repair_status: parsed.repairStatus || null,
     parts: parts,
     source_raw_text: parsed.sourceRawText || null,
     source_serial_no: parsed.serialNo || null,
-    source_parse_version: 'web-v0.7-deep-parity',
+    source_parse_version: 'web-v0.8-claim-hint',
     source_fields: {
       app_code: parsed.appCode || null,
+      claim_type_label: parsed.claimType || null,
     },
     source_provenance: {
-      parser: 'apps/web parseWarrantyText tsv-map',
+      parser: 'apps/web parseWarrantyText',
       wo_policy: 'clear_wo_on_new_collision',
-      version: '0.7',
+      version: '0.8',
     },
     last_updated: new Date().toISOString(),
   };
