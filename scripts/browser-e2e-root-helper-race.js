@@ -97,6 +97,8 @@ async function runScenario(browser, aDelay, bDelay) {
       { waitUntil: 'domcontentloaded' }
     );
 
+    await page.evaluate((prime) => { location.hash = '#/sdlg-input/' + prime; }, PRIME);
+
     await page.evaluate(() => {
       window.sdlgSupabase = {
         from(table) {
@@ -146,6 +148,7 @@ async function runScenario(browser, aDelay, bDelay) {
     await page.waitForTimeout(50);
 
     const navigationAtMs = await page.evaluate(() => {
+      location.hash = '#/sdlg-input/0211-2026-SDLG-PFR';
       document.getElementById('claim-id').textContent = '0211-2026-SDLG-PFR';
       document.getElementById('person').textContent = 'Technician — Akhsana Taqwim';
       document.getElementById('report').textContent =
@@ -181,10 +184,14 @@ async function runScenario(browser, aDelay, bDelay) {
        entry.report.includes('PRIME complaint'))
     );
 
+    // The root helper is intentionally inert on the SDLG input route:
+    // React/liveClaim owns form fields. A legacy helper request or write is a failure.
     const pass = (
       state.selectedClaimId === TARGET &&
-      state.person === TARGET_PERSON &&
-      state.helperLast?.claimId === TARGET &&
+      state.person === immediate.person &&
+      state.report === immediate.report &&
+      state.helperLast == null &&
+      requestTrace.length === 0 &&
       staleWrites.length === 0 &&
       pageErrors.length === 0
     );
@@ -211,8 +218,7 @@ async function runScenario(browser, aDelay, bDelay) {
 
     result.immediatePass = bDelay <= 100
       ? (
-          immediate.selectedClaimId === TARGET &&
-          immediate.person === TARGET_PERSON &&
+          immediate.helperLast == null &&
           !immediate.person.includes('Prime Tech') &&
           !immediate.report.includes('PRIME complaint')
         )

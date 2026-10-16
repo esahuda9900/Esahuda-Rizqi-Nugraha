@@ -20,7 +20,8 @@ function readRequired(file, label) {
   catch (err) { fail(label, 'cannot read file: ' + err.message); return null; }
 }
 
-const html = readRequired(path.join(root, 'index.html'), 'Production HTML');
+const htmlPath = process.argv[2] ? path.resolve(root, process.argv[2]) : path.join(root, 'index.html');
+const html = readRequired(htmlPath, 'Production HTML');
 // Canonical helper URLs may carry a cache-busting query string (?v=...).
 // Validate the helper resource identity without rejecting the deterministic cache key.
 const helper = readRequired(path.join(root, 'canonical-warranty-helper.js'), 'Canonical warranty helper');
@@ -67,11 +68,11 @@ if (html) {
   function countSrc(re) { return (html.match(re) || []).length; }
   if (countSrc(/<script[^>]+src=["']\/?canonical-warranty-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Canonical helper wiring', 'exactly one external helper tag (query-string cache bust allowed)');
   else fail('Canonical helper wiring', 'expected exactly 1 canonical helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/export-table-helper\.js["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/export-table-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
   else fail('Excel export helper wiring', 'expected exactly 1 export helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/claim-parser-helpers\.js["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/claim-parser-helpers\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
   else fail('Claim parser helper wiring', 'expected exactly 1 parser helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/master-resolution-ux\.js["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/)?\/?modules\/master-resolution-ux\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
   else fail('Master resolution UX wiring', 'expected exactly 1 resolution UX helper tag');
 
   if (html.includes('const styleTable = window.SDLGExportTableHelper.styleTable;')) pass('Excel export helper integration', 'inline exporter delegates styleTable');
@@ -103,12 +104,12 @@ checkSyntax(parserContract, 'Warranty parser guard');
 checkSyntax(golden, 'Warranty golden verifier');
 checkSyntax(dualWarrantyVerifier, 'Dual warranty routing verifier');
 
-if (helper) {
-  if (helper.includes("rpc('sdlg_warranty_resolve_claim'") || helper.includes('rpc("sdlg_warranty_resolve_claim"')) pass('Canonical warranty runtime source', 'root helper calls canonical warranty RPC');
-  else fail('Canonical warranty runtime source', 'root helper lacks direct canonical warranty RPC');
-  if (helper.includes('claim_warranty_resolution_v')) fail('Canonical warranty runtime source', 'root helper still depends on legacy warranty view');
-  else pass('Canonical warranty legacy view removal', 'root helper does not depend on claim_warranty_resolution_v');
-  if (helper.includes('technical_personnel')) pass('Canonical helper feedback contract', 'reads claims.technical_personnel');
+if (helperModule) {
+  if (helperModule.includes("rpc('sdlg_warranty_resolve_claim'") || helperModule.includes('rpc("sdlg_warranty_resolve_claim"')) pass('Canonical warranty runtime source', 'canonical module calls the warranty resolver RPC');
+  else fail('Canonical warranty runtime source', 'canonical module lacks direct warranty resolver RPC');
+  if (helperModule.includes('claim_warranty_resolution_v') || (helper && helper.includes('claim_warranty_resolution_v'))) fail('Canonical warranty legacy view removal', 'a canonical helper still depends on the legacy warranty view');
+  else pass('Canonical warranty legacy view removal', 'canonical helpers do not depend on claim_warranty_resolution_v');
+  if (helperModule.includes('technical_personnel')) pass('Canonical helper feedback contract', 'reads claims.technical_personnel');
 }
 
 if (exportTableModule) {

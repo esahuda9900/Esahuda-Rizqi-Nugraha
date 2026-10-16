@@ -59,40 +59,64 @@ OLD_SEL = (
 )
 NEW_SEL = (
     "function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {\n"
-    "    const fromList = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;\n"
     "    const [liveClaim, setLiveClaim] = useState(null);\n"
     "    const [liveReady, setLiveReady] = useState(false);\n"
+    "    const [liveError, setLiveError] = useState('');\n"
     "    useEffect(() => {\n"
     "        let alive = true;\n"
+    "        const id = String(selectedClaimId || '').trim();\n"
     "        setLiveReady(false);\n"
     "        setLiveClaim(null);\n"
-    "        const id = String(selectedClaimId || '').trim();\n"
-    "        if (!id) { setLiveReady(true); return undefined; }\n"
+    "        setLiveError('');\n"
+    "        // Clear shared consumers immediately; never let the previous claim leak into this selection.\n"
+    "        try { window.__SDLG_LIVE_CLAIM__ = null; } catch (_e) {}\n"
+    "        if (!id) { setLiveReady(true); return () => { alive = false; }; }\n"
     "        const client = (typeof window !== 'undefined' && window.getSdlgSupabase && window.getSdlgSupabase()) || null;\n"
-    "        if (!client) { setLiveClaim(fromList); setLiveReady(true); return undefined; }\n"
+    "        if (!client) { setLiveError('Database connection is unavailable. Do not copy or submit this claim.'); setLiveReady(true); return () => { alive = false; }; }\n"
     "        (async () => {\n"
     "            try {\n"
     "                const { data: row, error } = await client.from('claims').select('*').eq('claim_id', id).maybeSingle();\n"
     "                if (!alive) return;\n"
-    "                if (error) { console.warn('[SDLG portal] live fetch', error); setLiveClaim(fromList); }\n"
-    "                else if (row) {\n"
-    "                    setLiveClaim(row);\n"
-    "                    try { window.__SDLG_LIVE_CLAIM__ = row; } catch (_e) {}\n"
-    "                } else { setLiveClaim(fromList); }\n"
-    "            } catch (e) { if (alive) { console.warn('[SDLG portal] live fetch', e); setLiveClaim(fromList); } }\n"
+    "                if (error) { console.error('[SDLG portal] claim fetch failed', error); setLiveError('Could not load this claim from the database. Do not copy or submit; retry after checking the connection.'); return; }\n"
+    "                if (!row || String(row.claim_id || '').trim() !== id) { setLiveError('Claim ID verification failed. Do not copy or submit this claim.'); return; }\n"
+    "                setLiveClaim(row);\n"
+    "                try { window.__SDLG_LIVE_CLAIM__ = row; } catch (_e) {}\n"
+    "            } catch (e) { if (alive) { console.error('[SDLG portal] claim fetch failed', e); setLiveError('Could not load this claim from the database. Do not copy or submit; retry after checking the connection.'); } }\n"
     "            finally { if (alive) setLiveReady(true); }\n"
     "        })();\n"
     "        return () => { alive = false; };\n"
     "    }, [selectedClaimId]);\n"
-    "    const selectedClaim = liveClaim || (liveReady ? fromList : null);"
+    "    const requestedClaimId = String(selectedClaimId || '').trim();\n"
+    "    const selectedClaim = liveClaim && String(liveClaim.claim_id || '').trim() === requestedClaimId ? liveClaim : null;\n"
+    "    if (requestedClaimId && !selectedClaim) {\n"
+    "        if (!liveReady || liveClaim) return React.createElement('div', { role: 'status', style: { margin: '16px', padding: '16px', border: '1px solid #94a3b8', borderRadius: '10px' } }, 'Loading and verifying claim data...');\n"
+    "        return React.createElement('div', { role: 'alert', style: { margin: '16px', padding: '16px', border: '2px solid #b91c1c', borderRadius: '10px', background: '#fef2f2', color: '#7f1d1d', fontWeight: 700 } },\n"
+    "            React.createElement('p', null, liveError || 'Claim data is not verified. Do not copy or submit.'),\n"
+    "            React.createElement('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },\n"
+    "                React.createElement('button', { type: 'button', onClick: () => window.location.reload(), style: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #7f1d1d', cursor: 'pointer' } }, 'Muat ulang'),\n"
+    "                React.createElement('button', { type: 'button', onClick: () => { if (typeof onBack === 'function') onBack(); }, style: { padding: '8px 12px', borderRadius: '8px', border: '1px solid #7f1d1d', cursor: 'pointer' } }, 'Kembali ke Claims')\n"
+    "            )\n"
+    "        );\n"
+    "    }\n"
+)
+OLD_LIVE_RE = re.compile(
+    r"function SDLGPortalInputPage\(\{ claims, selectedClaimId, onSelectClaim, onBack \}\) \{\n"
+    r".*?"
+    r"const selectedClaim = liveClaim \|\| \(liveReady \? fromList : null\);",
+    re.DOTALL,
 )
 if OLD_SEL in data:
     data = data.replace(OLD_SEL, NEW_SEL, 1)
     print("liveClaim: injected")
+elif "requestedClaimId" in data and "Claim ID verification failed" in data:
+    print("liveClaim: safety guard already present")
 elif "setLiveClaim" in data:
-    print("liveClaim: already present")
+    data, n = OLD_LIVE_RE.subn(lambda _m: NEW_SEL, data, count=1)
+    if n != 1:
+        raise SystemExit("FATAL: old liveClaim block detected but could not be upgraded safely")
+    print("liveClaim: unsafe block upgraded")
 else:
-    print("liveClaim: WARN not found")
+    raise SystemExit("FATAL: could not locate SDLGPortalInputPage claim selector; refusing an unverified build")
 
 # 2) year-safe repairDate
 OLD_RD = "repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),"
@@ -157,12 +181,169 @@ if "const _liveR =" not in data:
             1,
         )
 
+# Regression guard: these legacy timer scripts must not be dynamically loaded by claim-fields.
+# The generated HTML check below cannot catch runtime script injection from another module.
+CLAIM_FIELDS = Path("modules/claim-fields.js")
+if CLAIM_FIELDS.exists():
+    claim_fields_source = CLAIM_FIELDS.read_text(encoding="utf-8", errors="replace")
+    if re.search(
+        r"loadScript\(\s*['\"]\.\/modules\/sdlg-(?:input-hydrate|inline-enforcer)\.js",
+        claim_fields_source,
+    ):
+        raise SystemExit("FATAL: claim-fields must not load timer-based SDLG DOM writers")
+
 # Sanity
 if re.search(r"replace\(/\[[\r\n]", data):
     raise SystemExit("FATAL: newline still inside regex character class")
 if "sdlg-input-hydrate.js" in data or "sdlg-inline-enforcer.js" in data:
     raise SystemExit("FATAL: timer DOM writer must not be loaded")
+# Fail the build if the generated SDLG form loses its claim-identity safety gates.
+for needle in (
+    "const requestedClaimId = String(selectedClaimId || '').trim();",
+    "String(liveClaim.claim_id || '').trim() === requestedClaimId",
+    "if (!alive) return;",
+    "Claim ID verification failed",
+):
+    if needle not in data:
+        raise SystemExit("FATAL: generated SDLG claim safety guard missing: " + needle)
+
+FINANCE = Path("modules/sdlg-portal-finance-ux.js")
+if FINANCE.exists():
+    finance_source = FINANCE.read_text(encoding="utf-8", errors="replace")
+    if "function verifiedLiveClaim()" not in finance_source or "var claim = verifiedLiveClaim();" not in finance_source:
+        raise SystemExit("FATAL: SDLG finance calculations must verify the active claim ID")
+
+ENRICH = Path("modules/sdlg-portal-enrich.js")
+if ENRICH.exists():
+    enrich_source = ENRICH.read_text(encoding="utf-8", errors="replace")
+    if "getSelectedClaimId() !== expectedClaimId" not in enrich_source or "getSelectedClaimId() !== claimId" not in enrich_source:
+        raise SystemExit("FATAL: async SDLG enrichment must verify the active claim before writing")
+
+POLICY_REPAIR = Path("modules/sdlg-policy-repair-hardfix.js")
+if POLICY_REPAIR.exists():
+    policy_source = POLICY_REPAIR.read_text(encoding="utf-8", errors="replace")
+    if "claimIdFromPage() !== id" not in policy_source:
+        raise SystemExit("FATAL: async SDLG policy/repair data must verify the active claim before writing")
+
+POLICY_TABLE = Path("modules/sdlg-policy-table-fill.js")
+if POLICY_TABLE.exists():
+    policy_table_source = POLICY_TABLE.read_text(encoding="utf-8", errors="replace")
+    if "if (getClaimId() !== claimId) return;" not in policy_table_source:
+        raise SystemExit("FATAL: async SDLG policy-table results must verify the active claim before writing")
+
+CANONICAL_MODULE = Path("modules/canonical-warranty-helper.js")
+if CANONICAL_MODULE.exists():
+    canonical_source = CANONICAL_MODULE.read_text(encoding="utf-8", errors="replace")
+    if "if (scheduled || isPortalInputPage()) return;" not in canonical_source or "findClaimId() !== claimId" not in canonical_source:
+        raise SystemExit("FATAL: legacy canonical helper must not write portal fields or stale claim data")
+
+CLAIM_LOCK = Path("modules/sdlg-input-claim-lock.js")
+if CLAIM_LOCK.exists():
+    lock_source = CLAIM_LOCK.read_text(encoding="utf-8", errors="replace")
+    if "root.SDLGInputHydrate.apply(c)" in lock_source or "root.SDLGInputHydrate.hydrate(" in lock_source:
+        raise SystemExit("FATAL: claim-lock must not delegate portal writes to legacy hydration")
+
+MASTER_LOADER = Path("modules/master-resolution-ux.js")
+if MASTER_LOADER.exists():
+    master_source = MASTER_LOADER.read_text(encoding="utf-8", errors="replace")
+    for needle in (
+        "sdlg-policy-repair-hardfix.js?v=20261013-claim-integrity-v2",
+        "sdlg-portal-enrich.js?v=20261013-claim-integrity-v2",
+        "sdlg-policy-table-fill.js?v=20261013-claim-integrity-v2",
+    ):
+        if needle not in master_source:
+            raise SystemExit("FATAL: claim-context loader has stale cache key: " + needle)
+
 print("sanity: OK")
+
+# Bust browser caches for modules whose claim-safety behavior changed.
+CACHE_BUSTS = {
+    "modules/claim-fields.js": "20261013-claim-integrity-v4",
+    "modules/sdlg-portal-finance-ux.js": "20261013-v54",
+    "modules/sdlg-input-claim-lock.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-portal-enrich.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-policy-repair-hardfix.js": "20261013-claim-integrity-v2",
+    "modules/sdlg-policy-table-fill.js": "20261013-claim-integrity-v2",
+    "modules/canonical-warranty-helper.js": "20261013-claim-integrity-v2",
+}
+for script_path, version in CACHE_BUSTS.items():
+    src_pattern = re.compile(
+        r'(<script\b[^>]*\bsrc=["\'][^"\']*?'
+        + re.escape(script_path)
+        + r')(?:\?[^"\']*)?(["\'])',
+        re.IGNORECASE,
+    )
+    data, count = src_pattern.subn(lambda m: m.group(1) + "?v=" + version + m.group(2), data)
+    if count:
+        print("cache-busted", script_path, count)
+
+# If an older inline claim-context loader remains in the shell, move it to the
+# same generation as the external loader so it cannot suppress the patched module.
+data = data.replace("__SDLG_CLAIM_CONTEXT_LOADER_V17__", "__SDLG_CLAIM_CONTEXT_LOADER_V18__")
+data = data.replace("sdlg-policy-repair-hardfix.js?v=20261008-v2.1", "sdlg-policy-repair-hardfix.js?v=20261013-claim-integrity-v2")
+data = data.replace("sdlg-portal-enrich.js?v=20261008-v1.4", "sdlg-portal-enrich.js?v=20261013-claim-integrity-v2")
+data = data.replace("sdlg-policy-table-fill.js?v=20261008-v1.1", "sdlg-policy-table-fill.js?v=20261013-claim-integrity-v2")
+
+# Normalize helper script wiring in the actual Pages artifact.
+# GitHub Pages deploys _site directly; it does not run the legacy Cloudflare injector chain.
+data = re.sub(
+    r'<script>\s*/\* SDLG_WARRANTY_HELPER_CANONICAL_V\d+ \*/\s*[\s\S]*?</script>\s*',
+    '',
+    data,
+    flags=re.IGNORECASE,
+)
+
+required_module_tags = [
+    ("modules/export-table-helper.js", "20261013-v1"),
+    ("modules/claim-parser-helpers.js", "20261013-v1"),
+    ("modules/master-resolution-ux.js", "20261013-v1"),
+    ("modules/wo-collision-modal.js", "20261013-v1"),
+    ("modules/wo-claim-policy.js", "20261013-v1"),
+]
+for script_path, _version in required_module_tags:
+    module_tag_pattern = re.compile(
+        r'<script\b[^>]*\bsrc=["\'][^"\']*?'
+        + re.escape(script_path)
+        + r'(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
+        re.IGNORECASE,
+    )
+    data = module_tag_pattern.sub('', data)
+
+canonical_tag_pattern = re.compile(
+    r'<script\b[^>]*\bsrc=["\']/?canonical-warranty-helper\.js(?:\?[^"\']*)?["\'][^>]*>\s*</script>',
+    re.IGNORECASE,
+)
+data = canonical_tag_pattern.sub('', data)
+if "</head>" not in data:
+    raise SystemExit("FATAL: cannot insert helper modules; </head> missing")
+if "</body>" not in data:
+    raise SystemExit("FATAL: cannot insert canonical helper; </body> missing")
+
+required_module_tags = [
+    '<script src="modules/claim-parser-helpers.js?v=20261013-v1"></script>',
+    '<script src="modules/wo-collision-modal.js?v=20261013-v1"></script>',
+    '<script src="modules/wo-claim-policy.js?v=20261013-v1"></script>',
+    '<script src="modules/master-resolution-ux.js?v=20261013-v1"></script>',
+    '<script src="modules/export-table-helper.js?v=20261013-v1"></script>',
+]
+data = data.replace("</head>", "\n".join(required_module_tags) + "\n</head>", 1)
+data = data.replace(
+    "</body>",
+    '<script src="canonical-warranty-helper.js?v=20261013-v2"></script>\n</body>',
+    1,
+)
+
+for script_path, _version in [
+    ("modules/claim-parser-helpers.js", "20261013-v1"),
+    ("modules/wo-collision-modal.js", "20261013-v1"),
+    ("modules/wo-claim-policy.js", "20261013-v1"),
+    ("modules/export-table-helper.js", "20261013-v1"),
+    ("modules/master-resolution-ux.js", "20261013-v1"),
+]:
+    if len(re.findall(r'<script\b[^>]*\bsrc=["\'][^"\']*?' + re.escape(script_path) + r'(?:\?[^"\']*)?["\'][^>]*>\s*</script>', data, re.IGNORECASE)) != 1:
+        raise SystemExit("FATAL: helper tag must appear exactly once: " + script_path)
+if len(canonical_tag_pattern.findall(data)) != 1:
+    raise SystemExit("FATAL: canonical helper tag must appear exactly once in Pages artifact")
 
 INDEX.write_text(data, encoding="utf-8")
 print("pages_prepare done", len(data))

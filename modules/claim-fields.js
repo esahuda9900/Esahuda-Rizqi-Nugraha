@@ -45,13 +45,15 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      loadScript('./modules/sdlg-input-hydrate.js?v=20261012-v13', 'data-sdlg-input-hydrate');
-      // use distinct attr so baked legacy inline enforcer does NOT block this module
-      loadScript('./modules/sdlg-inline-enforcer.js?v=20261012-v3', 'data-sdlg-inline-enforcer-mod');
+      // IMPORTANT: Do not load the timer-based DOM writers here.
+      // The SDLG React form's selected/live claim state must be the only source
+      // of truth for portal fields. These legacy modules rewrite input values on
+      // intervals and can reapply a previous claim while a new claim is loading.
+      // Finance calculations remain handled by sdlg-portal-finance-ux.js below.
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
       loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
-      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v53', 'data-sdlg-finance-ux');
+      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261013-v54', 'data-sdlg-finance-ux');
       loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');

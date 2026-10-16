@@ -1,13 +1,8 @@
 name: Bake source index.html to production-safe
 
+# Manual-only: do not let CI automatically rewrite and push production source.
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'scripts/bake_source_index.py'
-      - 'scripts/pages_prepare_index.py'
-      - 'scripts/regression_contract.sh'
-      - '.github/workflows/bake-source-to-production.yml'
 
 permissions:
   contents: write

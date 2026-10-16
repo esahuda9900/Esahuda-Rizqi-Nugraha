@@ -10,6 +10,7 @@
   var RE_CLAIM_HEADER = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\s*[\u00B7\u2022|]`);
   var RE_CLAIM_CARD = new RegExp(String.raw`\bCLAIM\s*\n?\s*(\d{4}-\d{4}-SDLG-PFR)\b`, 'i');
   var RE_CLAIM_ANY = new RegExp(String.raw`\b(\d{4}-\d{4}-SDLG-PFR)\b`);
+  var RE_CLAIM_EXACT = new RegExp(String.raw`^\d{3,4}-\d{4}-SDLG-PFR$`);
 
   function portalDate(value) {
     if (value == null || value === '') return '';
@@ -25,6 +26,20 @@
   }
 
   function claimIdFromPage() {
+    // Prefer the current picker selection; page text may still contain the previous claim during transitions.
+    var selects = document.querySelectorAll('select');
+    for (var i = 0; i < selects.length; i++) {
+      var value = String(selects[i].value || '').trim();
+      if (RE_CLAIM_EXACT.test(value)) return value;
+    }
+    var hash = String(root.location && root.location.hash || '');
+    var route = hash.match(/(?:sdlg-input|sdlginput|claims|claim)\/([^/?#]+)/i);
+    if (route) {
+      try {
+        var routeId = decodeURIComponent(route[1]).trim();
+        if (RE_CLAIM_EXACT.test(routeId)) return routeId;
+      } catch (_) {}
+    }
     var text = (document.body && document.body.innerText) || '';
     var m = text.match(RE_CLAIM_HEADER);
     if (m) return m[1];
@@ -161,7 +176,8 @@
     var id = claimIdFromPage();
     if (!id) return;
     var data = await loadAll(id);
-    if (!data) return;
+    if (!data || claimIdFromPage() !== id) return;
+    if (data.claim && String(data.claim.claim_id || '').trim() !== id) return;
     if (data.claim) {
       var repair = portalDate(data.claim.dealer_repair_date || data.claim.completion_date);
       if (repair) setRepair(repair);

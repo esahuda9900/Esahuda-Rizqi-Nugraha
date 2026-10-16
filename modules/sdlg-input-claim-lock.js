@@ -45,21 +45,14 @@
       return '';
     }
 
-    function applyClaim(c) {
-      // Delegate to unified hydrate when present
-      if (root.__SDLG_DISABLE_CLAIM_LOCK_FIELD_WRITES__ || root.SDLGInputHydrate) {
-        if (root.SDLGInputHydrate && root.SDLGInputHydrate.apply && c) {
-          try { root.SDLGInputHydrate.apply(c); } catch (_) {}
-        }
-        return;
-      }
-      // legacy path removed — hydrate owns writes
+    function applyClaim(_claim) {
+      // Portal fields are React-owned. Never delegate writes to a legacy DOM hydrator.
+      return false;
     }
 
-    async function hydrate(claimId) {
-      if (root.SDLGInputHydrate && root.SDLGInputHydrate.hydrate) {
-        return root.SDLGInputHydrate.hydrate(claimId || activeClaimId());
-      }
+    async function hydrate(_claimId) {
+      // Retained for compatibility with older callers, but legacy hydration is disabled.
+      return false;
     }
 
     root.SDLGInputClaimLock = {
