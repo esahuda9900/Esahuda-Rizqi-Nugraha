@@ -1,14 +1,14 @@
 /**
- * SDLG repository v3.1 — count cache key bumped (v2) to clear stale 100.
+ * SDLG repository v4.2 — Performance Booster & VIN Lookup (RPC Version)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_REPOSITORY_V31__) return;
-  root.__SDLG_REPOSITORY_V31__ = true;
+  if (root.__SDLG_REPOSITORY_V42__) return;
+  root.__SDLG_REPOSITORY_V42__ = true;
 
-  var COUNT_CACHE_KEY = 'sdlg:claims-count:v2';
+  var COUNT_CACHE_KEY = 'sdlg:claims-count:v3';
   var COUNT_CACHE_TTL_MS = 5 * 60 * 1000;
-  var PAGE_SIZE = 100;
+  var PAGE_SIZE = 50;
 
   function getClient() {
     return (typeof root.getSdlgSupabase === 'function' && root.getSdlgSupabase())
@@ -29,15 +29,12 @@
   function writeCountCache(count) {
     try {
       if (typeof count !== 'number') return;
-      root.sessionStorage.setItem(
-        COUNT_CACHE_KEY,
-        JSON.stringify({ count: count, at: Date.now() })
-      );
+      root.sessionStorage.setItem(COUNT_CACHE_KEY, JSON.stringify({ count: count, at: Date.now() }));
     } catch (_) {}
   }
 
-  // Drop legacy v1 cache that may hold 100
   try { root.sessionStorage.removeItem('sdlg:claims-count:v1'); } catch (_) {}
+  try { root.sessionStorage.removeItem('sdlg:claims-count:v2'); } catch (_) {}
 
   var repo = {
     async countClaims() {
@@ -62,49 +59,51 @@
       var client = getClient();
       if (!client) return [];
       var from = Math.max(0, (page || 0) * PAGE_SIZE);
-      var result = await client
-        .from('claims')
-        .select('*')
-        .order('claim_id', { ascending: false })
-        .range(from, from + PAGE_SIZE - 1);
+      var result = await client.from('claims').select('*').order('claim_id', { ascending: false }).range(from, from + PAGE_SIZE - 1);
       if (result.error) throw result.error;
       return result.data || [];
     },
 
-    async listClaims() {
-      var client = getClient();
-      if (!client) return [];
-      var all = [];
-      var page = 0;
-      while (page < 30) {
-        var rows = await client
-          .from('claims')
-          .select('*')
-          .order('claim_id', { ascending: false })
-          .range(page * 200, page * 200 + 199);
-        if (rows.error) throw rows.error;
-        var chunk = rows.data || [];
-        all = all.concat(chunk);
-        if (chunk.length < 200) break;
-        page += 1;
-      }
-      return all;
+    async listClaimsHydrated() {
+      try { return await repo.listClaimsPage(0); } catch (e) { return []; }
     },
 
-    async listClaimsHydrated() {
-      var pageRows = [];
+    // ==========================================
+    // VIN LOOKUP VIA RPC RESMI SUPABASE
+    // ==========================================
+    async lookupMachineVIN(model, serialNo) {
+      var client = getClient();
+      if (!client || !serialNo) return null;
+
+      var cleanModel = model ? String(model).trim().toUpperCase() : null;
+      var cleanSerial = String(serialNo).trim().toUpperCase();
+
       try {
-        pageRows = await repo.listClaimsPage(0);
-      } catch (_) {}
-      var full = null;
-      try {
-        full = await repo.listClaims();
-      } catch (_) {}
-      return full && full.length ? full : pageRows;
+        // Memanggil RPC sdlg_lookup_unit
+        var res = await client.rpc('sdlg_lookup_unit', {
+          p_serial: cleanSerial,
+          p_model: cleanModel
+        });
+
+        if (res.error) {
+          console.warn('[SDLG Repo] RPC VIN Lookup error:', res.error.message);
+          return null;
+        }
+
+        // RPC biasanya mengembalikan object atau string. Kita handle keduanya.
+        if (res.data) {
+          if (typeof res.data === 'string') return res.data;
+          return res.data.machine_build_no || res.data.indent_no || res.data.vin || null;
+        }
+        return null; 
+      } catch (err) {
+        console.warn('[SDLG Repo] RPC VIN Lookup failed:', err);
+        return null;
+      }
     }
   };
 
   root.SDLGRepository = repo;
   root.sdlgRepository = repo;
-  try { console.info('[SDLG] sdlg-repository.js v3.1 loaded (count cache v2)'); } catch (_) {}
+  try { console.info('[SDLG] sdlg-repository.js v4.2 loaded (RPC ready)'); } catch (_) {}
 })(typeof window !== 'undefined' ? window : this);
