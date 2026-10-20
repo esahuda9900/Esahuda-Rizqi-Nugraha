@@ -1,15 +1,23 @@
 /**
- * SDLG Portal Finance v5.3 — never use labourRate<=0; force hrs*25 when amount stuck at 0.
+ * SDLG Portal Finance v5.5 — Ultimate UX & Performance Update
+ * New: Read-only output fields, Reset Rates, Auto-save indicator, Input Debounce.
+ * Fixes: Infinite loop, CPU overload, Console spam.
  */
 (function () {
   'use strict';
-  if (window.__SDLG_PORTAL_FINANCE_UX_V53__) return;
-  window.__SDLG_PORTAL_FINANCE_UX_V53__ = true;
+  if (window.__SDLG_PORTAL_FINANCE_UX_V55__) return;
+  window.__SDLG_PORTAL_FINANCE_UX_V55__ = true;
   window.__SDLG_PORTAL_FINANCE_UX_V5__ = true;
 
   var STORAGE_KEY = 'sdlg:finance-rates:v1';
   var DEFAULT_LABOUR = 25;
   var DEFAULT_MILEAGE = 0.5;
+  var IS_DEBUG = window.location.search.indexOf('debug=true') > -1;
+
+  // Helper log agar console bersih saat production
+  function log() {
+    if (IS_DEBUG) console.info.apply(console, ['[SDLG finance]', ...arguments]);
+  }
 
   function num(v) {
     if (v == null || v === '') return null;
@@ -26,6 +34,16 @@
     var n = num(v);
     if (n == null || n <= 0) return fallback;
     return n;
+  }
+
+  // Fitur Anti-Lag: Tunggu user berhenti ngetik baru hitung
+  function debounce(func, wait) {
+    var timeout;
+    return function () {
+      var context = this, args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(function () { func.apply(context, args); }, wait);
+    };
   }
 
   function loadRates() {
@@ -45,7 +63,6 @@
   }
 
   var state = loadRates();
-  // heal bad rates from previous sessions
   if (!(state.labourRate > 0)) state.labourRate = DEFAULT_LABOUR;
   if (!(state.mileageRate > 0)) state.mileageRate = DEFAULT_MILEAGE;
 
@@ -57,9 +74,23 @@
     return document.querySelector('[data-sdlg-input-helper]');
   }
 
-  function setInput(el, value) {
+  // Anti-Tamper: Kunci input hasil hitungan agar tidak bisa diedit manual
+  function makeReadOnly(el) {
     if (!el) return;
+    if (!el.readOnly) {
+      el.readOnly = true;
+      el.style.backgroundColor = '#f1f5f9'; // Kasih warna abu-abu biar user tau itu otomatis
+      el.style.cursor = 'not-allowed';
+    }
+  }
+
+  function setInput(el, value, isCalculated) {
+    if (!el) return;
+    if (isCalculated) makeReadOnly(el);
+    
     var next = String(value);
+    if (el.value === next) return; // Mencegah infinite loop
+    
     try {
       var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
       var desc = Object.getOwnPropertyDescriptor(proto, 'value');
@@ -69,13 +100,13 @@
     try { el.setAttribute('value', next); el.defaultValue = next; } catch (_) {}
   }
 
-  function setByIdOrLabel(id, label, value) {
+  function setByIdOrLabel(id, label, value, isCalculated) {
     var el = document.getElementById(id);
-    if (el) setInput(el, value);
-    document.querySelectorAll('[id="' + id + '"]').forEach(function (n) { setInput(n, value); });
+    if (el) setInput(el, value, isCalculated);
+    document.querySelectorAll('[id="' + id + '"]').forEach(function (n) { setInput(n, value, isCalculated); });
     if (label) {
       document.querySelectorAll('[data-sdlg-field]').forEach(function (n) {
-        if ((n.getAttribute('data-label') || '') === label) setInput(n, value);
+        if ((n.getAttribute('data-label') || '') === label) setInput(n, value, isCalculated);
       });
     }
   }
@@ -127,20 +158,20 @@
     var other = state.otherRate != null && state.otherRate >= 0 ? state.otherRate : 0;
     var partsAmt = partsTotal();
 
-    setByIdOrLabel('sdlg_labourAmount', 'Labour Amount', money(labour));
-    setByIdOrLabel('sdlg_mileageAmount', 'Mileage Amount', money(mileage));
+    // isCalculated = true -> Membuat input menjadi Read-Only
+    setByIdOrLabel('sdlg_labourAmount', 'Labour Amount', money(labour), true);
+    setByIdOrLabel('sdlg_mileageAmount', 'Mileage Amount', money(mileage), true);
 
     var oa = document.getElementById('sdlg_otherAmount');
     if (oa && (isDash(oa.value) || oa.value === '' || oa.value === '0' || oa.value === '0.00')) {
-      setByIdOrLabel('sdlg_otherAmount', 'Other Amount', money(other));
+      setByIdOrLabel('sdlg_otherAmount', 'Other Amount', money(other), true);
     }
+    
     var otherVal = oa ? (num(oa.value) != null ? num(oa.value) : other) : other;
     var total = partsAmt + labour + mileage + otherVal;
-    setByIdOrLabel('sdlg_totalAmount', 'Total Amount Claimed', money(total));
+    setByIdOrLabel('sdlg_totalAmount', 'Total Amount Claimed', money(total), true);
 
-    try {
-      console.info('[SDLG finance] labour=', money(labour), 'hrs=', hrs, 'rate=', labourRate, 'mileage=', money(mileage), 'total=', money(total));
-    } catch (_) {}
+    log('Calculated: labour=', money(labour), 'hrs=', hrs, 'rate=', labourRate, 'total=', money(total));
   }
 
   function purgeExtraPanels() {
@@ -156,17 +187,24 @@
     if (r.querySelector('[data-sdlg-finance-panel]')) return;
     var box = document.createElement('div');
     box.setAttribute('data-sdlg-finance-panel', '1');
-    box.style.cssText = 'margin:12px 0;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;font-size:12px;';
+    box.style.cssText = 'margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:13px;box-shadow: 0 1px 3px rgba(0,0,0,0.05);';
+    
+    // UI Panel yang lebih rapi + Tombol Reset
     box.innerHTML =
-      '<div style="font-weight:700;margin-bottom:6px;color:#0f172a">Rate Calculator</div>' +
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
-      '<label>Labour rate <input data-sdlg-rate="labour" type="number" step="0.01" value="' +
-      state.labourRate +
-      '" style="width:80px;margin-left:4px"/></label>' +
-      '<label>Mileage rate <input data-sdlg-rate="mileage" type="number" step="0.01" value="' +
-      state.mileageRate +
-      '" style="width:80px;margin-left:4px"/></label>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        '<div style="font-weight:700;color:#0f172a">⚙️ Rate Calculator</div>' +
+        '<button type="button" id="sdlg_reset_rates" style="font-size:11px;padding:4px 8px;background:#e2e8f0;border:none;border-radius:4px;cursor:pointer;color:#475569;">Reset Default</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:15px;flex-wrap:wrap;align-items:center">' +
+        '<label style="display:flex;align-items:center;gap:5px;">Labour rate <input data-sdlg-rate="labour" type="number" step="0.01" value="' +
+        state.labourRate +
+        '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:4px;"/></label>' +
+        '<label style="display:flex;align-items:center;gap:5px;">Mileage rate <input data-sdlg-rate="mileage" type="number" step="0.01" value="' +
+        state.mileageRate +
+        '" style="width:70px;padding:4px;border:1px solid #cbd5e1;border-radius:4px;"/></label>' +
+        '<span id="sdlg_save_status" style="font-size:11px;color:#10b981;opacity:0;transition:opacity 0.3s;">✓ Saved!</span>' +
       '</div>';
+      
     var anchor = null;
     r.querySelectorAll('div').forEach(function (d) {
       if (/^Other Cost Details$/i.test(String(d.textContent || '').trim()) && !anchor) anchor = d;
@@ -174,6 +212,7 @@
     if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(box, anchor);
     else r.appendChild(box);
 
+    // Event Listener untuk Input Rate
     box.addEventListener('input', function (e) {
       var t = e.target;
       if (!t || !t.getAttribute) return;
@@ -184,6 +223,28 @@
       else if (kind === 'mileage') state.mileageRate = safeRate(v, DEFAULT_MILEAGE);
       saveRates();
       recompute();
+      
+      // Efek visual "Saved!"
+      var status = document.getElementById('sdlg_save_status');
+      if (status) {
+        status.style.opacity = '1';
+        clearTimeout(window.__sdlg_save_timer);
+        window.__sdlg_save_timer = setTimeout(function() { status.style.opacity = '0'; }, 1500);
+      }
+    });
+
+    // Event Listener untuk Tombol Reset
+    box.querySelector('#sdlg_reset_rates').addEventListener('click', function() {
+      state.labourRate = DEFAULT_LABOUR;
+      state.mileageRate = DEFAULT_MILEAGE;
+      saveRates();
+      
+      var inL = box.querySelector('[data-sdlg-rate="labour"]');
+      var inM = box.querySelector('[data-sdlg-rate="mileage"]');
+      if (inL) inL.value = DEFAULT_LABOUR;
+      if (inM) inM.value = DEFAULT_MILEAGE;
+      
+      recompute();
     });
   }
 
@@ -192,8 +253,11 @@
       var el = document.getElementById(id);
       if (!el || el.getAttribute('data-sdlg-fin-bound') === '1') return;
       el.setAttribute('data-sdlg-fin-bound', '1');
-      el.addEventListener('input', recompute);
-      el.addEventListener('change', recompute);
+      
+      // Gunakan Debounce (tunggu 200ms setelah user berhenti ngetik)
+      var debouncedRecompute = debounce(recompute, 200);
+      el.addEventListener('input', debouncedRecompute);
+      el.addEventListener('change', debouncedRecompute);
     });
   }
 
@@ -207,15 +271,20 @@
   }
 
   function enhance() {
-    var r = root();
-    if (!r) { purgeExtraPanels(); return; }
+    if (window.__SDLG_FINANCE_UX_ENHANCING__) return;
+    window.__SDLG_FINANCE_UX_ENHANCING__ = true;
+
     try {
+      var r = root();
+      if (!r) { purgeExtraPanels(); return; }
       ensureCalcPanel(r);
       bindHrsKmListeners();
       recompute();
       scrubKosong(r);
     } catch (e) {
-      try { console.warn('[SDLG finance-ux v5.3]', e); } catch (_) {}
+      if (IS_DEBUG) console.warn('[SDLG finance-ux v5.5]', e);
+    } finally {
+      window.__SDLG_FINANCE_UX_ENHANCING__ = false;
     }
   }
 
@@ -223,27 +292,25 @@
     enhance();
     if (typeof MutationObserver !== 'undefined' && document.body) {
       var deb = null;
-      new MutationObserver(function () {
+      var observer = new MutationObserver(function () {
+        if (window.__SDLG_FINANCE_UX_ENHANCING__) return;
         clearTimeout(deb);
-        deb = setTimeout(enhance, 400);
-      }).observe(document.body, { childList: true, subtree: true });
+        deb = setTimeout(enhance, 800);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
     }
-    setInterval(function () {
-      purgeExtraPanels();
-      recompute();
-      scrubKosong(root());
-    }, 2000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
   window.SDLGPortalFinance = {
-    version: '5.3.0',
+    version: '5.5.0',
     recompute: recompute,
     getRates: function () {
       return { labourRate: state.labourRate, mileageRate: state.mileageRate, otherRate: state.otherRate };
     }
   };
-  console.info('[SDLG finance-ux] v5.3 safe rates');
+  
+  if (IS_DEBUG) console.info('[SDLG finance-ux] v5.5 Loaded (Debug Mode ON)');
 })();
