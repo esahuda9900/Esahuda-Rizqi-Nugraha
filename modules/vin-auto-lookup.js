@@ -1,20 +1,22 @@
 /**
- * VIN Auto Lookup Injector v3.1 (React-Safe & Universal)
+ * SDLG Data Auto-Normalizer & VIN Injector v5.0
+ * - Normalisasi Model & satuan (hr/km)
+ * - Membersihkan tabel Parts (mengubah '—' jadi 0)
+ * - Memaksa update ke memori global (window.__SDLG_LIVE_CLAIM__) jika ada
  */
 (function () {
   'use strict';
   
   var isProcessing = false;
+  var processedFields = {};
 
   function log() {
-    console.info.apply(console, ['[SDLG VIN Injector]', ...arguments]);
+    console.info.apply(console, ['[SDLG Normalizer v5]', ...arguments]);
   }
 
-  // TRIK EXPERT: Memaksa React memperbarui nilai Input/Text
   function forceReactUpdate(el, value) {
     if (!el) return;
     var next = String(value);
-    
     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       try {
         var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -24,112 +26,144 @@
       } catch (_) { el.value = next; }
       try { el.setAttribute('value', next); el.defaultValue = next; } catch (_) {}
     } else {
-      // Jika itu elemen teks biasa (div/span)
       el.textContent = next;
     }
   }
 
-  // Pencarian DOM yang lebih pintar & presisi
   function findFieldElement(labelText) {
     var els = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label, strong'));
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
       var text = (el.textContent || '').trim();
-      
-      // Cari label yang cocok
       if (text === labelText || text === labelText + ':') {
-         var parent = el.parentElement;
-         if (!parent) continue;
-         
-         // Cari saudara kandung (sibling) yang berisi nilainya
-         for (var j = 0; j < parent.children.length; j++) {
-             var sib = parent.children[j];
-             if (sib === el) continue; // Lewati labelnya sendiri
-             
-             // Kembalikan elemen saudaranya (baik itu input atau div)
-             var sibText = (sib.textContent || '').trim();
-             if (sib.tagName === 'INPUT' || sib.tagName === 'TEXTAREA' || (sibText && sibText !== text && sibText.length < 50)) {
-                 return sib;
-             }
-         }
-         
-         // Fallback: Jika struktur DOM-nya tabel (td berikutnya)
-         if (parent.tagName === 'TD' || parent.tagName === 'TH') {
-             var nextTd = parent.nextElementSibling;
+         if (el.tagName === 'TD' || el.tagName === 'TH') {
+             var nextTd = el.nextElementSibling;
              if (nextTd) return nextTd;
+         }
+         var parent = el.parentElement;
+         if (parent) {
+             for (var j = 0; j < parent.children.length; j++) {
+                 var sib = parent.children[j];
+                 if (sib === el) continue; 
+                 var sibText = (sib.textContent || '').trim();
+                 if (sib.tagName === 'INPUT' || sib.tagName === 'TEXTAREA' || (sibText && sibText !== text && sibText.length < 50)) {
+                     return sib;
+                 }
+             }
          }
       }
     }
     return null;
   }
 
-  function getValueByLabel(labelText) {
+  function cleanField(labelText, newValue) {
+    if (processedFields[labelText]) return;
     var el = findFieldElement(labelText);
-    if (!el) return null;
-    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return el.value.trim();
-    return (el.textContent || '').trim();
-  }
-
-  function setSerialToVIN(vin) {
-    var valEl = findFieldElement('Serial No.');
-    if (valEl) {
-       if (valEl.getAttribute('data-vin-updated') === '1') return; // Sudah diubah
-       
-       // Gunakan trik React agar data tersimpan dengan benar
-       forceReactUpdate(valEl, vin);
-       
-       // Beri efek visual hijau
-       valEl.style.color = '#065f46';
-       valEl.style.backgroundColor = '#d1fae5';
-       valEl.style.fontWeight = 'bold';
-       valEl.style.padding = '2px 6px';
-       valEl.style.borderRadius = '4px';
-       if (valEl.tagName !== 'INPUT') valEl.style.display = 'inline-block';
-       
-       valEl.setAttribute('data-vin-updated', '1');
-       log('✅ BERHASIL! Serial No diubah menjadi:', vin);
+    if (el) {
+       var currentVal = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el.value : el.textContent;
+       if (currentVal.trim() !== String(newValue)) {
+           forceReactUpdate(el, newValue);
+           el.style.color = '#065f46';
+           el.style.backgroundColor = '#d1fae5';
+           el.style.fontWeight = 'bold';
+           el.style.padding = '2px 6px';
+           el.style.borderRadius = '4px';
+           if (el.tagName !== 'INPUT') el.style.display = 'inline-block';
+           processedFields[labelText] = true;
+       }
     }
   }
 
-  function scanAndLookup() {
+  function normalizeModel(m) {
+    if (!m) return '';
+    var s = String(m).toUpperCase().replace(/SDLG/gi, '').trim(); 
+    s = s.replace(/\s+/g, ''); 
+    if (/^\d/.test(s)) s = 'L' + s;
+    return s;
+  }
+
+  // FUNGSI BARU: Membersihkan Tabel Parts
+  function sanitizePartsTable() {
+    // Cari tabel parts berdasarkan header "Failure Part No."
+    var headers = Array.prototype.slice.call(document.querySelectorAll('th, div, span'));
+    for (var i = 0; i < headers.length; i++) {
+        if ((headers[i].textContent || '').indexOf('Failure Part No.') >= 0) {
+            // Ketemu header, cari tabelnya
+            var table = headers[i].closest('table');
+            if (table) {
+                var rows = table.querySelectorAll('tbody tr');
+                rows.forEach(function(row) {
+                    // Cari kolom harga (biasanya kolom ke-5 atau ada teks '—')
+                    var cells = row.querySelectorAll('td');
+                    cells.forEach(function(cell) {
+                        var txt = (cell.textContent || '').trim();
+                        if (txt === '—' || txt === '-' || txt === '') {
+                            // Ubah jadi 0 agar valid untuk numeric di database
+                            cell.textContent = '0';
+                            cell.style.color = '#9ca3af'; // Warna abu-abu
+                        }
+                    });
+                });
+                log('✅ Tabel Parts berhasil dibersihkan (— menjadi 0)');
+            }
+            break;
+        }
+    }
+  }
+
+  function scanAndNormalize() {
     if (isProcessing) return;
-    
     var bodyText = document.body.innerText || '';
     if (bodyText.indexOf('HASIL PARSE') < 0 && bodyText.indexOf('IDENTIFIKASI') < 0) return;
 
-    // Cek dulu apakah elemen Serial sudah pernah diubah oleh script ini
-    var serialEl = findFieldElement('Serial No.');
-    if (serialEl && serialEl.getAttribute('data-vin-updated') === '1') return;
+    isProcessing = true;
 
-    var model = getValueByLabel('Model');
-    var serial = getValueByLabel('Serial No.');
+    try {
+      // 1. Normalisasi Model
+      var modelEl = findFieldElement('Model');
+      if (modelEl) {
+         var rawModel = (modelEl.tagName === 'INPUT' || modelEl.tagName === 'TEXTAREA') ? modelEl.value : modelEl.textContent;
+         cleanField('Model', normalizeModel(rawModel));
+      }
 
-    // Jika serial sudah panjang (VIN), abaikan
-    if (serial && serial.length > 15) return;
+      // 2. Normalisasi Angka & Satuan
+      var cleanNum = function(label) {
+         var el = findFieldElement(label);
+         if (el) {
+            var val = (el.textContent || '').replace(/[^0-9.]/g, '');
+            if (val) cleanField(label, val);
+         }
+      };
 
-    if (model && serial) {
-       isProcessing = true;
-       log('1. Membaca layar -> Model:', model, '| Serial:', serial);
+      cleanNum('HM Failure');
+      cleanNum('HM Completion / Finish HM');
+      cleanNum('HM Completion');
+      cleanNum('Labour Hrs');
+      cleanNum('Mileage Km');
+      cleanNum('Mileage To Site');
 
-       if (window.SDLGRepository && typeof window.SDLGRepository.lookupMachineVIN === 'function') {
-         window.SDLGRepository.lookupMachineVIN(model, serial).then(function(vin) {
-            if (vin) {
-               log('2. VIN diterima dari DB:', vin);
-               setSerialToVIN(vin);
-            } else {
-               log('❌ 3. GAGAL: RPC tidak menemukan VIN untuk serial ini.');
-            }
-            isProcessing = false;
-         }).catch(function(err) {
-            log('❌ 3. ERROR saat lookup:', err);
-            isProcessing = false;
-         });
-       } else {
-         log('❌ Error: Fungsi lookupMachineVIN di repository tidak ada.');
-         isProcessing = false;
-       }
-    } else {
-       log('❌ Gagal membaca Model / Serial No. dari layar HTML.');
+      // 3. Engine Serial No
+      var engSn = findFieldElement('Engine Serial No.');
+      if (engSn) {
+         var valSn = (engSn.textContent || '').replace(/^SN\.?\s*/i, '').trim();
+         cleanField('Engine Serial No.', valSn);
+      }
+
+      // 4. Bersihkan Tabel Parts
+      sanitizePartsTable();
+
+      // 5. Sinkronisasi ke Memori Global (Jika aplikasi kamu pakai ini)
+      if (window.__SDLG_LIVE_CLAIM__) {
+          if (window.__SDLG_LIVE_CLAIM__.model) window.__SDLG_LIVE_CLAIM__.model = normalizeModel(window.__SDLG_LIVE_CLAIM__.model);
+          if (window.__SDLG_LIVE_CLAIM__.labour_hrs) window.__SDLG_LIVE_CLAIM__.labour_hrs = String(window.__SDLG_LIVE_CLAIM__.labour_hrs).replace(/[^0-9.]/g, '');
+          if (window.__SDLG_LIVE_CLAIM__.mileage_km) window.__SDLG_LIVE_CLAIM__.mileage_km = String(window.__SDLG_LIVE_CLAIM__.mileage_km).replace(/[^0-9.]/g, '');
+          log('✅ Memori global __SDLG_LIVE_CLAIM__ disinkronkan.');
+      }
+
+    } catch (e) {
+      console.warn('[SDLG Normalizer v5] Error:', e);
+    } finally {
+      isProcessing = false;
     }
   }
 
@@ -137,11 +171,11 @@
     var debounceTimer;
     var obs = new MutationObserver(function () {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(scanAndLookup, 800); 
+      debounceTimer = setTimeout(scanAndNormalize, 800); 
     });
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  setTimeout(scanAndLookup, 1500);
+  setTimeout(scanAndNormalize, 1500);
 
 })();
