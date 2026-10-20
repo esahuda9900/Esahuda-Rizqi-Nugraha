@@ -1,6 +1,5 @@
 /**
- * VIN Auto Lookup Injector v2.1 (Final)
- * Target: Menimpa kolom "Serial No." dengan VIN lengkap dari Supabase.
+ * VIN Auto Lookup Injector v3.1 (React-Safe & Universal)
  */
 (function () {
   'use strict';
@@ -11,16 +10,53 @@
     console.info.apply(console, ['[SDLG VIN Injector]', ...arguments]);
   }
 
-  function getElementByLabel(labelText) {
-    var labels = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label'));
-    for (var i = 0; i < labels.length; i++) {
-      var el = labels[i];
-      if (el.children.length > 0) continue;
+  // TRIK EXPERT: Memaksa React memperbarui nilai Input/Text
+  function forceReactUpdate(el, value) {
+    if (!el) return;
+    var next = String(value);
+    
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      try {
+        var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        var desc = Object.getOwnPropertyDescriptor(proto, 'value');
+        if (desc && desc.set) desc.set.call(el, next);
+        else el.value = next;
+      } catch (_) { el.value = next; }
+      try { el.setAttribute('value', next); el.defaultValue = next; } catch (_) {}
+    } else {
+      // Jika itu elemen teks biasa (div/span)
+      el.textContent = next;
+    }
+  }
+
+  // Pencarian DOM yang lebih pintar & presisi
+  function findFieldElement(labelText) {
+    var els = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label, strong'));
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
       var text = (el.textContent || '').trim();
-      if (text === labelText) {
+      
+      // Cari label yang cocok
+      if (text === labelText || text === labelText + ':') {
          var parent = el.parentElement;
-         if (parent && parent.children.length >= 2) {
-            return parent.children[parent.children.length - 1];
+         if (!parent) continue;
+         
+         // Cari saudara kandung (sibling) yang berisi nilainya
+         for (var j = 0; j < parent.children.length; j++) {
+             var sib = parent.children[j];
+             if (sib === el) continue; // Lewati labelnya sendiri
+             
+             // Kembalikan elemen saudaranya (baik itu input atau div)
+             var sibText = (sib.textContent || '').trim();
+             if (sib.tagName === 'INPUT' || sib.tagName === 'TEXTAREA' || (sibText && sibText !== text && sibText.length < 50)) {
+                 return sib;
+             }
+         }
+         
+         // Fallback: Jika struktur DOM-nya tabel (td berikutnya)
+         if (parent.tagName === 'TD' || parent.tagName === 'TH') {
+             var nextTd = parent.nextElementSibling;
+             if (nextTd) return nextTd;
          }
       }
     }
@@ -28,25 +64,30 @@
   }
 
   function getValueByLabel(labelText) {
-    var el = getElementByLabel(labelText);
-    return el ? (el.textContent || '').trim() : null;
+    var el = findFieldElement(labelText);
+    if (!el) return null;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return el.value.trim();
+    return (el.textContent || '').trim();
   }
 
   function setSerialToVIN(vin) {
-    var valEl = getElementByLabel('Serial No.');
+    var valEl = findFieldElement('Serial No.');
     if (valEl) {
-       if (valEl.getAttribute('data-vin-updated') === '1') return;
+       if (valEl.getAttribute('data-vin-updated') === '1') return; // Sudah diubah
        
-       valEl.textContent = vin;
+       // Gunakan trik React agar data tersimpan dengan benar
+       forceReactUpdate(valEl, vin);
+       
+       // Beri efek visual hijau
        valEl.style.color = '#065f46';
        valEl.style.backgroundColor = '#d1fae5';
        valEl.style.fontWeight = 'bold';
        valEl.style.padding = '2px 6px';
        valEl.style.borderRadius = '4px';
-       valEl.style.display = 'inline-block';
-       valEl.setAttribute('data-vin-updated', '1');
+       if (valEl.tagName !== 'INPUT') valEl.style.display = 'inline-block';
        
-       log('✅ SUKSES! Serial No telah diubah menjadi VIN:', vin);
+       valEl.setAttribute('data-vin-updated', '1');
+       log('✅ BERHASIL! Serial No diubah menjadi:', vin);
     }
   }
 
@@ -56,6 +97,10 @@
     var bodyText = document.body.innerText || '';
     if (bodyText.indexOf('HASIL PARSE') < 0 && bodyText.indexOf('IDENTIFIKASI') < 0) return;
 
+    // Cek dulu apakah elemen Serial sudah pernah diubah oleh script ini
+    var serialEl = findFieldElement('Serial No.');
+    if (serialEl && serialEl.getAttribute('data-vin-updated') === '1') return;
+
     var model = getValueByLabel('Model');
     var serial = getValueByLabel('Serial No.');
 
@@ -64,24 +109,27 @@
 
     if (model && serial) {
        isProcessing = true;
-       log('Memulai Lookup. Model Asli:', model, '| Serial:', serial);
+       log('1. Membaca layar -> Model:', model, '| Serial:', serial);
 
        if (window.SDLGRepository && typeof window.SDLGRepository.lookupMachineVIN === 'function') {
          window.SDLGRepository.lookupMachineVIN(model, serial).then(function(vin) {
             if (vin) {
+               log('2. VIN diterima dari DB:', vin);
                setSerialToVIN(vin);
             } else {
-               log('❌ VIN tidak ditemukan di database. Pastikan Model & Serial cocok.');
+               log('❌ 3. GAGAL: RPC tidak menemukan VIN untuk serial ini.');
             }
             isProcessing = false;
          }).catch(function(err) {
-            log('❌ Error:', err);
+            log('❌ 3. ERROR saat lookup:', err);
             isProcessing = false;
          });
        } else {
-         log('❌ Error: Fungsi lookupMachineVIN tidak ditemukan.');
+         log('❌ Error: Fungsi lookupMachineVIN di repository tidak ada.');
          isProcessing = false;
        }
+    } else {
+       log('❌ Gagal membaca Model / Serial No. dari layar HTML.');
     }
   }
 
@@ -89,11 +137,11 @@
     var debounceTimer;
     var obs = new MutationObserver(function () {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(scanAndLookup, 600); 
+      debounceTimer = setTimeout(scanAndLookup, 800); 
     });
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  setTimeout(scanAndLookup, 1000);
+  setTimeout(scanAndLookup, 1500);
 
 })();
