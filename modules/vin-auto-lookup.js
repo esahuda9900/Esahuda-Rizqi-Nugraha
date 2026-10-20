@@ -1,8 +1,6 @@
 /**
- * SDLG Data Auto-Normalizer & VIN Injector v5.0
- * - Normalisasi Model & satuan (hr/km)
- * - Membersihkan tabel Parts (mengubah '—' jadi 0)
- * - Memaksa update ke memori global (window.__SDLG_LIVE_CLAIM__) jika ada
+ * SDLG Data Auto-Normalizer & VIN Injector v6.0 (X-Ray Vision)
+ * Fixes: DOM targeting for Model, HM, Labour, Mileage, Engine SN, and Parts Table.
  */
 (function () {
   'use strict';
@@ -11,9 +9,10 @@
   var processedFields = {};
 
   function log() {
-    console.info.apply(console, ['[SDLG Normalizer v5]', ...arguments]);
+    console.info.apply(console, ['[SDLG Normalizer v6]', ...arguments]);
   }
 
+  // Fungsi memaksa React update (termasuk trigger event input)
   function forceReactUpdate(el, value) {
     if (!el) return;
     var next = String(value);
@@ -25,33 +24,39 @@
         else el.value = next;
       } catch (_) { el.value = next; }
       try { el.setAttribute('value', next); el.defaultValue = next; } catch (_) {}
+      
+      // Trigger event agar React sadar ada perubahan
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
     } else {
       el.textContent = next;
     }
   }
 
+  // Pencarian DOM yang jauh lebih agresif & presisi
   function findFieldElement(labelText) {
-    var els = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label, strong'));
-    for (var i = 0; i < els.length; i++) {
-      var el = els[i];
-      var text = (el.textContent || '').trim();
-      if (text === labelText || text === labelText + ':') {
-         if (el.tagName === 'TD' || el.tagName === 'TH') {
-             var nextTd = el.nextElementSibling;
-             if (nextTd) return nextTd;
-         }
-         var parent = el.parentElement;
-         if (parent) {
-             for (var j = 0; j < parent.children.length; j++) {
-                 var sib = parent.children[j];
-                 if (sib === el) continue; 
-                 var sibText = (sib.textContent || '').trim();
-                 if (sib.tagName === 'INPUT' || sib.tagName === 'TEXTAREA' || (sibText && sibText !== text && sibText.length < 50)) {
-                     return sib;
-                 }
-             }
-         }
-      }
+    var elements = document.querySelectorAll('*');
+    for (var i = 0; i < elements.length; i++) {
+        var el = elements[i];
+        // Cek apakah elemen ini berisi teks persis seperti label
+        if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3 && el.textContent.trim() === labelText) {
+            var parent = el.parentElement;
+            
+            // Skenario 1: Label ada di dalam tabel (td), value ada di td sebelahnya
+            if (el.tagName === 'TD' || el.tagName === 'TH') {
+                if (el.nextElementSibling) return el.nextElementSibling;
+            }
+            
+            // Skenario 2: Label dan value ada di div bersebelahan
+            if (el.nextElementSibling && el.nextElementSibling.textContent.trim().length > 0) {
+                return el.nextElementSibling;
+            }
+            
+            // Skenario 3: Label di dalam div, value di div sebelah parent
+            if (parent && parent.nextElementSibling && parent.nextElementSibling.textContent.trim().length > 0) {
+                return parent.nextElementSibling;
+            }
+        }
     }
     return null;
   }
@@ -70,6 +75,7 @@
            el.style.borderRadius = '4px';
            if (el.tagName !== 'INPUT') el.style.display = 'inline-block';
            processedFields[labelText] = true;
+           log('✨ ' + labelText + ' -> ' + newValue);
        }
     }
   }
@@ -82,31 +88,29 @@
     return s;
   }
 
-  // FUNGSI BARU: Membersihkan Tabel Parts
+  // FUNGSI BARU: Membersihkan Tabel Parts (Mengubah '—' jadi '0')
   function sanitizePartsTable() {
-    // Cari tabel parts berdasarkan header "Failure Part No."
-    var headers = Array.prototype.slice.call(document.querySelectorAll('th, div, span'));
-    for (var i = 0; i < headers.length; i++) {
-        if ((headers[i].textContent || '').indexOf('Failure Part No.') >= 0) {
-            // Ketemu header, cari tabelnya
-            var table = headers[i].closest('table');
-            if (table) {
-                var rows = table.querySelectorAll('tbody tr');
-                rows.forEach(function(row) {
-                    // Cari kolom harga (biasanya kolom ke-5 atau ada teks '—')
-                    var cells = row.querySelectorAll('td');
-                    cells.forEach(function(cell) {
-                        var txt = (cell.textContent || '').trim();
-                        if (txt === '—' || txt === '-' || txt === '') {
-                            // Ubah jadi 0 agar valid untuk numeric di database
-                            cell.textContent = '0';
-                            cell.style.color = '#9ca3af'; // Warna abu-abu
-                        }
-                    });
-                });
-                log('✅ Tabel Parts berhasil dibersihkan (— menjadi 0)');
-            }
-            break;
+    // Cari semua tabel
+    var tables = document.querySelectorAll('table');
+    for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        if ((table.textContent || '').indexOf('Failure Part No.') > -1) {
+            // Kita temukan tabel Parts
+            var rows = table.querySelectorAll('tbody tr, tr');
+            rows.forEach(function(row) {
+                var cells = row.querySelectorAll('td');
+                // Kolom Unit Price biasanya index ke-4 (0: Failure, 1: Replacement, 2: Desc, 3: Qty, 4: Price)
+                if (cells.length >= 5) {
+                    var priceCell = cells[4]; 
+                    if (priceCell.textContent.trim() === '—' || priceCell.textContent.trim() === '-') {
+                        priceCell.textContent = '0';
+                        priceCell.style.color = '#065f46';
+                        priceCell.style.fontWeight = 'bold';
+                        log('✅ Parts Unit Price diubah dari — menjadi 0');
+                    }
+                }
+            });
+            break; // Selesai jika tabel parts sudah ketemu
         }
     }
   }
@@ -152,21 +156,14 @@
       // 4. Bersihkan Tabel Parts
       sanitizePartsTable();
 
-      // 5. Sinkronisasi ke Memori Global (Jika aplikasi kamu pakai ini)
-      if (window.__SDLG_LIVE_CLAIM__) {
-          if (window.__SDLG_LIVE_CLAIM__.model) window.__SDLG_LIVE_CLAIM__.model = normalizeModel(window.__SDLG_LIVE_CLAIM__.model);
-          if (window.__SDLG_LIVE_CLAIM__.labour_hrs) window.__SDLG_LIVE_CLAIM__.labour_hrs = String(window.__SDLG_LIVE_CLAIM__.labour_hrs).replace(/[^0-9.]/g, '');
-          if (window.__SDLG_LIVE_CLAIM__.mileage_km) window.__SDLG_LIVE_CLAIM__.mileage_km = String(window.__SDLG_LIVE_CLAIM__.mileage_km).replace(/[^0-9.]/g, '');
-          log('✅ Memori global __SDLG_LIVE_CLAIM__ disinkronkan.');
-      }
-
     } catch (e) {
-      console.warn('[SDLG Normalizer v5] Error:', e);
+      console.warn('[SDLG Normalizer v6] Error:', e);
     } finally {
       isProcessing = false;
     }
   }
 
+  // Observer untuk memantau perubahan DOM
   if (typeof MutationObserver !== 'undefined' && document.body) {
     var debounceTimer;
     var obs = new MutationObserver(function () {
@@ -176,6 +173,7 @@
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
+  // Jalankan pertama kali
   setTimeout(scanAndNormalize, 1500);
 
 })();
