@@ -1,10 +1,63 @@
 (function () {
   'use strict';
 
-  // Canonical portal helper v1.2.8
-  // Portal Home field writes DISABLED when __SDLG_DISABLE_CANONICAL_PORTAL_WRITES__ or hydrate present.
-  // Still used for Warranty Assessment panels on claim detail pages.
+  // Canonical portal helper v1.4.1 (Bulletproof Edition)
+  // Fixes: Restored full select for warranty panel, added Supabase abortSignal fallback, React DOM protection.
+  
+  var IS_DEBUG = window.location.search.indexOf('debug=true') > -1;
+  var RE = /^\d{3,4}-\d{4}-SDLG-PFR$/i;
+  var scheduled = false;
+  var lastAppliedKey = '';
+  var applying = false;
+  var activeAbortController = null;
 
+  function log() {
+    if (IS_DEBUG) console.info.apply(console, ['[SDLG Helper v1.4.1]', ...arguments]);
+  }
+
+  // 1. CSS Injection untuk Notifikasi (Aman dari React)
+  function injectStyles() {
+    if (document.getElementById('sdlg-toast-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'sdlg-toast-styles';
+    style.textContent = `
+      .sdlg-toast {
+        position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+        border-radius: 6px; color: white; font-family: sans-serif;
+        font-size: 14px; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;
+        pointer-events: none; max-width: 300px; word-wrap: break-word;
+      }
+      .sdlg-toast.show { opacity: 1; transform: translateY(0); }
+      .sdlg-toast-success { background-color: #10b981; }
+      .sdlg-toast-error { background-color: #ef4444; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showToast(message, type) {
+    injectStyles();
+    var toast = document.createElement('div');
+    toast.className = 'sdlg-toast ' + (type === 'error' ? 'sdlg-toast-error' : 'sdlg-toast-success');
+    toast.textContent = message;
+    
+    // Tempel ke body
+    document.body.appendChild(toast);
+    
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { if (toast) toast.classList.add('show'); });
+    });
+    
+    setTimeout(function() {
+      if (toast) toast.classList.remove('show');
+      setTimeout(function() { 
+        // Cek parentNode untuk mencegah error jika React sudah menghapusnya
+        if (toast && toast.parentNode) toast.parentNode.removeChild(toast); 
+      }, 300);
+    }, 3000);
+  }
+
+  // KEMBALIKAN KE DEFAULT ASLI (Agar panel Warranty tidak blank)
   var DEFAULT_CLAIM_SELECT = [
     'claim_id','model','serial_no','customer','repair_method','technical_personnel',
     'causing_part_no','causing_part_desc','failure_part_location','fault_description',
@@ -22,21 +75,7 @@
     return DEFAULT_CLAIM_SELECT;
   }
 
-  var scheduled = false;
-  var lastAppliedKey = '';
-  var applying = false;
-  var RE = /^\d{3,4}-\d{4}-SDLG-PFR$/i;
-
   function clean(v) { return v == null ? '' : String(v).trim(); }
-  function displayStatus(v) { return clean(v).replace(/_/g, ' '); }
-
-  function formatPortalDate(v) {
-    var s = clean(v);
-    if (!s) return '';
-    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return m[3] + '/' + m[2] + '/' + m[1];
-    return s;
-  }
 
   function findClaimId() {
     try {
@@ -77,34 +116,65 @@
     return false;
   }
 
+  // 2. Fitur AbortController + Kompatibilitas Versi Supabase Lama
   async function loadClaim(claimId) {
     var c = getClient();
     if (!c) throw new Error('No Supabase client');
-    var res = await c.from('claims').select(claimSelect()).eq('claim_id', claimId).maybeSingle();
+    
+    if (activeAbortController) {
+      try { activeAbortController.abort(); } catch(_) {}
+    }
+    activeAbortController = new AbortController();
+
+    var query = c.from('claims')
+      .select(claimSelect())
+      .eq('claim_id', claimId);
+
+    // Cek apakah Supabase versi ini mendukung abortSignal
+    if (typeof query.abortSignal === 'function') {
+      query = query.abortSignal(activeAbortController.signal);
+    }
+
+    var res = await query.maybeSingle();
     if (res.error) throw res.error;
     return res.data;
   }
 
   async function run() {
     if (scheduled || applying) return;
-    // On SDLG Input Helper page: hydrate owns all portal fields — do nothing
     if (isPortalInputPage()) return;
     scheduled = true;
+    
     try {
       var claimId = findClaimId();
       if (!claimId) return;
       if (lastAppliedKey === claimId) return;
+      
       applying = true;
+      log('Fetching claim data for:', claimId);
+      
       var claim = await loadClaim(claimId);
-      if (!claim) return;
-      if (findClaimId() !== claimId) return;
-      // Claim-detail warranty assessment only — no portal home field writes here anymore
+      
+      if (!claim) {
+        showToast('Data klaim tidak ditemukan di database', 'error');
+        return;
+      }
+      if (findClaimId() !== claimId) return; 
+      
       lastAppliedKey = claimId;
-      try {
-        console.info('[SDLG Helper] claim-detail context', claim.claim_id, '(portal writes delegated to hydrate)');
-      } catch (_) {}
+      log('Claim loaded successfully', claim.claim_id);
+      
+      showToast('✓ Data klaim berhasil dimuat', 'success');
+
     } catch (err) {
-      console.warn('[SDLG Helper]', err && err.message ? err.message : err);
+      if (err.name === 'AbortError') {
+        log('Fetch aborted because user navigated away.');
+        return;
+      }
+      
+      var msg = err && err.message ? err.message : err;
+      log('Error:', msg);
+      showToast('Gagal memuat data klaim. Cek koneksi.', 'error');
     } finally {
       applying = false;
       scheduled = false;
@@ -117,8 +187,15 @@
     setTimeout(run, 250);
   }
 
-  window.addEventListener('hashchange', function () { lastAppliedKey = ''; schedule(); });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
-  else schedule();
+  window.addEventListener('hashchange', function () { 
+    lastAppliedKey = ''; 
+    schedule(); 
+  });
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', schedule);
+  } else {
+    schedule();
+  }
   setTimeout(schedule, 800);
 })();
