@@ -1,10 +1,10 @@
 /**
- * SDLG repository v4.2 — Performance Booster & VIN Lookup (RPC Version)
+ * SDLG repository v4.3 — Precision VIN Lookup (Array & Normalization Support)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_REPOSITORY_V42__) return;
-  root.__SDLG_REPOSITORY_V42__ = true;
+  if (root.__SDLG_REPOSITORY_V43__) return;
+  root.__SDLG_REPOSITORY_V43__ = true;
 
   var COUNT_CACHE_KEY = 'sdlg:claims-count:v3';
   var COUNT_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -35,6 +35,16 @@
 
   try { root.sessionStorage.removeItem('sdlg:claims-count:v1'); } catch (_) {}
   try { root.sessionStorage.removeItem('sdlg:claims-count:v2'); } catch (_) {}
+
+  // FUNGSI NORMALISASI MODEL: Mengubah "SDLG 956HE" menjadi "L956HE"
+  function normalizeModel(m) {
+    if (!m) return '';
+    var s = String(m).toUpperCase().replace(/SDLG/gi, '').trim(); // Hapus SDLG
+    s = s.replace(/\s+/g, ''); // Hapus semua spasi
+    // Jika diawali angka (misal "956HE"), tambahkan "L" di depan
+    if (/^\d/.test(s)) s = 'L' + s;
+    return s;
+  }
 
   var repo = {
     async countClaims() {
@@ -69,20 +79,20 @@
     },
 
     // ==========================================
-    // VIN LOOKUP VIA RPC RESMI SUPABASE
+    // VIN LOOKUP VIA RPC (FIXED FOR ARRAY & MODEL FORMAT)
     // ==========================================
     async lookupMachineVIN(model, serialNo) {
       var client = getClient();
       if (!client || !serialNo) return null;
 
-      var cleanModel = model ? String(model).trim().toUpperCase() : null;
       var cleanSerial = String(serialNo).trim().toUpperCase();
+      var normalizedModel = normalizeModel(model);
 
       try {
-        // Memanggil RPC sdlg_lookup_unit
+        // Panggil RPC dengan format model yang sudah dinormalisasi
         var res = await client.rpc('sdlg_lookup_unit', {
           p_serial: cleanSerial,
-          p_model: cleanModel
+          p_model: normalizedModel || null
         });
 
         if (res.error) {
@@ -90,12 +100,13 @@
           return null;
         }
 
-        // RPC biasanya mengembalikan object atau string. Kita handle keduanya.
-        if (res.data) {
-          if (typeof res.data === 'string') return res.data;
-          return res.data.machine_build_no || res.data.indent_no || res.data.vin || null;
+        // Karena hasilnya Array, kita ambil elemen pertama [0]
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          // Ambil dari kolom serial_no sesuai info database
+          return res.data[0].serial_no || null;
         }
-        return null; 
+        
+        return null; // Tidak ketemu
       } catch (err) {
         console.warn('[SDLG Repo] RPC VIN Lookup failed:', err);
         return null;
@@ -105,5 +116,5 @@
 
   root.SDLGRepository = repo;
   root.sdlgRepository = repo;
-  try { console.info('[SDLG] sdlg-repository.js v4.2 loaded (RPC ready)'); } catch (_) {}
+  try { console.info('[SDLG] sdlg-repository.js v4.3 loaded (Precision VIN ready)'); } catch (_) {}
 })(typeof window !== 'undefined' ? window : this);

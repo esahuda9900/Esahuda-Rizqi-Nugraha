@@ -1,117 +1,99 @@
 /**
- * VIN Auto Lookup Injector v1.0
- * Berjalan di background, mendeteksi jika ada "Hasil Parse", lalu menembak RPC VIN.
+ * VIN Auto Lookup Injector v2.1 (Final)
+ * Target: Menimpa kolom "Serial No." dengan VIN lengkap dari Supabase.
  */
 (function () {
   'use strict';
   
-  var IS_DEBUG = window.location.search.indexOf('debug=true') > -1;
   var isProcessing = false;
 
   function log() {
-    if (IS_DEBUG) console.info.apply(console, ['[SDLG VIN Injector]', ...arguments]);
+    console.info.apply(console, ['[SDLG VIN Injector]', ...arguments]);
   }
 
-  // Fungsi untuk mencari nilai teks di sebelah label
-  function getValueByLabel(labelText) {
+  function getElementByLabel(labelText) {
     var labels = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label'));
     for (var i = 0; i < labels.length; i++) {
       var el = labels[i];
-      if (el.children.length > 0) continue; // Hanya cek elemen daun (paling ujung)
-      
+      if (el.children.length > 0) continue;
       var text = (el.textContent || '').trim();
       if (text === labelText) {
-         // Cari value di sebelah kanannya (biasanya elemen bersebelahan atau div di parent yang sama)
          var parent = el.parentElement;
          if (parent && parent.children.length >= 2) {
-            // Ambil elemen terakhir sebagai value
-            var valEl = parent.children[parent.children.length - 1];
-            return (valEl.textContent || '').trim();
+            return parent.children[parent.children.length - 1];
          }
       }
     }
     return null;
   }
 
-  // Fungsi untuk mengisi nilai VIN ke kolom UI
-  function setVINValue(vin) {
-    var labels = Array.prototype.slice.call(document.querySelectorAll('div, span, td, th, label'));
-    for (var i = 0; i < labels.length; i++) {
-      var el = labels[i];
-      var text = (el.textContent || '').trim();
-      
-      // Mencari label "Indent / Machine Build No." atau yang sejenis
-      if (/Indent.*Machine Build No/i.test(text)) {
-         var parent = el.parentElement;
-         if (parent && parent.children.length >= 2) {
-            var valEl = parent.children[parent.children.length - 1];
-            // Cek apakah masih kosong atau berisi strip
-            var currentVal = (valEl.textContent || '').trim();
-            if (!currentVal || currentVal === '—' || currentVal === '-') {
-               valEl.textContent = vin;
-               valEl.style.color = '#10b981'; // Warna hijau tanda berhasil
-               valEl.style.fontWeight = 'bold';
-               log('VIN injected successfully:', vin);
-            }
-         }
-      }
+  function getValueByLabel(labelText) {
+    var el = getElementByLabel(labelText);
+    return el ? (el.textContent || '').trim() : null;
+  }
+
+  function setSerialToVIN(vin) {
+    var valEl = getElementByLabel('Serial No.');
+    if (valEl) {
+       if (valEl.getAttribute('data-vin-updated') === '1') return;
+       
+       valEl.textContent = vin;
+       valEl.style.color = '#065f46';
+       valEl.style.backgroundColor = '#d1fae5';
+       valEl.style.fontWeight = 'bold';
+       valEl.style.padding = '2px 6px';
+       valEl.style.borderRadius = '4px';
+       valEl.style.display = 'inline-block';
+       valEl.setAttribute('data-vin-updated', '1');
+       
+       log('✅ SUKSES! Serial No telah diubah menjadi VIN:', vin);
     }
   }
 
-  // Fungsi utama pemantau DOM
   function scanAndLookup() {
     if (isProcessing) return;
     
-    // Cek apakah halaman hasil parse sudah muncul
     var bodyText = document.body.innerText || '';
     if (bodyText.indexOf('HASIL PARSE') < 0 && bodyText.indexOf('IDENTIFIKASI') < 0) return;
 
-    // Ambil Model & Serial dari layar
     var model = getValueByLabel('Model');
     var serial = getValueByLabel('Serial No.');
 
-    if (model && serial) {
-       // Cek apakah VIN sudah terisi
-       var vinField = getValueByLabel('Indent / Machine Build No.');
-       if (vinField && vinField !== '—' && vinField !== '-' && vinField.length > 5) {
-           // Jika sudah terisi (mungkin dari hasil parse mentah), kita bisa lewati atau timpa. 
-           // Untuk aman, kita biarkan jika isinya sesuai format VIN.
-           return; 
-       }
+    // Jika serial sudah panjang (VIN), abaikan
+    if (serial && serial.length > 15) return;
 
+    if (model && serial) {
        isProcessing = true;
-       log('Looking up VIN for:', model, serial);
+       log('Memulai Lookup. Model Asli:', model, '| Serial:', serial);
 
        if (window.SDLGRepository && typeof window.SDLGRepository.lookupMachineVIN === 'function') {
          window.SDLGRepository.lookupMachineVIN(model, serial).then(function(vin) {
             if (vin) {
-               setVINValue(vin);
+               setSerialToVIN(vin);
             } else {
-               log('VIN not found in database for:', serial);
+               log('❌ VIN tidak ditemukan di database. Pastikan Model & Serial cocok.');
             }
             isProcessing = false;
          }).catch(function(err) {
-            log('Lookup error:', err);
+            log('❌ Error:', err);
             isProcessing = false;
          });
        } else {
-         log('Error: SDLGRepository.lookupMachineVIN is not loaded.');
+         log('❌ Error: Fungsi lookupMachineVIN tidak ditemukan.');
          isProcessing = false;
        }
     }
   }
 
-  // Pantau perubahan layar
   if (typeof MutationObserver !== 'undefined' && document.body) {
     var debounceTimer;
     var obs = new MutationObserver(function () {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(scanAndLookup, 500); // Tunggu 500ms agar React selesai render
+      debounceTimer = setTimeout(scanAndLookup, 600); 
     });
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Panggil sekali saat load
   setTimeout(scanAndLookup, 1000);
 
 })();
