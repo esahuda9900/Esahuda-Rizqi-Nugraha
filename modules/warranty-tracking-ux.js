@@ -1,5 +1,5 @@
 /**
- * SDLG Warranty Tracking UX v1.6.8
+ * SDLG Warranty Tracking UX v1.6.9
  * Progressive enhancement only. No business logic / no data mutation.
  * Relative style paths for GitHub Project Pages.
  */
@@ -12,7 +12,7 @@
   var COMMAND_ID = 'sdlg-claim-command';
   var OBSERVER = null;
   var DEBOUNCE_MS = 480;
-  var VERSION = '1.6.8';
+  var VERSION = '1.6.9'; // <-- Versi dinaikkan agar browser ambil cache baru
   var lastRunAt = 0;
 
   function injectCss() {
@@ -234,25 +234,43 @@
     return 'Lihat timeline & dokumen di bawah';
   }
 
+  // === BAGIAN INI YANG KITA UBAH AGAR RAPI ===
   function buildPanelHtml(data) {
+    var blockedHtml = '';
+    if (data.blocked) {
+      var items = data.blocked.split(' · ');
+      blockedHtml = '<ul class="sdlg-tracking-panel__list">';
+      for (var i = 0; i < items.length; i++) {
+        blockedHtml += '<li>' + escapeHtml(items[i]) + '</li>';
+      }
+      blockedHtml += '</ul>';
+    } else {
+      blockedHtml = '<span class="sdlg-tracking-panel__value sdlg-tracking-panel__value--muted">Tidak ada blokir aktif</span>';
+    }
+
     return (
       '<div class="sdlg-tracking-panel__item">' +
-        '<span class="sdlg-tracking-panel__label">Current Owner</span>' +
+        '<span class="sdlg-tracking-panel__label">👤 Current Owner</span>' +
         '<span class="sdlg-tracking-panel__value sdlg-tracking-panel__value--owner">' + escapeHtml(data.owner) + '</span></div>' +
+      
       '<div class="sdlg-tracking-panel__item">' +
-        '<span class="sdlg-tracking-panel__label">Current Stage</span>' +
+        '<span class="sdlg-tracking-panel__label">📍 Current Stage</span>' +
         '<span class="sdlg-tracking-panel__value">' + escapeHtml(data.stage) + '</span></div>' +
+      
       '<div class="sdlg-tracking-panel__item">' +
-        '<span class="sdlg-tracking-panel__label">What Happened</span>' +
+        '<span class="sdlg-tracking-panel__label">📝 What Happened</span>' +
         '<span class="sdlg-tracking-panel__value' + (data.happened ? '' : ' sdlg-tracking-panel__value--muted') + '">' + escapeHtml(data.happened || '—') + '</span></div>' +
+      
       '<div class="sdlg-tracking-panel__item">' +
-        '<span class="sdlg-tracking-panel__label">Why Blocked</span>' +
-        '<span class="sdlg-tracking-panel__value' + (data.blocked ? ' sdlg-tracking-panel__value--blocked' : ' sdlg-tracking-panel__value--muted') + '">' + escapeHtml(data.blocked || 'Tidak ada blokir aktif') + '</span></div>' +
+        '<span class="sdlg-tracking-panel__label">⚠️ Why Blocked</span>' +
+        blockedHtml + '</div>' +
+      
       '<div class="sdlg-tracking-panel__item sdlg-tracking-panel__item--next">' +
-        '<span class="sdlg-tracking-panel__label">Next Action</span>' +
+        '<span class="sdlg-tracking-panel__label">🚀 Next Action</span>' +
         '<span class="sdlg-tracking-panel__value sdlg-tracking-panel__value--next">' + escapeHtml(data.next) + '</span></div>' +
+      
       '<div class="sdlg-tracking-panel__item sdlg-tracking-panel__item--handoff">' +
-        '<span class="sdlg-tracking-panel__label">Evidence / Handoff</span>' +
+        '<span class="sdlg-tracking-panel__label">🤝 Evidence / Handoff</span>' +
         '<span class="sdlg-tracking-panel__value sdlg-tracking-panel__value--muted">' + escapeHtml(data.handoff || 'Lihat timeline di bawah') + '</span></div>'
     );
   }
