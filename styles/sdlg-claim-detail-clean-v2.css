@@ -1,95 +1,79 @@
-/* SDLG CLAIM DETAIL CLEAN V2.2
-   Scoped to .page.claim-detail-page only.
+/* =========================================================
+   SDLG CLAIM DETAIL CLEAN V3.0 (EXPERT REVISED)
+   Scoped: .page.claim-detail-page ONLY.
    Goal: Tracking = decision surface; engine/matrix/policy = quiet evidence.
-   Visual only. No business logic. */
+   Fix: Removed #sdlg-tracking-panel overrides (handled by dedicated CSS).
+   ========================================================= */
 
+/* 1. PAGE CONTAINER SETUP */
 .page.claim-detail-page {
-  max-width: 1320px !important;
-  padding-bottom: 40px !important;
+  max-width: 1440px !important; /* Sedikit dilebarkan biar lega */
+  padding-bottom: 60px !important;
 }
 
 .page.claim-detail-page > * {
-  margin-bottom: 10px !important;
+  margin-bottom: 16px !important;
 }
 
 .page.claim-detail-page > *:last-child {
   margin-bottom: 0 !important;
 }
 
+/* 2. COMMAND BAR (Atas) - Dibuat sedikit lebih elegan */
 .page.claim-detail-page #sdlg-claim-command {
-  margin: 0 0 8px !important;
-  border: 1px solid #d7e2f5 !important;
-  border-radius: 14px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%) !important;
-  box-shadow: 0 4px 16px rgba(15, 35, 70, 0.06) !important;
-}
-
-.page.claim-detail-page #sdlg-tracking-panel {
   margin: 0 0 12px !important;
-  border: 1px solid #c9d8f8 !important;
-  border-radius: 14px !important;
-  background: linear-gradient(180deg, #f7faff 0%, #ffffff 42%) !important;
-  box-shadow: 0 8px 24px rgba(31, 94, 255, 0.08) !important;
-  position: relative !important;
-  z-index: 5 !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-radius: var(--sdlg-radius, 16px) !important;
+  background: var(--sdlg-surface, #ffffff) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 2px 6px rgba(12,21,38,0.06)) !important;
 }
 
-.page.claim-detail-page #sdlg-warranty-assessment-shell {
-  display: none !important;
-}
-
-.page.claim-detail-page.sdlg-tracking-active .claim-decision-summary,
+/* 3. HIDE NON-ESSENTIAL SECTIONS (Biar user fokus ke Tracking) */
+.page.claim-detail-page #sdlg-warranty-assessment-shell,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .claim-decision-summary,
-.page.claim-detail-page.sdlg-tracking-active .sdlg-legacy-decision,
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-legacy-decision {
-  display: none !important;
-}
-
+.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-legacy-decision,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__next {
   display: none !important;
 }
 
+/* 4. DEMOTE ROUTE SUMMARY (Jadikan "Quiet Evidence") */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary,
 .page.claim-detail-page:has(#sdlg-tracking-panel) > .card.card-pad:first-of-type {
-  margin: 0 0 10px !important;
-  padding: 10px 12px !important;
-  border: 1px solid #e8eef6 !important;
+  margin: 0 0 12px !important;
+  padding: 12px 16px !important;
+  border: 1px dashed var(--sdlg-border-strong, #cfd8e6) !important; /* Pakai dashed biar berasa "info sekunder" */
   border-radius: 12px !important;
-  background: #f8fafc !important;
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
   box-shadow: none !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary [class*="grid"],
-.page.claim-detail-page:has(#sdlg-tracking-panel) > .card.card-pad [style*="grid"],
-.page.claim-detail-page:has(#sdlg-tracking-panel) > .card.card-pad > div {
-  gap: 6px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__title,
-.page.claim-detail-page:has(#sdlg-tracking-panel) .card .section-title {
+.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__title {
   font-size: 12px !important;
   font-weight: 700 !important;
-  color: #475569 !important;
-  margin: 0 0 6px !important;
+  color: var(--sdlg-muted, #5a6578) !important;
+  margin: 0 0 4px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) table {
-  font-size: 11.5px !important;
-  border-collapse: collapse !important;
-  width: 100% !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) table th,
-.page.claim-detail-page:has(#sdlg-tracking-panel) table td {
-  padding: 5px 8px !important;
-  line-height: 1.3 !important;
-  vertical-align: top !important;
-}
-
+/* 5. TABLES (Compact but Readable) */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table {
   display: block !important;
-  max-height: 180px !important;
-  overflow: auto !important;
+  max-height: 220px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+}
+
+/* Custom Scrollbar biar ga jadul */
+.page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad thead,
@@ -99,95 +83,83 @@
   table-layout: fixed !important;
 }
 
+.page.claim-detail-page:has(#sdlg-tracking-panel) table th {
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  font-weight: 600 !important;
+  color: var(--sdlg-muted, #5a6578) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+.page.claim-detail-page:has(#sdlg-tracking-panel) table th,
+.page.claim-detail-page:has(#sdlg-tracking-panel) table td {
+  padding: 8px 12px !important;
+  font-size: 12.5px !important; /* Dinaikkan dari 11.5px agar ga sakit mata */
+  line-height: 1.4 !important;
+  vertical-align: top !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
+}
+
+/* 6. QUIET CARDS (Policy Decision, Coverage, dll) */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card,
 .page.claim-detail-page:has(#sdlg-tracking-panel) [class*="card-pad"] {
-  border-color: #e8eef6 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  border-color: var(--sdlg-border, #e2e8f2) !important;
+  box-shadow: none !important; /* Hilangkan shadow biar flat */
   border-radius: 12px !important;
-  margin-bottom: 10px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .section-title,
-.page.claim-detail-page:has(#sdlg-tracking-panel) h2,
-.page.claim-detail-page:has(#sdlg-tracking-panel) h3 {
-  font-size: 13px !important;
-  letter-spacing: -0.01em !important;
-  margin-bottom: 6px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .section-sub {
-  font-size: 11px !important;
-  color: #64748b !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn {
-  min-height: 30px !important;
-  padding: 4px 8px !important;
-  font-size: 11px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .status-track {
-  position: static !important;
-  box-shadow: none !important;
-  background: #f8fafc !important;
-  padding: 6px !important;
-  border: 1px solid #e8eef6 !important;
-  border-radius: 10px !important;
+  margin-bottom: 16px !important;
+  background: var(--sdlg-surface, #ffffff) !important;
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card:has([class*="Policy Decision"]),
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card:has([class*="WARRANTY COVERAGE"]),
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card:has([class*="PARTS COMPLIANCE"]),
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card:has([class*="SUBMISSION SLA"]) {
-  background: #fafbfc !important;
-  border: 1px solid #eef2f7 !important;
-  box-shadow: none !important;
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  border: 1px dashed var(--sdlg-border-strong, #cfd8e6) !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) [class*="machine"],
-.page.claim-detail-page:has(#sdlg-tracking-panel) > div[style*="background"] {
-  border-radius: 12px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) .data-table td,
-.page.claim-detail-page:has(#sdlg-tracking-panel) .data-table th {
-  padding: 6px 10px !important;
-  font-size: 12.5px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) ul,
-.page.claim-detail-page:has(#sdlg-tracking-panel) ol {
-  margin: 4px 0 !important;
-  padding-left: 18px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) li {
-  margin: 2px 0 !important;
-  line-height: 1.35 !important;
-  font-size: 12.5px !important;
-}
-
-.page.claim-detail-page:has(#sdlg-tracking-panel) > div:has(> button),
-.page.claim-detail-page:has(#sdlg-tracking-panel) > div:has(.primary-btn) {
-  gap: 6px !important;
+/* 7. TYPOGRAPHY TWEAKS (Judul & Tombol) */
+.page.claim-detail-page:has(#sdlg-tracking-panel) .section-title,
+.page.claim-detail-page:has(#sdlg-tracking-panel) h2,
+.page.claim-detail-page:has(#sdlg-tracking-panel) h3 {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--sdlg-text, #0c1526) !important;
   margin-bottom: 8px !important;
 }
 
+.page.claim-detail-page:has(#sdlg-tracking-panel) .section-sub,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card p {
   font-size: 12.5px !important;
-  line-height: 1.4 !important;
-  color: #475569 !important;
+  line-height: 1.5 !important;
+  color: var(--sdlg-muted, #5a6578) !important;
 }
 
-@media (max-width: 720px) {
+.page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn {
+  min-height: 32px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+}
+
+.page.claim-detail-page:has(#sdlg-tracking-panel) .status-track {
+  position: static !important;
+  box-shadow: none !important;
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  padding: 8px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-radius: 10px !important;
+}
+
+/* 8. RESPONSIVE (Tampilan HP) */
+@media (max-width: 768px) {
   .page.claim-detail-page {
     max-width: 100% !important;
   }
-  .page.claim-detail-page #sdlg-tracking-panel {
-    box-shadow: 0 4px 14px rgba(31, 94, 255, 0.07) !important;
-  }
-  .page.claim-detail-page:has(#sdlg-tracking-panel) table {
-    font-size: 11px !important;
-    max-height: 140px !important;
+  .page.claim-detail-page:has(#sdlg-tracking-panel) table th,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) table td {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
   }
 }

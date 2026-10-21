@@ -1,167 +1,173 @@
-/* SDLG_COMPACT_CLAIM_DETAIL_V3
+/* =========================================================
+   SDLG_COMPACT_CLAIM_DETAIL_V4.0 (EXPERT REVISED)
    Dense operations-console treatment for Claim Detail.
    Scoped to .claim-detail-page only.
    Visual only — no business logic/workflow/data changes.
-*/
-@media (min-width:761px){
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page{
-    max-width:1500px!important;
-    padding:14px 16px 28px!important;
+   ========================================================= */
+
+@media (min-width: 761px) {
+  /* 1. PAGE CONTAINER SETUP */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
+    max-width: 1500px !important;
+    padding: 16px 20px 32px !important;
   }
 
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div{
-    margin-bottom:8px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div {
+    margin-bottom: 12px !important; /* Sedikit dilonggarkan dari 8px */
   }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:last-child{
-    margin-bottom:0!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:last-child {
+    margin-bottom: 0 !important;
   }
 
-  /* Toolbar */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child{
-    min-height:36px!important;
-    gap:6px!important;
-    margin-bottom:8px!important;
+  /* 2. TOOLBAR (Tombol Edit, SDLG Input, dll) */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child {
+    min-height: 40px !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
   }
   .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .primary-btn,
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .secondary-btn{
-    min-height:34px!important;
-    padding:6px 10px!important;
-    font-size:11px!important;
-    border-radius:9px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .secondary-btn {
+    min-height: 36px !important;
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
   }
 
-  /* Claim Status panel: this element has inline padding/margin. */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 12px 14px"]{
-    padding:9px 11px!important;
-    margin-bottom:8px!important;
-    border-radius:11px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 12px 14px"] .section-title{
-    font-size:13px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 12px 14px"] .section-sub{
-    font-size:10px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 12px 14px"] button{
-    min-height:30px!important;
-    padding:5px 9px!important;
-    font-size:10.5px!important;
-    border-radius:999px!important;
+  /* 3. CLAIM STATUS PANEL (Menggunakan selektor yang lebih aman) */
+  /* Alih-alih menargetkan "padding: 12px 14px", kita targetkan div yang punya section-title */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.section-title) {
+    padding: 14px 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+    background: var(--sdlg-surface, #ffffff) !important;
   }
 
-  /* Status/history panel */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 11px 14px"]{
-    padding:9px 11px!important;
-    margin-bottom:8px!important;
-    border-radius:11px!important;
+  /* Status History */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
   }
 
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track){
-    padding:11px 12px!important;
-    margin-bottom:8px!important;
-    border-radius:12px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) .section-head{
-    margin-bottom:8px!important;
-    gap:8px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) .section-title{
-    font-size:14px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) .section-sub{
-    font-size:10px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) .section-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
   }
 
-  /* Six-step workflow */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track{
-    display:grid!important;
-    grid-template-columns:repeat(6,minmax(0,1fr))!important;
-    gap:5px!important;
-    overflow:visible!important;
-    padding:0!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step{
-    min-width:0!important;
-    min-height:48px!important;
-    padding:6px 5px!important;
-    border-radius:9px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step .dot{
-    width:8px!important;
-    height:8px!important;
-    margin-bottom:4px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step-label{
-    font-size:9.5px!important;
-    line-height:1.15!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(.status-track) .section-sub {
+    font-size: 12px !important; /* Dinaikkan dari 10px agar terbaca */
+    color: var(--sdlg-muted, #5a6578) !important;
   }
 
-  /* Reject/archive notice */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 10px 14px"]{
-    padding:8px 11px!important;
-    margin-bottom:8px!important;
+  /* 4. SIX-STEP WORKFLOW (Status Track) */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step {
+    min-width: 0 !important;
+    min-height: 56px !important;
+    padding: 8px 6px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
   }
 
-  /* Hero machine strip */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="linear-gradient(135deg,#0f172a,#1e3a5f)"]{
-    padding:12px 16px!important;
-    margin-bottom:8px!important;
-    min-height:88px!important;
-    border-radius:13px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="linear-gradient(135deg,#0f172a,#1e3a5f)"] div[style*="font-size: 20px"]{
-    font-size:18px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step .dot {
+    width: 10px !important;
+    height: 10px !important;
+    margin-bottom: 6px !important;
   }
 
-  /* Lifecycle/policy/info/evidence/parts surfaces */
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card{
-    border-radius:12px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card.card-pad{
-    padding:12px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div[style*="padding: 14px 16px"]{
-    padding:10px 12px!important;
-    margin-bottom:8px!important;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-head{
-    margin-bottom:8px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step-label {
+    font-size: 11px !important; /* Dinaikkan dari 9.5px agar tidak menyiksa mata */
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
   }
 
-  /* Dense tables */
+  /* 5. HERO MACHINE STRIP (Ganti selektor gradient jadi lebih stabil) */
+  /* Kita targetkan div yang punya teks besar (model mesin) */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(> div > div[style*="font-size: 20px"]) {
+    padding: 16px 20px !important;
+    margin-bottom: 12px !important;
+    min-height: 90px !important;
+    border-radius: 14px !important;
+    box-shadow: var(--sdlg-shadow-md) !important;
+  }
+
+  /* 6. TABLES (Dense but Readable) */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card {
+    border-radius: 12px !important;
+    border-color: var(--sdlg-border, #e2e8f2) !important;
+  }
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card.card-pad {
+    padding: 14px !important;
+  }
+
   .app-shell:not(:has(.login-screen)) .page.claim-detail-page table th,
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page table td{
-    padding-top:6px!important;
-    padding-bottom:6px!important;
-    font-size:11px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page table td {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    font-size: 12px !important; /* Dinaikkan dari 11px */
+    line-height: 1.4 !important;
   }
 
   .app-shell:not(:has(.login-screen)) .page.claim-detail-page input,
   .app-shell:not(:has(.login-screen)) .page.claim-detail-page select,
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page textarea{
-    font-size:11.5px!important;
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page textarea {
+    font-size: 12.5px !important;
+    padding: 8px 10px !important;
   }
 
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card:hover{
-    transform:none!important;
-    box-shadow:var(--cc-shadow,0 1px 2px rgba(15,23,42,.035))!important;
+  /* 7. LINDUNGI PANEL CLAIM TRACKING DARI EFEK COMPACT */
+  /* Pastikan panel tracking kita tetap lega dan elegan */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page #sdlg-tracking-panel {
+    padding: 24px !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__grid {
+    gap: 24px !important;
+  }
+  
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__value {
+    font-size: 14px !important; /* Jangan ikut mengecil */
+  }
+
+  /* Hover effect khusus untuk card-card biasa (Bukan Tracking Panel) */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card:hover:not(#sdlg-tracking-panel) {
+    transform: translateY(-1px) !important;
+    box-shadow: var(--sdlg-shadow-md) !important;
   }
 }
 
-@media (min-width:1400px){
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page{
-    max-width:1660px!important;
+/* 8. RESPONSIVE TWEAKS */
+@media (min-width: 1400px) {
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
+    max-width: 1660px !important;
   }
 }
 
-@media (max-width:1000px){
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+@media (max-width: 1000px) {
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 }
 
-@media (max-width:760px){
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div{
-    margin-bottom:8px!important;
+@media (max-width: 760px) {
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page > div {
+    margin-bottom: 12px !important;
+  }
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
