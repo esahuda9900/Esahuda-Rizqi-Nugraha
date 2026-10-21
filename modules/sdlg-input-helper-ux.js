@@ -1,15 +1,61 @@
 /**
- * SDLG Input Helper — Copy Fix + UX patch v1.9.1 — strict page detection
+ * SDLG Input Helper UX — V2.0 (Smart Form Assistant)
+ * Copy Fix + UX patch + Zero Amount Banner + Dark Mode
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * UPGRADE V2.0:
+ * ✅ SDLGNOTIFY: Gak bikin toast sendiri, hemat kode & memory.
+ * ✅ EVENT DELEGATION: 1 listener buat semua tombol Copy.
+ * ✅ SCOPED OBSERVER: Cuma ngawasin .page (hemat baterai).
+ * ✅ DARK MODE: Banner kuning support tema gelap.
+ * ✅ REMOVED DEAD CODE: ensureActionBar() dihapus.
+ * ═══════════════════════════════════════════════════════════
  */
 (function () {
   'use strict';
-  if (window.__SDLG_COPY_FIX_191__) return;
-  window.__SDLG_COPY_FIX_191__ = true;
 
-  var ACTION_ID = 'sdlg-input-action-bar';
-  var TOAST_ID = 'sdlg-input-toast';
-  var ZERO_ID = 'sdlg-zero-amount-banner';
+  if (window.__SDLG_COPY_FIX_V2__) return;
+  window.__SDLG_COPY_FIX_V2__ = true;
+  window.__SDLG_COPY_FIX_191__ = true; // Backward compat
 
+  // ─────────────────────────────────────────────────────────
+  // 1. KONFIGURASI & STYLES
+  // ─────────────────────────────────────────────────────────
+  var STYLE_ID = 'sdlg-input-helper-ux-styles';
+  var ZERO_BANNER_ID = 'sdlg-zero-amount-banner';
+
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = `
+      #${ZERO_BANNER_ID} {
+        margin: 12px 0; padding: 14px 16px;
+        border: 1px solid #f59e0b; border-radius: 10px;
+        background: #fffbeb; color: #92400e;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 13px; line-height: 1.5;
+        display: flex; align-items: flex-start; gap: 10px;
+        animation: sdlgZeroIn 0.3s ease-out;
+      }
+      #${ZERO_BANNER_ID} b { color: #7c2d12; }
+      @keyframes sdlgZeroIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+      
+      @media (prefers-color-scheme: dark) {
+        #${ZERO_BANNER_ID} {
+          background: rgba(245,158,11,0.15);
+          border-color: rgba(245,158,11,0.3);
+          color: #fcd34d;
+        }
+        #${ZERO_BANNER_ID} b { color: #fbbf24; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 2. UTILITIES
+  // ─────────────────────────────────────────────────────────
   function textOf(el) {
     if (!el) return '';
     try { return String(el.textContent || '').replace(/\s+/g, ' ').trim(); }
@@ -21,36 +67,25 @@
     return !s || s === '\u2014' || s === '-' || s === '\u2013' || /^xxx+$/i.test(s);
   }
 
-  function showToast(msg, kind) {
-    kind = kind || 'ok';
-    var el = document.getElementById(TOAST_ID);
-    if (!el) {
-      el = document.createElement('div');
-      el.id = TOAST_ID;
-      el.setAttribute('role', 'status');
-      el.style.cssText =
-        'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;' +
-        'padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;' +
-        'box-shadow:0 8px 24px rgba(15,23,42,.18);pointer-events:none;' +
-        'transition:opacity .2s;opacity:0';
-      document.body.appendChild(el);
+  function notify(type, title, msg) {
+    if (window.SDLGNotify && window.SDLGNotify[type]) {
+      window.SDLGNotify[type](title, msg);
+    } else {
+      console.log('[SDLG UX] ' + title + ': ' + msg);
     }
-    el.style.background = kind === 'err' ? '#b91c1c' : kind === 'warn' ? '#b45309' : '#047857';
-    el.style.color = '#fff';
-    el.textContent = msg;
-    el.style.opacity = '1';
-    clearTimeout(window.__sdlgToastTimer);
-    window.__sdlgToastTimer = setTimeout(function () { el.style.opacity = '0'; }, 1800);
   }
 
-  function fallbackCopy(t) {
+  // ─────────────────────────────────────────────────────────
+  // 3. COPY ENGINE (Fully Async)
+  // ─────────────────────────────────────────────────────────
+  function fallbackCopy(text) {
     try {
       var ta = document.createElement('textarea');
-      ta.value = t;
+      ta.value = text;
       ta.setAttribute('readonly', '');
       ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
       document.body.appendChild(ta);
-      ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+      ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
       var ok = document.execCommand('copy');
       document.body.removeChild(ta);
       return !!ok;
@@ -59,32 +94,55 @@
 
   function copyText(text) {
     var t = String(text == null ? '' : text);
+    
     if (!t || isEmptyDisplay(t)) {
-      showToast('Tidak ada data untuk di-copy', 'warn');
+      notify('warning', 'Tidak Ada Data', 'Field ini kosong, tidak bisa di-copy.');
       return Promise.resolve(false);
     }
-    function ok() { showToast('Tersalin ke clipboard', 'ok'); return true; }
-    function fail(r) {
-      if (fallbackCopy(t)) { showToast('Tersalin (fallback)', 'ok'); return true; }
-      showToast('Gagal copy — pilih teks manual', 'err');
-      console.warn('[SDLG CopyFix]', r);
-      return false;
-    }
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
-        return navigator.clipboard.writeText(t).then(ok).catch(fail);
+
+    return new Promise(function (resolve) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+          navigator.clipboard.writeText(t)
+            .then(function () {
+              notify('success', 'Tersalin', 'Data berhasil di-copy ke clipboard.');
+              resolve(true);
+            })
+            .catch(function (err) {
+              if (fallbackCopy(t)) {
+                notify('success', 'Tersalin (Fallback)', 'Data berhasil di-copy.');
+                resolve(true);
+              } else {
+                notify('error', 'Gagal Copy', 'Browser tidak mengizinkan akses clipboard.');
+                resolve(false);
+              }
+            });
+          return;
+        }
+      } catch (_) {}
+      
+      // Fallback path
+      if (fallbackCopy(t)) {
+        notify('success', 'Tersalin (Fallback)', 'Data berhasil di-copy.');
+        resolve(true);
+      } else {
+        notify('error', 'Gagal Copy', 'Browser tidak mengizinkan akses clipboard.');
+        resolve(false);
       }
-    } catch (e) { return Promise.resolve(fail(e)); }
-    return Promise.resolve(fail('no-api'));
+    });
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 4. BUTTON STATE MANAGEMENT
+  // ─────────────────────────────────────────────────────────
   function setBtnState(btn, state) {
     if (!btn) return;
     if (!btn.getAttribute('data-label-orig')) btn.setAttribute('data-label-orig', btn.textContent || 'Copy');
+
     if (state === 'ok') {
-      btn.textContent = 'Copied';
+      btn.textContent = '✓ Copied';
       btn.disabled = false;
-      setTimeout(function () { btn.textContent = btn.getAttribute('data-label-orig'); }, 1200);
+      setTimeout(function () { btn.textContent = btn.getAttribute('data-label-orig'); }, 1500);
     } else if (state === 'empty') {
       btn.textContent = 'Kosong';
       btn.disabled = true;
@@ -92,88 +150,150 @@
       btn.style.opacity = '0.55';
       btn.style.cursor = 'not-allowed';
     } else if (state === 'err') {
-      btn.textContent = 'Gagal';
-      setTimeout(function () { btn.textContent = btn.getAttribute('data-label-orig'); }, 1400);
+      btn.textContent = '✗ Gagal';
+      setTimeout(function () { btn.textContent = btn.getAttribute('data-label-orig'); }, 1500);
     }
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 5. PAGE DETECTION (Cached & Strict)
+  // ─────────────────────────────────────────────────────────
+  var _helperPageCache = null;
+  var _helperPageCacheTime = 0;
+  var CACHE_TTL = 2000; // 2 detik
+
   function isHelperPage() {
+    var now = Date.now();
+    if (_helperPageCache !== null && (now - _helperPageCacheTime) < CACHE_TTL) {
+      return _helperPageCache;
+    }
+
     var page = document.querySelector('.page');
-    if (!page) return false;
-    var t = textOf(page.querySelector('.page-title')).toLowerCase();
-    if (/warranty claim input helper|sdlg input helper/.test(t)) return true;
-    if (/warranty claim input helper/i.test(textOf(page).slice(0, 400))) return true;
-    try {
-      if (window.SDLGHashRouter && window.SDLGHashRouter.parse) {
-        var r = window.SDLGHashRouter.parse();
-        if (r && (r.page === 'sdlg-input' || (r.page === 'claim' && r.subTab === 'input'))) return true;
-      }
-      var h = String(location.hash || '');
-      if (/#\/?sdlg-input/i.test(h) || /#\/?claim\/[^/]+\/input/i.test(h) || /#\/?sdlginput/i.test(h)) return true;
-    } catch (_) {}
-    return false;
-  }
+    if (!page) {
+      _helperPageCache = false;
+      _helperPageCacheTime = now;
+      return false;
+    }
 
-  function hardenButtons(page) {
-    page.querySelectorAll('[data-sdlg-field]').forEach(function (field) {
-      var wrap = field.closest('div') || field.parentElement;
-      if (!wrap) return;
-      wrap.querySelectorAll('button').forEach(function (btn) {
-        if (btn.getAttribute('data-sdlg-copy-hard') === '1') return;
-        var label = (btn.textContent || '').trim();
-        if (!/^Copy$/i.test(label) && !/^Copied$/i.test(label) && !/^Kosong$/i.test(label)) return;
-        btn.setAttribute('data-sdlg-copy-hard', '1');
-        var val = String(field.value || '').trim();
-        if (isEmptyDisplay(val)) { setBtnState(btn, 'empty'); return; }
-        btn.addEventListener('click', function (e) {
-          var current = String(field.value || '').trim();
-          if (isEmptyDisplay(current)) {
-            e.preventDefault(); e.stopPropagation();
-            setBtnState(btn, 'empty');
-            showToast('Field ini kosong', 'warn');
-            return;
+    var result = false;
+    var title = textOf(page.querySelector('.page-title')).toLowerCase();
+    
+    if (/warranty claim input helper|sdlg input helper/.test(title)) {
+      result = true;
+    } else if (/warranty claim input helper/i.test(textOf(page).slice(0, 400))) {
+      result = true;
+    } else {
+      // Cek via Router
+      try {
+        if (window.SDLGHashRouter && window.SDLGHashRouter.parse) {
+          var r = window.SDLGHashRouter.parse();
+          if (r && (r.page === 'sdlg-input' || (r.page === 'claim' && r.subTab === 'input'))) {
+            result = true;
           }
-          copyText(current).then(function (ok) { setBtnState(btn, ok ? 'ok' : 'err'); });
-        }, true);
-      });
-    });
-
-    page.querySelectorAll('button').forEach(function (btn) {
-      var t = (btn.textContent || '').trim();
-      if (/Copy Nama Report/i.test(t) && btn.getAttribute('data-sdlg-report-hard') !== '1') {
-        btn.setAttribute('data-sdlg-report-hard', '1');
-        btn.addEventListener('click', function () {
-          var el = page.querySelector('[data-sdlg-copy-report-name], [data-value]');
-          var v = el ? (el.getAttribute('data-value') || textOf(el)) : '';
-          if (isEmptyDisplay(v)) {
-            var code = page.querySelector('code, pre');
-            if (code) v = textOf(code);
-          }
-          copyText(v).then(function (ok) { setBtnState(btn, ok ? 'ok' : 'err'); });
-        }, true);
+        }
+      } catch (_) {}
+      
+      // Cek via Hash
+      if (!result) {
+        var h = String(location.hash || '');
+        if (/#\/?sdlg-input/i.test(h) || /#\/?claim\/[^/]+\/input/i.test(h) || /#\/?sdlginput/i.test(h)) {
+          result = true;
+        }
       }
+    }
+
+    _helperPageCache = result;
+    _helperPageCacheTime = now;
+    return result;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 6. EVENT DELEGATION (1 Listener untuk Semua Tombol Copy)
+  // ─────────────────────────────────────────────────────────
+  function handleCopyClick(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+
+    var label = (btn.textContent || '').trim();
+    if (!/^Copy$|^Copied$|^Kosong$/i.test(label)) return;
+
+    // Cari field terkait
+    var wrap = btn.closest('div');
+    if (!wrap) return;
+    
+    var field = wrap.querySelector('input, textarea, [data-sdlg-field]');
+    if (!field) return;
+
+    var value = field.value != null ? String(field.value).trim() : textOf(field);
+    
+    if (isEmptyDisplay(value)) {
+      e.preventDefault();
+      e.stopPropagation();
+      setBtnState(btn, 'empty');
+      notify('warning', 'Field Kosong', 'Field ini tidak ada isinya.');
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+    
+    copyText(value).then(function (ok) {
+      setBtnState(btn, ok ? 'ok' : 'err');
     });
   }
 
-  function ensureActionBar() {
-    var old = document.getElementById(ACTION_ID);
-    if (old && old.parentNode) old.parentNode.removeChild(old);
+  function handleReportNameClick(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    
+    var t = (btn.textContent || '').trim();
+    if (!/Copy Nama Report/i.test(t)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    var page = document.querySelector('.page');
+    var el = page ? page.querySelector('[data-sdlg-copy-report-name], [data-value]') : null;
+    var value = el ? (el.getAttribute('data-value') || textOf(el)) : '';
+    
+    if (isEmptyDisplay(value)) {
+      var code = page ? page.querySelector('code, pre') : null;
+      if (code) value = textOf(code);
+    }
+
+    copyText(value).then(function (ok) {
+      setBtnState(btn, ok ? 'ok' : 'err');
+    });
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 7. ZERO AMOUNT BANNER
+  // ─────────────────────────────────────────────────────────
   function ensureZeroBanner(page) {
-    var existing = document.getElementById(ZERO_ID);
+    var existing = document.getElementById(ZERO_BANNER_ID);
     var bodyText = textOf(page);
     var looksZero = /Total Amount Claimed[\s\S]{0,40}\b0\b/i.test(bodyText);
-    if (!looksZero) { if (existing) existing.remove(); return; }
+    
+    if (!looksZero) {
+      if (existing) existing.remove();
+      return;
+    }
+
     if (existing) return;
+
+    injectStyles();
+
     var banner = document.createElement('div');
-    banner.id = ZERO_ID;
-    banner.style.cssText =
-      'margin:12px 0;padding:12px 14px;border:1px solid #f59e0b;border-radius:8px;' +
-      'background:#fffbeb;color:#92400e;font-size:13px;line-height:1.45';
-    banner.innerHTML =
-      '<b>\u26a0 Amount masih 0</b> \u2014 Labour / Mileage / Other / Total kosong di data claim. ' +
-      'Harus diisi <b>manual</b> di Dealer Portal.';
+    banner.id = ZERO_BANNER_ID;
+    banner.innerHTML = `
+      <span style="font-size:16px">⚠️</span>
+      <div>
+        <b>Amount masih 0</b> — Labour / Mileage / Other / Total kosong di data klaim. 
+        Harus diisi <b>manual</b> di Dealer Portal.
+      </div>
+    `;
+
+    // Cari tempat yang pas
     var nodes = page.querySelectorAll('div, h2, h3, strong, span');
     for (var i = 0; i < nodes.length; i++) {
       if (/Other Cost Details/i.test(textOf(nodes[i]))) {
@@ -184,38 +304,78 @@
     page.appendChild(banner);
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 8. MAIN RUN
+  // ─────────────────────────────────────────────────────────
   function run() {
     var page = document.querySelector('.page');
+    if (!page) return;
+
+    // Reset cache kalau halaman berubah
+    _helperPageCache = null;
+
     if (!isHelperPage()) {
-      if (page && page.getAttribute('data-sdlg-input-helper') === '1') {
-        var t = textOf(page.querySelector('.page-title')).toLowerCase();
-        if (!/warranty claim input helper|sdlg input helper/.test(t)) page.removeAttribute('data-sdlg-input-helper');
+      if (page.getAttribute('data-sdlg-input-helper') === '1') {
+        var title = textOf(page.querySelector('.page-title')).toLowerCase();
+        if (!/warranty claim input helper|sdlg input helper/.test(title)) {
+          page.removeAttribute('data-sdlg-input-helper');
+        }
       }
       return;
     }
-    if (!page) return;
+
     page.setAttribute('data-sdlg-input-helper', '1');
-    hardenButtons(page);
-    ensureActionBar();
     ensureZeroBanner(page);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 9. INIT & OBSERVER
+  // ─────────────────────────────────────────────────────────
+  function scheduleRun() {
+    if (window.__sdlgCopyFixTimer) clearTimeout(window.__sdlgCopyFixTimer);
+    window.__sdlgCopyFixTimer = setTimeout(run, 250);
   }
 
   function boot() {
     run();
-    var obs = new MutationObserver(function () {
-      clearTimeout(window.__sdlgCopyFixTimer);
-      window.__sdlgCopyFixTimer = setTimeout(run, 250);
-    });
-    obs.observe(document.body || document.documentElement, { childList: true, subtree: true });
-    document.addEventListener('click', function () {
+
+    // 1. Event Delegation untuk tombol Copy
+    document.addEventListener('click', handleCopyClick, false);
+    document.addEventListener('click', handleReportNameClick, false);
+
+    // 2. Scoped Mutation Observer (cuma ngawasin .page)
+    var pageContainer = document.querySelector('.page');
+    if (pageContainer && window.MutationObserver) {
+      var obs = new MutationObserver(scheduleRun);
+      obs.observe(pageContainer, { childList: true, subtree: true });
+    }
+
+    // 3. React ke route change
+    window.addEventListener('sdlg-route-changed', function () {
+      _helperPageCache = null;
       setTimeout(run, 200);
-      setTimeout(run, 600);
-    }, true);
+    });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 
-  window.SDLGInputCopyFix = { version: '1.9.1', refresh: run, copyText: copyText };
-  window.SDLGInputHelperUX = { version: '1.9.1', refresh: run, copyText: copyText };
+  // ─────────────────────────────────────────────────────────
+  // 10. PUBLIC API
+  // ─────────────────────────────────────────────────────────
+  window.SDLGInputCopyFix = Object.freeze({
+    version: '2.0.0',
+    refresh: run,
+    copyText: copyText
+  });
+
+  window.SDLGInputHelperUX = Object.freeze({
+    version: '2.0.0',
+    refresh: run,
+    copyText: copyText
+  });
+
 })();

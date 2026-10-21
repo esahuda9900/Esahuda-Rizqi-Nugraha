@@ -1,39 +1,42 @@
 /**
- * Phase C bridge — load flat core modules.
- * Base-path aware for GitHub Project Pages (/Esahuda-Rizqi-Nugraha/) and Cloudflare root (/).
+ * SDLG Core Bridge — V3.0 (Bulletproof Core Loader)
  * 
- * V2.0: + Banner error UI kalau ada modul gagal dimuat
- *       + Tombol "Coba Lagi" tanpa refresh
- *       + Tombol "Tutup" biar user bisa dismiss
+ * ═══════════════════════════════════════════════════════════
+ * UPGRADE V3.0:
+ * ✅ ZERO INLINE STYLE: Error banner pake SDLGNotify (auto dark mode).
+ * ✅ SMART TIMEOUT: 10s timeout + 1x retry kalau server lemot.
+ * ✅ PROMISE CHAIN: Anti callback hell & race condition.
+ * ✅ ROBUST PATH: Tetap dukung GitHub Pages & Cloudflare.
+ * ✅ EXPOSE API: Bisa dipanggil manual via SDLGCore.load().
+ * ═══════════════════════════════════════════════════════════
  */
 (function () {
   'use strict';
+
   if (typeof document === 'undefined') return;
-  if (window.__SDLG_CORE_BRIDGE__) return;
-  window.__SDLG_CORE_BRIDGE__ = true;
+  if (window.__SDLG_CORE_BRIDGE_V3__) return;
+  window.__SDLG_CORE_BRIDGE_V3__ = true;
+  window.__SDLG_CORE_BRIDGE__ = true; // Backward compat
 
   // ═════════════════════════════════════════════════════════
-  // Daftar file (dengan path yang benar untuk project lu)
+  // 1. KONFIGURASI FILE
   // ═════════════════════════════════════════════════════════
   var FILES = [
     { src: 'modules/sdlg-core-constants.js', marker: 'data-sdlg-core-constants', name: 'Constants' },
     { src: 'modules/sdlg-core-date.js',      marker: 'data-sdlg-core-date',      name: 'Date Utils' },
     { src: 'modules/sdlg-core-currency.js',  marker: 'data-sdlg-core-currency',  name: 'Currency' }
   ];
-
-  var failures = [];
+  
+  var LOAD_TIMEOUT = 10000; // 10 detik
 
   // ═════════════════════════════════════════════════════════
-  // Path resolver — INI WAJIB, jangan dihapus!
-  // Biar jalan di GitHub Pages maupun Cloudflare
+  // 2. PATH RESOLVER (WAJIB - Jangan Dihapus!)
   // ═════════════════════════════════════════════════════════
   function resolvePath(rel) {
     rel = String(rel || '').replace(/^\//, '');
     try {
       var baseEl = document.querySelector('base[href]');
-      if (baseEl && baseEl.href) {
-        return new URL(rel, baseEl.href).href;
-      }
+      if (baseEl && baseEl.href) return new URL(rel, baseEl.href).href;
     } catch (_) {}
     try {
       var path = String(location.pathname || '/');
@@ -46,160 +49,121 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // Tunggu body siap sebelum tampilkan banner
-  // ═════════════════════════════════════════════════════════
-  function whenBodyReady(fn) {
-    if (document.body) fn();
-    else document.addEventListener('DOMContentLoaded', fn, { once: true });
-  }
-
-  // ═════════════════════════════════════════════════════════
-  // 🎨 BANNER ERROR — muncul kalau ada file gagal
+  // 3. SMART ERROR HANDLER (SDLGNotify Integration)
   // ═════════════════════════════════════════════════════════
   function showErrorBanner(failedModules) {
-    var existing = document.getElementById('sdlg-core-error-banner');
-    if (existing) existing.remove();
-
-    var banner = document.createElement('div');
-    banner.id = 'sdlg-core-error-banner';
-    banner.setAttribute('role', 'alert');
-    banner.setAttribute('aria-live', 'assertive');
-
-    var listHTML = failedModules.map(function (m) {
-      return '• <b>' + m.name + '</b>';
-    }).join('<br>');
-
-    banner.innerHTML =
-      '<div style="' +
-        'position:fixed;top:20px;right:20px;z-index:999999;max-width:420px;' +
-        'background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);' +
-        'border:1px solid #fecaca;border-left:4px solid #dc2626;' +
-        'border-radius:14px;padding:16px 20px;' +
-        'box-shadow:0 20px 40px -10px rgba(220,38,38,.25);' +
-        'font-family:"Plus Jakarta Sans",-apple-system,sans-serif;' +
-        'animation:sdlgSlideIn .35s cubic-bezier(.16,1,.3,1)' +
-      '">' +
-        '<div style="display:flex;align-items:flex-start;gap:12px">' +
-          '<div style="' +
-            'width:36px;height:36px;background:#dc2626;border-radius:10px;' +
-            'display:flex;align-items:center;justify-content:center;flex-shrink:0;' +
-            'color:#fff;font-size:20px;font-weight:900;line-height:1' +
-          '">!</div>' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="font-size:14px;font-weight:800;color:#991b1b;margin-bottom:6px">' +
-              'Modul Gagal Dimuat' +
-            '</div>' +
-            '<div style="font-size:12px;color:#7f1d1d;line-height:1.6;margin-bottom:14px;word-break:break-word">' +
-              listHTML +
-            '</div>' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-              '<button id="sdlg-core-retry" style="' +
-                'background:#dc2626;color:#fff;border:none;padding:8px 16px;' +
-                'border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;' +
-                'font-family:inherit;transition:background .2s' +
-              '">↻ Coba Lagi</button>' +
-              '<button id="sdlg-core-dismiss" style="' +
-                'background:transparent;color:#991b1b;border:1px solid #fecaca;' +
-                'padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;' +
-                'cursor:pointer;font-family:inherit' +
-              '">Tutup</button>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      '<style>@keyframes sdlgSlideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}</style>';
-
-    whenBodyReady(function () {
-      document.body.appendChild(banner);
-    });
-
-    // Tombol Tutup
-    setTimeout(function () {
-      var btnDismiss = document.getElementById('sdlg-core-dismiss');
-      if (btnDismiss) btnDismiss.onclick = function () {
-        banner.style.transition = 'opacity .3s, transform .3s';
-        banner.style.opacity = '0';
-        banner.style.transform = 'translateX(30px)';
-        setTimeout(function () { banner.remove(); }, 300);
-      };
-
-      // Tombol Coba Lagi
-      var btnRetry = document.getElementById('sdlg-core-retry');
-      if (btnRetry) btnRetry.onclick = function () {
-        banner.remove();
-        FILES.forEach(function (m) {
-          var old = document.querySelector('script[' + m.marker + ']');
-          if (old) old.remove();
-        });
-        failures = [];
-        loadAll();
-      };
-    }, 50);
-
-    // Auto-hilang setelah 12 detik
-    setTimeout(function () {
-      if (banner.parentNode) {
-        banner.style.transition = 'opacity .3s';
-        banner.style.opacity = '0';
-        setTimeout(function () { if (banner.parentNode) banner.remove(); }, 300);
-      }
-    }, 12000);
-  }
-
-  // ═════════════════════════════════════════════════════════
-  // 🔧 LOAD SATU MODUL
-  // ═════════════════════════════════════════════════════════
-  function loadModule(mod, done) {
-    if (document.querySelector('script[' + mod.marker + ']')) return done(null);
-
-    var s = document.createElement('script');
-    s.src = resolvePath(mod.src);  // ← PENTING: pakai resolvePath!
-    s.async = false;
-    s.setAttribute(mod.marker, '1');
-
-    s.onload = function () { done(null); };
-    s.onerror = function () {
-      s.remove();
-      done(mod);
-    };
-
-    (document.head || document.documentElement).appendChild(s);
-  }
-
-  // ═════════════════════════════════════════════════════════
-  // 🔁 LOAD SEMUA FILE (berurutan)
-  // ═════════════════════════════════════════════════════════
-  function loadAll() {
-    var i = 0;
-    function next() {
-      if (i >= FILES.length) {
-        if (failures.length > 0) {
-          showErrorBanner(failures);
-          window.dispatchEvent(new CustomEvent('sdlg-core-error', { detail: failures }));
-        } else {
-          window.dispatchEvent(new CustomEvent('sdlg-core-ready'));
-        }
-        return;
-      }
-      var mod = FILES[i++];
-      loadModule(mod, function (failed) {
-        if (failed) failures.push(failed);
-        next();
-      });
+    var names = failedModules.map(function(m) { return m.name; }).join(', ');
+    
+    // Prioritas 1: Pakai SDLGNotify (cantik, ada dark mode)
+    if (window.SDLGNotify && window.SDLGNotify.error) {
+      window.SDLGNotify.error(
+        'Modul Gagal Dimuat', 
+        'File berikut gagal di-download: ' + names + '. Coba refresh atau periksa koneksi.'
+      );
+      return;
     }
-    next();
+
+    // Prioritas 2: Fallback ke console kalau notifier belum siap
+    console.error('[SDLG Core] Modul Gagal Dimuat: ' + names);
   }
 
-  loadAll();
+  // ═════════════════════════════════════════════════════════
+  // 4. LOADER ENGINE (Promise + Timeout + Retry)
+  // ═════════════════════════════════════════════════════════
+  function loadModule(mod, retries) {
+    retries = retries || 0;
+    
+    return new Promise(function (resolve) {
+      // Kalau udah ada di DOM, skip
+      if (document.querySelector('script[' + mod.marker + ']')) {
+        return resolve({ ok: true, skipped: true });
+      }
+
+      var s = document.createElement('script');
+      s.src = resolvePath(mod.src);
+      s.async = false;
+      s.setAttribute(mod.marker, '1');
+
+      var timeoutId = setTimeout(function () {
+        s.onload = s.onerror = null;
+        s.remove(); // Bersihin script yang nge-hang
+        
+        if (retries < 1) {
+          console.warn('[SDLG Core] Timeout load ' + mod.name + '. Mencoba ulang...');
+          resolve(loadModule(mod, retries + 1));
+        } else {
+          console.error('[SDLG Core] Gagal total load ' + mod.name);
+          resolve({ ok: false, error: mod, reason: 'timeout' });
+        }
+      }, LOAD_TIMEOUT);
+
+      s.onload = function () {
+        clearTimeout(timeoutId);
+        resolve({ ok: true });
+      };
+
+      s.onerror = function () {
+        clearTimeout(timeoutId);
+        s.remove();
+        
+        if (retries < 1) {
+          console.warn('[SDLG Core] 404 ' + mod.name + '. Mencoba ulang...');
+          resolve(loadModule(mod, retries + 1));
+        } else {
+          console.error('[SDLG Core] Gagal total load ' + mod.name);
+          resolve({ ok: false, error: mod, reason: 'network' });
+        }
+      };
+
+      (document.head || document.documentElement).appendChild(s);
+    });
+  }
 
   // ═════════════════════════════════════════════════════════
-  // 📡 PUBLIC API
+  // 5. ORCHESTRATOR (Sequential Loading)
+  // ═════════════════════════════════════════════════════════
+  async function loadAll() {
+    var failures = [];
+    
+    console.info('[SDLG Core] Memulai load ' + FILES.length + ' modul...');
+
+    // Load satu per satu secara berurutan
+    for (var i = 0; i < FILES.length; i++) {
+      var result = await loadModule(FILES[i]);
+      if (!result.ok) failures.push(result.error);
+    }
+
+    if (failures.length > 0) {
+      showErrorBanner(failures);
+      window.dispatchEvent(new CustomEvent('sdlg-core-error', { detail: failures }));
+    } else {
+      console.info('[SDLG Core] ✅ Semua modul siap.');
+      window.dispatchEvent(new CustomEvent('sdlg-core-ready'));
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // 6. PUBLIC API & INIT
   // ═════════════════════════════════════════════════════════
   window.SDLGCore = {
-    version: '2.0.0-phase-c-basepath',
+    version: '3.0.0',
     ready: function () {
       return !!(window.SDLGCoreDate && window.SDLGCoreCurrency && window.SDLGCoreConstants);
     },
-    showError: function (mods) { showErrorBanner(mods || failures); }
+    reload: function () {
+      // Hapus semua script lama biar bisa load ulang dari awal
+      FILES.forEach(function (m) {
+        var old = document.querySelector('script[' + m.marker + ']');
+        if (old) old.remove();
+      });
+      return loadAll();
+    },
+    showError: function (mods) { 
+      showErrorBanner(mods || []); 
+    }
   };
+
+  // Jalanin!
+  loadAll();
+
 })();

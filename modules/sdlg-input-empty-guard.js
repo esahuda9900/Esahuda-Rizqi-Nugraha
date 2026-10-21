@@ -1,35 +1,57 @@
 /**
- * SDLG Input empty-state guard v1.0
- * If SDLG Input is active but neither form nor claim picker is visible, show recovery UI.
+ * SDLG Input Empty-State Guard — V2.0 (Smart Sentinel)
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * UPGRADE V2.0:
+ * ✅ ZERO INTERVAL: Gak pakai setInterval (hemat baterai).
+ * ✅ SMART OBSERVER: Cuma ngawasin .page dengan debounce.
+ * ✅ DARK MODE: Kotak panduan support tema gelap.
+ * ✅ XSS PROTECTED: Claim ID di-escape.
+ * ✅ ROUTER INTEGRATED: Tombol langsung ke router.
+ * ═══════════════════════════════════════════════════════════
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_INPUT_EMPTY_GUARD_V1__) return;
-  root.__SDLG_INPUT_EMPTY_GUARD_V1__ = true;
+
+  if (root.__SDLG_INPUT_EMPTY_GUARD_V2__) return;
+  root.__SDLG_INPUT_EMPTY_GUARD_V2__ = true;
+  root.__SDLG_INPUT_EMPTY_GUARD_V1__ = true; // Backward compat
+
+  var GUARD_ID = 'sdlg-input-empty-guard';
+  var STYLE_ID = 'sdlg-input-empty-guard-style';
+  var OBSERVER_DELAY = 300;   // Debounce DOM changes
+  var RENDER_DELAY = 1500;    // Waktu tunggu React render form
+
+  var lastCheckTime = 0;
+  var checkTimer = null;
+
+  // ─────────────────────────────────────────────────────────
+  // 1. UTILITIES
+  // ─────────────────────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   function isSdlgInputTab() {
-    try {
-      var h = String(location.hash || '');
-      if (/#\/?sdlg-input|#\/?sdlginput/i.test(h)) return true;
-    } catch (_) {}
-    try {
-      var t = localStorage.getItem('sdlg-warranty:last-tab:v1:guest');
-      if (t === 'sdlginput') return true;
-    } catch (_) {}
-    var page = document.querySelector('.page');
-    if (page && /SDLG Input Helper|Warranty Claim Input Helper|SDLG DEALER PORTAL/i.test(page.textContent || '')) {
-      // only if nav also suggests input — avoid false positive on other pages
-      if (/#\/?sdlg-input|#\/?sdlginput/i.test(String(location.hash || ''))) return true;
-    }
-    return /#\/?sdlg-input|#\/?sdlginput/i.test(String(location.hash || ''));
+    var h = String(root.location.hash || '');
+    return /#\/?(sdlg-input|sdlginput)/i.test(h);
   }
 
   function hasHelperContent() {
+    // Cek elemen utama (paling cepat)
     if (document.querySelector('[data-sdlg-input-helper] [data-sdlg-field], [data-sdlg-input-helper] [data-sdlg-copy]')) return true;
     if (document.querySelector('.page input[placeholder*="Cari Claim"], .page select[size]')) return true;
     if (document.querySelector('.page #sdlg_serviceType, .page [data-label="Service Type"]')) return true;
+    
+    // Fallback: cek title + input apapun di dalam .page
     var page = document.querySelector('.page');
     if (!page) return false;
+    
     var title = page.querySelector('.page-title');
     if (title && /Input Helper/i.test(title.textContent || '')) {
       if (page.querySelector('select, input[type="text"], textarea, [data-sdlg-field]')) return true;
@@ -37,78 +59,212 @@
     return false;
   }
 
+  // ─────────────────────────────────────────────────────────
+  // 2. STYLES (Dark Mode Ready)
+  // ─────────────────────────────────────────────────────────
+  function injectStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    var s = document.createElement('style');
+    s.id = STYLE_ID;
+    s.textContent = `
+      #${GUARD_ID} {
+        max-width: 640px; margin: 24px auto;
+        padding: 24px 28px;
+        border: 1px solid #e2e8f0; border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px -10px rgba(15,23,42,0.1);
+        font-family: system-ui, -apple-system, sans-serif;
+        animation: sdlgGuardFadeIn 0.4s ease-out;
+      }
+      @keyframes sdlgGuardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      
+      @media (prefers-color-scheme: dark) {
+        #${GUARD_ID} {
+          background: #111a2e; border-color: #1e2a45;
+          box-shadow: 0 10px 30px -10px rgba(0,0,0,0.4);
+        }
+      }
+      
+      #${GUARD_ID} .sg-badge {
+        display: inline-block; font-size: 10px; font-weight: 800;
+        color: #2f5bff; background: rgba(47,91,255,0.1);
+        letter-spacing: 0.08em; text-transform: uppercase;
+        padding: 4px 10px; border-radius: 999px; margin-bottom: 10px;
+      }
+      #${GUARD_ID} .sg-title {
+        font-size: 22px; font-weight: 800; color: #0f172a;
+        margin-bottom: 10px; letter-spacing: -0.02em;
+      }
+      #${GUARD_ID} .sg-desc {
+        font-size: 14px; color: #64748b; line-height: 1.6;
+        margin: 0 0 20px;
+      }
+      #${GUARD_ID} .sg-desc b { color: #0f172a; }
+      #${GUARD_ID} .sg-code {
+        font-family: monospace; background: rgba(15,23,42,0.06);
+        padding: 2px 6px; border-radius: 4px; font-weight: 700;
+      }
+      #${GUARD_ID} .sg-actions {
+        display: flex; flex-wrap: wrap; gap: 10px;
+      }
+      #${GUARD_ID} button {
+        font: inherit; font-size: 13px; font-weight: 700;
+        padding: 10px 18px; border-radius: 10px; cursor: pointer;
+        transition: all 0.2s; border: 1px solid transparent;
+      }
+      #${GUARD_ID} .sg-btn-primary {
+        background: #2f5bff; color: #ffffff;
+      }
+      #${GUARD_ID} .sg-btn-primary:hover { background: #1e40af; }
+      #${GUARD_ID} .sg-btn-secondary {
+        background: transparent; color: #0f172a; border-color: #cbd5e1;
+      }
+      #${GUARD_ID} .sg-btn-secondary:hover { background: #f8fafc; }
+      
+      @media (prefers-color-scheme: dark) {
+        #${GUARD_ID} .sg-title { color: #f8fafc; }
+        #${GUARD_ID} .sg-desc { color: #94a3b8; }
+        #${GUARD_ID} .sg-desc b { color: #f8fafc; }
+        #${GUARD_ID} .sg-code { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+        #${GUARD_ID} .sg-btn-secondary { color: #f8fafc; border-color: #334155; }
+        #${GUARD_ID} .sg-btn-secondary:hover { background: #1e293b; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 3. GUARD INJECTION
+  // ─────────────────────────────────────────────────────────
   function removeGuard() {
-    var g = document.getElementById('sdlg-input-empty-guard');
+    var g = document.getElementById(GUARD_ID);
     if (g && g.parentNode) g.parentNode.removeChild(g);
   }
 
   function injectGuard() {
-    if (!isSdlgInputTab()) { removeGuard(); return; }
-    if (hasHelperContent()) { removeGuard(); return; }
+    // Kalau bukan tab SDLG Input, atau form-nya udah muncul → bersihin
+    if (!isSdlgInputTab() || hasHelperContent()) {
+      removeGuard();
+      return;
+    }
 
     var page = document.querySelector('.page') || document.querySelector('#root') || document.body;
     if (!page) return;
-    if (document.getElementById('sdlg-input-empty-guard')) return;
+    
+    // Kalau udah ada, jangan bikin lagi
+    if (document.getElementById(GUARD_ID)) return;
+
+    injectStyles();
 
     var claimId = '';
     try {
-      claimId = localStorage.getItem('sdlg-warranty:last-sdlginput-claim:v1') ||
-        localStorage.getItem('sdlg-warranty:last-claim:v1') || '';
+      claimId = root.localStorage.getItem('sdlg-warranty:last-sdlginput-claim:v2') ||
+                root.localStorage.getItem('sdlg-warranty:last-claim:v2') || '';
     } catch (_) {}
 
     var box = document.createElement('div');
-    box.id = 'sdlg-input-empty-guard';
+    box.id = GUARD_ID;
     box.setAttribute('role', 'status');
-    box.style.cssText =
-      'max-width:640px;margin:24px auto;padding:20px 22px;border:1px solid #cbd5e1;border-radius:12px;' +
-      'background:#fff;box-shadow:0 4px 16px rgba(15,23,42,.06);font-family:system-ui,sans-serif';
-    box.innerHTML =
-      '<div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">SDLG Dealer Portal</div>' +
-      '<div style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:8px">SDLG Input Helper</div>' +
-      '<p style="font-size:13px;color:#475569;line-height:1.5;margin:0 0 14px">' +
-      (claimId
-        ? ('Claim <b style="font-family:monospace">' + String(claimId).replace(/[<>&]/g, '') + '</b> belum termuat. Buka tab <b>Claims</b>, klik klaim itu, lalu tekan <b>SDLG Input</b> lagi.')
-        : 'Belum ada claim yang dipilih. Buka tab <b>Claims</b> → klik satu klaim → tombol <b>SDLG Input</b>.') +
-      '</p>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
-      '<button type="button" data-go-claims style="border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;background:#1e40af;color:#fff">Buka Claims</button>' +
-      '<button type="button" data-reload style="border:1px solid #cbd5e1;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;background:#fff;color:#0f172a">Muat ulang</button>' +
-      '</div>';
+    
+    var safeClaimId = escapeHtml(claimId);
+    
+    var descHtml = claimId
+      ? ('Klaim <span class="sg-code">' + safeClaimId + '</span> belum termuat. Buka tab <b>Claims</b>, klik klaim tersebut, lalu tekan <b>SDLG Input</b> lagi.')
+      : 'Belum ada klaim yang dipilih. Buka tab <b>Claims</b> &rarr; klik satu klaim &rarr; tekan tombol <b>SDLG Input</b>.';
+
+    box.innerHTML = `
+      <div class="sg-badge">SDLG Dealer Portal</div>
+      <div class="sg-title">SDLG Input Helper</div>
+      <p class="sg-desc">${descHtml}</p>
+      <div class="sg-actions">
+        <button type="button" class="sg-btn-primary" data-go-claims>Buka Daftar Claims</button>
+        <button type="button" class="sg-btn-secondary" data-reload>Muat Ulang</button>
+      </div>
+    `;
+
     page.appendChild(box);
 
-    var go = box.querySelector('[data-go-claims]');
-    if (go) {
-      go.addEventListener('click', function () {
-        try {
-          if (root.SDLGHashRouter && root.SDLGHashRouter.navigate) root.SDLGHashRouter.navigate('claims');
-          else location.hash = '#/claims';
-        } catch (_) { location.hash = '#/claims'; }
-        document.querySelectorAll('button, a').forEach(function (el) {
-          if (/^Claims/i.test(String(el.textContent || '').trim())) el.click();
-        });
+    // Event: Buka Claims
+    var goBtn = box.querySelector('[data-go-claims]');
+    if (goBtn) {
+      goBtn.addEventListener('click', function () {
+        if (root.SDLGHashRouter && root.SDLGHashRouter.navigate) {
+          root.SDLGHashRouter.navigate('claims');
+        } else {
+          root.location.hash = '#/claims';
+        }
       });
     }
-    var rel = box.querySelector('[data-reload]');
-    if (rel) rel.addEventListener('click', function () { location.reload(); });
-  }
 
-  function tick() {
-    try { injectGuard(); } catch (e) { console.warn('[SDLG input-empty-guard]', e); }
-  }
-
-  function boot() {
-    tick();
-    setInterval(tick, 1500);
-    root.addEventListener('hashchange', function () { setTimeout(tick, 200); });
-    if (typeof MutationObserver !== 'undefined' && document.body) {
-      var t = null;
-      new MutationObserver(function () {
-        clearTimeout(t);
-        t = setTimeout(tick, 400);
-      }).observe(document.body, { childList: true, subtree: true });
+    // Event: Reload
+    var reloadBtn = box.querySelector('[data-reload]');
+    if (reloadBtn) {
+      reloadBtn.addEventListener('click', function () {
+        root.location.reload();
+      });
     }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-  else boot();
-})(window);
+  // ─────────────────────────────────────────────────────────
+  // 4. SMART SCHEDULER
+  // ─────────────────────────────────────────────────────────
+  function scheduleCheck(force) {
+    if (checkTimer) clearTimeout(checkTimer);
+    checkTimer = setTimeout(function () {
+      lastCheckTime = Date.now();
+      try { injectGuard(); } catch (e) { console.warn('[SDLG Guard]', e); }
+    }, force ? 0 : OBSERVER_DELAY);
+  }
+
+  // Cek pertama (kasih delay 1.5 detik biar React sempet render)
+  function initialCheck() {
+    setTimeout(function () {
+      try { injectGuard(); } catch (_) {}
+    }, RENDER_DELAY);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 5. EVENT LISTENERS
+  // ─────────────────────────────────────────────────────────
+  
+  // A. Hash berubah (via Router)
+  root.addEventListener('hashchange', function () {
+    // Hapus guard dulu (biar gak nyangkut pas ganti tab)
+    removeGuard();
+    scheduleCheck(true);
+    initialCheck();
+  });
+
+  root.addEventListener('sdlg-route-changed', function () {
+    removeGuard();
+    scheduleCheck(true);
+    initialCheck();
+  });
+
+  // B. Mutation Observer (Cuma ngawasin .page)
+  function setupObserver() {
+    if (!root.MutationObserver || !document.body) return;
+    
+    var page = document.querySelector('.page') || document.body;
+    var obs = new MutationObserver(function () {
+      scheduleCheck(false);
+    });
+    
+    obs.observe(page, { childList: true, subtree: true });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 6. BOOT
+  // ─────────────────────────────────────────────────────────
+  function boot() {
+    setupObserver();
+    initialCheck();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+})(typeof window !== 'undefined' ? window : globalThis);
