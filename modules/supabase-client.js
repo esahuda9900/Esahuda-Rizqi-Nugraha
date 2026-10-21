@@ -1,10 +1,12 @@
 /**
- * SDLG Supabase singleton v2.2 — legacy anon JWT + session recheck on SIGNED_IN
+ * SDLG Supabase singleton v2.3 — legacy anon JWT + session recheck on SIGNED_IN
  * Root cause of blank Overview: REST grants only to authenticated; requests without JWT → 401.
+ * v2.3: dedupe identical auth event logs (no SIGNED_IN spam).
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_SUPABASE_SINGLETON_V22__) return;
+  if (root.__SDLG_SUPABASE_SINGLETON_V23__) return;
+  root.__SDLG_SUPABASE_SINGLETON_V23__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V22__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V2__ = true;
 
@@ -65,7 +67,7 @@
         flowType: 'implicit'
       },
       global: {
-        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v22' }
+        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v23' }
       }
     };
   }
@@ -78,104 +80,53 @@
     return Object.assign({}, defaultOptions(), opts, { auth: auth });
   }
 
-  function createRaw(url, key, opts) {
-    if (!root.supabase || typeof root.supabase.createClient !== 'function') {
-      throw new Error('Supabase JS CDN not loaded');
-    }
-    var fn = originalCreateClient || root.supabase.createClient.bind(root.supabase);
-    return fn(url || SUPABASE_URL, key || SUPABASE_ANON, mergeAuthOptions(opts));
+  function patchCreateClient() {
+    if (originalCreateClient) return;
+    var sb = root.supabase;
+    if (!sb || typeof sb.createClient !== 'function') return;
+    originalCreateClient = sb.createClient.bind(sb);
+    sb.createClient = function (url, key, opts) {
+      var existing = findExisting();
+      if (existing) return existing;
+      var c = originalCreateClient(url || SUPABASE_URL, key || SUPABASE_ANON, mergeAuthOptions(opts));
+      remember(c);
+      wireAuthRecheck(c);
+      return c;
+    };
   }
 
   function ensureClient() {
     var existing = findExisting();
-    if (existing) return existing;
-    if (!root.supabase || typeof root.supabase.createClient !== 'function') return null;
-    try {
-      var c = createRaw(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
-      log('Supabase client initialized (singleton v2.2, legacy anon JWT)');
-      wireAuthRecheck(c);
-      return remember(c);
-    } catch (err) {
-      warn('createClient failed', err);
-      return null;
+    if (existing) {
+      wireAuthRecheck(existing);
+      return existing;
     }
-  }
-
-  function patchCreateClient() {
-    if (!root.supabase || typeof root.supabase.createClient !== 'function') return false;
-    if (root.__SDLG_CREATE_CLIENT_PATCHED__) return true;
-    originalCreateClient = root.supabase.createClient.bind(root.supabase);
-    root.supabase.createClient = function patchedCreateClient(url, key, opts) {
-      var existing = findExisting();
-      if (existing) {
-        log('createClient reused singleton');
-        return existing;
-      }
-      var c = createRaw(SUPABASE_URL, SUPABASE_ANON, opts);
-      log('createClient first instance stored as singleton');
-      wireAuthRecheck(c);
-      return remember(c);
-    };
-    root.__SDLG_CREATE_CLIENT_PATCHED__ = true;
-    return true;
-  }
-
-  function hasTokenHint() {
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i) || '';
-        if (/sb-.*-auth-token/i.test(k)) return true;
-      }
-      if (localStorage.getItem(STORAGE_KEY)) return true;
-    } catch (_) {}
-    return false;
+    patchCreateClient();
+    var sb = root.supabase;
+    if (!sb || typeof sb.createClient !== 'function') return null;
+    var c = sb.createClient(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
+    remember(c);
+    wireAuthRecheck(c);
+    log('Supabase client initialized (singleton v2.3, legacy anon JWT)');
+    return c;
   }
 
   function applySessionFlags(c, session) {
+    if (!c) return;
     c.__SDLG_LAST_SESSION__ = session || null;
     c.__SDLG_AUTHENTICATED__ = !!(session && session.access_token);
   }
 
-  function checkSession(c) {
-    if (!c || !c.auth || typeof c.auth.getSession !== 'function') {
-      return Promise.resolve({ session: null, error: new Error('No auth API') });
-    }
+  function recheckSession(c) {
+    if (!c || !c.auth) return Promise.resolve({ session: null, error: null });
     return c.auth.getSession().then(function (res) {
       var session = res && res.data ? res.data.session : null;
       var error = res ? res.error : null;
-      if (error) warn('getSession error', error);
-
-      if (!session && hasTokenHint() && typeof c.auth.refreshSession === 'function') {
-        log('Token present but session null — refreshSession once');
-        return c.auth.refreshSession().then(function (ref) {
-          session = ref && ref.data ? ref.data.session : null;
-          error = ref ? ref.error : null;
-          if (session) {
-            log('Session recovered via refreshSession', session.user && session.user.email);
-          } else {
-            warn('refreshSession failed — clearing dead token');
-            try {
-              var keys = [];
-              for (var i = 0; i < localStorage.length; i++) {
-                var k = localStorage.key(i);
-                if (k && /^sb-/i.test(k)) keys.push(k);
-              }
-              keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
-            } catch (_) {}
-            try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
-            applySessionFlags(c, null);
-            warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-          }
-          applySessionFlags(c, session);
-          return { session: session, error: error };
-        }).catch(function (err) {
-          warn('refreshSession threw', err);
-          applySessionFlags(c, null);
-          warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-          return { session: null, error: err };
-        });
+      if (error) {
+        warn('getSession error', error);
+        applySessionFlags(c, null);
+        return { session: null, error: error };
       }
-
       if (!session) {
         warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
       } else {
@@ -193,9 +144,15 @@
   function wireAuthRecheck(c) {
     if (!c || !c.auth || c.__SDLG_AUTH_RECHECK__) return;
     c.__SDLG_AUTH_RECHECK__ = true;
+    var lastAuthLog = '';
     try {
       c.auth.onAuthStateChange(function (event, session) {
-        log('auth event', event, session && session.user && session.user.email);
+        var email = session && session.user && session.user.email;
+        var key = event + '|' + (email || '');
+        if (key !== lastAuthLog) {
+          lastAuthLog = key;
+          log('auth event', event, email);
+        }
         applySessionFlags(c, session);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
           readyPromise = null;
@@ -203,7 +160,7 @@
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           try {
             root.dispatchEvent(new CustomEvent('sdlg-session-ready', {
-              detail: { email: session && session.user && session.user.email, event: event }
+              detail: { email: email, event: event }
             }));
           } catch (_) {}
         }
@@ -219,52 +176,27 @@
   root.waitForSupabaseReady = function waitForSupabaseReady(timeoutMs) {
     timeoutMs = timeoutMs || 15000;
     if (readyPromise) return readyPromise;
+    var start = Date.now();
     readyPromise = new Promise(function (resolve, reject) {
-      var started = Date.now();
-      function attempt() {
-        patchCreateClient();
+      (function tick() {
         var c = ensureClient();
-        if (!c) {
-          if (Date.now() - started > timeoutMs) {
-            reject(new Error('waitForSupabaseReady: CDN/client timeout'));
-            return;
-          }
-          setTimeout(attempt, 50);
+        if (c) {
+          recheckSession(c).then(function () { resolve(c); }).catch(function () { resolve(c); });
           return;
         }
-        checkSession(c).then(function () { resolve(c); }).catch(reject);
-      }
-      attempt();
+        if (Date.now() - start > timeoutMs) {
+          reject(new Error('Supabase client not ready'));
+          return;
+        }
+        setTimeout(tick, 50);
+      })();
     });
     return readyPromise;
   };
 
-  root.sdlgRecheckSession = function sdlgRecheckSession() {
-    readyPromise = null;
-    var c = root.getSdlgSupabase();
-    if (!c) return Promise.resolve(null);
-    return checkSession(c).then(function (r) { return r.session; });
-  };
-
-  function boot() {
-    if (patchCreateClient()) {
-      ensureClient();
-      root.waitForSupabaseReady().catch(function (e) { warn(e); });
-      return;
-    }
-    var tries = 0;
-    var t = setInterval(function () {
-      tries += 1;
-      if (patchCreateClient()) {
-        clearInterval(t);
-        ensureClient();
-        root.waitForSupabaseReady().catch(function (e) { warn(e); });
-      } else if (tries > 80) {
-        clearInterval(t);
-        warn('Supabase CDN never appeared');
-      }
-    }, 50);
-  }
-
-  boot();
-})(typeof window !== 'undefined' ? window : globalThis);
+  // Boot
+  try {
+    patchCreateClient();
+    ensureClient();
+  } catch (_) {}
+})(typeof window !== 'undefined' ? window : this);
