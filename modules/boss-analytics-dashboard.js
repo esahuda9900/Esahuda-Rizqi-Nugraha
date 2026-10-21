@@ -214,6 +214,36 @@
     var style = document.createElement('style');
     style.id = 'SDLG_BOSS_ANALYTICS_STABLE_STYLE';
     style.textContent = [
+      /* === SDLG DASHBOARD POLISH V5.1 PREMIUM === */
+      'body{background-color:#f1f5f9!important}',
+      '.metric-grid{gap:20px!important;margin-bottom:32px!important}',
+      '.metric-card{background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;padding:24px 28px!important;min-height:120px!important;box-shadow:0 10px 25px -5px rgba(0,0,0,.05),0 8px 10px -6px rgba(0,0,0,.01)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;position:relative!important;overflow:hidden!important;transition:all .3s cubic-bezier(.4,0,.2,1)!important}',
+      '.metric-card:hover{transform:translateY(-5px)!important;box-shadow:0 20px 25px -5px rgba(47,91,255,.15),0 10px 10px -5px rgba(47,91,255,.05)!important;border-color:#2f5bff!important}',
+      '.metric-card::before{content:""!important;position:absolute!important;top:0!important;left:0!important;bottom:0!important;width:6px!important;background:linear-gradient(180deg,#2f5bff 0%,#00d4ff 100%)!important;z-index:10!important}',
+      '.metric-label{font-size:13px!important;font-weight:700!important;color:#64748b!important;text-transform:uppercase!important;letter-spacing:.05em!important;margin-bottom:8px!important}',
+      '.metric-value{font-family:"Inter Tight",monospace!important;font-size:36px!important;font-weight:900!important;color:#0f172a!important;letter-spacing:-.04em!important;line-height:1!important}',
+      '.card:has(.metric-grid){padding:28px!important;border-radius:20px!important;border:1px solid #e2e8f0!important;background:#fff!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.05)!important}',
+      '.card:has(.metric-grid)>div:first-child{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:16px!important;margin-bottom:28px!important}',
+      '.card:has(.metric-grid)>div:first-child>div{border-radius:12px!important;padding:20px!important;display:flex!important;flex-direction:column!important;gap:8px!important;border:1px solid transparent!important;position:relative!important;overflow:hidden!important;transition:transform .2s ease!important}',
+      '.card:has(.metric-grid)>div:first-child>div:hover{transform:scale(1.02)!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(1){background:#fef2f2!important;border-color:#fecaca!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(2){background:#fffbeb!important;border-color:#fde68a!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(3){background:#eff6ff!important;border-color:#bfdbfe!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(4){background:#f8fafc!important;border-color:#e2e8f0!important}',
+      '.card:has(.metric-grid)>div:first-child>div>div:first-child{font-size:32px!important;font-weight:900!important;line-height:1!important;font-family:"Inter Tight",sans-serif!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(1)>div:first-child{color:#dc2626!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(2)>div:first-child{color:#d97706!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(3)>div:first-child{color:#2563eb!important}',
+      '.card:has(.metric-grid)>div:first-child>div:nth-child(4)>div:first-child{color:#0f172a!important}',
+      '.claim-row,.action-row{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:16px 20px!important;border-radius:10px!important;margin-bottom:8px!important;background:#f8fafc!important;border:1px solid #f1f5f9!important;transition:all .2s ease!important}',
+      '.claim-row:hover,.action-row:hover{background:#fff!important;border-color:#cbd5e1!important;box-shadow:0 4px 12px rgba(0,0,0,.05)!important;transform:translateX(4px)!important}',
+      /* --- KOTAK GELAP ESTIMASI TOTAL --- */
+      '.total-estimasi-box{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%)!important;color:#fff!important;padding:32px 40px!important;border-radius:20px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 20px 40px -10px rgba(15,23,42,.4)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;margin:32px 0!important;position:relative!important;overflow:hidden!important;border:1px solid #1e293b!important}',
+      '.total-estimasi-box::after{content:""!important;position:absolute!important;top:-50%!important;right:-10%!important;width:300px!important;height:300px!important;background:radial-gradient(circle,rgba(47,91,255,.5) 0%,transparent 70%)!important;border-radius:50%!important;pointer-events:none!important}',
+      '.total-estimasi-box .label{font-size:13px!important;font-weight:700!important;color:#94a3b8!important;text-transform:uppercase!important;letter-spacing:.1em!important;position:relative!important;z-index:2!important}',
+      '.total-estimasi-box .value{font-family:"Inter Tight",-apple-system,sans-serif!important;font-size:42px!important;font-weight:900!important;color:#fff!important;letter-spacing:-.03em!important;margin-top:8px!important;position:relative!important;z-index:2!important;text-shadow:0 2px 10px rgba(255,255,255,.1)!important}',
+      
+      /* === CSS BAWAAN LU === */
       '.wx-analytics-shell{margin-top:16px}',
       '.wx-insight{padding:15px 16px;background:#fff;border:1px solid #e4e9f0;border-radius:14px;margin-bottom:10px}',
       '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:#3563e9}',
@@ -236,7 +266,9 @@
       '.wx-filter-label{font-size:10px;font-weight:800;color:#3c4a60}.wx-filter select{height:36px;border:1px solid #d7dee8;border-radius:8px;background:#fafcff;padding:0 9px;font-size:11px;font-weight:700;color:#26354b}.wx-filter-count{justify-self:end;font-size:10px;color:#7a8698;font-weight:700}',
       '@media(max-width:1100px){.wx-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.wx-breakdown-grid{grid-template-columns:1fr 1fr}.wx-insight-grid{grid-template-columns:1fr 1fr}}',
       '@media(max-width:760px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid{grid-template-columns:1fr 1fr}.wx-filter{grid-template-columns:1fr 1fr}.wx-filter-label,.wx-filter-count{grid-column:1/-1;justify-self:start}}',
-      '@media(max-width:520px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid,.wx-filter{grid-template-columns:1fr}.wx-filter-label,.wx-filter-count{grid-column:auto}}'
+      '@media(max-width:520px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid,.wx-filter{grid-template-columns:1fr}.wx-filter-label,.wx-filter-count{grid-column:auto}}',
+      '@media(max-width:1024px){.card:has(.metric-grid)>div:first-child{grid-template-columns:repeat(2,1fr)!important}}',
+      '@media(max-width:768px){.metric-value{font-size:28px!important}.card:has(.metric-grid)>div:first-child{grid-template-columns:1fr!important}.total-estimasi-box{padding:24px!important}.total-estimasi-box .value{font-size:32px!important}}'
     ].join('\n');
     document.head.appendChild(style);
   }
