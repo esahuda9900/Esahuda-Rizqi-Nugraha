@@ -80,65 +80,83 @@
     return Object.assign({}, defaultOptions(), opts, { auth: auth });
   }
 
-  function patchCreateClient() {
-    if (originalCreateClient) return;
-    var sb = root.supabase;
-    if (!sb || typeof sb.createClient !== 'function') return;
-    originalCreateClient = sb.createClient.bind(sb);
-    sb.createClient = function (url, key, opts) {
-      var existing = findExisting();
-      if (existing) return existing;
-      var c = originalCreateClient(url || SUPABASE_URL, key || SUPABASE_ANON, mergeAuthOptions(opts));
-      remember(c);
-      wireAuthRecheck(c);
-      return c;
-    };
+  function createRaw(url, key, opts) {
+    if (!root.supabase || typeof root.supabase.createClient !== 'function') {
+      throw new Error('Supabase JS CDN not loaded');
+    }
+    var fn = originalCreateClient || root.supabase.createClient.bind(root.supabase);
+    return fn(url || SUPABASE_URL, key || SUPABASE_ANON, mergeAuthOptions(opts));
   }
 
   function ensureClient() {
     var existing = findExisting();
-    if (existing) {
-      wireAuthRecheck(existing);
-      return existing;
+    if (existing) return existing;
+    if (!root.supabase || typeof root.supabase.createClient !== 'function') return null;
+    try {
+      var c = createRaw(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
+      log('Supabase client initialized (singleton v2.3, legacy anon JWT)');
+      wireAuthRecheck(c);
+      return remember(c);
+    } catch (err) {
+      warn('createClient failed', err);
+      return null;
     }
-    patchCreateClient();
-    var sb = root.supabase;
-    if (!sb || typeof sb.createClient !== 'function') return null;
-    var c = sb.createClient(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
-    remember(c);
-    wireAuthRecheck(c);
-    log('Supabase client initialized (singleton v2.3, legacy anon JWT)');
-    return c;
+  }
+
+  function patchCreateClient() {
+    if (!root.supabase || typeof root.supabase.createClient !== 'function') return false;
+    if (root.__SDLG_CREATE_CLIENT_PATCHED__) return true;
+    originalCreateClient = root.supabase.createClient.bind(root.supabase);
+    root.supabase.createClient = function patchedCreateClient(url, key, opts) {
+      var existing = findExisting();
+      if (existing) {
+        log('createClient reused singleton');
+        return existing;
+      }
+      var c = createRaw(SUPABASE_URL, SUPABASE_ANON, opts);
+      log('createClient first instance stored as singleton');
+      wireAuthRecheck(c);
+      return remember(c);
+    };
+    root.__SDLG_CREATE_CLIENT_PATCHED__ = true;
+    return true;
   }
 
   function applySessionFlags(c, session) {
     if (!c) return;
-    c.__SDLG_LAST_SESSION__ = session || null;
-    c.__SDLG_AUTHENTICATED__ = !!(session && session.access_token);
+    try {
+      c.__SDLG_LAST_SESSION__ = session || null;
+      c.__SDLG_AUTHENTICATED__ = !!(session && session.access_token);
+    } catch (_) {}
   }
 
-  function recheckSession(c) {
-    if (!c || !c.auth) return Promise.resolve({ session: null, error: null });
-    return c.auth.getSession().then(function (res) {
-      var session = res && res.data ? res.data.session : null;
-      var error = res ? res.error : null;
-      if (error) {
-        warn('getSession error', error);
+  function getSessionSafe(c) {
+    if (!c || !c.auth || typeof c.auth.getSession !== 'function') {
+      return Promise.resolve({ session: null, error: new Error('no auth') });
+    }
+    return Promise.resolve()
+      .then(function () { return c.auth.getSession(); })
+      .then(function (res) {
+        var session = res && res.data ? res.data.session : null;
+        var error = res ? res.error : null;
+        if (error) {
+          warn('getSession error', error);
+          applySessionFlags(c, null);
+          return { session: null, error: error };
+        }
+        if (!session) {
+          warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
+        } else {
+          log('authenticated', session.user && session.user.email);
+        }
+        applySessionFlags(c, session);
+        return { session: session, error: null };
+      })
+      .catch(function (err) {
+        warn('getSession threw', err);
         applySessionFlags(c, null);
-        return { session: null, error: error };
-      }
-      if (!session) {
-        warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-      } else {
-        log('authenticated', session.user && session.user.email);
-      }
-      applySessionFlags(c, session);
-      return { session: session, error: error };
-    }).catch(function (err) {
-      warn('getSession threw', err);
-      applySessionFlags(c, null);
-      return { session: null, error: err };
-    });
+        return { session: null, error: err };
+      });
   }
 
   function wireAuthRecheck(c) {
@@ -179,24 +197,34 @@
     var start = Date.now();
     readyPromise = new Promise(function (resolve, reject) {
       (function tick() {
+        patchCreateClient();
         var c = ensureClient();
         if (c) {
-          recheckSession(c).then(function () { resolve(c); }).catch(function () { resolve(c); });
+          getSessionSafe(c).then(function () { resolve(c); });
           return;
         }
-        if (Date.now() - start > timeoutMs) {
-          reject(new Error('Supabase client not ready'));
+        if (Date.now() - start >= timeoutMs) {
+          reject(new Error('Supabase client not ready within timeout'));
           return;
         }
-        setTimeout(tick, 50);
+        setTimeout(tick, 40);
       })();
     });
     return readyPromise;
   };
 
-  // Boot
+  // Early boot
   try {
-    patchCreateClient();
-    ensureClient();
-  } catch (_) {}
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        patchCreateClient();
+        ensureClient();
+      }, { once: true });
+    } else {
+      patchCreateClient();
+      ensureClient();
+    }
+  } catch (_) {
+    try { patchCreateClient(); ensureClient(); } catch (__) {}
+  }
 })(typeof window !== 'undefined' ? window : this);
