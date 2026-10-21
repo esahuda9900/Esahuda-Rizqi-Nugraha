@@ -1,5 +1,5 @@
 /**
- * SDLG Warranty Tracking UX v1.7.0
+ * SDLG Warranty Tracking UX v1.8.0
  * Progressive enhancement only. No business logic / no data mutation.
  * Relative style paths for GitHub Project Pages.
  */
@@ -12,7 +12,7 @@
   var COMMAND_ID = 'sdlg-claim-command';
   var OBSERVER = null;
   var DEBOUNCE_MS = 480;
-  var VERSION = '1.7.0'; 
+  var VERSION = '1.8.0'; 
   var lastRunAt = 0;
 
   function injectCss() {
@@ -234,7 +234,7 @@
     return 'Lihat timeline & dokumen di bawah';
   }
 
-  // --- FUNGSI INI YANG DIBERSIHKAN (EMOJI DIHAPUS) ---
+  // --- FUNGSI DIBERSIHKAN (EMOJI DIHAPUS) ---
   function buildPanelHtml(data) {
     var blockedHtml = '';
     if (data.blocked) {

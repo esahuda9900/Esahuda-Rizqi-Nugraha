@@ -1,97 +1,95 @@
-/* SDLG_WARRANTY_TRACKING_V1.8.0 (Expert Edition) */
-/* Fitur: Isolasi penuh, Modern Dashboard Look, Warning Alerts */
+/* =========================================================
+   SDLG_WARRANTY_TRACKING_V1.8.0
+   Scope: .page.claim-detail-page ONLY
+   ========================================================= */
 
 :root {
-  --track-owner: #0f172a;
-  --track-stage: #1e4ed8;
-  --track-blocked-bg: #fffbeb;
-  --track-blocked-border: #fcd34d;
-  --track-blocked-text: #b45309;
-  --track-next-bg: #ecfdf5;
-  --track-next-border: #a7f3d0;
-  --track-next-text: #047857;
+  --track-blocked-bg: #fff0f1;
+  --track-blocked-border: #f8b4ba;
+  --track-blocked-text: #e03e4a;
+  --track-next-bg: #e6f8f1;
+  --track-next-border: #a7e8cd;
+  --track-next-text: #0d9f6e;
 }
 
-/* === 1. ISOLASI KOTAK UTAMA (Mencegah bocornya CSS global) === */
-#sdlg-tracking-panel {
+/* 1. CONTAINER UTAMA */
+.page.claim-detail-page #sdlg-tracking-panel {
   display: block !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
+  background: var(--sdlg-surface, #ffffff) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-radius: var(--sdlg-radius, 16px) !important;
   padding: 24px !important;
   margin-bottom: 24px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+  box-shadow: var(--sdlg-shadow-md, 0 8px 24px rgba(12, 21, 38, 0.08)) !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
-/* Paksa semua elemen di dalam panel untuk lepas dari style global */
-#sdlg-tracking-panel * {
+.page.claim-detail-page #sdlg-tracking-panel * {
   box-sizing: border-box !important;
   border: none;
   background: transparent;
 }
 
-/* === 2. HEADER PANEL === */
-#sdlg-tracking-panel .sdlg-tracking-panel__head {
+/* 2. HEADER */
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__head {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   margin-bottom: 20px !important;
   padding-bottom: 16px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__title {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__title {
   font-size: 18px !important;
   font-weight: 800 !important;
-  color: #1e293b !important;
+  color: var(--sdlg-text, #0c1526) !important;
   letter-spacing: -0.02em !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__ver {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__ver {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #64748b !important;
-  background: #f1f5f9 !important;
+  color: var(--sdlg-muted, #5a6578) !important;
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
   padding: 4px 10px !important;
-  border-radius: 999px !important; /* Bikin versi jadi bentuk pil */
+  border-radius: 999px !important;
 }
 
-/* === 3. GRID UNTUK ISI DATA === */
-#sdlg-tracking-panel .sdlg-tracking-panel__grid {
+/* 3. GRID LAYOUT */
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__grid {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 24px !important;
   align-items: start !important;
 }
 
-/* === 4. ITEM & LABEL & VALUE === */
-#sdlg-tracking-panel .sdlg-tracking-panel__item {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item {
   display: flex !important;
   flex-direction: column !important;
   gap: 8px !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__label {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__label {
   font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.08em !important;
-  color: #64748b !important;
+  color: var(--sdlg-muted, #5a6578) !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__value {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__value {
   font-size: 14px !important;
   font-weight: 600 !important;
-  color: #0f172a !important;
+  color: var(--sdlg-text, #0c1526) !important;
   line-height: 1.5 !important;
   word-break: break-word !important;
 }
 
-/* === 5. MODERN ALERT BOX: "WHY BLOCKED" === */
-#sdlg-tracking-panel .sdlg-tracking-panel__list {
+/* 4. ALERT BOX (WHY BLOCKED) */
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__list {
   margin: 0 !important;
   padding: 12px 16px 12px 32px !important;
   list-style-type: disc !important;
@@ -100,7 +98,7 @@
   border-radius: 8px !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__list li {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__list li {
   font-size: 13px !important;
   line-height: 1.5 !important;
   color: var(--track-blocked-text) !important;
@@ -108,65 +106,60 @@
   margin-bottom: 6px !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__list li:last-child {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__list li:last-child {
   margin-bottom: 0 !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__value--muted {
-  color: #94a3b8 !important;
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__value--muted {
+  color: var(--sdlg-muted, #5a6578) !important;
   font-weight: 500 !important;
 }
 
-/* === 6. NEXT ACTION & HANDOFF (Action Cards) === */
-#sdlg-tracking-panel .sdlg-tracking-panel__item--next {
+/* 5. NEXT ACTION CARD (HIJAU) */
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--next {
   grid-column: span 2 !important;
   background: var(--track-next-bg) !important;
   border: 1px solid var(--track-next-border) !important;
   padding: 16px 20px !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
-  grid-column: span 2 !important;
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  padding: 16px 20px !important;
-  border-radius: 10px !important;
-}
-
-#sdlg-tracking-panel .sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
   color: var(--track-next-text) !important;
 }
 
-#sdlg-tracking-panel .sdlg-tracking-panel__value--next {
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__value--next {
   color: var(--track-next-text) !important;
   font-weight: 700 !important;
   font-size: 14.5px !important;
 }
 
-/* === 7. SEMBUNYIKAN SECTION YANG GAK KEPAKE === */
-.page.claim-detail-page:has(#sdlg-tracking-panel) #sdlg-warranty-assessment-shell,
-.page.claim-detail-page:has(#sdlg-tracking-panel) .warranty-assessment-card {
-  display: none !important;
+/* 6. HANDOFF CARD (ABU) */
+.page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
+  grid-column: span 2 !important;
+  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  padding: 16px 20px !important;
+  border-radius: 12px !important;
 }
 
-/* === 8. RESPONSIVE (Tampilan HP & Tablet) === */
+/* 7. RESPONSIVE */
 @media (max-width: 1200px) {
-  #sdlg-tracking-panel .sdlg-tracking-panel__grid {
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-  #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
-  #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
     grid-column: span 2 !important;
   }
 }
 
 @media (max-width: 768px) {
-  #sdlg-tracking-panel .sdlg-tracking-panel__grid {
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__grid {
     grid-template-columns: 1fr !important;
   }
-  #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
-  #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
+  .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
     grid-column: span 1 !important;
   }
 }
