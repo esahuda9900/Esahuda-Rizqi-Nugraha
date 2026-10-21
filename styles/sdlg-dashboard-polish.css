@@ -1,505 +1,285 @@
 /* =========================================================
-   SDLG DASHBOARD POLISH v3.0 — PREMIUM EDITION
-   Scoped to the Dashboard page only.
-
-   Highlights:
-   ✔ Design tokens (CSS custom properties)
-   ✔ Auto dark mode (+ manual via [data-theme="dark"])
-   ✔ Staggered entrance animations & hover micro-interactions
-   ✔ Accessibility: focus-visible, reduced-motion, high-contrast
-   ✔ Tabular figures for financial metrics
-   ✔ RTL-ready logical properties
+   SDLG DASHBOARD POLISH V4.0 (AGGRESSIVE & PREMIUM)
+   Target: Membuat dashboard terlihat seperti SaaS modern
    ========================================================= */
 
-/* =========================================
-   0. DESIGN TOKENS (scoped ke dashboard)
-   ========================================= */
+/* 1. PAGE BACKGROUND (Biar kartu-kartu putihnya "POP OUT") */
 .page:has(.metric-grid) {
-  /* — Colors · Light — */
-  --sdlg-bg:            #ffffff;
-  --sdlg-bg-subtle:     #f8fafc;
-  --sdlg-bg-hover:      #f1f5f9;
-  --sdlg-border:        #e2e8f0;
-  --sdlg-border-strong: #cbd5e1;
-
-  --sdlg-text:          #0f172a;
-  --sdlg-text-muted:    #64748b;
-  --sdlg-text-subtle:   #94a3b8;
-
-  --sdlg-accent:        #2f5bff;
-  --sdlg-accent-soft:   rgba(47, 91, 255, 0.10);
-  --sdlg-accent-glow:   rgba(47, 91, 255, 0.22);
-
-  /* — Radii — */
-  --sdlg-r-sm:  8px;
-  --sdlg-r-md:  12px;
-  --sdlg-r-lg:  16px;
-  --sdlg-r-xl:  20px;
-
-  /* — Layered shadows for depth — */
-  --sdlg-shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
-  --sdlg-shadow-sm: 0 1px 2px rgba(15,23,42,0.05),
-                    0 2px 8px rgba(15,23,42,0.04);
-  --sdlg-shadow-md: 0 2px 4px rgba(15,23,42,0.04),
-                    0 8px 24px rgba(15,23,42,0.06);
-  --sdlg-shadow-lg: 0 4px 12px rgba(15,23,42,0.06),
-                    0 16px 40px rgba(15,23,42,0.08);
-
-  /* — Motion — */
-  --sdlg-ease:      cubic-bezier(0.4, 0, 0.2, 1);
-  --sdlg-ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
-  --sdlg-dur-fast:  150ms;
-  --sdlg-dur-base:  250ms;
-  --sdlg-dur-slow:  400ms;
-
-  /* — Typography — */
-  --sdlg-numeric: "Inter Tight", "SF Pro Display", -apple-system,
-                   BlinkMacSystemFont, "Segoe UI", sans-serif;
-
-  /* — Layout — */
-  padding-block-start: 32px !important;
-  max-inline-size: 1440px !important;
-  margin-inline: auto !important;
+  background-color: #f1f5f9 !important; /* Abu-abu kebiruan soft */
+  padding: 32px 24px 64px 24px !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif !important;
 }
 
-/* =========================================
-   1. DARK MODE (auto + manual)
-   ========================================= */
-@media (prefers-color-scheme: dark) {
-  .page:has(.metric-grid) {
-    --sdlg-bg:            #0b1220;
-    --sdlg-bg-subtle:     #111a2e;
-    --sdlg-bg-hover:      #16233d;
-    --sdlg-border:        #1e2a45;
-    --sdlg-border-strong: #2a3a5f;
-    --sdlg-text:          #f8fafc;
-    --sdlg-text-muted:    #94a3b8;
-    --sdlg-text-subtle:   #64748b;
-    --sdlg-accent:        #4d70ff;
-    --sdlg-accent-soft:   rgba(77, 112, 255, 0.14);
-    --sdlg-accent-glow:   rgba(77, 112, 255, 0.30);
-    --sdlg-shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
-    --sdlg-shadow-sm: 0 1px 2px rgba(0,0,0,0.40),
-                      0 2px 8px rgba(0,0,0,0.30);
-    --sdlg-shadow-md: 0 2px 4px rgba(0,0,0,0.40),
-                      0 8px 24px rgba(0,0,0,0.35);
-    --sdlg-shadow-lg: 0 4px 12px rgba(0,0,0,0.40),
-                      0 16px 40px rgba(0,0,0,0.40);
-  }
-}
-
-/* Manual override */
-[data-theme="dark"] .page:has(.metric-grid),
-.page:has(.metric-grid)[data-theme="dark"] {
-  --sdlg-bg:            #0b1220;
-  --sdlg-bg-subtle:     #111a2e;
-  --sdlg-bg-hover:      #16233d;
-  --sdlg-border:        #1e2a45;
-  --sdlg-border-strong: #2a3a5f;
-  --sdlg-text:          #f8fafc;
-  --sdlg-text-muted:    #94a3b8;
-  --sdlg-text-subtle:   #64748b;
-  --sdlg-accent:        #4d70ff;
-  --sdlg-accent-soft:   rgba(77, 112, 255, 0.14);
-  --sdlg-accent-glow:   rgba(77, 112, 255, 0.30);
-}
-
-/* =========================================
-   2. GLOBAL FOCUS & A11Y UTILITIES
-   ========================================= */
-.page:has(.metric-grid) :is(
-  .metric-card,
-  .claim-row,
-  .action-row,
-  .snapshot-item
-):focus-visible {
-  outline: 2px solid var(--sdlg-accent) !important;
-  outline-offset: 2px !important;
-  border-radius: var(--sdlg-r-md) !important;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .page:has(.metric-grid) *,
-  .page:has(.metric-grid) *::before,
-  .page:has(.metric-grid) *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* =========================================
-   3. ENTRANCE ANIMATIONS (staggered)
-   ========================================= */
-@keyframes sdlg-rise {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.page:has(.metric-grid) > div {
-  margin-block-end: 24px !important;
-}
-
-.page:has(.metric-grid) .metric-card {
-  animation: sdlg-rise var(--sdlg-dur-slow) var(--sdlg-ease-out) both;
-}
-.page:has(.metric-grid) .metric-card:nth-child(1) { animation-delay: 0ms;   }
-.page:has(.metric-grid) .metric-card:nth-child(2) { animation-delay: 60ms;  }
-.page:has(.metric-grid) .metric-card:nth-child(3) { animation-delay: 120ms; }
-.page:has(.metric-grid) .metric-card:nth-child(4) { animation-delay: 180ms; }
-.page:has(.metric-grid) .metric-card:nth-child(5) { animation-delay: 240ms; }
-.page:has(.metric-grid) .metric-card:nth-child(6) { animation-delay: 300ms; }
-
-/* =========================================
-   4. METRIC CARDS (top row)
-   ========================================= */
+/* 2. KARTU METRIK ATAS (Total Claims, dll) */
 .page:has(.metric-grid) .metric-grid {
-  gap: 16px !important;
-  margin-block-end: 24px !important;
+  gap: 20px !important;
+  margin-bottom: 32px !important;
 }
 
 .page:has(.metric-grid) .metric-card {
-  position: relative !important;
-  overflow: hidden !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 24px 28px !important;
+  min-height: 120px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-
-  padding: 20px 24px !important;
-  min-block-size: 110px !important;
-
-  background: var(--sdlg-bg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-r-md) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-
-  transition:
-    transform var(--sdlg-dur-base) var(--sdlg-ease),
-    box-shadow var(--sdlg-dur-base) var(--sdlg-ease),
-    border-color var(--sdlg-dur-base) var(--sdlg-ease) !important;
-  will-change: transform;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Hover lift */
+/* Hover Effect Melayang */
 .page:has(.metric-grid) .metric-card:hover {
-  transform: translateY(-2px) !important;
-  border-color: var(--sdlg-accent) !important;
-  box-shadow: var(--sdlg-shadow-md), 0 0 0 3px var(--sdlg-accent-soft) !important;
+  transform: translateY(-5px) !important;
+  box-shadow: 0 20px 25px -5px rgba(47, 91, 255, 0.1), 0 10px 10px -5px rgba(47, 91, 255, 0.04) !important;
+  border-color: #2f5bff !important;
 }
 
-/* Accent bar (gradient) */
+/* Garis Aksen Kiri Tebal */
 .page:has(.metric-grid) .metric-card::before {
   content: "" !important;
   position: absolute !important;
-  inset-block: 0 !important;
-  inset-inline-start: 0 !important;
-  inline-size: 4px !important;
-  background: linear-gradient(180deg,
-    var(--sdlg-accent) 0%,
-    color-mix(in srgb, var(--sdlg-accent) 40%, transparent) 100%) !important;
+  top: 0 !important; left: 0 !important; bottom: 0 !important;
+  width: 6px !important;
+  background: linear-gradient(180deg, #2f5bff 0%, #00d4ff 100%) !important;
+  z-index: 10 !important;
 }
 
-/* Subtle corner glow */
-.page:has(.metric-grid) .metric-card::after {
-  content: "" !important;
-  position: absolute !important;
-  inset-block-start: -40px !important;
-  inset-inline-end: -40px !important;
-  inline-size: 120px !important;
-  block-size: 120px !important;
-  background: radial-gradient(circle, var(--sdlg-accent-glow) 0%, transparent 70%) !important;
-  opacity: 0 !important;
-  transition: opacity var(--sdlg-dur-base) var(--sdlg-ease) !important;
-  pointer-events: none !important;
-}
-.page:has(.metric-grid) .metric-card:hover::after {
-  opacity: 1 !important;
-}
-
+/* Typography Label & Value */
 .page:has(.metric-grid) .metric-label {
-  font-size: 11px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
-  color: var(--sdlg-text-muted) !important;
+  color: #64748b !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  margin-block-end: 6px !important;
-  text-wrap: balance !important;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 8px !important;
 }
 
 .page:has(.metric-grid) .metric-value {
-  font-family: var(--sdlg-numeric) !important;
-  font-size: 32px !important;
-  font-weight: 800 !important;
-  color: var(--sdlg-text) !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.1 !important;
-  font-variant-numeric: tabular-nums lining-nums !important;
-  font-feature-settings: "tnum" 1, "lnum" 1 !important;
+  font-family: "Inter Tight", monospace !important;
+  font-size: 36px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1 !important;
 }
 
-/* =========================================
-   5. "MY ACTION TODAY" — 4 color boxes
-   ========================================= */
+/* 3. KOTAK "MY ACTION TODAY" (Kritikal, Action, dll) */
 .page:has(.metric-grid) .card:has(.metric-grid) {
-  padding: 24px !important;
-  border-radius: var(--sdlg-r-lg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  background: var(--sdlg-bg) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
+  padding: 28px !important;
+  border-radius: 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
 }
 
+/* Grid 4 Kotak Warna */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(4, 1fr) !important;
   gap: 16px !important;
-  margin-block-end: 24px !important;
+  margin-bottom: 28px !important;
 }
 
+/* Kotak Warna - DIPAKSA LEBIH VIBRANT */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div {
-  padding: 16px 20px !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
-  border-radius: var(--sdlg-r-md) !important;
+  gap: 8px !important;
   border: 1px solid transparent !important;
-  transition:
-    transform var(--sdlg-dur-fast) var(--sdlg-ease),
-    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease),
-    border-color var(--sdlg-dur-fast) var(--sdlg-ease) !important;
-  cursor: pointer;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease !important;
 }
+
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
+  transform: scale(1.02) !important;
 }
 
+/* Paksa Warna Background Berdasarkan Urutan (Merah, Kuning, Biru, Abu) */
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
+  background: #fef2f2 !important; border-color: #fecaca !important;
+}
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(2) {
+  background: #fffbeb !important; border-color: #fde68a !important;
+}
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(3) {
+  background: #eff6ff !important; border-color: #bfdbfe !important;
+}
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(4) {
+  background: #f8fafc !important; border-color: #e2e8f0 !important;
+}
+
+/* Angka Besar di dalam Kotak */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div > div:first-child {
-  font-family: var(--sdlg-numeric) !important;
-  font-size: 26px !important;
-  font-weight: 800 !important;
+  font-size: 32px !important;
+  font-weight: 900 !important;
   line-height: 1 !important;
-  letter-spacing: -0.02em !important;
-  font-variant-numeric: tabular-nums !important;
+  font-family: "Inter Tight", sans-serif !important;
 }
+/* Warna teks angka */
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child { color: #dc2626 !important; }
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(2) > div:first-child { color: #d97706 !important; }
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child { color: #2563eb !important; }
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:nth-child(4) > div:first-child { color: #0f172a !important; }
 
-/* =========================================
-   6. LIST ROWS (Claims + Actions)
-   ========================================= */
+/* 4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED" */
 .page:has(.metric-grid) .claim-row,
 .page:has(.metric-grid) .action-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 12px !important;
-
-  padding: 14px 16px !important;
-  border-radius: var(--sdlg-r-sm) !important;
-  border-block-end: 1px solid var(--sdlg-bg-hover) !important;
-
-  transition:
-    background-color var(--sdlg-dur-fast) var(--sdlg-ease),
-    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease),
-    transform var(--sdlg-dur-fast) var(--sdlg-ease) !important;
-  cursor: pointer;
+  padding: 16px 20px !important;
+  border-radius: 10px !important;
+  margin-bottom: 8px !important; /* Ubah dari border-bottom jadi card terpisah */
+  background: #f8fafc !important;
+  border: 1px solid #f1f5f9 !important;
+  transition: all 0.2s ease !important;
 }
 
-.page:has(.metric-grid) :is(.claim-row, .action-row):hover {
-  background: var(--sdlg-bg-subtle) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-.page:has(.metric-grid) :is(.claim-row, .action-row):hover .metric-value {
-  color: var(--sdlg-accent) !important;
-}
-
-/* Remove border-bottom on last item */
-.page:has(.metric-grid) :is(.claim-row, .action-row):last-child {
-  border-block-end: none !important;
+.page:has(.metric-grid) .claim-row:hover,
+.page:has(.metric-grid) .action-row:hover {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+  transform: translateX(4px) !important;
 }
 
-/* =========================================
-   7. TOTAL ESTIMASI BOX — premium dark card
-   ========================================= */
+/* 5. TOTAL ESTIMASI (KOTAK GELAP) 
+   NOTE: Karena di screenshot ini gak ada kotak gelapnya, 
+   saya pakai selector paksa berdasarkan teks "Rp" */
+.page:has(.metric-grid) div:has(> div:first-child):has(> div:last-child) {
+  /* Fallback jika class .total-estimasi-box tidak ada */
+}
+
+/* Jika Anda bisa menambahkan class .total-estimasi-box di HTML, ini akan jalan: */
 .page:has(.metric-grid) .total-estimasi-box {
-  position: relative !important;
-  overflow: hidden !important;
-
-  padding: 24px 32px !important;
-  margin-block: 24px !important;
-  border-radius: var(--sdlg-r-lg) !important;
-
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  color: white !important;
+  padding: 32px 40px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-
-  color: #ffffff !important;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 10px 30px rgba(15, 23, 42, 0.20) !important;
+  margin: 32px 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
-
-/* Subtle dot texture */
-.page:has(.metric-grid) .total-estimasi-box::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgba(255,255,255,0.05) 1px,
-    transparent 0
-  ) !important;
-  background-size: 20px 20px !important;
-  pointer-events: none !important;
-}
-
-/* Soft corner light */
+/* Efek Kilau di pojok */
 .page:has(.metric-grid) .total-estimasi-box::after {
   content: "" !important;
   position: absolute !important;
-  inset-block-start: -60px !important;
-  inset-inline-end: -60px !important;
-  inline-size: 220px !important;
-  block-size: 220px !important;
-  background: radial-gradient(circle, rgba(77, 112, 255, 0.18) 0%, transparent 70%) !important;
-  pointer-events: none !important;
+  top: -50% !important; right: -10% !important;
+  width: 300px !important; height: 300px !important;
+  background: radial-gradient(circle, rgba(47,91,255,0.4) 0%, transparent 70%) !important;
+  border-radius: 50% !important;
 }
 
 .page:has(.metric-grid) .total-estimasi-box .label {
-  position: relative !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
   color: #94a3b8 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.1em !important;
+  position: relative !important;
+  z-index: 2 !important;
 }
 
 .page:has(.metric-grid) .total-estimasi-box .value {
-  position: relative !important;
-  font-family: var(--sdlg-numeric) !important;
-  font-size: 38px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.02em !important;
-  margin-block-start: 4px !important;
+  font-family: "Inter Tight", sans-serif !important;
+  font-size: 42px !important;
+  font-weight: 900 !important;
   color: #ffffff !important;
-  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.03em !important;
+  margin-top: 8px !important;
+  position: relative !important;
+  z-index: 2 !important;
 }
 
-/* =========================================
-   8. CHART CARDS
-   ========================================= */
+/* 6. CHART SECTIONS (Trend, Model, Branch) */
 .page:has(.metric-grid) .card:has(canvas),
 .page:has(.metric-grid) .card:has(svg) {
-  padding: 24px !important;
-  border-radius: var(--sdlg-r-lg) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  background: var(--sdlg-bg) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  transition:
-    box-shadow var(--sdlg-dur-base) var(--sdlg-ease),
-    border-color var(--sdlg-dur-base) var(--sdlg-ease) !important;
+  padding: 28px !important;
+  border-radius: 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+  transition: box-shadow 0.3s ease !important;
 }
 .page:has(.metric-grid) .card:has(canvas):hover,
 .page:has(.metric-grid) .card:has(svg):hover {
-  box-shadow: var(--sdlg-shadow-md) !important;
-  border-color: var(--sdlg-border-strong) !important;
+  box-shadow: 0 12px 20px -5px rgba(0,0,0,0.08) !important;
 }
 
-/* =========================================
-   9. EXECUTIVE SNAPSHOT GRID
-   ========================================= */
+/* Paksa Bar Chart (div biru) jadi melengkung & bergradasi */
+.page:has(.metric-grid) .card > div > div > div[style*="background-color: blue"],
+.page:has(.metric-grid) .card > div > div > div[style*="background: #3b82f6"] {
+  border-radius: 999px !important; /* Bikin jadi kapsul */
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%) !important;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 7. EXECUTIVE SNAPSHOT GRID */
 .page:has(.metric-grid) .snapshot-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-  gap: 16px !important;
-  margin-block-start: 16px !important;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+  gap: 20px !important;
+  margin-top: 24px !important;
 }
 
 .page:has(.metric-grid) .snapshot-item {
+  background: #ffffff !important;
+  padding: 24px !important;
+  border-radius: 16px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
-  padding: 20px !important;
-  background: var(--sdlg-bg-subtle) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-r-md) !important;
-  transition:
-    transform var(--sdlg-dur-fast) var(--sdlg-ease),
-    background-color var(--sdlg-dur-fast) var(--sdlg-ease),
-    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease) !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
 }
+
 .page:has(.metric-grid) .snapshot-item:hover {
+  border-color: #cbd5e1 !important;
   transform: translateY(-2px) !important;
-  background: var(--sdlg-bg) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
 }
 
 .page:has(.metric-grid) .snapshot-item .label {
-  font-size: 11px !important;
+  font-size: 12px !important;
+  color: #64748b !important;
   font-weight: 700 !important;
-  color: var(--sdlg-text-muted) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.05em !important;
 }
 
 .page:has(.metric-grid) .snapshot-item .value {
-  font-family: var(--sdlg-numeric) !important;
-  font-size: 24px !important;
-  font-weight: 800 !important;
-  color: var(--sdlg-text) !important;
+  font-family: "Inter Tight", sans-serif !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
   letter-spacing: -0.02em !important;
-  font-variant-numeric: tabular-nums !important;
 }
 
-/* =========================================
-   10. RESPONSIVE
-   ========================================= */
+/* 8. RESPONSIVE FIXES */
 @media (max-width: 1024px) {
   .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
-
 @media (max-width: 768px) {
-  .page:has(.metric-grid) {
-    padding-block-start: 20px !important;
-    padding-inline: 16px !important;
-  }
-  .page:has(.metric-grid) .metric-value {
-    font-size: 24px !important;
-  }
+  .page:has(.metric-grid) { padding: 16px !important; }
+  .page:has(.metric-grid) .metric-value { font-size: 28px !important; }
   .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
     grid-template-columns: 1fr !important;
   }
-  .page:has(.metric-grid) .total-estimasi-box {
-    padding: 20px 24px !important;
-  }
-  .page:has(.metric-grid) .total-estimasi-box .value {
-    font-size: 28px !important;
-  }
-  /* Disable hover-lift on touch devices (biar gak glitch) */
-  .page:has(.metric-grid) .metric-card:hover,
-  .page:has(.metric-grid) .snapshot-item:hover,
-  .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:hover {
-    transform: none !important;
-  }
-}
-
-/* =========================================
-   11. HIGH CONTRAST & PRINT
-   ========================================= */
-@media (prefers-contrast: more) {
-  .page:has(.metric-grid) .metric-card,
-  .page:has(.metric-grid) .snapshot-item {
-    border-width: 2px !important;
-  }
-}
-
-@media print {
-  .page:has(.metric-grid) .metric-card,
-  .page:has(.metric-grid) .snapshot-item,
-  .page:has(.metric-grid) .total-estimasi-box {
-    box-shadow: none !important;
-    break-inside: avoid !important;
-  }
+  .page:has(.metric-grid) .total-estimasi-box { padding: 24px !important; }
+  .page:has(.metric-grid) .total-estimasi-box .value { font-size: 32px !important; }
 }
