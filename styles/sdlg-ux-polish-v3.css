@@ -1,56 +1,63 @@
-/* SDLG UX POLISH V3 — authenticated operations usability layer
-   Visual hierarchy and interaction clarity only. No business logic changes. */
+/* =========================================================
+   SDLG UX POLISH V4.0 (EXPERT REVISED)
+   Authenticated operations usability layer.
+   Visual hierarchy and interaction clarity only.
+   ========================================================= */
 
-:root {
-  --ux-ink: #10213d;
-  --ux-muted: #64748b;
-  --ux-line: #dbe3ee;
-  --ux-brand: #1f5eff;
-  --ux-brand-soft: #eaf0ff;
-  --ux-surface: #ffffff;
-  --ux-warning-soft: #fff7ed;
-}
-
-/* Faster, calmer authenticated chrome. */
+/* =========================================
+   1. TOPBAR & NAVIGATION (Calm Chrome)
+   ========================================= */
 .app-shell:not(:has(.login-screen)) .topbar-inner {
   max-width: 1440px !important;
   gap: 14px !important;
 }
+
 .app-shell:not(:has(.login-screen)) .brand {
   min-width: 205px !important;
 }
+
 .app-shell:not(:has(.login-screen)) .nav-scroll {
   min-width: 0 !important;
   gap: 3px !important;
   scrollbar-width: none !important;
 }
-.app-shell:not(:has(.login-screen)) .nav-scroll::-webkit-scrollbar { display: none !important; }
-.app-shell:not(:has(.login-screen)) .nav-btn {
-  font-size: 11px !important;
-  padding: 8px 10px !important;
-  letter-spacing: -.01em !important;
+
+.app-shell:not(:has(.login-screen)) .nav-scroll::-webkit-scrollbar {
+  display: none !important;
 }
+
+.app-shell:not(:has(.login-screen)) .nav-btn {
+  font-size: 11.5px !important;
+  padding: 8px 12px !important;
+  letter-spacing: -0.01em !important;
+  border-radius: var(--sdlg-radius-btn, 8px) !important;
+}
+
 .app-shell:not(:has(.login-screen)) .nav-tools {
   flex-shrink: 0 !important;
 }
 
-/* Auth loading must feel intentional instead of like a blank page. */
+/* =========================================
+   2. LOGIN LOADING STATE (Intentional UI)
+   ========================================= */
 .login-loading {
   min-height: 100vh !important;
   display: grid !important;
   place-items: center !important;
   padding: 24px !important;
-  background: radial-gradient(circle at 20% 0%, #eef4ff 0, #f6f8fc 42%, #f8fafc 100%) !important;
+  background: radial-gradient(circle at 20% 0%, #eef4ff 0, var(--sdlg-bg, #f6f8fc) 42%, #f8fafc 100%) !important;
 }
+
 .login-loading-card {
   width: min(420px, 100%) !important;
   padding: 32px 28px !important;
   text-align: center !important;
-  border: 1px solid #dbe3ee !important;
+  border: 1px solid var(--sdlg-border, #dbe3ee) !important;
   border-radius: 18px !important;
-  background: rgba(255,255,255,.96) !important;
-  box-shadow: 0 18px 50px rgba(15,35,70,.10) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 18px 50px rgba(15, 35, 70, 0.10) !important;
 }
+
 .login-loading-mark {
   margin: 0 auto 16px !important;
   width: 48px !important;
@@ -61,135 +68,207 @@
   color: #fff !important;
   font-size: 20px !important;
   font-weight: 900 !important;
-  background: linear-gradient(135deg,#10213d,#1f5eff) !important;
-  box-shadow: 0 10px 22px rgba(31,94,255,.22) !important;
+  background: linear-gradient(135deg, #10213d, var(--sdlg-primary, #2f5bff)) !important;
+  box-shadow: 0 10px 22px rgba(47, 91, 255, 0.22) !important;
 }
-.login-loading-title { color: var(--ux-ink) !important; font-size: 17px !important; font-weight: 850 !important; }
-.login-loading-copy { margin-top: 6px !important; color: var(--ux-muted) !important; font-size: 12px !important; }
+
+.login-loading-title {
+  color: var(--sdlg-text-main, #0c1526) !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+}
+
+.login-loading-copy {
+  margin-top: 6px !important;
+  color: var(--sdlg-muted, #5a6578) !important;
+  font-size: 12px !important;
+}
+
 .login-loading-card::after {
   content: "Menyiapkan workspace dan memeriksa hak akses";
   display: block;
   margin-top: 18px;
-  color: #94a3b8;
+  color: var(--sdlg-faint, #94a3b8);
   font-size: 11px;
+  font-weight: 500;
 }
 
-/* Dashboard: keep action priority above analytics density. */
+/* =========================================
+   3. DASHBOARD METRICS
+   ========================================= */
 .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card {
   min-height: 116px !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .metric-card:nth-child(n+4) .metric-label {
-  color: #64748b !important;
+  color: var(--sdlg-muted, #5a6578) !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card.card-pad {
   overflow: hidden !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card.card-pad button:focus-visible,
 .app-shell:not(:has(.login-screen)) .page:has(.metric-grid) .card.card-pad button:hover {
-  background: #f8fbff !important;
+  background: var(--sdlg-surface-muted, #f8fbff) !important;
 }
 
-/* Claim detail: keep the current decision visible while reading evidence. */
+/* =========================================
+   4. CLAIM DETAIL: STATUS TRACK (Smart Sticky)
+   ========================================= */
 .app-shell:not(:has(.login-screen)) .page:has(.status-track) .status-track {
   position: sticky !important;
-  top: 82px !important;
+  top: 84px !important; /* Offset akurat di bawah navbar */
   z-index: 12 !important;
   padding: 8px !important;
-  border: 1px solid var(--ux-line) !important;
+  border: 1px solid var(--sdlg-border, #dbe3ee) !important;
   border-radius: 12px !important;
-  background: rgba(255,255,255,.95) !important;
-  box-shadow: 0 8px 24px rgba(15,35,70,.07) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 8px 24px rgba(15, 35, 70, 0.07) !important;
   backdrop-filter: blur(10px) !important;
-}
-.status-transition-label {
-  color: var(--ux-muted) !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  letter-spacing: .02em !important;
-}
-.status-transition-btn {
-  min-height: 34px !important;
-  border: 1px solid var(--ux-line) !important;
-  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease !important;
-}
-.status-transition-btn:hover:not(:disabled) {
-  transform: translateY(-1px) !important;
-  border-color: #9db5ef !important;
-  background: var(--ux-brand-soft) !important;
-  color: #1748c7 !important;
+  -webkit-backdrop-filter: blur(10px) !important;
 }
 
+/* Label & Tombol Transisi */
+.status-transition-label {
+  color: var(--sdlg-muted, #5a6578) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+}
+
+.status-transition-btn {
+  min-height: 34px !important;
+  border: 1px solid var(--sdlg-border, #dbe3ee) !important;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease !important;
+}
+
+.status-transition-btn:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  border-color: var(--sdlg-primary, #9db5ef) !important;
+  background: var(--sdlg-primary-soft, #eaf0ff) !important;
+  color: var(--sdlg-primary-strong, #1e45d6) !important;
+}
+
+/* =========================================
+   5. CLAIM DECISION SUMMARY (Modern Box)
+   ========================================= */
 .claim-decision-summary {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 14px !important;
   margin: 0 0 12px !important;
-  padding: 12px 14px !important;
-  border: 1px solid #cfe0ff !important;
+  padding: 14px 16px !important;
+  border: 1px solid var(--sdlg-primary-border, #cfe0ff) !important;
   border-radius: 14px !important;
-  background: linear-gradient(135deg, #f7faff 0%, #ffffff 100%) !important;
-  box-shadow: 0 4px 16px rgba(31,94,255,.06) !important;
+  background: linear-gradient(135deg, var(--sdlg-primary-soft, #f7faff) 0%, var(--sdlg-surface, #ffffff) 100%) !important;
+  box-shadow: 0 4px 16px rgba(47, 91, 255, 0.06) !important;
 }
+
 .decision-summary-kicker {
-  color: #6d7fa1 !important;
+  color: var(--sdlg-muted, #6d7fa1) !important;
   font-size: 9px !important;
   font-weight: 900 !important;
-  letter-spacing: .1em !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
 }
+
 .decision-summary-title {
   margin-top: 3px !important;
-  color: var(--ux-ink) !important;
+  color: var(--sdlg-text-main, #0c1526) !important;
   font-size: 15px !important;
   font-weight: 850 !important;
 }
+
 .decision-summary-next {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-end !important;
   gap: 3px !important;
-  color: #315de7 !important;
-  font-size: 11px !important;
+  color: var(--sdlg-primary-strong, #315de7) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
   text-align: right !important;
 }
-.decision-summary-next span { color: #7c8da9 !important; font-size: 10px !important; }
 
-/* SDLG Input: make the copy workflow scannable. */
+.decision-summary-next span {
+  color: var(--sdlg-muted, #7c8da9) !important;
+  font-size: 10px !important;
+}
+
+/* =========================================
+   6. SDLG INPUT HELPER: COPY WORKFLOW
+   ========================================= */
 .app-shell:not(:has(.login-screen)) .page:has(#sdlg-copy-all) [data-sdlg-field] {
-  border-color: var(--ux-line) !important;
-  background: #fff !important;
-  box-shadow: 0 2px 8px rgba(15,35,70,.025) !important;
+  border-color: var(--sdlg-border, #dbe3ee) !important;
+  background: var(--sdlg-surface, #fff) !important;
+  box-shadow: 0 2px 8px rgba(15, 35, 70, 0.025) !important;
+  border-radius: var(--sdlg-radius-input, 6px) !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(#sdlg-copy-all) [data-sdlg-copy] {
-  min-height: 30px !important;
-  padding: 4px 8px !important;
-  color: #315de7 !important;
-  border-color: #c9d6f6 !important;
-  background: #f6f8ff !important;
+  min-height: 34px !important; /* Lebih besar agar mudah diklik */
+  padding: 6px 10px !important;
+  color: var(--sdlg-primary-strong, #315de7) !important;
+  border-color: var(--sdlg-primary-border, #c9d6f6) !important;
+  background: var(--sdlg-primary-soft, #f6f8ff) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(#sdlg-copy-all) [data-sdlg-copy]:hover {
-  background: var(--ux-brand-soft) !important;
-  border-color: #9db5ef !important;
+  background: var(--sdlg-primary-soft, #eaf0ff) !important;
+  border-color: var(--sdlg-primary, #9db5ef) !important;
+  transform: translateY(-1px) !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page:has(#sdlg-copy-all) textarea {
   min-height: 112px !important;
+  font-family: var(--sdlg-font-family) !important;
 }
 
-/* Mobile: avoid sticky detail bar colliding with the wrapped header. */
+/* =========================================
+   7. RESPONSIVE (Mobile & Tablet)
+   ========================================= */
 @media (max-width: 900px) {
+  /* Matikan sticky di mobile agar tidak menutupi layar */
   .app-shell:not(:has(.login-screen)) .page:has(.status-track) .status-track {
     position: static !important;
     box-shadow: none !important;
+    background: var(--sdlg-surface-muted, #f8fafc) !important;
   }
-  .app-shell:not(:has(.login-screen)) .brand { min-width: 0 !important; }
+  
+  .app-shell:not(:has(.login-screen)) .brand {
+    min-width: 0 !important;
+  }
 }
+
 @media (max-width: 560px) {
-  .app-shell:not(:has(.login-screen)) .nav-btn { font-size: 12px !important; padding: 8px 11px !important; }
-  .login-loading-card { padding: 28px 20px !important; }
-  .claim-decision-summary { align-items: flex-start !important; flex-direction: column !important; }
-  .decision-summary-next { align-items: flex-start !important; text-align: left !important; }
+  .app-shell:not(:has(.login-screen)) .nav-btn {
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
+  
+  .login-loading-card {
+    padding: 28px 20px !important;
+  }
+
+  /* Decision Summary jadi tumpuk ke bawah (Column) */
+  .claim-decision-summary {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+  
+  .decision-summary-next {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .status-transition-btn { transition: none !important; }
+  .status-transition-btn {
+    transition: none !important;
+  }
 }

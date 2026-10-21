@@ -1,70 +1,63 @@
-/* SDLG Modern Layout Grid V14
-   Source of truth for design tokens + fluid grids.
-   Runtime inject lives in modules/navigation-state.js until Phase 2 extraction.
-   Visual only — no business logic. */
+/* =========================================================
+   SDLG MODERN LAYOUT GRID V15.0 (EXPERT REVISED)
+   Source of truth for fluid grids & structural layout.
+   Visual only — no business logic.
+   ========================================================= */
 
-:root {
-  --sdlg-space-1: 4px;
-  --sdlg-space-2: 8px;
-  --sdlg-space-3: 12px;
-  --sdlg-space-4: 16px;
-  --sdlg-space-5: 20px;
-  --sdlg-space-6: 24px;
-  --sdlg-space-8: 32px;
-  --sdlg-radius-card: 16px;
-  --sdlg-radius-sm: 11px;
-  --sdlg-col-min: 140px;
-  --sdlg-col-min-lg: 200px;
-  --sdlg-page-max: 1280px;
-  --sdlg-page-x: 24px;
-  --sdlg-page-b: 64px;
-  --sdlg-theme-clearance: 0px;
-}
-
-/* Page shell */
+/* =========================================
+   1. PAGE SHELL (Bungkus Utama Halaman)
+   ========================================= */
 .app-shell:not(:has(.login-screen)) .page {
-  max-width: var(--sdlg-page-max);
+  max-width: 1440px; /* Disamakan dengan Command Center agar lega */
   margin-inline: auto;
-  padding-left: var(--sdlg-page-x);
-  padding-right: var(--sdlg-page-x);
-  padding-bottom: calc(var(--sdlg-page-b) + var(--sdlg-theme-clearance));
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-bottom: 64px;
   box-sizing: border-box;
 }
 
-/* Metric — fluid auto-fit */
+/* =========================================
+   2. METRIC GRID (Dashboard Cards)
+   ========================================= */
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--sdlg-col-min), 1fr));
-  gap: var(--sdlg-space-3);
-  margin-bottom: var(--sdlg-space-5);
+  /* Min 180px agar angka tidak terpotong, auto-fit agar responsif */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sdlg-spacing-4, 16px);
+  margin-bottom: var(--sdlg-spacing-5, 20px);
   width: 100%;
 }
 
 .metric-card {
   min-width: 0;
-  min-height: 100px;
-  border-radius: var(--sdlg-radius-card);
+  min-height: 110px;
+  border-radius: var(--sdlg-radius-card, 16px);
   overflow: hidden;
 }
 
 .metric-value {
   overflow-wrap: anywhere;
   word-break: break-word;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums; /* Angka sejajar rata */
 }
 
-/* Detail split */
+/* =========================================
+   3. DETAIL GRID (Split View / Two-Column)
+   ========================================= */
 .detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.7fr);
-  gap: var(--sdlg-space-4);
+  /* Kiri lebih lebar (1.6fr) untuk data, Kanan (0.8fr) untuk sidebar */
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
+  gap: var(--sdlg-spacing-5, 24px);
   align-items: start;
 }
 
-/* Cards */
+/* =========================================
+   4. CARDS & SECTIONS
+   ========================================= */
 .card,
 .card-pad {
-  border-radius: var(--sdlg-radius-card);
+  border-radius: var(--sdlg-radius-card, 16px);
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
@@ -74,43 +67,47 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sdlg-space-2);
-  margin-bottom: var(--sdlg-space-3);
+  gap: var(--sdlg-spacing-2, 8px);
+  margin-bottom: var(--sdlg-spacing-4, 16px);
 }
 
 .claims-filter-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sdlg-space-2);
-  border-radius: var(--sdlg-radius-card);
+  gap: var(--sdlg-spacing-3, 12px);
+  border-radius: var(--sdlg-radius-card, 16px);
 }
 
-/* Tablet */
-@media (max-width: 900px) {
-  :root {
-    --sdlg-page-x: 16px;
-    --sdlg-col-min: 160px;
+/* =========================================
+   5. RESPONSIVE: TABLET (Max 1024px)
+   ========================================= */
+@media (max-width: 1024px) {
+  .app-shell:not(:has(.login-screen)) .page {
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .detail-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--sdlg-space-3);
+    grid-template-columns: minmax(0, 1fr); /* Sidebar turun ke bawah */
+    gap: var(--sdlg-spacing-4, 16px);
   }
 }
 
-/* Phone */
-@media (max-width: 760px) {
-  :root {
-    --sdlg-page-x: 12px;
-    --sdlg-page-b: 28px;
-    --sdlg-theme-clearance: calc(72px + env(safe-area-inset-bottom, 0px));
-    --sdlg-col-min: 130px;
+/* =========================================
+   6. RESPONSIVE: PHONE (Max 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  .app-shell:not(:has(.login-screen)) .page {
+    padding-left: 16px;
+    padding-right: 16px;
+    /* Clearance untuk bottom navigation di HP (jika ada) */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
   .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--sdlg-space-2);
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 Kolom di HP */
+    gap: var(--sdlg-spacing-3, 12px);
   }
 
   .claims-filter-bar {
@@ -118,12 +115,19 @@
     align-items: stretch;
   }
 
+  /* Navigasi Horizontal (Swipeable) di HP */
   .nav-scroll {
     display: flex;
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: none; /* Sembunyikan scrollbar Firefox */
+    padding-bottom: 4px;
+  }
+
+  /* Sembunyikan scrollbar Chrome/Safari */
+  .nav-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .nav-btn {
@@ -131,29 +135,40 @@
     white-space: nowrap;
   }
 
+  /* Theme Switcher (Terang/Gelap) posisi tengah bawah */
   .sdlg-theme-switcher {
     left: 50%;
     right: auto;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
     z-index: 40;
+    box-shadow: var(--sdlg-shadow-md);
   }
 }
 
-/* Narrow */
+/* =========================================
+   7. RESPONSIVE: NARROW PHONE (Max 480px)
+   ========================================= */
 @media (max-width: 480px) {
-  :root {
-    --sdlg-page-x: 10px;
+  .app-shell:not(:has(.login-screen)) .page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr; /* 1 Kolom penuh di HP kecil */
   }
 
   .metric-value {
-    font-size: 20px;
+    font-size: 24px;
   }
 }
 
-/* Wide desktop */
-@media (min-width: 1200px) {
+/* =========================================
+   8. RESPONSIVE: WIDE DESKTOP (Min 1440px)
+   ========================================= */
+@media (min-width: 1440px) {
   .metric-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* Maksimal 4 kolom */
   }
 }

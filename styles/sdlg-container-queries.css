@@ -1,37 +1,46 @@
-/* SDLG Container Queries per Card — V15
+/* =========================================================
+   SDLG CONTAINER QUERIES V2.0 (EXPERT REVISED)
    Source stylesheet. Runtime inject: modules/navigation-state.js
-   Visual only. */
+   Visual only. Harmonized with Core & Component files.
+   ========================================================= */
 
 :root {
-  --sdlg-space-1: 4px;
-  --sdlg-space-2: 8px;
-  --sdlg-space-3: 12px;
-  --sdlg-space-4: 16px;
-  --sdlg-space-5: 20px;
+  /* Sinkronisasi dengan file core (spacing, bukan space) */
+  --sdlg-spacing-1: 4px;
+  --sdlg-spacing-2: 8px;
+  --sdlg-spacing-3: 12px;
+  --sdlg-spacing-4: 16px;
+  --sdlg-spacing-5: 20px;
+
   --sdlg-radius-card: 16px;
   --sdlg-col-min: 140px;
-  --sdlg-page-max: 1280px;
+  --sdlg-page-max: 1440px; /* Disamakan dengan Command Center */
   --sdlg-page-x: 24px;
   --sdlg-page-b: 64px;
-  --sdlg-theme-clearance: 0px;
 }
 
-/* Containment contexts */
+/* =========================================================
+   1. CONTAINMENT CONTEXTS
+   ========================================================= */
+
+/* Page-level container */
 .page {
   container-type: inline-size;
   container-name: sdlg-page;
 }
 
+/* Grid Container */
 .metric-grid {
   container-type: inline-size;
   container-name: sdlg-metrics;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--sdlg-col-min), 1fr));
-  gap: var(--sdlg-space-3);
+  gap: var(--sdlg-spacing-3);
 }
 
-.card,
-.card-pad,
+/* Card Containers (PENTING: Jangan pasang di #sdlg-tracking-panel) */
+.card:not(#sdlg-tracking-panel),
+.card-pad:not(#sdlg-tracking-panel),
 .metric-card,
 .claims-filter-bar,
 .detail-grid {
@@ -43,26 +52,24 @@
   border-radius: var(--sdlg-radius-card);
 }
 
-/* Metric density by container */
+/* =========================================================
+   2. METRIC DENSITY BY CONTAINER
+   ========================================================= */
 @container sdlg-metrics (max-width: 520px) {
-  .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @container sdlg-metrics (max-width: 340px) {
-  .metric-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  .metric-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @container sdlg-metrics (min-width: 900px) {
-  .metric-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
+  .metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
-/* Per-card type scale */
+/* =========================================================
+   3. PER-CARD TYPE SCALE (Metric Cards)
+   ========================================================= */
 @container sdlg-card (max-width: 280px) {
   .metric-value { font-size: 20px; }
   .metric-label, .section-sub { font-size: 10px; }
@@ -76,6 +83,9 @@
   .metric-value { font-size: 28px; }
 }
 
+/* =========================================================
+   4. FORM & FILTER ADAPTATION
+   ========================================================= */
 @container sdlg-card (max-width: 560px) {
   .claims-filter-bar {
     flex-direction: column;
@@ -89,23 +99,38 @@
   }
 }
 
-/* Page-level form grids */
+/* =========================================================
+   5. PAGE-LEVEL GRID ADAPTATION
+   ========================================================= */
 @container sdlg-page (max-width: 900px) {
   .detail-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
+/* PERBAIKAN EXPERT: Selektor yang lebih toleran terhadap spasi */
+/* Menggunakan [style*="repeat(4"] agar tetap jalan meski formatnya berbeda */
 @container sdlg-page (max-width: 560px) {
-  .page [style*="repeat(4,minmax(0,1fr))"],
-  .page [style*="repeat(3,minmax(0,1fr))"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .page [style*="repeat(4"],
+  .page [style*="repeat(3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @container sdlg-page (max-width: 400px) {
-  .page [style*="repeat(4,minmax(0,1fr))"],
-  .page [style*="repeat(3,minmax(0,1fr))"] {
-    grid-template-columns: minmax(0, 1fr);
+  .page [style*="repeat(4"],
+  .page [style*="repeat(3"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* =========================================================
+   6. PROTECT TRACKING PANEL
+   ========================================================= */
+/* Mencegah font di panel tracking mengecil karena aturan di atas */
+@container sdlg-page (max-width: 560px) {
+  #sdlg-tracking-panel [style*="repeat"] {
+    /* Abaikan container query untuk panel tracking kita */
+    grid-template-columns: inherit !important; 
   }
 }

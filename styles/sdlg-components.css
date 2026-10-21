@@ -1,357 +1,358 @@
-/* styles/sdlg-components.css */
-/* Reusable Industrial ERP Component Library styled with design tokens */
+/* ==========================================
+   SDLG COMPONENT LIBRARY V2.0 (EXPERT REVISED)
+   Reusable Industrial ERP Components
+   ========================================== */
 
 /* ==========================================
-   BUTTONS
+   1. BUTTONS
    ========================================== */
 .sdlg-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  padding: 0 var(--sdlg-spacing-3);
-  border-radius: var(--sdlg-radius-btn);
-  font-family: var(--sdlg-font-family);
-  font-size: var(--sdlg-font-size-sm);
-  font-weight: var(--sdlg-font-weight-medium);
+  height: 34px; /* Sedikit dinaikkan dari 32px agar lebih nyaman diklik */
+  padding: 0 var(--sdlg-spacing-3, 12px);
+  border-radius: var(--sdlg-radius-btn, 6px);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
+  font-size: var(--sdlg-font-size-sm, 14px);
+  font-weight: var(--sdlg-font-weight-medium, 500);
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
   background-color: transparent;
-  color: var(--sdlg-text-main);
-  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  color: var(--sdlg-text-main, #0c1526);
+  /* Spesifik transisi agar performa ringan */
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Focus State - Sangat penting untuk aksesibilitas (Tab keyboard) */
+.sdlg-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sdlg-primary-soft, rgba(47, 91, 255, 0.2));
 }
 
 /* Primary Button */
 .sdlg-btn--primary {
-  background-color: var(--sdlg-primary);
-  color: var(--sdlg-surface);
+  background-color: var(--sdlg-primary, #2f5bff);
+  color: #ffffff;
 }
 .sdlg-btn--primary:hover:not(:disabled) {
-  background-color: var(--sdlg-primary-hover);
+  background-color: var(--sdlg-primary-hover, #1e45d6);
 }
 
 /* Secondary Button */
 .sdlg-btn--secondary {
-  background-color: var(--sdlg-surface);
-  border-color: var(--sdlg-border);
-  color: var(--sdlg-text-main);
+  background-color: var(--sdlg-surface, #ffffff);
+  border-color: var(--sdlg-border, #e2e8f2);
+  color: var(--sdlg-text-main, #0c1526);
 }
 .sdlg-btn--secondary:hover:not(:disabled) {
-  background-color: var(--sdlg-bg);
-  border-color: var(--sdlg-border);
+  background-color: var(--sdlg-bg, #eef1f7);
+  border-color: var(--sdlg-border-strong, #cfd8e6);
 }
 
 /* Danger Button */
 .sdlg-btn--danger {
-  background-color: var(--sdlg-danger);
-  color: var(--sdlg-surface);
+  background-color: var(--sdlg-danger, #e03e4a);
+  color: #ffffff;
 }
 .sdlg-btn--danger:hover:not(:disabled) {
-  background-color: #991b1b; /* 8% darker red for hover state */
+  background-color: #b91c1c; /* Red-700 */
+}
+
+/* Success Button */
+.sdlg-btn--success {
+  background-color: var(--sdlg-success, #0d9f6e);
+  color: #ffffff;
+}
+.sdlg-btn--success:hover:not(:disabled) {
+  background-color: #047857; /* Emerald-700 */
 }
 
 /* Ghost Button */
 .sdlg-btn--ghost {
-  color: var(--sdlg-primary);
+  color: var(--sdlg-primary, #2f5bff);
   background-color: transparent;
   border: none;
 }
 .sdlg-btn--ghost:hover:not(:disabled) {
-  background-color: var(--sdlg-bg);
+  background-color: var(--sdlg-primary-soft, #eaf0ff);
 }
 
 /* State controls */
 .sdlg-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(100%);
 }
 
-/* Normal height modifier (36px) */
+/* Size Modifiers */
 .sdlg-btn--normal {
-  height: 36px;
-  padding: 0 var(--sdlg-spacing-4);
+  height: 38px;
+  padding: 0 var(--sdlg-spacing-4, 16px);
+  font-size: 14px;
 }
-
-/* Compact size modifier (26px) for tags/badges inside lists */
 .sdlg-btn--compact {
-  height: 26px;
-  padding: 0 var(--sdlg-spacing-2);
-  font-size: var(--sdlg-font-size-xs);
+  height: 28px;
+  padding: 0 var(--sdlg-spacing-2, 8px);
+  font-size: var(--sdlg-font-size-xs, 12px);
 }
-
-/* Success Button */
-.sdlg-btn--success {
-  background-color: var(--sdlg-success);
-  color: var(--sdlg-surface);
-}
-.sdlg-btn--success:hover:not(:disabled) {
-  background-color: #0a5c30; /* 8% darker success green */
-}
-
 
 /* ==========================================
-   INPUTS & SELECTION
+   2. INPUTS & SELECTION
    ========================================== */
 .sdlg-input,
 .sdlg-select {
   display: block;
   width: 100%;
-  height: 32px;
-  padding: 0 var(--sdlg-spacing-2);
-  border-radius: var(--sdlg-radius-input);
-  font-family: var(--sdlg-font-family);
-  font-size: var(--sdlg-font-size-sm);
-  color: var(--sdlg-text-main);
-  background-color: var(--sdlg-surface);
-  border: 1px solid var(--sdlg-border);
+  height: 34px;
+  padding: 0 var(--sdlg-spacing-3, 12px);
+  border-radius: var(--sdlg-radius-input, 6px);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
+  font-size: var(--sdlg-font-size-sm, 14px);
+  color: var(--sdlg-text-main, #0c1526);
+  background-color: var(--sdlg-surface, #ffffff);
+  border: 1px solid var(--sdlg-border, #e2e8f2);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.12s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sdlg-input:focus,
 .sdlg-select:focus {
-  border-color: var(--sdlg-primary);
-  box-shadow: none; /* ERP strictly avoids glow/shadow */
+  border-color: var(--sdlg-primary, #2f5bff);
+  box-shadow: 0 0 0 3px var(--sdlg-primary-soft, rgba(47, 91, 255, 0.2)); /* Focus ring elegan */
 }
 
 .sdlg-input--error,
 .sdlg-select--error {
-  border-color: var(--sdlg-danger);
+  border-color: var(--sdlg-danger, #e03e4a);
+  box-shadow: 0 0 0 3px var(--sdlg-danger-soft, rgba(224, 62, 74, 0.2));
 }
 
 .sdlg-input:disabled,
 .sdlg-select:disabled {
-  background-color: var(--sdlg-bg);
-  color: var(--sdlg-text-muted);
+  background-color: var(--sdlg-surface-muted, #f5f7fb);
+  color: var(--sdlg-text-muted, #5a6578);
   cursor: not-allowed;
 }
 
 /* ==========================================
-   TABLES
+   3. TABLES
    ========================================== */
 .sdlg-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--sdlg-font-family);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
 }
 
 .sdlg-table thead th {
-  background-color: var(--sdlg-bg);
-  font-size: var(--sdlg-font-size-xs);
-  font-weight: var(--sdlg-font-weight-medium);
-  color: var(--sdlg-text-muted);
+  background-color: var(--sdlg-surface-muted, #f5f7fb);
+  font-size: var(--sdlg-font-size-xs, 12px);
+  font-weight: var(--sdlg-font-weight-semibold, 600);
+  color: var(--sdlg-text-muted, #5a6578);
   text-align: left;
-  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
-  border-bottom: 1px solid var(--sdlg-border);
+  padding: var(--sdlg-spacing-3, 12px);
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f2);
   white-space: nowrap;
+  position: sticky; /* Biar header nempel saat scroll */
+  top: 0;
+  z-index: 10;
 }
 
 .sdlg-table tbody td {
-  font-size: var(--sdlg-font-size-sm);
-  color: var(--sdlg-text-main);
-  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
-  border-bottom: 1px solid var(--sdlg-border);
-  height: 36px;
+  font-size: var(--sdlg-font-size-sm, 14px);
+  color: var(--sdlg-text-main, #0c1526);
+  padding: var(--sdlg-spacing-3, 12px);
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f2);
+  height: 44px; /* Sedikit dilebarkan agar tidak sesak */
   box-sizing: border-box;
 }
 
 .sdlg-table tbody tr {
-  transition: background-color 0.1s ease;
+  transition: background-color 0.15s ease;
 }
 
 .sdlg-table tbody tr:hover {
-  background-color: #fafbfc; /* Subtle row highlight */
+  background-color: var(--sdlg-primary-soft, #eaf0ff); /* Hover warna biru muda */
 }
 
 /* ==========================================
-   CARDS
+   4. CARDS
    ========================================== */
-/* Inherits .sdlg-card from base but locks rules */
 .sdlg-card {
-  background-color: var(--sdlg-surface) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-card) !important;
-  padding: var(--sdlg-spacing-3) var(--sdlg-spacing-4) !important;
-  margin-bottom: var(--sdlg-spacing-2) !important;
-  box-shadow: none !important; /* No shadow */
+  background-color: var(--sdlg-surface, #ffffff) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-radius: var(--sdlg-radius-card, 12px) !important;
+  padding: var(--sdlg-spacing-4, 16px) !important;
+  margin-bottom: var(--sdlg-spacing-3, 12px) !important;
+  box-shadow: none !important;
 }
 
 /* ==========================================
-   MODALS
+   5. MODALS
    ========================================== */
 .sdlg-modal-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(26, 35, 50, 0.4); /* Solid backdrop - matches design specifications */
+  inset: 0; /* Ganti top/left/right/bottom jadi inset */
+  background-color: rgba(15, 23, 42, 0.5); /* Warna slate gelap transparan */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: none !important; /* Strictly no blur */
+  backdrop-filter: blur(4px) !important; /* Blur tipis biar modern */
 }
 
 .sdlg-modal {
-  background-color: var(--sdlg-surface);
-  border: 1px solid var(--sdlg-border);
-  border-radius: var(--sdlg-radius-modal);
-  padding: var(--sdlg-spacing-5);
-  box-shadow: var(--sdlg-shadow-modal);
+  background-color: var(--sdlg-surface, #ffffff);
+  border: 1px solid var(--sdlg-border, #e2e8f2);
+  border-radius: var(--sdlg-radius-modal, 16px);
+  padding: var(--sdlg-spacing-5, 24px);
+  box-shadow: var(--sdlg-shadow-lg, 0 20px 48px rgba(12, 21, 38, 0.12));
   max-width: 600px;
   width: 90%;
   display: flex;
   flex-direction: column;
-  gap: var(--sdlg-spacing-4);
-  font-family: var(--sdlg-font-family);
+  gap: var(--sdlg-spacing-4, 16px);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
+  animation: modalFadeIn 0.2s ease-out; /* Animasi muncul */
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .sdlg-modal-header {
-  font-size: var(--sdlg-font-size-lg);
-  font-weight: var(--sdlg-font-weight-semibold);
-  color: var(--sdlg-text-main);
-  border-bottom: 1px solid var(--sdlg-border);
-  padding-bottom: var(--sdlg-spacing-3);
-  margin-bottom: var(--sdlg-spacing-2);
+  font-size: var(--sdlg-font-size-lg, 20px);
+  font-weight: var(--sdlg-font-weight-bold, 700);
+  color: var(--sdlg-text-main, #0c1526);
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f2);
+  padding-bottom: var(--sdlg-spacing-3, 12px);
+  margin-bottom: var(--sdlg-spacing-2, 8px);
 }
 
 .sdlg-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--sdlg-spacing-2);
-  border-top: 1px solid var(--sdlg-border);
-  padding-top: var(--sdlg-spacing-3);
-  margin-top: var(--sdlg-spacing-2);
+  gap: var(--sdlg-spacing-3, 12px);
+  border-top: 1px solid var(--sdlg-border, #e2e8f2);
+  padding-top: var(--sdlg-spacing-4, 16px);
+  margin-top: var(--sdlg-spacing-2, 8px);
 }
 
 /* ==========================================
-   TOASTS
+   6. TOASTS
    ========================================== */
 .sdlg-toast {
   position: fixed;
-  bottom: var(--sdlg-spacing-6);
-  right: var(--sdlg-spacing-6);
-  background-color: var(--sdlg-text-main); /* Uses tokens main text solid slate dark */
-  color: var(--sdlg-surface);
-  padding: var(--sdlg-spacing-3) var(--sdlg-spacing-4);
-  border-radius: var(--sdlg-radius-input);
-  font-family: var(--sdlg-font-family);
-  font-size: var(--sdlg-font-size-sm);
+  bottom: var(--sdlg-spacing-6, 32px);
+  right: var(--sdlg-spacing-6, 32px);
+  background-color: var(--sdlg-text-main, #0c1526);
+  color: #ffffff;
+  padding: var(--sdlg-spacing-3, 12px) var(--sdlg-spacing-4, 16px);
+  border-radius: var(--sdlg-radius-input, 6px);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
+  font-size: var(--sdlg-font-size-sm, 14px);
+  font-weight: var(--sdlg-font-weight-medium, 500);
   display: flex;
   align-items: center;
-  gap: var(--sdlg-spacing-3);
-  box-shadow: var(--sdlg-shadow-modal);
+  gap: var(--sdlg-spacing-3, 12px);
+  box-shadow: var(--sdlg-shadow-lg, 0 20px 48px rgba(12, 21, 38, 0.12));
   z-index: 2000;
+  animation: toastSlideIn 0.3s ease-out;
 }
 
-.sdlg-toast--success {
-  border-left: 3px solid var(--sdlg-success);
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-.sdlg-toast--error {
-  border-left: 3px solid var(--sdlg-danger);
-}
+.sdlg-toast--success { border-left: 4px solid var(--sdlg-success, #0d9f6e); }
+.sdlg-toast--error { border-left: 4px solid var(--sdlg-danger, #e03e4a); }
 
 /* ==========================================
-   BADGES
+   7. BADGES
    ========================================== */
 .sdlg-badge {
   display: inline-block;
-  padding: 2px var(--sdlg-spacing-2);
-  border-radius: 4px;
-  font-family: var(--sdlg-font-family);
-  font-size: 11px;
-  font-weight: var(--sdlg-font-weight-medium);
+  padding: 3px 8px;
+  border-radius: 999px; /* Dibikin kapsul biar modern */
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
+  font-size: var(--sdlg-font-size-xs, 11px);
+  font-weight: var(--sdlg-font-weight-semibold, 600);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.05em;
   border: 1px solid transparent;
   line-height: 1.2;
 }
 
 .sdlg-badge--success {
-  background-color: var(--sdlg-success-bg);
-  color: var(--sdlg-success);
-  border-color: var(--sdlg-success-border);
+  background-color: var(--sdlg-success-bg, #e6f8f1);
+  color: var(--sdlg-success, #0d9f6e);
+  border-color: var(--sdlg-success-border, #a7e8cd);
 }
 
 .sdlg-badge--warning {
-  background-color: var(--sdlg-warning-bg);
-  color: var(--sdlg-warning);
-  border-color: var(--sdlg-warning-border);
+  background-color: var(--sdlg-warning-bg, #fff6e4);
+  color: var(--sdlg-warning, #c47a0a);
+  border-color: var(--sdlg-warning-border, #fcd34d);
 }
 
 .sdlg-badge--danger {
-  background-color: var(--sdlg-danger-bg);
-  color: var(--sdlg-danger);
-  border-color: var(--sdlg-danger-border);
+  background-color: var(--sdlg-danger-bg, #fff0f1);
+  color: var(--sdlg-danger, #e03e4a);
+  border-color: var(--sdlg-danger-border, #f8b4ba);
 }
 
 .sdlg-badge--neutral {
-  background-color: var(--sdlg-neutral-bg);
-  color: var(--sdlg-neutral);
-  border-color: var(--sdlg-neutral-border);
+  background-color: var(--sdlg-surface-muted, #f5f7fb);
+  color: var(--sdlg-muted, #5a6578);
+  border-color: var(--sdlg-border, #e2e8f2);
 }
 
 .sdlg-badge--primary {
-  background-color: var(--sdlg-primary-bg);
-  color: var(--sdlg-primary);
-  border-color: var(--sdlg-primary-border);
+  background-color: var(--sdlg-primary-soft, #eaf0ff);
+  color: var(--sdlg-primary, #2f5bff);
+  border-color: var(--sdlg-primary, #bfdbfe);
 }
 
 /* ==========================================
-   EMPTY STATES
+   8. EMPTY STATES
    ========================================== */
 .sdlg-empty {
   text-align: center;
-  padding: var(--sdlg-spacing-8) var(--sdlg-spacing-6);
-  color: var(--sdlg-text-muted);
-  font-family: var(--sdlg-font-family);
+  padding: var(--sdlg-spacing-8, 48px) var(--sdlg-spacing-6, 32px);
+  color: var(--sdlg-text-muted, #5a6578);
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
 }
 
 .sdlg-empty-title {
-  font-size: var(--sdlg-font-size-md);
-  font-weight: var(--sdlg-font-weight-medium);
-  color: var(--sdlg-text-main);
-  margin-bottom: var(--sdlg-spacing-1);
+  font-size: var(--sdlg-font-size-md, 16px);
+  font-weight: var(--sdlg-font-weight-semibold, 600);
+  color: var(--sdlg-text-main, #0c1526);
+  margin-bottom: var(--sdlg-spacing-2, 8px);
 }
 
 .sdlg-empty-desc {
-  font-size: var(--sdlg-font-size-sm);
-  color: var(--sdlg-text-muted);
+  font-size: var(--sdlg-font-size-sm, 14px);
+  color: var(--sdlg-text-muted, #5a6578);
 }
 
 /* ==========================================
-   TABLE HEAD GRIDS
-   ========================================== */
-.sdlg-table-head {
-  display: grid;
-  grid-template-columns: 130px 1fr 130px 120px 60px;
-  gap: var(--sdlg-spacing-3);
-  padding: var(--sdlg-spacing-2) var(--sdlg-spacing-3);
-  background-color: var(--sdlg-bg);
-  border-bottom: 1px solid var(--sdlg-border);
-  font-size: var(--sdlg-font-size-xs);
-  font-weight: var(--sdlg-font-weight-medium);
-  color: var(--sdlg-text-muted);
-}
-
-/* ==========================================
-   CLAIMS SEARCHBAR LAYOUT RESET
+   9. CLAIMS SEARCHBAR (Diselaraskan dengan Command Center)
    ========================================== */
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: var(--sdlg-spacing-2) !important;
+  gap: var(--sdlg-spacing-3, 12px) !important;
   align-items: center !important;
-  background-color: var(--sdlg-surface) !important;
+  background-color: var(--sdlg-surface, #ffffff) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
-  flex: 1 1 240px !important;
+  flex: 1 1 300px !important;
   grid-column: auto !important;
 }
 

@@ -1,31 +1,112 @@
-/* SDLG Portal Helper v2.2 */
-.sdlg-toast {
-  position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
-  z-index: 100001; max-width: min(520px, 92vw); padding: 10px 14px;
-  border-radius: 8px; background: #0f172a; color: #fff;
-  font: 500 13px/1.4 system-ui, sans-serif;
-}
-.sdlg-toast-warn { background: #854d0e; }
+/* =========================================================
+   SDLG PORTAL HELPER V3.0 (EXPERT REVISED)
+   Modern, Accessible, and Token-Driven styles for the Input Helper page.
+   ========================================================= */
 
-.sdlg-portal-sticky-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100000;
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center;
-  padding: 10px 14px; background: #ffffff; border-top: 1px solid #e2e8f0;
+/* =========================================
+   1. TOAST NOTIFICATIONS
+   ========================================= */
+.sdlg-toast {
+  position: fixed;
+  bottom: 90px; /* Jarak aman di atas sticky bar */
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  z-index: 100001;
+  max-width: min(520px, 92vw);
+  padding: 12px 20px;
+  border-radius: var(--sdlg-radius-btn, 8px);
+  background: var(--sdlg-text-main, #0f172a);
+  color: #ffffff;
+  font-family: var(--sdlg-font-family, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: var(--sdlg-shadow-lg, 0 10px 30px rgba(0,0,0,0.2));
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  text-align: center;
 }
+
+.sdlg-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.sdlg-toast-warn {
+  background: var(--sdlg-warning, #b45309);
+}
+
+/* =========================================
+   2. STICKY BOTTOM BAR (Glassmorphism)
+   ========================================= */
+.sdlg-portal-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100000;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sdlg-spacing-2, 8px);
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); /* Aman untuk iPhone */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-top: 1px solid var(--sdlg-border, #e2e8f0);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="dark"] .sdlg-portal-sticky-bar {
+  background: rgba(17, 24, 39, 0.85);
+  border-top-color: var(--sdlg-border, #243044);
+}
+
 .sdlg-portal-sticky-bar .primary-btn,
 .sdlg-portal-sticky-bar .secondary-btn {
-  font-weight: 600; font-size: 12px; padding: 8px 12px; border-radius: 8px; text-decoration: none;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: var(--sdlg-radius-btn, 8px);
+  text-decoration: none;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Padding bawah di halaman agar tidak tertutup sticky bar */
 html.sdlg-has-portal-sticky .page.sdlg-input-helper-page,
-html.sdlg-has-portal-sticky .sdlg-input-helper-page { padding-bottom: 100px; }
+html.sdlg-has-portal-sticky .sdlg-input-helper-page {
+  padding-bottom: 120px;
+}
 
+/* =========================================
+   3. TOP ACTIONS
+   ========================================= */
 .sdlg-portal-top-actions {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; align-items: center;
-}
-.sdlg-portal-top-actions .primary-btn {
-  font-weight: 600; font-size: 12px; padding: 8px 14px; text-decoration: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sdlg-spacing-2, 8px);
+  margin: var(--sdlg-spacing-2, 8px) 0 var(--sdlg-spacing-4, 16px);
+  align-items: center;
 }
 
+.sdlg-portal-top-actions .primary-btn {
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: var(--sdlg-radius-btn, 8px);
+  text-decoration: none;
+  box-shadow: var(--sdlg-shadow-sm);
+}
+
+/* =========================================
+   4. COLLAPSIBLE SECTIONS
+   ========================================= */
 .sdlg-input-helper-page a.sdlg-portal-bottom-link,
 .sdlg-input-helper-page a[data-sdlg-portal-mid] { display: none !important; }
 
@@ -33,70 +114,150 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page { padding-bottom: 100px; }
 [data-sdlg-section-role="attachments"][hidden] { display: none !important; }
 
 .sdlg-collapsible .sdlg-section-head-row {
-  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
-  gap: 10px; margin-bottom: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sdlg-spacing-3, 12px);
+  margin-bottom: var(--sdlg-spacing-2, 8px);
 }
-.sdlg-section-head-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.sdlg-collapse-body[hidden] { display: none !important; }
-.sdlg-collapse-toggle { font-weight: 600; font-size: 12px; }
 
+.sdlg-section-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sdlg-spacing-2, 8px);
+  align-items: center;
+}
+
+.sdlg-collapse-body[hidden] { display: none !important; }
+
+.sdlg-collapse-toggle {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--sdlg-primary);
+  cursor: pointer;
+  background: var(--sdlg-primary-soft);
+  padding: 4px 10px;
+  border-radius: var(--sdlg-radius-sm);
+  border: none;
+}
+
+/* =========================================
+   5. IOV GRID (Input Output Value)
+   ========================================= */
 .sdlg-portal-iov-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-@media (max-width: 900px) {
-  .sdlg-portal-iov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 560px) {
-  .sdlg-portal-iov-grid { grid-template-columns: 1fr; }
-  .sdlg-portal-sticky-bar { justify-content: flex-start; overflow-x: auto; }
+  gap: var(--sdlg-spacing-3, 12px);
 }
 
+@media (max-width: 1024px) {
+  .sdlg-portal-iov-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .sdlg-portal-iov-grid { grid-template-columns: 1fr; }
+  .sdlg-portal-sticky-bar { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; }
+}
+
+/* =========================================
+   6. FIELDS & COPY INTERACTIONS
+   ========================================= */
 .sdlg-field-wrap { position: relative; }
+
+/* Logika Hover: Sembunyikan tombol copy di Desktop */
 .sdlg-field-wrap .sdlg-copy-hover,
 .sdlg-portal-field .sdlg-copy-hover {
-  opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: translateX(4px);
 }
+
+/* Munculkan saat hover/focus */
 .sdlg-field-wrap:hover .sdlg-copy-hover,
 .sdlg-portal-field:hover .sdlg-copy-hover,
 .sdlg-field-wrap:focus-within .sdlg-copy-hover,
 .sdlg-portal-field:focus-within .sdlg-copy-hover {
-  opacity: 1; pointer-events: auto;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
+
+/* PENTING: Di HP (Touch Screen), selalu tampilkan tombol copy */
+@media (hover: none) and (pointer: coarse) {
+  .sdlg-field-wrap .sdlg-copy-hover,
+  .sdlg-portal-field .sdlg-copy-hover {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+}
+
+/* Tombol copy "Copy All" selalu terlihat */
 [data-sdlg-copy-all],
 .sdlg-section-head-actions .sdlg-copy-hover,
 .sdlg-portal-sticky-bar .sdlg-copy-hover {
-  opacity: 1 !important; pointer-events: auto !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
 }
 
+/* Layout Field */
 .sdlg-portal-field { margin-bottom: 0; min-width: 0; }
 .sdlg-portal-field-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sdlg-spacing-2, 8px);
+  margin-bottom: 6px;
 }
-.sdlg-portal-field-label { font-size: 11px; font-weight: 600; color: #475569; }
+.sdlg-portal-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sdlg-muted, #5a6578);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 .sdlg-portal-field-control {
-  width: 100%; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 8px;
-  padding: 8px 10px; font-size: 12px; background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--sdlg-border-strong, #cfd8e6);
+  border-radius: var(--sdlg-radius-input, 6px);
+  padding: 10px 12px;
+  font-size: 13px;
+  background: var(--sdlg-surface, #fff);
+  color: var(--sdlg-text, #0f172a);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sdlg-portal-field-control:focus {
+  border-color: var(--sdlg-primary);
+  box-shadow: var(--sdlg-ring);
+  outline: none;
 }
 
+/* Read-Only Field (Tampilan lebih kalem) */
 .sdlg-portal-field-ro .sdlg-portal-ro-value {
   font-size: 13px;
   font-weight: 500;
-  color: #0f172a;
-  line-height: 1.4;
-  min-height: 20px;
+  color: var(--sdlg-text, #0f172a);
+  line-height: 1.5;
+  min-height: 24px;
   word-break: break-word;
+  padding: 8px 12px;
+  background: var(--sdlg-surface-muted, #f5f7fb);
+  border-radius: var(--sdlg-radius-input, 6px);
+  border: 1px dashed var(--sdlg-border);
 }
 .sdlg-portal-field-ro .sdlg-portal-ro-value.is-empty {
-  color: #94a3b8;
-  font-weight: 500;
+  color: var(--sdlg-muted, #94a3b8);
+  font-style: italic;
 }
 
-.sdlg-logistics-spacer {
-  min-height: 1px;
-  pointer-events: none;
-}
+/* =========================================
+   7. LAYOUT HELPERS & BANNER
+   ========================================= */
+.sdlg-logistics-spacer { min-height: 1px; pointer-events: none; }
 
 .sdlg-section-report,
 .sdlg-report-name-text {
@@ -107,11 +268,33 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page { padding-bottom: 100px; }
   overflow: visible;
 }
 
+/* Warning Note Banner */
 .sdlg-portal-note-banner {
-  display: flex; align-items: flex-start; gap: 10px;
-  background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px;
-  padding: 10px 12px; margin-bottom: 12px;
-  font-size: 12px; font-weight: 500; color: #1a2332; line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sdlg-spacing-3, 12px);
+  background: var(--sdlg-warning-bg, #fff6e4);
+  border: 1px solid var(--sdlg-warning-border, #fcd34d);
+  border-radius: var(--sdlg-radius-card, 12px);
+  padding: 12px 16px;
+  margin-bottom: var(--sdlg-spacing-4, 16px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sdlg-warning, #b45309);
+  line-height: 1.5;
 }
-.sdlg-portal-note-icon { flex-shrink: 0; color: #b45309; display: inline-flex; margin-top: 1px; }
+
+.sdlg-portal-note-icon {
+  flex-shrink: 0;
+  color: var(--sdlg-warning, #b45309);
+  display: inline-flex;
+  margin-top: 2px;
+}
+
 .sdlg-portal-note-text { min-width: 0; }
+
+html[data-theme="dark"] .sdlg-portal-note-banner {
+  background: rgba(196, 122, 10, 0.15);
+  border-color: rgba(196, 122, 10, 0.3);
+  color: #fbbf24;
+}
