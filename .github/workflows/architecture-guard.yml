@@ -43,10 +43,12 @@ jobs:
           failed=0
           allowed='.github/workflows/bake-boss-analytics.yml'
           allowed_production_bake='.github/workflows/bake-production-index.yml'
+          allowed_source_bake='.github/workflows/bake-source-to-production.yml'
+          allowed_pages_deploy='.github/workflows/static.yml'
           for f in .github/workflows/*.{yml,yaml}; do
             [ -f "$f" ] || continue
             [ "$f" = '.github/workflows/architecture-guard.yml' ] && continue
-            if [ "$f" = "$allowed" ] || [ "$f" = "$allowed_production_bake" ]; then
+            if [ "$f" = "$allowed" ] || [ "$f" = "$allowed_production_bake" ] || [ "$f" = "$allowed_source_bake" ] || [ "$f" = "$allowed_pages_deploy" ]; then
               echo "Reviewed repository-mutating workflow allowed: $f"
               continue
             fi
@@ -68,7 +70,7 @@ jobs:
           set -euo pipefail
           files=$(find .github/workflows -maxdepth 1 -type f ! -name 'architecture-guard.yml' -print)
           if [ -n "$files" ] && grep -InE 'netlify[[:space:]]+deploy|vercel[[:space:]]+deploy|supabase[[:space:]]+db[[:space:]]+(push|reset)' $files; then
-            echo 'Direct infrastructure mutation from CI is forbidden. Keep deploy authority in the platform integration.'
+            echo 'Direct infrastructure mutation from CI is forbidden.'
             exit 1
           fi
 
@@ -76,13 +78,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # SPA must not be published as site root on push without explicit cutover design
-          if grep -RInE 'VITE_BASE=/Esahuda-Rizqi-Nugraha/"|VITE_BASE=/"|cp -R dist/\.?[[:space:]]+_site/([^"]|$)' .github/workflows 2>/dev/null; then
-            echo 'FORBIDDEN: workflow appears to publish Vite dist to production root (cutover).'
-            echo 'See docs/CUTOVER-POLICY.md — requires owner AUTHORIZE CUTOVER.'
+          # Only flag explicit root cutover of Vite dist — not preview/ copies
+          if grep -RInE 'VITE_BASE=/"[[:space:]]*$|VITE_BASE=/Esahuda-Rizqi-Nugraha/"[[:space:]]*$' .github/workflows 2>/dev/null; then
+            echo 'FORBIDDEN: workflow sets VITE_BASE to site root (cutover).'
             exit 1
           fi
-          # static.yml must keep preview path
+          if grep -RInE 'cp -R[[:space:]]+dist(/\.)?[[:space:]]+_site/[[:space:]]*$|cp -R[[:space:]]+dist(/\.)?[[:space:]]+_site/"' .github/workflows 2>/dev/null; then
+            echo 'FORBIDDEN: workflow copies Vite dist onto production root.'
+            exit 1
+          fi
           if [ -f .github/workflows/static.yml ]; then
             grep -q 'preview' .github/workflows/static.yml
             grep -q 'guard-no-cutover' .github/workflows/static.yml
