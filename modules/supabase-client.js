@@ -1,12 +1,10 @@
 /**
- * SDLG Supabase singleton v2.3 — legacy anon JWT + session recheck on SIGNED_IN
+ * SDLG Supabase singleton v2.2 — legacy anon JWT + session recheck on SIGNED_IN
  * Root cause of blank Overview: REST grants only to authenticated; requests without JWT → 401.
- * v2.3: dedupe identical auth event logs (no SIGNED_IN spam).
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_SUPABASE_SINGLETON_V23__) return;
-  root.__SDLG_SUPABASE_SINGLETON_V23__ = true;
+  if (root.__SDLG_SUPABASE_SINGLETON_V22__) return;
   root.__SDLG_SUPABASE_SINGLETON_V22__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V2__ = true;
 
@@ -67,7 +65,7 @@
         flowType: 'implicit'
       },
       global: {
-        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v23' }
+        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v22' }
       }
     };
   }
@@ -94,7 +92,7 @@
     if (!root.supabase || typeof root.supabase.createClient !== 'function') return null;
     try {
       var c = createRaw(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
-      log('Supabase client initialized (singleton v2.3, legacy anon JWT)');
+      log('Supabase client initialized (singleton v2.2, legacy anon JWT)');
       wireAuthRecheck(c);
       return remember(c);
     } catch (err) {
@@ -130,47 +128,36 @@
     } catch (_) {}
   }
 
-  function getSessionSafe(c) {
-    if (!c || !c.auth || typeof c.auth.getSession !== 'function') {
-      return Promise.resolve({ session: null, error: new Error('no auth') });
-    }
-    return Promise.resolve()
-      .then(function () { return c.auth.getSession(); })
-      .then(function (res) {
-        var session = res && res.data ? res.data.session : null;
-        var error = res ? res.error : null;
-        if (error) {
-          warn('getSession error', error);
-          applySessionFlags(c, null);
-          return { session: null, error: error };
-        }
-        if (!session) {
-          warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-        } else {
-          log('authenticated', session.user && session.user.email);
-        }
-        applySessionFlags(c, session);
-        return { session: session, error: null };
-      })
-      .catch(function (err) {
-        warn('getSession threw', err);
+  function checkSession(c) {
+    if (!c || !c.auth) return Promise.resolve({ session: null, error: new Error('no client') });
+    return c.auth.getSession().then(function (res) {
+      var session = res && res.data ? res.data.session : null;
+      var error = res ? res.error : null;
+      if (error) {
+        warn('getSession error', error);
         applySessionFlags(c, null);
-        return { session: null, error: err };
-      });
+        return { session: null, error: error };
+      }
+      if (!session) {
+        warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
+      } else {
+        log('authenticated', session.user && session.user.email);
+      }
+      applySessionFlags(c, session);
+      return { session: session, error: null };
+    }).catch(function (err) {
+      warn('getSession threw', err);
+      applySessionFlags(c, null);
+      return { session: null, error: err };
+    });
   }
 
   function wireAuthRecheck(c) {
     if (!c || !c.auth || c.__SDLG_AUTH_RECHECK__) return;
     c.__SDLG_AUTH_RECHECK__ = true;
-    var lastAuthLog = '';
     try {
       c.auth.onAuthStateChange(function (event, session) {
-        var email = session && session.user && session.user.email;
-        var key = event + '|' + (email || '');
-        if (key !== lastAuthLog) {
-          lastAuthLog = key;
-          log('auth event', event, email);
-        }
+        log('auth event', event, session && session.user && session.user.email);
         applySessionFlags(c, session);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
           readyPromise = null;
@@ -178,7 +165,7 @@
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           try {
             root.dispatchEvent(new CustomEvent('sdlg-session-ready', {
-              detail: { email: email, event: event }
+              detail: { email: session && session.user && session.user.email, event: event }
             }));
           } catch (_) {}
         }
@@ -194,37 +181,52 @@
   root.waitForSupabaseReady = function waitForSupabaseReady(timeoutMs) {
     timeoutMs = timeoutMs || 15000;
     if (readyPromise) return readyPromise;
-    var start = Date.now();
     readyPromise = new Promise(function (resolve, reject) {
-      (function tick() {
+      var started = Date.now();
+      function attempt() {
         patchCreateClient();
         var c = ensureClient();
-        if (c) {
-          getSessionSafe(c).then(function () { resolve(c); });
+        if (!c) {
+          if (Date.now() - started > timeoutMs) {
+            reject(new Error('waitForSupabaseReady: CDN/client timeout'));
+            return;
+          }
+          setTimeout(attempt, 50);
           return;
         }
-        if (Date.now() - start >= timeoutMs) {
-          reject(new Error('Supabase client not ready within timeout'));
-          return;
-        }
-        setTimeout(tick, 40);
-      })();
+        checkSession(c).then(function () { resolve(c); }).catch(reject);
+      }
+      attempt();
     });
     return readyPromise;
   };
 
-  // Early boot
-  try {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function () {
-        patchCreateClient();
-        ensureClient();
-      }, { once: true });
-    } else {
-      patchCreateClient();
+  root.sdlgRecheckSession = function sdlgRecheckSession() {
+    readyPromise = null;
+    var c = root.getSdlgSupabase();
+    if (!c) return Promise.resolve(null);
+    return checkSession(c).then(function (r) { return r.session; });
+  };
+
+  function boot() {
+    if (patchCreateClient()) {
       ensureClient();
+      root.waitForSupabaseReady().catch(function (e) { warn(e); });
+      return;
     }
-  } catch (_) {
-    try { patchCreateClient(); ensureClient(); } catch (__) {}
+    var tries = 0;
+    var t = setInterval(function () {
+      tries += 1;
+      if (patchCreateClient()) {
+        clearInterval(t);
+        ensureClient();
+        root.waitForSupabaseReady().catch(function (e) { warn(e); });
+      } else if (tries > 80) {
+        clearInterval(t);
+        warn('Supabase CDN never appeared');
+      }
+    }, 50);
   }
-})(typeof window !== 'undefined' ? window : this);
+
+  boot();
+})(typeof window !== 'undefined' ? window : globalThis);
