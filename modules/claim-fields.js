@@ -45,7 +45,6 @@
         s.setAttribute(attr, '1');
         (document.head || document.documentElement).appendChild(s);
       }
-      // Event-driven hydrate only. Inline enforcer removed — React owns report, repair date, machine location.
       loadScript('./modules/sdlg-input-hydrate.js?v=20261021-v15', 'data-sdlg-input-hydrate');
       loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
       loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
@@ -55,7 +54,7 @@
       loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
       loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
       loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v33', 'data-sdlg-ui-polish-v3');
-      loadScript('./modules/sdlg-auth-route-guard.js?v=20261010-v13', 'data-sdlg-auth-route-guard');
+      loadScript('./modules/sdlg-auth-route-guard.js?v=20261021-v14', 'data-sdlg-auth-route-guard');
       loadScript('./modules/sdlg-overview-session-gate.js?v=20261010-v12', 'data-sdlg-overview-gate');
       loadScript('./modules/sdlg-overview-ux.js?v=20261010-v11', 'data-sdlg-overview-ux');
     }
