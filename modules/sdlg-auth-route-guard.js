@@ -1,27 +1,35 @@
 /**
- * SDLG Auth Route Guard v1.3 — nuclear session sync
+ * SDLG Auth Route Guard v1.4 — nuclear session sync + quiet logs
  * - Dead token (storage but getSession null) → clear sb-* keys → #/login
  * - 401 → clear session first → #/login (no loop)
  * - Login hash never auto-redirects unless real access_token present
  * - Watchdog every 5 min
+ * - Console: dedupe identical auth events (no SIGNED_IN spam)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_AUTH_ROUTE_GUARD_V13__) return;
+  if (root.__SDLG_AUTH_ROUTE_GUARD_V14__) return;
+  root.__SDLG_AUTH_ROUTE_GUARD_V14__ = true;
   root.__SDLG_AUTH_ROUTE_GUARD_V13__ = true;
-  root.__SDLG_AUTH_ROUTE_GUARD_V12__ = true;
   root.__SDLG_AUTH_ROUTE_GUARD_V1__ = true;
 
   var KEY = 'sdlg_redirect_after_login';
   var busy = false;
   var clearing = false;
   var lastAuth = null;
+  var lastLogKey = '';
 
   function log() {
     try {
       var a = ['[SDLG auth-guard]'].concat([].slice.call(arguments));
       console.info.apply(console, a);
     } catch (_) {}
+  }
+  function logOnce(key) {
+    var args = [].slice.call(arguments, 1);
+    if (key && key === lastLogKey) return;
+    lastLogKey = key || lastLogKey;
+    log.apply(null, args);
   }
   function warn() {
     try {
@@ -207,10 +215,11 @@
   function wireAuthListener() {
     var client = getClient();
     if (!client || !client.auth || typeof client.auth.onAuthStateChange !== 'function') return false;
-    if (root.__SDLG_AUTH_LISTENER_V13__) return true;
+    if (root.__SDLG_AUTH_LISTENER_V14__) return true;
     try {
       client.auth.onAuthStateChange(function (event, session) {
-        log('onAuthStateChange', event, session && session.user && session.user.email);
+        var email = session && session.user && session.user.email;
+        logOnce(event + '|' + (email || ''), 'onAuthStateChange', event, email);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
           if (session && session.access_token) {
             lastAuth = true;
@@ -227,12 +236,14 @@
         }
         if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
           lastAuth = false;
+          lastLogKey = '';
           client.__SDLG_LAST_SESSION__ = null;
           client.__SDLG_AUTHENTICATED__ = false;
           try { root.dispatchEvent(new CustomEvent('sdlg-auth-cleared', { detail: { reason: event } })); } catch (_) {}
           goLogin(true, false);
         }
       });
+      root.__SDLG_AUTH_LISTENER_V14__ = true;
       root.__SDLG_AUTH_LISTENER_V13__ = true;
       return true;
     } catch (_) {
@@ -241,7 +252,8 @@
   }
 
   function wire401Trap() {
-    if (root.__SDLG_401_TRAP_V13__) return;
+    if (root.__SDLG_401_TRAP_V14__) return;
+    root.__SDLG_401_TRAP_V14__ = true;
     root.__SDLG_401_TRAP_V13__ = true;
     var origFetch = root.fetch;
     if (typeof origFetch !== 'function') return;
@@ -289,8 +301,9 @@
     var tries = 0;
     var t = setInterval(function () {
       tries++;
-      if (wireAuthListener() || tries > 25) clearInterval(t);
-      if (tries <= 8) enforce();
+      if (wireAuthListener() || tries > 12) clearInterval(t);
+      // Only re-enforce a couple times while client is still booting
+      if (tries <= 3) enforce();
     }, 500);
   }
 
@@ -307,7 +320,7 @@
   } catch (_) {}
 
   root.SDLGAuthRouteGuard = {
-    version: '1.3.0',
+    version: '1.4.0',
     enforce: enforce,
     goLogin: goLogin,
     goAfterLogin: goAfterLogin,
