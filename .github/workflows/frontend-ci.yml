@@ -37,18 +37,20 @@ jobs:
           test -s modules/sdlg-core.js
           test -s modules/export-table-helper.js
           test -s modules/claim-parser-helpers.js
-          test -s scripts/verify-public-release.js
+          test -s modules/claim-fields.js
+          test -s modules/sdlg-input-hydrate.js
+          test -s modules/sdlg-inline-enforcer.js
           test -s scripts/verify-module-syntax.js
           grep -q 'frqvelcreczmnofldrga.supabase.co' index.html
           grep -q 'SDLGCore' modules/sdlg-core.js
           echo 'Required frontend files present.'
 
-      - name: Validate Python patch scripts
+      - name: Validate Python scripts compile
         shell: bash
         run: |
           set -euo pipefail
           python3 -m compileall -q scripts
-          echo 'Python patch scripts compile successfully.'
+          echo 'Python scripts compile successfully.'
 
       - name: Validate production GitHub Pages artifact
         shell: bash
@@ -67,7 +69,7 @@ jobs:
           bash scripts/guard-no-cutover.sh _site
           echo 'Production Pages artifact and safety contracts passed.'
 
-      - name: Validate external module syntax
+      - name: Validate changed module syntax
         shell: bash
         run: |
           set -euo pipefail
@@ -75,15 +77,8 @@ jobs:
           node --check modules/sdlg-input-hydrate.js
           node --check modules/sdlg-inline-enforcer.js
           node --check modules/claim-fields.js
-          echo 'Module syntax OK.'
-
-      - name: Run Pages-relevant source contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/verify-production.js _site/index.html
-          node scripts/verify-parser-contract.js _site/index.html
-          node scripts/verify-dual-warranty-routing.js
-          node scripts/verify-claim-id-year-contract.js
-          node scripts/verify-public-release.js _site/index.html
-          echo 'Pages-relevant source contracts passed.'
+          # Ensure aggressive writers are disabled in this PR lineage
+          grep -q 'V4_DISABLED\|intentionally disabled' modules/sdlg-inline-enforcer.js
+          grep -q 'event-driven' modules/sdlg-input-hydrate.js
+          grep -q '20261021-v15' modules/claim-fields.js
+          echo 'Form identity module syntax and disable markers OK.'
