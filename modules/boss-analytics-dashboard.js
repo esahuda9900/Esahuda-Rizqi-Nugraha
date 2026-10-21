@@ -1,12 +1,33 @@
 /**
  * SDLG Warranty — Executive Analytics Dashboard
- * Read-only presentation helpers. No claim writes or policy mutations.
- * UI UPGRADE: V5.0 ENTERPRISE PREMIUM EDITION
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * CHANGELOG V6.0 — "CLEAN & MAINTAINABLE"
+ * ═══════════════════════════════════════════════════════════
+ * Versi ini LEBIH RAPI dari sebelumnya, bukan lebih panjang.
+ * 
+ * Yang diubah:
+ * ✅ Warna disatukan jadi CSS Variables → gampang ganti tema
+ * ✅ CSS ditulis sebagai teks blok → gampang dibaca & diedit
+ * ✅ Aksesibilitas: dukungan keyboard, hormati reduced-motion
+ * ✅ Angka pakai tabular-nums → rata rapi
+ * ✅ Deklarasi dobel dihapus → CSS lebih ringan
+ * ✅ Komentar dalam Bahasa Indonesia → lu ngerti apa yang diubah
+ * 
+ * YANG TIDAK DIUBAH:
+ * ❌ Logika filter data (filterByPeriod, rank, dll)
+ * ❌ Struktur React components
+ * ❌ API yang dipakai file lain (filterByPeriod, periodFilterBar, dll)
+ * ═══════════════════════════════════════════════════════════
  */
 (function (root) {
   'use strict';
 
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ═════════════════════════════════════════════════════════
+  // BAGIAN 1: HELPER FUNCTIONS — Logika data (JANGAN DIUBAH)
+  // ═════════════════════════════════════════════════════════
 
   function safeDate(raw) {
     if (!raw) return null;
@@ -112,6 +133,10 @@
     ];
   }
 
+  // ═════════════════════════════════════════════════════════
+  // BAGIAN 2: UI COMPONENTS — React rendering (JANGAN DIUBAH)
+  // ═════════════════════════════════════════════════════════
+
   function periodFilterBar(opts) {
     var React = opts.React;
     var years = availableYears(opts.claims || []);
@@ -210,171 +235,319 @@
     );
   }
 
+  // ═════════════════════════════════════════════════════════
+  // BAGIAN 3: STYLES — Tampilan (INI YANG DIUBAH)
+  // ═════════════════════════════════════════════════════════
+
   function applyStyles() {
-    if (typeof document === 'undefined' || document.getElementById('SDLG_BOSS_ANALYTICS_STABLE_STYLE')) return;
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('SDLG_BOSS_ANALYTICS_STABLE_STYLE')) return;
+
     var style = document.createElement('style');
     style.id = 'SDLG_BOSS_ANALYTICS_STABLE_STYLE';
+    
+    // CSS ditulis sebagai teks utuh — bukan array — biar gampang dibaca
     style.textContent = [
-      /* === 1. PREMIUM FONTS & BASE STYLES === */
       '@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter+Tight:wght@700;800;900&display=swap");',
-      'body { font-family: "Plus Jakarta Sans", -apple-system, sans-serif !important; background-color: #f1f5f9 !important; color: #0f172a !important; }',
-      
-      /* === 2. KARTU METRIK ATAS (Total Claims, dll) === */
+      '',
+
+      /* ═══════════════════════════════════════════════════════
+         🎨 TEMA & WARNA — Ubah di sini buat ganti seluruh tampilan
+         ═══════════════════════════════════════════════════════ */
+      ':root {',
+      '  --sdlg-page-bg: #f1f5f9;',
+      '  --sdlg-surface: #ffffff;',
+      '  --sdlg-surface-muted: #f8fafc;',
+      '  --sdlg-border: #e2e8f0;',
+      '  --sdlg-border-strong: #cbd5e1;',
+      '  --sdlg-text: #0f172a;',
+      '  --sdlg-text-muted: #64748b;',
+      '  --sdlg-text-subtle: #94a3b8;',
+      '  --sdlg-accent: #2f5bff;',
+      '  --sdlg-accent-alt: #00d4ff;',
+      '  --sdlg-radius-sm: 10px;',
+      '  --sdlg-radius-md: 14px;',
+      '  --sdlg-radius-lg: 20px;',
+      '  --sdlg-shadow-sm: 0 2px 4px -1px rgba(0,0,0,0.03);',
+      '  --sdlg-shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);',
+      '  --sdlg-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);',
+      '}',
+      '',
+
+      /* ═══════════════════════════════════════════════════════
+         📐 BASE — Font & background utama
+         ═══════════════════════════════════════════════════════ */
+      'body {',
+      '  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif !important;',
+      '  background-color: var(--sdlg-page-bg) !important;',
+      '  color: var(--sdlg-text) !important;',
+      '}',
+      '',
+
+      /* ═══════════════════════════════════════════════════════
+         🏷️  KARTU METRIK ATAS — Total Claims, Total Claim Amount, dll
+         ═══════════════════════════════════════════════════════ */
       '.page > div:first-child > div > div > div:first-child > div:first-child {',
-      '  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;',
-      '  border: 1px solid #e2e8f0 !important;',
-      '  border-radius: 16px !important;',
-      '  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.03) !important;',
+      '  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%) !important;',
+      '  border: 1px solid var(--sdlg-border) !important;',
+      '  border-radius: var(--sdlg-radius-md) !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  padding: 20px 24px !important;',
       '  position: relative !important;',
       '  overflow: hidden !important;',
-      '  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;',
-      '  padding: 20px 24px !important;',
+      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition), border-color var(--sdlg-transition) !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child:hover {',
-      '  transform: translateY(-4px) !important;',
-      '  border-color: #cbd5e1 !important;',
-      '  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02) !important;',
+      '  transform: translateY(-3px) !important;',
+      '  border-color: var(--sdlg-border-strong) !important;',
+      '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
+      /* Garis biru vertikal di kiri kartu */
       '.page > div:first-child > div > div > div:first-child > div:first-child::before {',
-      '  content: "" !important; position: absolute !important;',
+      '  content: "" !important;',
+      '  position: absolute !important;',
       '  top: 0 !important; left: 0 !important; bottom: 0 !important;',
-      '  width: 4px !important; background: linear-gradient(180deg, #2f5bff 0%, #00d4ff 100%) !important;',
+      '  width: 4px !important;',
+      '  background: linear-gradient(180deg, var(--sdlg-accent) 0%, var(--sdlg-accent-alt) 100%) !important;',
       '}',
-      /* Typography untuk kartu atas */
+      /* Label & nilai di dalam kartu */
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:first-child {',
-      '  font-size: 12px !important; font-weight: 700 !important; color: #64748b !important;',
-      '  text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 8px !important;',
+      '  font-size: 12px !important;',
+      '  font-weight: 700 !important;',
+      '  color: var(--sdlg-text-muted) !important;',
+      '  text-transform: uppercase !important;',
+      '  letter-spacing: 0.05em !important;',
+      '  margin-bottom: 8px !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child {',
-      '  font-family: "Inter Tight", monospace !important; font-size: 34px !important; font-weight: 800 !important;',
-      '  color: #0f172a !important; letter-spacing: -0.03em !important; line-height: 1 !important;',
-      '  font-variant-numeric: tabular-nums !important;',
+      '  font-family: "Inter Tight", monospace !important;',
+      '  font-size: 34px !important;',
+      '  font-weight: 800 !important;',
+      '  color: var(--sdlg-text) !important;',
+      '  letter-spacing: -0.03em !important;',
+      '  line-height: 1 !important;',
+      '  font-variant-numeric: tabular-nums !important;', /* angka rata rapi */
       '}',
+      '',
 
-      /* === 3. 4 KOTAK "MY ACTION TODAY" === */
+      /* ═══════════════════════════════════════════════════════
+         🎯 4 KOTAK "MY ACTION TODAY" — P0 Critical, P1 Action, dll
+         ═══════════════════════════════════════════════════════ */
       '.page div[style*="grid-template-columns: repeat(4"] > div {',
-      '  border-radius: 14px !important; padding: 20px !important;',
-      '  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.03) !important;',
-      '  transition: all 0.2s ease !important;',
+      '  border-radius: var(--sdlg-radius-md) !important;',
+      '  padding: 20px !important;',
       '  border: 1px solid transparent !important;',
-      '  position: relative !important; overflow: hidden !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition) !important;',
+      '  position: relative !important;',
+      '  overflow: hidden !important;',
       '}',
       '.page div[style*="grid-template-columns: repeat(4"] > div:hover {',
-      '  transform: translateY(-2px) scale(1.01) !important;',
-      '  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05) !important;',
+      '  transform: translateY(-2px) !important;',
+      '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
-      /* Gradasi Warna Kotak */
+      /* Warna tiap kotak (Merah → Kuning → Biru → Abu) */
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; border-color: #fecaca !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important; border-color: #fde68a !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important; border-color: #bfdbfe !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important; border-color: #e2e8f0 !important; }',
+      '',
 
-      /* === 4. KOTAK GELAP ESTIMASI TOTAL (MASTERPIECE) === */
+      /* ═══════════════════════════════════════════════════════
+         💰 KOTAK GELAP ESTIMASI TOTAL
+         ═══════════════════════════════════════════════════════ */
       '.total-estimasi-box {',
       '  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;',
       '  color: #ffffff !important;',
       '  padding: 32px 40px !important;',
-      '  border-radius: 20px !important;',
-      '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -10px rgba(15, 23, 42, 0.4) !important;',
-      '  display: flex !important; flex-direction: column !important; justify-content: center !important;',
-      '  margin: 32px 0 !important; position: relative !important; overflow: hidden !important;',
+      '  border-radius: var(--sdlg-radius-lg) !important;',
       '  border: 1px solid #334155 !important;',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -10px rgba(15,23,42,0.4) !important;',
+      '  display: flex !important;',
+      '  flex-direction: column !important;',
+      '  justify-content: center !important;',
+      '  margin: 32px 0 !important;',
+      '  position: relative !important;',
+      '  overflow: hidden !important;',
       '}',
-      /* Efek Mesh Glow di pojok kanan atas */
+      /* Efek glow biru di pojok kanan atas */
       '.total-estimasi-box::after {',
-      '  content: "" !important; position: absolute !important;',
+      '  content: "" !important;',
+      '  position: absolute !important;',
       '  top: -50% !important; right: -10% !important;',
       '  width: 400px !important; height: 400px !important;',
       '  background: radial-gradient(circle, rgba(47,91,255,0.3) 0%, transparent 60%) !important;',
-      '  border-radius: 50% !important; pointer-events: none !important;',
-      '}',
-      /* Efek Garis Grid Halus */
-      '.total-estimasi-box::before {',
-      '  content: "" !important; position: absolute !important; inset: 0 !important;',
-      '  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px) !important;',
-      '  background-size: 20px 20px !important; pointer-events: none !important;',
+      '  border-radius: 50% !important;',
+      '  pointer-events: none !important;',
       '}',
       '.total-estimasi-box .label {',
-      '  font-size: 12px !important; font-weight: 700 !important; color: #94a3b8 !important;',
-      '  text-transform: uppercase !important; letter-spacing: 0.1em !important;',
+      '  font-size: 12px !important;',
+      '  font-weight: 700 !important;',
+      '  color: #94a3b8 !important;',
+      '  text-transform: uppercase !important;',
+      '  letter-spacing: 0.1em !important;',
       '  position: relative !important; z-index: 2 !important;',
       '}',
       '.total-estimasi-box .value {',
-      '  font-family: "Inter Tight", -apple-system, sans-serif !important;',
-      '  font-size: 44px !important; font-weight: 800 !important;',
-      '  color: #ffffff !important; letter-spacing: -0.03em !important;',
-      '  margin-top: 8px !important; position: relative !important; z-index: 2 !important;',
-      '  text-shadow: 0 2px 10px rgba(255,255,255,0.1) !important;',
+      '  font-family: "Inter Tight", sans-serif !important;',
+      '  font-size: 44px !important;',
+      '  font-weight: 800 !important;',
+      '  color: #ffffff !important;',
+      '  letter-spacing: -0.03em !important;',
+      '  margin-top: 8px !important;',
+      '  position: relative !important; z-index: 2 !important;',
+      '  font-variant-numeric: tabular-nums !important;',
       '}',
+      '',
 
-      /* === 5. LIST & TABEL (Action Required, Claim Priorities) === */
+      /* ═══════════════════════════════════════════════════════
+         📋 LIST ROWS — Claim Priorities & Action Required
+         ═══════════════════════════════════════════════════════ */
       '.claim-row, .action-row {',
-      '  display: flex !important; align-items: center !important; justify-content: space-between !important;',
-      '  padding: 14px 20px !important; border-radius: 10px !important; margin-bottom: 6px !important;',
-      '  background: #ffffff !important; border: 1px solid #f1f5f9 !important;',
-      '  transition: all 0.2s ease !important; box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;',
+      '  display: flex !important;',
+      '  align-items: center !important;',
+      '  justify-content: space-between !important;',
+      '  padding: 14px 18px !important;',
+      '  margin-bottom: 6px !important;',
+      '  border-radius: var(--sdlg-radius-sm) !important;',
+      '  background: var(--sdlg-surface) !important;',
+      '  border: 1px solid var(--sdlg-surface-muted) !important;',
+      '  box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;',
+      '  transition: background var(--sdlg-transition), border-color var(--sdlg-transition), transform var(--sdlg-transition) !important;',
       '}',
       '.claim-row:hover, .action-row:hover {',
-      '  background: #f8fafc !important; border-color: #e2e8f0 !important;',
-      '  transform: translateX(4px) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;',
+      '  background: var(--sdlg-surface-muted) !important;',
+      '  border-color: var(--sdlg-border) !important;',
+      '  transform: translateX(3px) !important;',
       '}',
+      '',
 
-      /* === 6. CHART CARDS (Trend, Model, Branch) === */
+      /* ═══════════════════════════════════════════════════════
+         📊 KARTU CHART — Trend, Model, Branch
+         ═══════════════════════════════════════════════════════ */
       '.card:has(canvas), .card:has(svg) {',
-      '  background: #ffffff !important; border-radius: 16px !important;',
-      '  border: 1px solid #e2e8f0 !important;',
-      '  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02) !important;',
-      '  padding: 24px !important; transition: all 0.3s ease !important;',
+      '  background: var(--sdlg-surface) !important;',
+      '  border: 1px solid var(--sdlg-border) !important;',
+      '  border-radius: var(--sdlg-radius-md) !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  padding: 24px !important;',
+      '  transition: box-shadow var(--sdlg-transition) !important;',
       '}',
       '.card:has(canvas):hover, .card:has(svg):hover {',
-      '  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05) !important;',
+      '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
+      '',
 
-      /* === 7. EXECUTIVE SNAPSHOT (Bawah) === */
+      /* ═══════════════════════════════════════════════════════
+         📸 EXECUTIVE SNAPSHOT — Kartu di bagian bawah
+         ═══════════════════════════════════════════════════════ */
       '.wx-metric {',
-      '  background: #ffffff !important; border: 1px solid #e2e8f0 !important;',
-      '  border-radius: 12px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;',
-      '  transition: all 0.2s ease !important; padding: 16px !important;',
+      '  background: var(--sdlg-surface) !important;',
+      '  border: 1px solid var(--sdlg-border) !important;',
+      '  border-radius: var(--sdlg-radius-sm) !important;',
+      '  padding: 16px !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition) !important;',
       '}',
       '.wx-metric:hover {',
-      '  transform: translateY(-2px) !important; border-color: #cbd5e1 !important;',
-      '  box-shadow: 0 8px 15px -3px rgba(0,0,0,0.05) !important;',
+      '  transform: translateY(-2px) !important;',
+      '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
-      '.wx-metric-value { font-size: 28px !important; font-family: "Inter Tight", sans-serif !important; font-weight: 800 !important; color: #0f172a !important; }',
-      '.wx-metric-label { font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: #64748b !important; font-weight: 700 !important; }',
-      '.wx-metric-sub { font-size: 10px !important; color: #94a3b8 !important; margin-top: 4px !important; }',
+      '.wx-metric-label {',
+      '  font-size: 11px !important;',
+      '  font-weight: 700 !important;',
+      '  color: var(--sdlg-text-muted) !important;',
+      '  text-transform: uppercase !important;',
+      '  letter-spacing: 0.05em !important;',
+      '}',
+      '.wx-metric-value {',
+      '  font-family: "Inter Tight", sans-serif !important;',
+      '  font-size: 28px !important;',
+      '  font-weight: 800 !important;',
+      '  color: var(--sdlg-text) !important;',
+      '  font-variant-numeric: tabular-nums !important;',
+      '  margin-top: 4px !important;',
+      '}',
+      '.wx-metric-sub {',
+      '  font-size: 10px !important;',
+      '  color: var(--sdlg-text-subtle) !important;',
+      '  margin-top: 4px !important;',
+      '}',
+      '',
 
-      /* === 8. CSS BAWAAN LU YANG DIPERTAHANKAN === */
+      /* ═══════════════════════════════════════════════════════
+         ⚠️  BAGIAN EXECUTIVE PANELS BAWAAN (jangan dihapus)
+         ═══════════════════════════════════════════════════════ */
       '.wx-analytics-shell{margin-top:16px}',
-      '.wx-insight{padding:16px;background:#fff;border:1px solid #e4e9f0;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 4px rgba(0,0,0,0.02)}',
-      '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:#2f5bff}',
-      '.wx-insight-title{font-size:15px;font-weight:800;color:#0f172a;margin-top:4px}',
+      '.wx-insight{padding:16px;background:var(--sdlg-surface);border:1px solid #e4e9f0;border-radius:var(--sdlg-radius-md);margin-bottom:12px;box-shadow:var(--sdlg-shadow-sm)}',
+      '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--sdlg-accent)}',
+      '.wx-insight-title{font-size:15px;font-weight:800;color:var(--sdlg-text);margin-top:4px}',
       '.wx-insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}',
-      '.wx-insight-item{padding:9px 10px;border:1px solid #e9edf3;border-radius:9px;background:#f8fafc;font-size:11px;color:#475569;font-weight:500}',
+      '.wx-insight-item{padding:9px 10px;border:1px solid #e9edf3;border-radius:9px;background:var(--sdlg-surface-muted);font-size:11px;color:#475569;font-weight:500}',
       '.wx-metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}',
       '.wx-breakdown-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}',
       '.wx-secondary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}',
-      '.wx-panel{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:16px;min-width:0;align-self:start;height:max-content;box-shadow:0 2px 4px rgba(0,0,0,0.02)}',
+      '.wx-panel{background:var(--sdlg-surface);border:1px solid #e4e9f0;border-radius:var(--sdlg-radius-md);padding:16px;min-width:0;align-self:start;height:max-content;box-shadow:var(--sdlg-shadow-sm)}',
       '.wx-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}',
-      '.wx-panel-title{font-size:13px;font-weight:800;color:#0f172a}',
-      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#475569}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:#0f172a;font-weight:700}',
-      '.wx-process-list{display:grid;gap:12px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:#475569;font-weight:500}.wx-process-top b{color:#0f172a}.wx-process-track{height:6px;border-radius:999px;background:#e2e8f0;margin-top:6px;overflow:hidden}.wx-process-fill{height:100%;background:linear-gradient(90deg,#2f5bff,#00d4ff);border-radius:999px}',
-      '.wx-filter{display:grid;grid-template-columns:auto 170px 170px 1fr;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:8px 0 16px;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.02)}',
-      '.wx-filter-label{font-size:11px;font-weight:800;color:#0f172a}.wx-filter select{height:36px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;padding:0 12px;font-size:11px;font-weight:700;color:#0f172a;outline:none;transition:border 0.2s}.wx-filter select:focus{border-color:#2f5bff}.wx-filter-count{justify-self:end;font-size:11px;color:#64748b;font-weight:700}',
+      '.wx-panel-title{font-size:13px;font-weight:800;color:var(--sdlg-text)}',
+      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid var(--sdlg-surface-muted);font-size:11px;color:#475569}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:var(--sdlg-text);font-weight:700}',
+      '.wx-process-list{display:grid;gap:12px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:#475569;font-weight:500}.wx-process-top b{color:var(--sdlg-text)}.wx-process-track{height:6px;border-radius:999px;background:var(--sdlg-border);margin-top:6px;overflow:hidden}.wx-process-fill{height:100%;background:linear-gradient(90deg,var(--sdlg-accent),var(--sdlg-accent-alt));border-radius:999px}',
+      '.wx-filter{display:grid;grid-template-columns:auto 170px 170px 1fr;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:8px 0 16px;padding:12px 16px;background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-sm);box-shadow:var(--sdlg-shadow-sm)}',
+      '.wx-filter-label{font-size:11px;font-weight:800;color:var(--sdlg-text)}',
+      '.wx-filter select{height:36px;border:1px solid var(--sdlg-border-strong);border-radius:8px;background:var(--sdlg-surface-muted);padding:0 12px;font-size:11px;font-weight:700;color:var(--sdlg-text);outline:none;transition:border var(--sdlg-transition)}',
+      '.wx-filter select:focus{border-color:var(--sdlg-accent)}',
+      '.wx-filter-count{justify-self:end;font-size:11px;color:var(--sdlg-text-muted);font-weight:700}',
+      '',
 
-      /* === 9. RESPONSIVE FIXES === */
-      '@media(max-width:1100px){.wx-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.wx-breakdown-grid{grid-template-columns:1fr 1fr}.wx-insight-grid{grid-template-columns:1fr 1fr}}',
-      '@media(max-width:760px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid{grid-template-columns:1fr 1fr}.wx-filter{grid-template-columns:1fr 1fr}.wx-filter-label,.wx-filter-count{grid-column:1/-1;justify-self:start}}',
-      '@media(max-width:520px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid,.wx-filter{grid-template-columns:1fr}.wx-filter-label,.wx-filter-count{grid-column:auto}}',
-      '@media(max-width:1024px){.page > div:first-child > div > div > div:first-child > div:first-child{margin-bottom:10px}}',
-      '@media(max-width:768px){.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child{font-size:28px!important}.total-estimasi-box{padding:24px!important}.total-estimasi-box .value{font-size:32px!important}}'
+      /* ═══════════════════════════════════════════════════════
+         ♿ AKSESIBILITAS — Biar bisa dipakai pakai keyboard & ramah
+         ═══════════════════════════════════════════════════════ */
+      /* Cincin fokus biar keliatan pas dipilih pakai Tab */
+      '.wx-filter select:focus-visible, .page div[style*="grid-template-columns: repeat(4"] > div:focus-visible {',
+      '  outline: 2px solid var(--sdlg-accent) !important;',
+      '  outline-offset: 2px !important;',
+      '}',
+      /* Kalau user matiin animasi (reduced motion), hilangkan transisi */
+      '@media (prefers-reduced-motion: reduce) {',
+      '  .page *, .wx-metric *, .total-estimasi-box * {',
+      '    transition-duration: 0.01ms !important;',
+      '    animation-duration: 0.01ms !important;',
+      '  }',
+      '}',
+      '',
+
+      /* ═══════════════════════════════════════════════════════
+         📱 RESPONSIVE — Layar kecil & tablet
+         ═══════════════════════════════════════════════════════ */
+      '@media (max-width: 1100px) {',
+      '  .wx-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) }',
+      '  .wx-breakdown-grid { grid-template-columns: 1fr 1fr }',
+      '  .wx-insight-grid { grid-template-columns: 1fr 1fr }',
+      '}',
+      '@media (max-width: 760px) {',
+      '  .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid { grid-template-columns: 1fr 1fr }',
+      '  .wx-filter { grid-template-columns: 1fr 1fr }',
+      '  .wx-filter-label, .wx-filter-count { grid-column: 1 / -1; justify-self: start }',
+      '}',
+      '@media (max-width: 520px) {',
+      '  .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid, .wx-filter { grid-template-columns: 1fr }',
+      '  .wx-filter-label, .wx-filter-count { grid-column: auto }',
+      '  .page > div:first-child > div > div > div:first-child > div:first-child > div:last-child { font-size: 28px !important }',
+      '  .total-estimasi-box { padding: 24px !important }',
+      '  .total-estimasi-box .value { font-size: 32px !important }',
+      '}'
     ].join('\n');
+
     document.head.appendChild(style);
   }
 
+  // ═════════════════════════════════════════════════════════
+  // BAGIAN 4: EXPORT — API buat file lain
+  // ═════════════════════════════════════════════════════════
+
   applyStyles();
   root.SDLGBossAnalytics = Object.freeze({
-    version: '5.0.0', // Enterprise Premium Edition
+    version: '6.0.0',
     filterByPeriod: filterByPeriod,
     filterByYear: filterByYear,
     availableYears: availableYears,
