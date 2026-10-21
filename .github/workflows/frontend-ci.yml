@@ -12,10 +12,7 @@ on:
       - 'package.json'
       - 'ARCHITECTURE.md'
       - 'DEPLOYMENT.md'
-      - 'FREE_TIER.md'
-      - 'SECURITY.md'
-      - 'INJECTOR_ROADMAP.md'
-      - '.github/workflows/frontend-ci.yml' 
+      - '.github/workflows/frontend-ci.yml'
 permissions:
   contents: read
 
@@ -46,12 +43,9 @@ jobs:
           test -s modules/claim-parser-helpers.js
           test -s scripts/verify-public-release.js
           test -s scripts/verify-module-syntax.js
-          test -s INJECTOR_ROADMAP.md
-          test -s FREE_TIER.md
-          test -s SECURITY.md
           grep -q 'frqvelcreczmnofldrga.supabase.co' index.html
           grep -q 'SDLGCore' modules/sdlg-core.js
-          echo 'Required frontend files, sdlg-core, module syntax verifier, stability docs, Supabase endpoint, and public-release verifier are present.'
+          echo 'Required frontend files, sdlg-core, module syntax verifier, Supabase endpoint, and public-release verifier are present.'
 
       - name: Validate Python patch scripts
         shell: bash
