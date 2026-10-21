@@ -20,9 +20,6 @@
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
   
-  <!-- TAMBAHAN BARU KITA: CSS DASHBOARD -->
-  <link rel="stylesheet" href="styles/sdlg-dashboard-polish.css">
-
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
   <script>
     window.SDLGLoadDependencyFallback = function(el, fallbackUrl, detail) {
@@ -3549,6 +3546,12 @@ input[type="checkbox"],input[type="radio"]{
 </style>
   <!-- SDLGHashRouter showBottomTaskbar sdlg-hash-router (runtime modules) -->
   <!-- routes: #/overview #/claims #/sdlg-input #/master-data -->
+
+  ...
+<!-- (semua script dan style raksasa ada di atas sini) -->
+
+<!-- TAMBAHKAN BARIS INI DI PALING BAWAH HEAD -->
+<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css">
 </head>
 <body>
   <div id="root"></div>
