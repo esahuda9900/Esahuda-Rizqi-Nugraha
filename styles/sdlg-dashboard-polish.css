@@ -1,242 +1,505 @@
 /* =========================================================
-   SDLG DASHBOARD POLISH V1.0 (EXPERT REVISED)
-   Scoped to the Dashboard page only (page with metric-grid).
-   Goal: Modern, clean, breathable SaaS Command Center.
+   SDLG DASHBOARD POLISH v3.0 — PREMIUM EDITION
+   Scoped to the Dashboard page only.
+
+   Highlights:
+   ✔ Design tokens (CSS custom properties)
+   ✔ Auto dark mode (+ manual via [data-theme="dark"])
+   ✔ Staggered entrance animations & hover micro-interactions
+   ✔ Accessibility: focus-visible, reduced-motion, high-contrast
+   ✔ Tabular figures for financial metrics
+   ✔ RTL-ready logical properties
    ========================================================= */
 
 /* =========================================
-   1. PAGE & LAYOUT
+   0. DESIGN TOKENS (scoped ke dashboard)
    ========================================= */
 .page:has(.metric-grid) {
-  padding-top: 32px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 24px !important; /* Jarak antar section lebih lega */
+  /* — Colors · Light — */
+  --sdlg-bg:            #ffffff;
+  --sdlg-bg-subtle:     #f8fafc;
+  --sdlg-bg-hover:      #f1f5f9;
+  --sdlg-border:        #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
+
+  --sdlg-text:          #0f172a;
+  --sdlg-text-muted:    #64748b;
+  --sdlg-text-subtle:   #94a3b8;
+
+  --sdlg-accent:        #2f5bff;
+  --sdlg-accent-soft:   rgba(47, 91, 255, 0.10);
+  --sdlg-accent-glow:   rgba(47, 91, 255, 0.22);
+
+  /* — Radii — */
+  --sdlg-r-sm:  8px;
+  --sdlg-r-md:  12px;
+  --sdlg-r-lg:  16px;
+  --sdlg-r-xl:  20px;
+
+  /* — Layered shadows for depth — */
+  --sdlg-shadow-xs: 0 1px 2px rgba(15,23,42,0.04);
+  --sdlg-shadow-sm: 0 1px 2px rgba(15,23,42,0.05),
+                    0 2px 8px rgba(15,23,42,0.04);
+  --sdlg-shadow-md: 0 2px 4px rgba(15,23,42,0.04),
+                    0 8px 24px rgba(15,23,42,0.06);
+  --sdlg-shadow-lg: 0 4px 12px rgba(15,23,42,0.06),
+                    0 16px 40px rgba(15,23,42,0.08);
+
+  /* — Motion — */
+  --sdlg-ease:      cubic-bezier(0.4, 0, 0.2, 1);
+  --sdlg-ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --sdlg-dur-fast:  150ms;
+  --sdlg-dur-base:  250ms;
+  --sdlg-dur-slow:  400ms;
+
+  /* — Typography — */
+  --sdlg-numeric: "Inter Tight", "SF Pro Display", -apple-system,
+                   BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* — Layout — */
+  padding-block-start: 32px !important;
+  max-inline-size: 1440px !important;
+  margin-inline: auto !important;
 }
 
 /* =========================================
-   2. METRIC CARDS (Top Row)
+   1. DARK MODE (auto + manual)
    ========================================= */
-.page:has(.metric-grid) .metric-grid {
-  gap: 16px !important;
-  margin-bottom: 0 !important;
+@media (prefers-color-scheme: dark) {
+  .page:has(.metric-grid) {
+    --sdlg-bg:            #0b1220;
+    --sdlg-bg-subtle:     #111a2e;
+    --sdlg-bg-hover:      #16233d;
+    --sdlg-border:        #1e2a45;
+    --sdlg-border-strong: #2a3a5f;
+    --sdlg-text:          #f8fafc;
+    --sdlg-text-muted:    #94a3b8;
+    --sdlg-text-subtle:   #64748b;
+    --sdlg-accent:        #4d70ff;
+    --sdlg-accent-soft:   rgba(77, 112, 255, 0.14);
+    --sdlg-accent-glow:   rgba(77, 112, 255, 0.30);
+    --sdlg-shadow-xs: 0 1px 2px rgba(0,0,0,0.30);
+    --sdlg-shadow-sm: 0 1px 2px rgba(0,0,0,0.40),
+                      0 2px 8px rgba(0,0,0,0.30);
+    --sdlg-shadow-md: 0 2px 4px rgba(0,0,0,0.40),
+                      0 8px 24px rgba(0,0,0,0.35);
+    --sdlg-shadow-lg: 0 4px 12px rgba(0,0,0,0.40),
+                      0 16px 40px rgba(0,0,0,0.40);
+  }
+}
+
+/* Manual override */
+[data-theme="dark"] .page:has(.metric-grid),
+.page:has(.metric-grid)[data-theme="dark"] {
+  --sdlg-bg:            #0b1220;
+  --sdlg-bg-subtle:     #111a2e;
+  --sdlg-bg-hover:      #16233d;
+  --sdlg-border:        #1e2a45;
+  --sdlg-border-strong: #2a3a5f;
+  --sdlg-text:          #f8fafc;
+  --sdlg-text-muted:    #94a3b8;
+  --sdlg-text-subtle:   #64748b;
+  --sdlg-accent:        #4d70ff;
+  --sdlg-accent-soft:   rgba(77, 112, 255, 0.14);
+  --sdlg-accent-glow:   rgba(77, 112, 255, 0.30);
+}
+
+/* =========================================
+   2. GLOBAL FOCUS & A11Y UTILITIES
+   ========================================= */
+.page:has(.metric-grid) :is(
+  .metric-card,
+  .claim-row,
+  .action-row,
+  .snapshot-item
+):focus-visible {
+  outline: 2px solid var(--sdlg-accent) !important;
+  outline-offset: 2px !important;
+  border-radius: var(--sdlg-r-md) !important;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .page:has(.metric-grid) *,
+  .page:has(.metric-grid) *::before,
+  .page:has(.metric-grid) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   3. ENTRANCE ANIMATIONS (staggered)
+   ========================================= */
+@keyframes sdlg-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page:has(.metric-grid) > div {
+  margin-block-end: 24px !important;
 }
 
 .page:has(.metric-grid) .metric-card {
-  background: #ffffff !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  border-radius: 16px !important;
-  padding: 20px 24px !important;
-  min-height: 110px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02) !important;
+  animation: sdlg-rise var(--sdlg-dur-slow) var(--sdlg-ease-out) both;
+}
+.page:has(.metric-grid) .metric-card:nth-child(1) { animation-delay: 0ms;   }
+.page:has(.metric-grid) .metric-card:nth-child(2) { animation-delay: 60ms;  }
+.page:has(.metric-grid) .metric-card:nth-child(3) { animation-delay: 120ms; }
+.page:has(.metric-grid) .metric-card:nth-child(4) { animation-delay: 180ms; }
+.page:has(.metric-grid) .metric-card:nth-child(5) { animation-delay: 240ms; }
+.page:has(.metric-grid) .metric-card:nth-child(6) { animation-delay: 300ms; }
+
+/* =========================================
+   4. METRIC CARDS (top row)
+   ========================================= */
+.page:has(.metric-grid) .metric-grid {
+  gap: 16px !important;
+  margin-block-end: 24px !important;
+}
+
+.page:has(.metric-grid) .metric-card {
+  position: relative !important;
+  overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  position: relative !important;
-  overflow: hidden !important;
+
+  padding: 20px 24px !important;
+  min-block-size: 110px !important;
+
+  background: var(--sdlg-bg) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-r-md) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+
+  transition:
+    transform var(--sdlg-dur-base) var(--sdlg-ease),
+    box-shadow var(--sdlg-dur-base) var(--sdlg-ease),
+    border-color var(--sdlg-dur-base) var(--sdlg-ease) !important;
+  will-change: transform;
 }
 
-/* Aksen garis atas untuk mempercantik */
+/* Hover lift */
+.page:has(.metric-grid) .metric-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--sdlg-accent) !important;
+  box-shadow: var(--sdlg-shadow-md), 0 0 0 3px var(--sdlg-accent-soft) !important;
+}
+
+/* Accent bar (gradient) */
 .page:has(.metric-grid) .metric-card::before {
   content: "" !important;
   position: absolute !important;
-  top: 0 !important; left: 0 !important; right: 0 !important;
-  height: 3px !important;
-  background: var(--sdlg-primary, #2f5bff) !important;
-  opacity: 0.8 !important;
+  inset-block: 0 !important;
+  inset-inline-start: 0 !important;
+  inline-size: 4px !important;
+  background: linear-gradient(180deg,
+    var(--sdlg-accent) 0%,
+    color-mix(in srgb, var(--sdlg-accent) 40%, transparent) 100%) !important;
+}
+
+/* Subtle corner glow */
+.page:has(.metric-grid) .metric-card::after {
+  content: "" !important;
+  position: absolute !important;
+  inset-block-start: -40px !important;
+  inset-inline-end: -40px !important;
+  inline-size: 120px !important;
+  block-size: 120px !important;
+  background: radial-gradient(circle, var(--sdlg-accent-glow) 0%, transparent 70%) !important;
+  opacity: 0 !important;
+  transition: opacity var(--sdlg-dur-base) var(--sdlg-ease) !important;
+  pointer-events: none !important;
+}
+.page:has(.metric-grid) .metric-card:hover::after {
+  opacity: 1 !important;
 }
 
 .page:has(.metric-grid) .metric-label {
   font-size: 11px !important;
   font-weight: 700 !important;
-  color: #64748b !important;
+  color: var(--sdlg-text-muted) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  margin-bottom: 8px !important;
+  letter-spacing: 0.06em !important;
+  margin-block-end: 6px !important;
+  text-wrap: balance !important;
 }
 
 .page:has(.metric-grid) .metric-value {
+  font-family: var(--sdlg-numeric) !important;
   font-size: 32px !important;
   font-weight: 800 !important;
-  color: #0f172a !important;
+  color: var(--sdlg-text) !important;
   letter-spacing: -0.03em !important;
   line-height: 1.1 !important;
+  font-variant-numeric: tabular-nums lining-nums !important;
+  font-feature-settings: "tnum" 1, "lnum" 1 !important;
 }
 
 /* =========================================
-   3. "MY ACTION TODAY" SECTION (Kotak Warna)
+   5. "MY ACTION TODAY" — 4 color boxes
    ========================================= */
 .page:has(.metric-grid) .card:has(.metric-grid) {
   padding: 24px !important;
-  border-radius: 16px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  background: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+  border-radius: var(--sdlg-r-lg) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  background: var(--sdlg-bg) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
 }
 
-/* Bikin 4 kotak di dalamnya rapi */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 16px !important;
-  margin-bottom: 20px !important;
+  margin-block-end: 24px !important;
 }
 
-/* Styling kotak Critical, Action, dll */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div {
-  border-radius: 12px !important;
-  padding: 16px !important;
-  border: 1px solid transparent !important;
+  padding: 16px 20px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 4px !important;
-  transition: transform 0.2s ease !important;
+  border-radius: var(--sdlg-r-md) !important;
+  border: 1px solid transparent !important;
+  transition:
+    transform var(--sdlg-dur-fast) var(--sdlg-ease),
+    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease),
+    border-color var(--sdlg-dur-fast) var(--sdlg-ease) !important;
+  cursor: pointer;
 }
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:hover {
   transform: translateY(-2px) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
 }
 
-/* Angka Besar di dalam kotak */
 .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div > div:first-child {
-  font-size: 24px !important;
+  font-family: var(--sdlg-numeric) !important;
+  font-size: 26px !important;
   font-weight: 800 !important;
   line-height: 1 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 /* =========================================
-   4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED"
+   6. LIST ROWS (Claims + Actions)
    ========================================= */
-/* Bikin list seperti baris tabel modern */
 .page:has(.metric-grid) .claim-row,
 .page:has(.metric-grid) .action-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 12px 16px !important;
-  border-radius: 8px !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  transition: background 0.15s ease !important;
   gap: 12px !important;
+
+  padding: 14px 16px !important;
+  border-radius: var(--sdlg-r-sm) !important;
+  border-block-end: 1px solid var(--sdlg-bg-hover) !important;
+
+  transition:
+    background-color var(--sdlg-dur-fast) var(--sdlg-ease),
+    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease),
+    transform var(--sdlg-dur-fast) var(--sdlg-ease) !important;
+  cursor: pointer;
 }
 
-.page:has(.metric-grid) .claim-row:hover,
-.page:has(.metric-grid) .action-row:hover {
-  background: #f8fafc !important;
-  border-bottom-color: transparent !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+.page:has(.metric-grid) :is(.claim-row, .action-row):hover {
+  background: var(--sdlg-bg-subtle) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+}
+.page:has(.metric-grid) :is(.claim-row, .action-row):hover .metric-value {
+  color: var(--sdlg-accent) !important;
 }
 
-/* =========================================
-   5. STATUS FLOW (Kanan)
-   ========================================= */
-/* Ubah list status jadi bentuk progress bar */
-.page:has(.metric-grid) .status-list-item {
-  display: flex !important;
-  justify-content: space-between !important;
-  padding: 8px 0 !important;
-  border-bottom: 1px dashed #e2e8f0 !important;
-  font-size: 13px !important;
-}
-.page:has(.metric-grid) .status-list-item:last-child {
-  border-bottom: none !important;
-}
-
-/* =========================================
-   6. CHART SECTIONS (Trend, Model, Branch)
-   ========================================= */
-.page:has(.metric-grid) .card:has(canvas),
-.page:has(.metric-grid) .card:has(svg) {
-  padding: 20px !important;
-  border-radius: 16px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-}
-.page:has(.metric-grid) .card:has(canvas) h3,
-.page:has(.metric-grid) .card:has(svg) h3 {
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  color: #1e293b !important;
-  margin-bottom: 16px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
+/* Remove border-bottom on last item */
+.page:has(.metric-grid) :is(.claim-row, .action-row):last-child {
+  border-block-end: none !important;
 }
 
 /* =========================================
-   7. TOTAL ESTIMASI (Hero Box)
+   7. TOTAL ESTIMASI BOX — premium dark card
    ========================================= */
 .page:has(.metric-grid) .total-estimasi-box {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-  color: white !important;
+  position: relative !important;
+  overflow: hidden !important;
+
   padding: 24px 32px !important;
-  border-radius: 16px !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2) !important;
+  margin-block: 24px !important;
+  border-radius: var(--sdlg-r-lg) !important;
+
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
+
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 10px 30px rgba(15, 23, 42, 0.20) !important;
 }
+
+/* Subtle dot texture */
+.page:has(.metric-grid) .total-estimasi-box::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255,255,255,0.05) 1px,
+    transparent 0
+  ) !important;
+  background-size: 20px 20px !important;
+  pointer-events: none !important;
+}
+
+/* Soft corner light */
+.page:has(.metric-grid) .total-estimasi-box::after {
+  content: "" !important;
+  position: absolute !important;
+  inset-block-start: -60px !important;
+  inset-inline-end: -60px !important;
+  inline-size: 220px !important;
+  block-size: 220px !important;
+  background: radial-gradient(circle, rgba(77, 112, 255, 0.18) 0%, transparent 70%) !important;
+  pointer-events: none !important;
+}
+
 .page:has(.metric-grid) .total-estimasi-box .label {
+  position: relative !important;
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #94a3b8 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0.08em !important;
 }
+
 .page:has(.metric-grid) .total-estimasi-box .value {
-  font-size: 36px !important;
+  position: relative !important;
+  font-family: var(--sdlg-numeric) !important;
+  font-size: 38px !important;
   font-weight: 800 !important;
-  color: #ffffff !important;
   letter-spacing: -0.02em !important;
-  margin-top: 4px !important;
+  margin-block-start: 4px !important;
+  color: #ffffff !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 /* =========================================
-   8. EXECUTIVE SNAPSHOT (Grid di bawah)
+   8. CHART CARDS
    ========================================= */
-.page:has(.metric-grid) .card:has(.executive-snapshot),
-.page:has(.metric-grid) div:has(> .snapshot-title) {
+.page:has(.metric-grid) .card:has(canvas),
+.page:has(.metric-grid) .card:has(svg) {
   padding: 24px !important;
-  border-radius: 16px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  background: #ffffff !important;
+  border-radius: var(--sdlg-r-lg) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  background: var(--sdlg-bg) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+  transition:
+    box-shadow var(--sdlg-dur-base) var(--sdlg-ease),
+    border-color var(--sdlg-dur-base) var(--sdlg-ease) !important;
+}
+.page:has(.metric-grid) .card:has(canvas):hover,
+.page:has(.metric-grid) .card:has(svg):hover {
+  box-shadow: var(--sdlg-shadow-md) !important;
+  border-color: var(--sdlg-border-strong) !important;
 }
 
-/* Rapihin grid di dalam snapshot */
+/* =========================================
+   9. EXECUTIVE SNAPSHOT GRID
+   ========================================= */
 .page:has(.metric-grid) .snapshot-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
   gap: 16px !important;
+  margin-block-start: 16px !important;
 }
+
 .page:has(.metric-grid) .snapshot-item {
-  background: #f8fafc !important;
-  padding: 16px !important;
-  border-radius: 12px !important;
-  border: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 20px !important;
+  background: var(--sdlg-bg-subtle) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-r-md) !important;
+  transition:
+    transform var(--sdlg-dur-fast) var(--sdlg-ease),
+    background-color var(--sdlg-dur-fast) var(--sdlg-ease),
+    box-shadow var(--sdlg-dur-fast) var(--sdlg-ease) !important;
 }
+.page:has(.metric-grid) .snapshot-item:hover {
+  transform: translateY(-2px) !important;
+  background: var(--sdlg-bg) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+}
+
 .page:has(.metric-grid) .snapshot-item .label {
   font-size: 11px !important;
-  color: #64748b !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  color: var(--sdlg-text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
 }
+
 .page:has(.metric-grid) .snapshot-item .value {
-  font-size: 20px !important;
+  font-family: var(--sdlg-numeric) !important;
+  font-size: 24px !important;
   font-weight: 800 !important;
-  color: #0f172a !important;
-  margin-top: 4px !important;
+  color: var(--sdlg-text) !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 /* =========================================
-   9. RESPONSIVE
+   10. RESPONSIVE
    ========================================= */
 @media (max-width: 1024px) {
   .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
 @media (max-width: 768px) {
+  .page:has(.metric-grid) {
+    padding-block-start: 20px !important;
+    padding-inline: 16px !important;
+  }
   .page:has(.metric-grid) .metric-value {
     font-size: 24px !important;
   }
   .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
     grid-template-columns: 1fr !important;
+  }
+  .page:has(.metric-grid) .total-estimasi-box {
+    padding: 20px 24px !important;
+  }
+  .page:has(.metric-grid) .total-estimasi-box .value {
+    font-size: 28px !important;
+  }
+  /* Disable hover-lift on touch devices (biar gak glitch) */
+  .page:has(.metric-grid) .metric-card:hover,
+  .page:has(.metric-grid) .snapshot-item:hover,
+  .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:hover {
+    transform: none !important;
+  }
+}
+
+/* =========================================
+   11. HIGH CONTRAST & PRINT
+   ========================================= */
+@media (prefers-contrast: more) {
+  .page:has(.metric-grid) .metric-card,
+  .page:has(.metric-grid) .snapshot-item {
+    border-width: 2px !important;
+  }
+}
+
+@media print {
+  .page:has(.metric-grid) .metric-card,
+  .page:has(.metric-grid) .snapshot-item,
+  .page:has(.metric-grid) .total-estimasi-box {
+    box-shadow: none !important;
+    break-inside: avoid !important;
   }
 }
