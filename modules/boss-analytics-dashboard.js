@@ -1,6 +1,7 @@
 /**
  * SDLG Warranty — Executive Analytics Dashboard
  * Read-only presentation helpers. No claim writes or policy mutations.
+ * UI UPGRADE: V5.0 ENTERPRISE PREMIUM EDITION
  */
 (function (root) {
   'use strict';
@@ -214,68 +215,166 @@
     var style = document.createElement('style');
     style.id = 'SDLG_BOSS_ANALYTICS_STABLE_STYLE';
     style.textContent = [
-      /* === SDLG DASHBOARD POLISH V5.1 PREMIUM === */
-      'body{background-color:#f1f5f9!important}',
-      '.metric-grid{gap:20px!important;margin-bottom:32px!important}',
-      '.metric-card{background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;padding:24px 28px!important;min-height:120px!important;box-shadow:0 10px 25px -5px rgba(0,0,0,.05),0 8px 10px -6px rgba(0,0,0,.01)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;position:relative!important;overflow:hidden!important;transition:all .3s cubic-bezier(.4,0,.2,1)!important}',
-      '.metric-card:hover{transform:translateY(-5px)!important;box-shadow:0 20px 25px -5px rgba(47,91,255,.15),0 10px 10px -5px rgba(47,91,255,.05)!important;border-color:#2f5bff!important}',
-      '.metric-card::before{content:""!important;position:absolute!important;top:0!important;left:0!important;bottom:0!important;width:6px!important;background:linear-gradient(180deg,#2f5bff 0%,#00d4ff 100%)!important;z-index:10!important}',
-      '.metric-label{font-size:13px!important;font-weight:700!important;color:#64748b!important;text-transform:uppercase!important;letter-spacing:.05em!important;margin-bottom:8px!important}',
-      '.metric-value{font-family:"Inter Tight",monospace!important;font-size:36px!important;font-weight:900!important;color:#0f172a!important;letter-spacing:-.04em!important;line-height:1!important}',
-      '.card:has(.metric-grid){padding:28px!important;border-radius:20px!important;border:1px solid #e2e8f0!important;background:#fff!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.05)!important}',
-      '.card:has(.metric-grid)>div:first-child{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:16px!important;margin-bottom:28px!important}',
-      '.card:has(.metric-grid)>div:first-child>div{border-radius:12px!important;padding:20px!important;display:flex!important;flex-direction:column!important;gap:8px!important;border:1px solid transparent!important;position:relative!important;overflow:hidden!important;transition:transform .2s ease!important}',
-      '.card:has(.metric-grid)>div:first-child>div:hover{transform:scale(1.02)!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(1){background:#fef2f2!important;border-color:#fecaca!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(2){background:#fffbeb!important;border-color:#fde68a!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(3){background:#eff6ff!important;border-color:#bfdbfe!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(4){background:#f8fafc!important;border-color:#e2e8f0!important}',
-      '.card:has(.metric-grid)>div:first-child>div>div:first-child{font-size:32px!important;font-weight:900!important;line-height:1!important;font-family:"Inter Tight",sans-serif!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(1)>div:first-child{color:#dc2626!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(2)>div:first-child{color:#d97706!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(3)>div:first-child{color:#2563eb!important}',
-      '.card:has(.metric-grid)>div:first-child>div:nth-child(4)>div:first-child{color:#0f172a!important}',
-      '.claim-row,.action-row{display:flex!important;align-items:center!important;justify-content:space-between!important;padding:16px 20px!important;border-radius:10px!important;margin-bottom:8px!important;background:#f8fafc!important;border:1px solid #f1f5f9!important;transition:all .2s ease!important}',
-      '.claim-row:hover,.action-row:hover{background:#fff!important;border-color:#cbd5e1!important;box-shadow:0 4px 12px rgba(0,0,0,.05)!important;transform:translateX(4px)!important}',
-      /* --- KOTAK GELAP ESTIMASI TOTAL --- */
-      '.total-estimasi-box{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%)!important;color:#fff!important;padding:32px 40px!important;border-radius:20px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 20px 40px -10px rgba(15,23,42,.4)!important;display:flex!important;flex-direction:column!important;justify-content:center!important;margin:32px 0!important;position:relative!important;overflow:hidden!important;border:1px solid #1e293b!important}',
-      '.total-estimasi-box::after{content:""!important;position:absolute!important;top:-50%!important;right:-10%!important;width:300px!important;height:300px!important;background:radial-gradient(circle,rgba(47,91,255,.5) 0%,transparent 70%)!important;border-radius:50%!important;pointer-events:none!important}',
-      '.total-estimasi-box .label{font-size:13px!important;font-weight:700!important;color:#94a3b8!important;text-transform:uppercase!important;letter-spacing:.1em!important;position:relative!important;z-index:2!important}',
-      '.total-estimasi-box .value{font-family:"Inter Tight",-apple-system,sans-serif!important;font-size:42px!important;font-weight:900!important;color:#fff!important;letter-spacing:-.03em!important;margin-top:8px!important;position:relative!important;z-index:2!important;text-shadow:0 2px 10px rgba(255,255,255,.1)!important}',
+      /* === 1. PREMIUM FONTS & BASE STYLES === */
+      '@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter+Tight:wght@700;800;900&display=swap");',
+      'body { font-family: "Plus Jakarta Sans", -apple-system, sans-serif !important; background-color: #f1f5f9 !important; color: #0f172a !important; }',
       
-      /* === CSS BAWAAN LU === */
+      /* === 2. KARTU METRIK ATAS (Total Claims, dll) === */
+      '.page > div:first-child > div > div > div:first-child > div:first-child {',
+      '  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;',
+      '  border: 1px solid #e2e8f0 !important;',
+      '  border-radius: 16px !important;',
+      '  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.03) !important;',
+      '  position: relative !important;',
+      '  overflow: hidden !important;',
+      '  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;',
+      '  padding: 20px 24px !important;',
+      '}',
+      '.page > div:first-child > div > div > div:first-child > div:first-child:hover {',
+      '  transform: translateY(-4px) !important;',
+      '  border-color: #cbd5e1 !important;',
+      '  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02) !important;',
+      '}',
+      '.page > div:first-child > div > div > div:first-child > div:first-child::before {',
+      '  content: "" !important; position: absolute !important;',
+      '  top: 0 !important; left: 0 !important; bottom: 0 !important;',
+      '  width: 4px !important; background: linear-gradient(180deg, #2f5bff 0%, #00d4ff 100%) !important;',
+      '}',
+      /* Typography untuk kartu atas */
+      '.page > div:first-child > div > div > div:first-child > div:first-child > div:first-child {',
+      '  font-size: 12px !important; font-weight: 700 !important; color: #64748b !important;',
+      '  text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 8px !important;',
+      '}',
+      '.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child {',
+      '  font-family: "Inter Tight", monospace !important; font-size: 34px !important; font-weight: 800 !important;',
+      '  color: #0f172a !important; letter-spacing: -0.03em !important; line-height: 1 !important;',
+      '  font-variant-numeric: tabular-nums !important;',
+      '}',
+
+      /* === 3. 4 KOTAK "MY ACTION TODAY" === */
+      '.page div[style*="grid-template-columns: repeat(4"] > div {',
+      '  border-radius: 14px !important; padding: 20px !important;',
+      '  box-shadow: 0 2px 4px -1px rgba(0,0,0,0.03) !important;',
+      '  transition: all 0.2s ease !important;',
+      '  border: 1px solid transparent !important;',
+      '  position: relative !important; overflow: hidden !important;',
+      '}',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:hover {',
+      '  transform: translateY(-2px) scale(1.01) !important;',
+      '  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05) !important;',
+      '}',
+      /* Gradasi Warna Kotak */
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; border-color: #fecaca !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important; border-color: #fde68a !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important; border-color: #bfdbfe !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important; border-color: #e2e8f0 !important; }',
+
+      /* === 4. KOTAK GELAP ESTIMASI TOTAL (MASTERPIECE) === */
+      '.total-estimasi-box {',
+      '  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;',
+      '  color: #ffffff !important;',
+      '  padding: 32px 40px !important;',
+      '  border-radius: 20px !important;',
+      '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -10px rgba(15, 23, 42, 0.4) !important;',
+      '  display: flex !important; flex-direction: column !important; justify-content: center !important;',
+      '  margin: 32px 0 !important; position: relative !important; overflow: hidden !important;',
+      '  border: 1px solid #334155 !important;',
+      '}',
+      /* Efek Mesh Glow di pojok kanan atas */
+      '.total-estimasi-box::after {',
+      '  content: "" !important; position: absolute !important;',
+      '  top: -50% !important; right: -10% !important;',
+      '  width: 400px !important; height: 400px !important;',
+      '  background: radial-gradient(circle, rgba(47,91,255,0.3) 0%, transparent 60%) !important;',
+      '  border-radius: 50% !important; pointer-events: none !important;',
+      '}',
+      /* Efek Garis Grid Halus */
+      '.total-estimasi-box::before {',
+      '  content: "" !important; position: absolute !important; inset: 0 !important;',
+      '  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px) !important;',
+      '  background-size: 20px 20px !important; pointer-events: none !important;',
+      '}',
+      '.total-estimasi-box .label {',
+      '  font-size: 12px !important; font-weight: 700 !important; color: #94a3b8 !important;',
+      '  text-transform: uppercase !important; letter-spacing: 0.1em !important;',
+      '  position: relative !important; z-index: 2 !important;',
+      '}',
+      '.total-estimasi-box .value {',
+      '  font-family: "Inter Tight", -apple-system, sans-serif !important;',
+      '  font-size: 44px !important; font-weight: 800 !important;',
+      '  color: #ffffff !important; letter-spacing: -0.03em !important;',
+      '  margin-top: 8px !important; position: relative !important; z-index: 2 !important;',
+      '  text-shadow: 0 2px 10px rgba(255,255,255,0.1) !important;',
+      '}',
+
+      /* === 5. LIST & TABEL (Action Required, Claim Priorities) === */
+      '.claim-row, .action-row {',
+      '  display: flex !important; align-items: center !important; justify-content: space-between !important;',
+      '  padding: 14px 20px !important; border-radius: 10px !important; margin-bottom: 6px !important;',
+      '  background: #ffffff !important; border: 1px solid #f1f5f9 !important;',
+      '  transition: all 0.2s ease !important; box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;',
+      '}',
+      '.claim-row:hover, .action-row:hover {',
+      '  background: #f8fafc !important; border-color: #e2e8f0 !important;',
+      '  transform: translateX(4px) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;',
+      '}',
+
+      /* === 6. CHART CARDS (Trend, Model, Branch) === */
+      '.card:has(canvas), .card:has(svg) {',
+      '  background: #ffffff !important; border-radius: 16px !important;',
+      '  border: 1px solid #e2e8f0 !important;',
+      '  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02) !important;',
+      '  padding: 24px !important; transition: all 0.3s ease !important;',
+      '}',
+      '.card:has(canvas):hover, .card:has(svg):hover {',
+      '  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05) !important;',
+      '}',
+
+      /* === 7. EXECUTIVE SNAPSHOT (Bawah) === */
+      '.wx-metric {',
+      '  background: #ffffff !important; border: 1px solid #e2e8f0 !important;',
+      '  border-radius: 12px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;',
+      '  transition: all 0.2s ease !important; padding: 16px !important;',
+      '}',
+      '.wx-metric:hover {',
+      '  transform: translateY(-2px) !important; border-color: #cbd5e1 !important;',
+      '  box-shadow: 0 8px 15px -3px rgba(0,0,0,0.05) !important;',
+      '}',
+      '.wx-metric-value { font-size: 28px !important; font-family: "Inter Tight", sans-serif !important; font-weight: 800 !important; color: #0f172a !important; }',
+      '.wx-metric-label { font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: #64748b !important; font-weight: 700 !important; }',
+      '.wx-metric-sub { font-size: 10px !important; color: #94a3b8 !important; margin-top: 4px !important; }',
+
+      /* === 8. CSS BAWAAN LU YANG DIPERTAHANKAN === */
       '.wx-analytics-shell{margin-top:16px}',
-      '.wx-insight{padding:15px 16px;background:#fff;border:1px solid #e4e9f0;border-radius:14px;margin-bottom:10px}',
-      '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:#3563e9}',
-      '.wx-insight-title{font-size:14px;font-weight:800;color:#1d2940;margin-top:4px}',
-      '.wx-insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}',
-      '.wx-insight-item{padding:9px 10px;border:1px solid #e9edf3;border-radius:9px;background:#f8fafc;font-size:11px;color:#4d5a6e}',
-      '.wx-metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}',
-      '.wx-metric{background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:12px 13px}',
-      '.wx-metric-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#7b8797;font-weight:800}',
-      '.wx-metric-value{font-size:24px;font-weight:900;color:#18243a;margin-top:6px}',
-      '.wx-metric-sub{font-size:9px;color:#7f8b9c;margin-top:4px}',
-      '.wx-breakdown-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px;align-items:start}',
-      '.wx-secondary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}',
-      '.wx-panel{background:#fff;border:1px solid #e4e9f0;border-radius:12px;padding:13px 14px;min-width:0;align-self:start;height:max-content}',
-      '.wx-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}',
-      '.wx-panel-title{font-size:12px;font-weight:800;color:#1d2940}',
-      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:7px 8px;border-bottom:1px solid #eef2f6;font-size:11px;color:#4c5970}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:#25344a}',
-      '.wx-process-list{display:grid;gap:11px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:#566276}.wx-process-top b{color:#1e2b42}.wx-process-track{height:7px;border-radius:999px;background:#eef2f6;margin-top:5px;overflow:hidden}.wx-process-fill{height:100%;background:#3167e8;border-radius:999px}',
-      '.wx-filter{display:grid;grid-template-columns:auto 170px 170px 1fr;align-items:center;gap:9px;width:100%;box-sizing:border-box;margin:4px 0 12px;padding:10px 11px;background:#fff;border:1px solid #e2e7ee;border-radius:11px}',
-      '.wx-filter-label{font-size:10px;font-weight:800;color:#3c4a60}.wx-filter select{height:36px;border:1px solid #d7dee8;border-radius:8px;background:#fafcff;padding:0 9px;font-size:11px;font-weight:700;color:#26354b}.wx-filter-count{justify-self:end;font-size:10px;color:#7a8698;font-weight:700}',
+      '.wx-insight{padding:16px;background:#fff;border:1px solid #e4e9f0;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 4px rgba(0,0,0,0.02)}',
+      '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:#2f5bff}',
+      '.wx-insight-title{font-size:15px;font-weight:800;color:#0f172a;margin-top:4px}',
+      '.wx-insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}',
+      '.wx-insight-item{padding:9px 10px;border:1px solid #e9edf3;border-radius:9px;background:#f8fafc;font-size:11px;color:#475569;font-weight:500}',
+      '.wx-metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}',
+      '.wx-breakdown-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}',
+      '.wx-secondary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}',
+      '.wx-panel{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:16px;min-width:0;align-self:start;height:max-content;box-shadow:0 2px 4px rgba(0,0,0,0.02)}',
+      '.wx-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}',
+      '.wx-panel-title{font-size:13px;font-weight:800;color:#0f172a}',
+      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#475569}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:#0f172a;font-weight:700}',
+      '.wx-process-list{display:grid;gap:12px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:#475569;font-weight:500}.wx-process-top b{color:#0f172a}.wx-process-track{height:6px;border-radius:999px;background:#e2e8f0;margin-top:6px;overflow:hidden}.wx-process-fill{height:100%;background:linear-gradient(90deg,#2f5bff,#00d4ff);border-radius:999px}',
+      '.wx-filter{display:grid;grid-template-columns:auto 170px 170px 1fr;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:8px 0 16px;padding:12px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.02)}',
+      '.wx-filter-label{font-size:11px;font-weight:800;color:#0f172a}.wx-filter select{height:36px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;padding:0 12px;font-size:11px;font-weight:700;color:#0f172a;outline:none;transition:border 0.2s}.wx-filter select:focus{border-color:#2f5bff}.wx-filter-count{justify-self:end;font-size:11px;color:#64748b;font-weight:700}',
+
+      /* === 9. RESPONSIVE FIXES === */
       '@media(max-width:1100px){.wx-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.wx-breakdown-grid{grid-template-columns:1fr 1fr}.wx-insight-grid{grid-template-columns:1fr 1fr}}',
       '@media(max-width:760px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid{grid-template-columns:1fr 1fr}.wx-filter{grid-template-columns:1fr 1fr}.wx-filter-label,.wx-filter-count{grid-column:1/-1;justify-self:start}}',
       '@media(max-width:520px){.wx-metric-grid,.wx-breakdown-grid,.wx-secondary-grid,.wx-insight-grid,.wx-filter{grid-template-columns:1fr}.wx-filter-label,.wx-filter-count{grid-column:auto}}',
-      '@media(max-width:1024px){.card:has(.metric-grid)>div:first-child{grid-template-columns:repeat(2,1fr)!important}}',
-      '@media(max-width:768px){.metric-value{font-size:28px!important}.card:has(.metric-grid)>div:first-child{grid-template-columns:1fr!important}.total-estimasi-box{padding:24px!important}.total-estimasi-box .value{font-size:32px!important}}'
+      '@media(max-width:1024px){.page > div:first-child > div > div > div:first-child > div:first-child{margin-bottom:10px}}',
+      '@media(max-width:768px){.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child{font-size:28px!important}.total-estimasi-box{padding:24px!important}.total-estimasi-box .value{font-size:32px!important}}'
     ].join('\n');
     document.head.appendChild(style);
   }
 
   applyStyles();
   root.SDLGBossAnalytics = Object.freeze({
-    version: '4.1.0',
+    version: '5.0.0', // Enterprise Premium Edition
     filterByPeriod: filterByPeriod,
     filterByYear: filterByYear,
     availableYears: availableYears,
