@@ -1,127 +1,147 @@
-/* SDLG_WARRANTY_TRACKING_V1.7.0 */
+/* SDLG_WARRANTY_TRACKING_V1.8.0 (Expert Edition) */
+/* Fitur: Isolasi penuh, Modern Dashboard Look, Warning Alerts */
 
 :root {
   --track-owner: #0f172a;
   --track-stage: #1e4ed8;
-  --track-blocked: #b45309;
-  --track-next: #059669;
+  --track-blocked-bg: #fffbeb;
+  --track-blocked-border: #fcd34d;
+  --track-blocked-text: #b45309;
+  --track-next-bg: #ecfdf5;
+  --track-next-border: #a7f3d0;
+  --track-next-text: #047857;
 }
 
-/* === 1. KOTAK UTAMA PANEL CLAIM TRACKING === */
-.page.claim-detail-page .sdlg-tracking-panel {
+/* === 1. ISOLASI KOTAK UTAMA (Mencegah bocornya CSS global) === */
+#sdlg-tracking-panel {
   display: block !important;
   width: 100% !important;
   box-sizing: border-box !important;
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
-  padding: 20px !important;
-  margin-bottom: 20px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  padding: 24px !important;
+  margin-bottom: 24px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
-/* === 2. HEADER PANEL (Judul & Versi) === */
-.sdlg-tracking-panel__head {
+/* Paksa semua elemen di dalam panel untuk lepas dari style global */
+#sdlg-tracking-panel * {
+  box-sizing: border-box !important;
+  border: none;
+  background: transparent;
+}
+
+/* === 2. HEADER PANEL === */
+#sdlg-tracking-panel .sdlg-tracking-panel__head {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  margin-bottom: 16px !important;
-  padding-bottom: 12px !important;
+  margin-bottom: 20px !important;
+  padding-bottom: 16px !important;
   border-bottom: 1px solid #f1f5f9 !important;
 }
 
-.sdlg-tracking-panel__title {
-  font-size: 16px !important;
+#sdlg-tracking-panel .sdlg-tracking-panel__title {
+  font-size: 18px !important;
   font-weight: 800 !important;
   color: #1e293b !important;
-  letter-spacing: -0.01em !important;
+  letter-spacing: -0.02em !important;
 }
 
-.sdlg-tracking-panel__ver {
+#sdlg-tracking-panel .sdlg-tracking-panel__ver {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #94a3b8 !important;
-  background: #f8fafc !important;
-  padding: 2px 8px !important;
-  border-radius: 6px !important;
-  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+  background: #f1f5f9 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important; /* Bikin versi jadi bentuk pil */
 }
 
-/* === 3. GRID UNTUK ISI DATA (Owner, Stage, dll) === */
-.sdlg-tracking-panel__grid {
+/* === 3. GRID UNTUK ISI DATA === */
+#sdlg-tracking-panel .sdlg-tracking-panel__grid {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 20px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 24px !important;
   align-items: start !important;
 }
 
-/* === 4. ITEM & LABEL === */
-.sdlg-tracking-panel__item {
+/* === 4. ITEM & LABEL & VALUE === */
+#sdlg-tracking-panel .sdlg-tracking-panel__item {
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
+  gap: 8px !important;
 }
 
-.sdlg-tracking-panel__label {
+#sdlg-tracking-panel .sdlg-tracking-panel__label {
   font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
+  letter-spacing: 0.08em !important;
   color: #64748b !important;
-  margin: 0 !important;
 }
 
-.sdlg-tracking-panel__value {
-  font-size: 13.5px !important;
+#sdlg-tracking-panel .sdlg-tracking-panel__value {
+  font-size: 14px !important;
   font-weight: 600 !important;
   color: #0f172a !important;
   line-height: 1.5 !important;
   word-break: break-word !important;
 }
 
-/* === 5. KHUSUS "WHY BLOCKED" (List Merah/Oren) === */
-.sdlg-tracking-panel__list {
+/* === 5. MODERN ALERT BOX: "WHY BLOCKED" === */
+#sdlg-tracking-panel .sdlg-tracking-panel__list {
   margin: 0 !important;
-  padding-left: 18px !important;
+  padding: 12px 16px 12px 32px !important;
   list-style-type: disc !important;
+  background: var(--track-blocked-bg) !important;
+  border: 1px solid var(--track-blocked-border) !important;
+  border-radius: 8px !important;
 }
 
-.sdlg-tracking-panel__list li {
+#sdlg-tracking-panel .sdlg-tracking-panel__list li {
   font-size: 13px !important;
   line-height: 1.5 !important;
-  color: #b45309 !important;
+  color: var(--track-blocked-text) !important;
   font-weight: 600 !important;
-  margin-bottom: 4px !important;
+  margin-bottom: 6px !important;
 }
 
-.sdlg-tracking-panel__value--muted {
+#sdlg-tracking-panel .sdlg-tracking-panel__list li:last-child {
+  margin-bottom: 0 !important;
+}
+
+#sdlg-tracking-panel .sdlg-tracking-panel__value--muted {
   color: #94a3b8 !important;
   font-weight: 500 !important;
 }
 
-/* === 6. NEXT ACTION & HANDOFF (Kotak Hijau) === */
-.sdlg-tracking-panel__item--next {
+/* === 6. NEXT ACTION & HANDOFF (Action Cards) === */
+#sdlg-tracking-panel .sdlg-tracking-panel__item--next {
   grid-column: span 2 !important;
-  background: #ecfdf5 !important;
-  border: 1px solid #a7f3d0 !important;
-  padding: 12px 16px !important;
-  border-radius: 8px !important;
+  background: var(--track-next-bg) !important;
+  border: 1px solid var(--track-next-border) !important;
+  padding: 16px 20px !important;
+  border-radius: 10px !important;
 }
 
-.sdlg-tracking-panel__item--handoff {
+#sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
   grid-column: span 2 !important;
-  padding: 12px 16px !important;
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
-  border-radius: 8px !important;
+  padding: 16px 20px !important;
+  border-radius: 10px !important;
 }
 
-.sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
-  color: #047857 !important;
+#sdlg-tracking-panel .sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
+  color: var(--track-next-text) !important;
 }
-.sdlg-tracking-panel__value--next {
-  color: #047857 !important;
+
+#sdlg-tracking-panel .sdlg-tracking-panel__value--next {
+  color: var(--track-next-text) !important;
   font-weight: 700 !important;
+  font-size: 14.5px !important;
 }
 
 /* === 7. SEMBUNYIKAN SECTION YANG GAK KEPAKE === */
@@ -130,23 +150,23 @@
   display: none !important;
 }
 
-/* === 8. RESPONSIVE (Untuk Layar HP) === */
-@media (max-width: 1024px) {
-  .sdlg-tracking-panel__grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+/* === 8. RESPONSIVE (Tampilan HP & Tablet) === */
+@media (max-width: 1200px) {
+  #sdlg-tracking-panel .sdlg-tracking-panel__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-  .sdlg-tracking-panel__item--next,
-  .sdlg-tracking-panel__item--handoff {
+  #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
+  #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
     grid-column: span 2 !important;
   }
 }
 
 @media (max-width: 768px) {
-  .sdlg-tracking-panel__grid {
+  #sdlg-tracking-panel .sdlg-tracking-panel__grid {
     grid-template-columns: 1fr !important;
   }
-  .sdlg-tracking-panel__item--next,
-  .sdlg-tracking-panel__item--handoff {
+  #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
+  #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
     grid-column: span 1 !important;
   }
 }
