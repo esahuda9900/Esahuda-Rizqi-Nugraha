@@ -1,0 +1,242 @@
+/* =========================================================
+   SDLG DASHBOARD POLISH V1.0 (EXPERT REVISED)
+   Scoped to the Dashboard page only (page with metric-grid).
+   Goal: Modern, clean, breathable SaaS Command Center.
+   ========================================================= */
+
+/* =========================================
+   1. PAGE & LAYOUT
+   ========================================= */
+.page:has(.metric-grid) {
+  padding-top: 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important; /* Jarak antar section lebih lega */
+}
+
+/* =========================================
+   2. METRIC CARDS (Top Row)
+   ========================================= */
+.page:has(.metric-grid) .metric-grid {
+  gap: 16px !important;
+  margin-bottom: 0 !important;
+}
+
+.page:has(.metric-grid) .metric-card {
+  background: #ffffff !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: 16px !important;
+  padding: 20px 24px !important;
+  min-height: 110px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Aksen garis atas untuk mempercantik */
+.page:has(.metric-grid) .metric-card::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 3px !important;
+  background: var(--sdlg-primary, #2f5bff) !important;
+  opacity: 0.8 !important;
+}
+
+.page:has(.metric-grid) .metric-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 8px !important;
+}
+
+.page:has(.metric-grid) .metric-value {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}
+
+/* =========================================
+   3. "MY ACTION TODAY" SECTION (Kotak Warna)
+   ========================================= */
+.page:has(.metric-grid) .card:has(.metric-grid) {
+  padding: 24px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+
+/* Bikin 4 kotak di dalamnya rapi */
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+  margin-bottom: 20px !important;
+}
+
+/* Styling kotak Critical, Action, dll */
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div {
+  border-radius: 12px !important;
+  padding: 16px !important;
+  border: 1px solid transparent !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  transition: transform 0.2s ease !important;
+}
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div:hover {
+  transform: translateY(-2px) !important;
+}
+
+/* Angka Besar di dalam kotak */
+.page:has(.metric-grid) .card:has(.metric-grid) > div:first-child > div > div:first-child {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+/* =========================================
+   4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED"
+   ========================================= */
+/* Bikin list seperti baris tabel modern */
+.page:has(.metric-grid) .claim-row,
+.page:has(.metric-grid) .action-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background 0.15s ease !important;
+  gap: 12px !important;
+}
+
+.page:has(.metric-grid) .claim-row:hover,
+.page:has(.metric-grid) .action-row:hover {
+  background: #f8fafc !important;
+  border-bottom-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+}
+
+/* =========================================
+   5. STATUS FLOW (Kanan)
+   ========================================= */
+/* Ubah list status jadi bentuk progress bar */
+.page:has(.metric-grid) .status-list-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px dashed #e2e8f0 !important;
+  font-size: 13px !important;
+}
+.page:has(.metric-grid) .status-list-item:last-child {
+  border-bottom: none !important;
+}
+
+/* =========================================
+   6. CHART SECTIONS (Trend, Model, Branch)
+   ========================================= */
+.page:has(.metric-grid) .card:has(canvas),
+.page:has(.metric-grid) .card:has(svg) {
+  padding: 20px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+}
+.page:has(.metric-grid) .card:has(canvas) h3,
+.page:has(.metric-grid) .card:has(svg) h3 {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-bottom: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* =========================================
+   7. TOTAL ESTIMASI (Hero Box)
+   ========================================= */
+.page:has(.metric-grid) .total-estimasi-box {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+.page:has(.metric-grid) .total-estimasi-box .label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+}
+.page:has(.metric-grid) .total-estimasi-box .value {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.02em !important;
+  margin-top: 4px !important;
+}
+
+/* =========================================
+   8. EXECUTIVE SNAPSHOT (Grid di bawah)
+   ========================================= */
+.page:has(.metric-grid) .card:has(.executive-snapshot),
+.page:has(.metric-grid) div:has(> .snapshot-title) {
+  padding: 24px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  background: #ffffff !important;
+}
+
+/* Rapihin grid di dalam snapshot */
+.page:has(.metric-grid) .snapshot-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+  gap: 16px !important;
+}
+.page:has(.metric-grid) .snapshot-item {
+  background: #f8fafc !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+.page:has(.metric-grid) .snapshot-item .label {
+  font-size: 11px !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+.page:has(.metric-grid) .snapshot-item .value {
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin-top: 4px !important;
+}
+
+/* =========================================
+   9. RESPONSIVE
+   ========================================= */
+@media (max-width: 1024px) {
+  .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 768px) {
+  .page:has(.metric-grid) .metric-value {
+    font-size: 24px !important;
+  }
+  .page:has(.metric-grid) .card:has(.metric-grid) > div:first-child {
+    grid-template-columns: 1fr !important;
+  }
+}
