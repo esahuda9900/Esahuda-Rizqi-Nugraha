@@ -1,295 +1,152 @@
-/* SDLG_WARRANTY_TRACKING_V1.6.9
-   v1.6.9: Support for HTML list in "Why Blocked" (from JS update), grid alignment fix.
-   v1.5.3: full What Happened wrap (no truncate)
-   v1.5.2: position:relative (NOT sticky)
-   v1.5.1: reset [class*=panel] false match on children
-*/
+/* SDLG_WARRANTY_TRACKING_V1.7.0 */
 
 :root {
   --track-owner: #0f172a;
   --track-stage: #1e4ed8;
-  --track-blocked: #b45309; /* Warna oren gelap untuk peringatan */
+  --track-blocked: #b45309;
   --track-next: #059669;
 }
 
-/* --- CONTAINER UTAMA PANEL --- */
+/* === 1. KOTAK UTAMA PANEL CLAIM TRACKING === */
 .page.claim-detail-page .sdlg-tracking-panel {
-  position: relative !important;
-  top: auto !important;
-  z-index: 2 !important;
-  margin: 0 0 16px !important;
-  padding: 16px 18px !important; /* Sedikit dilebarkan biar lega */
-  border: 1px solid #c9d8f8 !important;
-  border-radius: 14px !important;
-  background: linear-gradient(180deg, #f7faff 0%, #ffffff 45%) !important;
-  box-shadow: 0 6px 20px rgba(31, 94, 255, 0.07) !important;
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  margin-bottom: 20px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* === 2. HEADER PANEL (Judul & Versi) === */
+.sdlg-tracking-panel__head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.sdlg-tracking-panel__title {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: #1e293b !important;
+  letter-spacing: -0.01em !important;
+}
+
+.sdlg-tracking-panel__ver {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  background: #f8fafc !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* === 3. GRID UNTUK ISI DATA (Owner, Stage, dll) === */
+.sdlg-tracking-panel__grid {
   display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 16px 24px !important; /* Jarak antar item diperlebar */
-  align-items: start !important; /* Penting: Biar item ga melar ke bawah kalau ada list panjang */
-  clear: both !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 20px !important;
+  align-items: start !important;
 }
 
-@media (min-width: 1100px) {
-  .page.claim-detail-page .sdlg-tracking-panel {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-}
-
-/* --- ITEM (Label & Value) --- */
-.page.claim-detail-page .sdlg-tracking-panel .sdlg-tracking-panel__item,
-.page.claim-detail-page .sdlg-tracking-panel__item {
-  min-width: 0 !important;
+/* === 4. ITEM & LABEL === */
+.sdlg-tracking-panel__item {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  gap: 6px !important;
 }
 
-/* --- LABEL (JUDUL KECIL) --- */
-.page.claim-detail-page .sdlg-tracking-panel .sdlg-tracking-panel__label,
-.page.claim-detail-page .sdlg-tracking-panel__label {
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  font-size: 10px !important; /* Sedikit dibesarkan dari 9.5px biar kebaca */
-  font-weight: 800 !important;
-  letter-spacing: 0.08em !important;
+.sdlg-tracking-panel__label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
   color: #64748b !important;
-  line-height: 1.2 !important;
-}
-
-/* --- VALUE (ISI TEKS) --- */
-.page.claim-detail-page .sdlg-tracking-panel .sdlg-tracking-panel__value,
-.page.claim-detail-page .sdlg-tracking-panel__value {
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  padding: 0 !important;
   margin: 0 !important;
-  font-size: 13px !important;
-  font-weight: 650 !important;
-  color: #0f172a !important;
-  line-height: 1.5 !important; /* Spasi baris dilonggarkan */
-  word-break: break-word !important;
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  max-height: none !important;
 }
 
-/* --- STYLING UNTUK LIST (WHY BLOCKED) --- */
-.page.claim-detail-page .sdlg-tracking-panel__list {
-  margin: 4px 0 0 0 !important;
-  padding-left: 16px !important; /* Jarak bullet point */
+.sdlg-tracking-panel__value {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+}
+
+/* === 5. KHUSUS "WHY BLOCKED" (List Merah/Oren) === */
+.sdlg-tracking-panel__list {
+  margin: 0 !important;
+  padding-left: 18px !important;
   list-style-type: disc !important;
 }
 
-.page.claim-detail-page .sdlg-tracking-panel__list li {
-  font-size: 12.5px !important;
-  line-height: 1.4 !important;
-  color: var(--track-blocked) !important; /* Warna oren otomatis */
-  font-weight: 700 !important;
-  margin-bottom: 6px !important;
+.sdlg-tracking-panel__list li {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: #b45309 !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
 }
 
-.page.claim-detail-page .sdlg-tracking-panel__list li:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* --- STATE MUTED & BLOCKED --- */
-.page.claim-detail-page .sdlg-tracking-panel__value--muted {
-  color: #64748b !important;
+.sdlg-tracking-panel__value--muted {
+  color: #94a3b8 !important;
   font-weight: 500 !important;
 }
 
-.page.claim-detail-page .sdlg-tracking-panel__value--blocked {
-  color: var(--track-blocked) !important;
-}
-
-/* --- NEXT ACTION BOX (HIJAU) --- */
-.page.claim-detail-page .sdlg-tracking-panel__item--next {
-  grid-column: 1 / -1 !important;
-  padding: 12px 14px !important;
-  border-radius: 10px !important;
+/* === 6. NEXT ACTION & HANDOFF (Kotak Hijau) === */
+.sdlg-tracking-panel__item--next {
+  grid-column: span 2 !important;
   background: #ecfdf5 !important;
   border: 1px solid #a7f3d0 !important;
-  box-shadow: none !important;
+  padding: 12px 16px !important;
+  border-radius: 8px !important;
 }
 
-@media (min-width: 1100px) {
-  .page.claim-detail-page .sdlg-tracking-panel__item--next {
-    grid-column: 1 / 3 !important;
-  }
-  .page.claim-detail-page .sdlg-tracking-panel__item--handoff {
-    grid-column: 3 / 5 !important;
-  }
-}
-
-.page.claim-detail-page .sdlg-tracking-panel__value--next {
-  color: #047857 !important;
-  font-weight: 750 !important;
-}
-
-.page.claim-detail-page .sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
-  color: #047857 !important;
-}
-
-/* --- HANDOFF SECTION --- */
-.page.claim-detail-page .sdlg-tracking-panel__item--handoff {
-  padding: 12px 4px 0 !important;
-  border: none !important;
-  background: transparent !important;
-}
-
-/* --- CLAIM COMMAND BAR (BAGIAN ATAS) --- */
-.page.claim-detail-page .sdlg-claim-command {
-  position: relative !important;
-  z-index: 2 !important;
-  display: grid !important;
-  grid-template-columns: minmax(280px, 1.1fr) minmax(420px, 1fr) !important;
-  gap: 16px !important;
-  align-items: center !important;
-  margin: 0 0 10px !important;
-  padding: 12px 14px !important;
-  border: 1px solid #d7e2f5 !important;
-  border-radius: 14px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%) !important;
-  box-shadow: 0 4px 14px rgba(15, 35, 70, 0.05) !important;
-}
-
-.page.claim-detail-page .sdlg-claim-command * {
-  box-shadow: none !important;
-}
-
-.sdlg-claim-command__eyebrow {
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  color: #2f5bff !important;
-  margin-bottom: 2px !important;
-}
-
-.sdlg-claim-command__title {
-  font-size: 20px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.02em !important;
-  color: #0f172a !important;
-}
-
-.sdlg-claim-command__sub {
-  margin-top: 2px !important;
-  font-size: 12px !important;
-  color: #64748b !important;
-}
-
-.sdlg-claim-command__context {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-}
-
-.sdlg-claim-command__context > div {
-  min-width: 0 !important;
-  padding-left: 10px !important;
-  border-left: 1px solid #e2e8f0 !important;
-  background: transparent !important;
-}
-
-.sdlg-claim-command__context span {
-  display: block !important;
-  font-size: 9px !important;
-  color: #64748b !important;
-  font-weight: 750 !important;
-  letter-spacing: 0.06em !important;
-  text-transform: uppercase !important;
-}
-
-.sdlg-claim-command__context strong {
-  display: block !important;
-  margin-top: 2px !important;
-  font-size: 12px !important;
-  color: #0f172a !important;
-  font-weight: 700 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-/* --- OVERRIDES LAINNYA --- */
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary,
-.page.claim-detail-page.sdlg-tracking-active .sdlg-route-summary {
-  margin: 0 0 10px !important;
-  padding: 10px 12px !important;
-  border-radius: 12px !important;
-  box-shadow: none !important;
-  border: 1px solid #e8eef6 !important;
+.sdlg-tracking-panel__item--handoff {
+  grid-column: span 2 !important;
+  padding: 12px 16px !important;
   background: #f8fafc !important;
-  position: relative !important;
-  z-index: 1 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__title {
-  font-size: 13px !important;
+.sdlg-tracking-panel__item--next .sdlg-tracking-panel__label {
+  color: #047857 !important;
+}
+.sdlg-tracking-panel__value--next {
+  color: #047857 !important;
   font-weight: 700 !important;
-  color: #64748b !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__next {
+/* === 7. SEMBUNYIKAN SECTION YANG GAK KEPAKE === */
+.page.claim-detail-page:has(#sdlg-tracking-panel) #sdlg-warranty-assessment-shell,
+.page.claim-detail-page:has(#sdlg-tracking-panel) .warranty-assessment-card {
   display: none !important;
 }
 
-.page.claim-detail-page:has(#sdlg-tracking-panel) #sdlg-warranty-assessment-shell {
-  display: none !important;
+/* === 8. RESPONSIVE (Untuk Layar HP) === */
+@media (max-width: 1024px) {
+  .sdlg-tracking-panel__grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .sdlg-tracking-panel__item--next,
+  .sdlg-tracking-panel__item--handoff {
+    grid-column: span 2 !important;
+  }
 }
 
-/* --- CHIPS --- */
-.claim-track-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-}
-.claim-track-chip {
-  display: inline-flex;
-  font-size: 10px;
-  font-weight: 650;
-  padding: 1px 7px;
-  border-radius: 999px;
-}
-.claim-track-chip--stage {
-  background: #eef3ff;
-  color: #1e4ed8;
-  border: 1px solid #bfdbfe;
-}
-.claim-track-chip--blocked {
-  background: #fffbeb;
-  color: #b45309;
-  border: 1px solid #fde68a;
-}
-
-/* --- RESPONSIVE MOBILE --- */
-@media (max-width: 900px) {
-  .page.claim-detail-page .sdlg-claim-command {
+@media (max-width: 768px) {
+  .sdlg-tracking-panel__grid {
     grid-template-columns: 1fr !important;
   }
-  .page.claim-detail-page .sdlg-tracking-panel {
-    grid-template-columns: 1fr !important;
-  }
-  .page.claim-detail-page .sdlg-tracking-panel__item--next,
-  .page.claim-detail-page .sdlg-tracking-panel__item--handoff {
-    grid-column: 1 / -1 !important;
-  }
-  .sdlg-claim-command__context {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .sdlg-tracking-panel__item--next,
+  .sdlg-tracking-panel__item--handoff {
+    grid-column: span 1 !important;
   }
 }
