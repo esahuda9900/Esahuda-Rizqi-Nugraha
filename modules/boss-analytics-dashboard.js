@@ -2,12 +2,13 @@
  * SDLG Warranty — Executive Analytics Dashboard
  * 
  * ═══════════════════════════════════════════════════════════
- * CHANGELOG V7.0 — ENTERPRISE FINAL
+ * CHANGELOG V8.0 — THE GOD-TIER EDITION
  * ═══════════════════════════════════════════════════════════
- * ✅ FIX CSP ERROR: Google Fonts dihapus, ganti System Fonts.
- * ✅ UI UPGRADE: Layered shadows, glassmorphism, micro-interactions.
- * ✅ SAFE RENDER: Anti-blank screen kalau data kosong/null.
- * ✅ CLEAN CSS: CSS Variables dirapihin, gak ada deklarasi dobel.
+ * ✅ AUTO DARK MODE: Ngikutin settingan HP/Laptop user.
+ * ✅ STAGGERED ANIMATIONS: Kartu muncul satu per satu (halus).
+ * ✅ LOCALIZATION: Format angka pakai standar Indonesia (id-ID).
+ * ✅ GLASSMORPHISM 2.0: Kotak gelap lebih elegan & glowing.
+ * ✅ ZERO CSP ERROR: Bebas dari error font Google.
  * ═══════════════════════════════════════════════════════════
  */
 (function (root) {
@@ -16,7 +17,7 @@
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 1: LOGIKA DATA (Jangan Diubah — Aman)
+  // BAGIAN 1: LOGIKA DATA
   // ═════════════════════════════════════════════════════════
 
   function safeDate(raw) {
@@ -124,7 +125,7 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 2: REACT COMPONENTS (Aman)
+  // BAGIAN 2: REACT COMPONENTS
   // ═════════════════════════════════════════════════════════
 
   function periodFilterBar(opts) {
@@ -143,7 +144,7 @@
         React.createElement('option', { value: 'ALL' }, 'Semua bulan'),
         MONTHS.map(function (m, i) { return React.createElement('option', { key: i + 1, value: String(i + 1) }, m); })
       ),
-      React.createElement('div', { className: 'wx-filter-count' }, scope.length.toLocaleString('en-US') + ' claim dalam periode')
+      React.createElement('div', { className: 'wx-filter-count' }, scope.length.toLocaleString('id-ID') + ' claim dalam periode')
     );
   }
 
@@ -192,21 +193,21 @@
         React.createElement('div', { className: 'wx-insight-badge' }, 'EXECUTIVE SNAPSHOT'),
         React.createElement('div', { className: 'wx-insight-title' }, 'Ringkasan operasional periode terpilih'),
         React.createElement('div', { className: 'wx-insight-grid' },
-          React.createElement('div', { className: 'wx-insight-item' }, 'Claims: ' + ops.length.toLocaleString('en-US')),
-          React.createElement('div', { className: 'wx-insight-item' }, 'Aging ≥90d: ' + aged90.toLocaleString('en-US')),
-          React.createElement('div', { className: 'wx-insight-item' }, 'Aging ≥300d: ' + aged300.toLocaleString('en-US')),
+          React.createElement('div', { className: 'wx-insight-item' }, 'Claims: ' + ops.length.toLocaleString('id-ID')),
+          React.createElement('div', { className: 'wx-insight-item' }, 'Aging ≥90d: ' + aged90.toLocaleString('id-ID')),
+          React.createElement('div', { className: 'wx-insight-item' }, 'Aging ≥300d: ' + aged300.toLocaleString('id-ID')),
           React.createElement('div', { className: 'wx-insight-item' }, 'Top owner: ' + (owners.length ? owners[0][0] + ' (' + owners[0][1] + ')' : '—')),
           React.createElement('div', { className: 'wx-insight-item' }, 'Oldest claim aging: ' + (oldest ? oldest + ' days' : '—')),
           React.createElement('div', { className: 'wx-insight-item' }, 'Submission evidence: ' + evidence + '/' + ops.length)
         )
       ),
       React.createElement('div', { className: 'wx-metric-grid' },
-        metric('Claims', ops.length.toLocaleString('en-US'), 'portfolio aktif'),
-        metric('Aging ≥90d', aged90.toLocaleString('en-US'), ops.length ? Math.round(aged90 / ops.length * 1000) / 10 + '%' : '0%'),
-        metric('Aging ≥300d', aged300.toLocaleString('en-US'), ops.length ? Math.round(aged300 / ops.length * 1000) / 10 + '%' : '0%'),
-        metric('SDLG owner', owners.length ? owners[0][1].toLocaleString('en-US') : '0', 'owner teratas'),
+        metric('Claims', ops.length.toLocaleString('id-ID'), 'portfolio aktif'),
+        metric('Aging ≥90d', aged90.toLocaleString('id-ID'), ops.length ? Math.round(aged90 / ops.length * 1000) / 10 + '%' : '0%'),
+        metric('Aging ≥300d', aged300.toLocaleString('id-ID'), ops.length ? Math.round(aged300 / ops.length * 1000) / 10 + '%' : '0%'),
+        metric('SDLG owner', owners.length ? owners[0][1].toLocaleString('id-ID') : '0', 'owner teratas'),
         metric('Evidence', evidence + '/' + ops.length, 'submission / dealer claim'),
-        metric('Rejected', rejectedRows.length.toLocaleString('en-US'), 'dalam filter')
+        metric('Rejected', rejectedRows.length.toLocaleString('id-ID'), 'dalam filter')
       ),
       React.createElement('div', { className: 'wx-breakdown-grid' },
         panel('Ball in court', React.createElement('div', { className: 'wx-simple-table-wrap' }, React.createElement('table', { className: 'wx-table' }, React.createElement('tbody', null, rows(owners))))),
@@ -221,7 +222,7 @@
             React.createElement('div', { className: 'wx-process-track' }, React.createElement('div', { className: 'wx-process-fill', style: { width: width + '%' } }))
           );
         }))),
-        panel('Operational notes', React.createElement('div', { style: { fontSize: 11, color: '#5d697c', lineHeight: 1.6 } },
+        panel('Operational notes', React.createElement('div', { style: { fontSize: 11, color: 'var(--sdlg-text-muted)', lineHeight: 1.6 } },
           'Analytics ini read-only. Untuk operasional harian gunakan Command Center dan Follow-Up Center di bagian atas dashboard.'
         ))
       )
@@ -229,7 +230,7 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 3: STYLES (Bebas CSP Error + UI Premium)
+  // BAGIAN 3: STYLES (Auto Dark Mode & Animations)
   // ═════════════════════════════════════════════════════════
 
   function applyStyles() {
@@ -241,7 +242,7 @@
     
     style.textContent = [
       /* ═══════════════════════════════════════════════════════
-         🎨 TEMA & WARNA (Tanpa Google Fonts = Bebas CSP Error)
+         🎨 TEMA & WARNA (Light Mode Default)
          ═══════════════════════════════════════════════════════ */
       ':root {',
       '  --sdlg-page-bg: #f1f5f9;',
@@ -261,6 +262,18 @@
       '  --sdlg-shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);',
       '  --sdlg-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);',
       '}',
+
+      /* Animasi muncul (Staggered Fade-In) */
+      '@keyframes sdlgRise { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }',
+      '.wx-analytics-shell, .wx-metric, .wx-panel, .total-estimasi-box { animation: sdlgRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }',
+      
+      /* Delay biar munculnya gantian */
+      '.wx-metric:nth-child(1) { animation-delay: 0.05s; }',
+      '.wx-metric:nth-child(2) { animation-delay: 0.1s; }',
+      '.wx-metric:nth-child(3) { animation-delay: 0.15s; }',
+      '.wx-metric:nth-child(4) { animation-delay: 0.2s; }',
+      '.wx-metric:nth-child(5) { animation-delay: 0.25s; }',
+      '.wx-metric:nth-child(6) { animation-delay: 0.3s; }',
 
       'body {',
       '  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;',
@@ -286,27 +299,19 @@
       '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child::before {',
-      '  content: "" !important;',
-      '  position: absolute !important;',
+      '  content: "" !important; position: absolute !important;',
       '  top: 0 !important; left: 0 !important; bottom: 0 !important;',
       '  width: 4px !important;',
       '  background: linear-gradient(180deg, var(--sdlg-accent) 0%, var(--sdlg-accent-alt) 100%) !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:first-child {',
-      '  font-size: 12px !important;',
-      '  font-weight: 700 !important;',
+      '  font-size: 12px !important; font-weight: 700 !important;',
       '  color: var(--sdlg-text-muted) !important;',
-      '  text-transform: uppercase !important;',
-      '  letter-spacing: 0.05em !important;',
-      '  margin-bottom: 8px !important;',
+      '  text-transform: uppercase !important; letter-spacing: 0.05em !important; margin-bottom: 8px !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child {',
-      '  font-family: monospace !important;',
-      '  font-size: 34px !important;',
-      '  font-weight: 800 !important;',
-      '  color: var(--sdlg-text) !important;',
-      '  letter-spacing: -0.03em !important;',
-      '  line-height: 1 !important;',
+      '  font-family: monospace !important; font-size: 34px !important; font-weight: 800 !important;',
+      '  color: var(--sdlg-text) !important; letter-spacing: -0.03em !important; line-height: 1 !important;',
       '  font-variant-numeric: tabular-nums !important;',
       '}',
 
@@ -314,38 +319,31 @@
          🎯 4 KOTAK "MY ACTION TODAY"
          ═══════════════════════════════════════════════════════ */
       '.page div[style*="grid-template-columns: repeat(4"] > div {',
-      '  border-radius: var(--sdlg-radius-md) !important;',
-      '  padding: 20px !important;',
-      '  border: 1px solid transparent !important;',
-      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  border-radius: var(--sdlg-radius-md) !important; padding: 20px !important;',
+      '  border: 1px solid transparent !important; box-shadow: var(--sdlg-shadow-sm) !important;',
       '  transition: transform var(--sdlg-transition) !important;',
       '}',
-      '.page div[style*="grid-template-columns: repeat(4"] > div:hover {',
-      '  transform: translateY(-2px) !important;',
-      '}',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:hover { transform: translateY(-2px) !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: #fef2f2 !important; border-color: #fecaca !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: #fffbeb !important; border-color: #fde68a !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: #eff6ff !important; border-color: #bfdbfe !important; }',
       '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: #f8fafc !important; border-color: #e2e8f0 !important; }',
 
       /* ═══════════════════════════════════════════════════════
-         💰 KOTAK GELAP ESTIMASI TOTAL
+         💰 KOTAK GELAP ESTIMASI TOTAL (Glassmorphism)
          ═══════════════════════════════════════════════════════ */
       '.total-estimasi-box {',
       '  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;',
-      '  color: #ffffff !important;',
-      '  padding: 32px 40px !important;',
-      '  border-radius: var(--sdlg-radius-lg) !important;',
-      '  border: 1px solid #334155 !important;',
+      '  color: #ffffff !important; padding: 32px 40px !important;',
+      '  border-radius: var(--sdlg-radius-lg) !important; border: 1px solid #334155 !important;',
       '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -10px rgba(15,23,42,0.4) !important;',
       '  display: flex !important; flex-direction: column !important; justify-content: center !important;',
       '  margin: 32px 0 !important; position: relative !important; overflow: hidden !important;',
       '}',
       '.total-estimasi-box::after {',
       '  content: "" !important; position: absolute !important;',
-      '  top: -50% !important; right: -10% !important;',
-      '  width: 400px !important; height: 400px !important;',
-      '  background: radial-gradient(circle, rgba(47,91,255,0.3) 0%, transparent 60%) !important;',
+      '  top: -50% !important; right: -10% !important; width: 400px !important; height: 400px !important;',
+      '  background: radial-gradient(circle, rgba(47,91,255,0.4) 0%, transparent 60%) !important;',
       '  border-radius: 50% !important; pointer-events: none !important;',
       '}',
       '.total-estimasi-box .label {',
@@ -354,11 +352,9 @@
       '  position: relative !important; z-index: 2 !important;',
       '}',
       '.total-estimasi-box .value {',
-      '  font-family: monospace !important;',
-      '  font-size: 44px !important; font-weight: 800 !important;',
-      '  color: #ffffff !important; letter-spacing: -0.03em !important;',
-      '  margin-top: 8px !important; position: relative !important; z-index: 2 !important;',
-      '  font-variant-numeric: tabular-nums !important;',
+      '  font-family: monospace !important; font-size: 44px !important; font-weight: 800 !important;',
+      '  color: #ffffff !important; letter-spacing: -0.03em !important; margin-top: 8px !important;',
+      '  position: relative !important; z-index: 2 !important; font-variant-numeric: tabular-nums !important;',
       '}',
 
       /* ═══════════════════════════════════════════════════════
@@ -369,12 +365,10 @@
       '  padding: 14px 18px !important; margin-bottom: 6px !important;',
       '  border-radius: var(--sdlg-radius-sm) !important;',
       '  background: var(--sdlg-surface) !important; border: 1px solid var(--sdlg-surface-muted) !important;',
-      '  box-shadow: var(--sdlg-shadow-sm) !important;',
-      '  transition: all var(--sdlg-transition) !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important; transition: all var(--sdlg-transition) !important;',
       '}',
       '.claim-row:hover, .action-row:hover {',
-      '  background: var(--sdlg-surface-muted) !important; border-color: var(--sdlg-border) !important;',
-      '  transform: translateX(3px) !important;',
+      '  background: var(--sdlg-surface-muted) !important; border-color: var(--sdlg-border) !important; transform: translateX(3px) !important;',
       '}',
       '.card:has(canvas), .card:has(svg) {',
       '  background: var(--sdlg-surface) !important; border: 1px solid var(--sdlg-border) !important;',
@@ -391,7 +385,7 @@
       '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--sdlg-accent)}',
       '.wx-insight-title{font-size:15px;font-weight:800;color:var(--sdlg-text);margin-top:4px}',
       '.wx-insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}',
-      '.wx-insight-item{padding:9px 10px;border:1px solid var(--sdlg-border);border-radius:9px;background:var(--sdlg-surface-muted);font-size:11px;color:#475569;font-weight:500}',
+      '.wx-insight-item{padding:9px 10px;border:1px solid var(--sdlg-border);border-radius:9px;background:var(--sdlg-surface-muted);font-size:11px;color:var(--sdlg-text-muted);font-weight:500}',
       '.wx-metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}',
       '.wx-metric{background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-sm);padding:16px;box-shadow:var(--sdlg-shadow-sm);transition:transform var(--sdlg-transition)}',
       '.wx-metric:hover{transform:translateY(-2px);box-shadow:var(--sdlg-shadow-md)}',
@@ -403,13 +397,38 @@
       '.wx-panel{background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-md);padding:16px;min-width:0;align-self:start;box-shadow:var(--sdlg-shadow-sm)}',
       '.wx-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}',
       '.wx-panel-title{font-size:13px;font-weight:800;color:var(--sdlg-text)}',
-      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid var(--sdlg-surface-muted);font-size:11px;color:#475569}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:var(--sdlg-text);font-weight:700}',
-      '.wx-process-list{display:grid;gap:12px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:#475569;font-weight:500}.wx-process-top b{color:var(--sdlg-text)}.wx-process-track{height:6px;border-radius:999px;background:var(--sdlg-border);margin-top:6px;overflow:hidden}.wx-process-fill{height:100%;background:linear-gradient(90deg,var(--sdlg-accent),var(--sdlg-accent-alt));border-radius:999px}',
+      '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid var(--sdlg-surface-muted);font-size:11px;color:var(--sdlg-text-muted)}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:var(--sdlg-text);font-weight:700}',
+      '.wx-process-list{display:grid;gap:12px}.wx-process-top{display:flex;justify-content:space-between;font-size:11px;color:var(--sdlg-text-muted);font-weight:500}.wx-process-top b{color:var(--sdlg-text)}.wx-process-track{height:6px;border-radius:999px;background:var(--sdlg-border);margin-top:6px;overflow:hidden}.wx-process-fill{height:100%;background:linear-gradient(90deg,var(--sdlg-accent),var(--sdlg-accent-alt));border-radius:999px}',
       '.wx-filter{display:grid;grid-template-columns:auto 170px 170px 1fr;align-items:center;gap:12px;width:100%;box-sizing:border-box;margin:8px 0 16px;padding:12px 16px;background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-sm);box-shadow:var(--sdlg-shadow-sm)}',
       '.wx-filter-label{font-size:11px;font-weight:800;color:var(--sdlg-text)}',
       '.wx-filter select{height:36px;border:1px solid var(--sdlg-border-strong);border-radius:8px;background:var(--sdlg-surface-muted);padding:0 12px;font-size:11px;font-weight:700;color:var(--sdlg-text);outline:none;transition:border var(--sdlg-transition)}',
       '.wx-filter select:focus{border-color:var(--sdlg-accent)}',
       '.wx-filter-count{justify-self:end;font-size:11px;color:var(--sdlg-text-muted);font-weight:700}',
+
+      /* ═══════════════════════════════════════════════════════
+         🌙 AUTO DARK MODE (Sihir Utama V8.0)
+         ═══════════════════════════════════════════════════════ */
+      '@media (prefers-color-scheme: dark) {',
+      '  :root {',
+      '    --sdlg-page-bg: #0b1220;',
+      '    --sdlg-surface: #111a2e;',
+      '    --sdlg-surface-muted: #1e293b;',
+      '    --sdlg-border: #1e2a45;',
+      '    --sdlg-border-strong: #334155;',
+      '    --sdlg-text: #f8fafc;',
+      '    --sdlg-text-muted: #94a3b8;',
+      '    --sdlg-text-subtle: #64748b;',
+      '    --sdlg-accent: #4d70ff;',
+      '    --sdlg-accent-alt: #00d4ff;',
+      '    --sdlg-shadow-sm: 0 1px 3px rgba(0,0,0,0.4);',
+      '    --sdlg-shadow-md: 0 10px 25px -5px rgba(0,0,0,0.5);',
+      '  }',
+      '  /* Penyesuaian 4 kotak biar gak norak di dark mode */',
+      '  .page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: rgba(220, 38, 38, 0.1) !important; border-color: rgba(220, 38, 38, 0.3) !important; }',
+      '  .page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: rgba(217, 119, 6, 0.1) !important; border-color: rgba(217, 119, 6, 0.3) !important; }',
+      '  .page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: rgba(47, 91, 255, 0.1) !important; border-color: rgba(47, 91, 255, 0.3) !important; }',
+      '  .page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: rgba(255, 255, 255, 0.05) !important; border-color: rgba(255, 255, 255, 0.1) !important; }',
+      '}',
 
       /* RESPONSIVE */
       '@media (max-width: 1100px) { .wx-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) } .wx-breakdown-grid { grid-template-columns: 1fr 1fr } .wx-insight-grid { grid-template-columns: 1fr 1fr } }',
@@ -422,7 +441,7 @@
 
   applyStyles();
   root.SDLGBossAnalytics = Object.freeze({
-    version: '7.0.0',
+    version: '8.0.0',
     filterByPeriod: filterByPeriod,
     filterByYear: filterByYear,
     availableYears: availableYears,

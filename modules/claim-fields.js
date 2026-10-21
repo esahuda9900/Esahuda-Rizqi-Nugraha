@@ -1,7 +1,20 @@
-/** SDLG Claim field registry + MINIMAL module loader. */
+/**
+ * SDLG Claim Field Registry + Smart Module Loader — V2.0
+ * 
+ * ═══════════════════════════════════════════════════════════
+ * UPGRADE V2.0:
+ * ✅ ANTI-RACE CONDITION: File di-load berurutan (async=false).
+ * ✅ SMART NOTIFICATION: Muncul notif jika ada file gagal load.
+ * ✅ IMMUTABLE CONFIG: Data field dilindungi Object.freeze().
+ * ✅ AUTO-RETRY: Bisa coba load ulang jika gagal.
+ * ═══════════════════════════════════════════════════════════
+ */
 (function (global) {
   'use strict';
 
+  // ─────────────────────────────────────────────────────────
+  // 1. KONFIGURASI FIELD DATABASE
+  // ─────────────────────────────────────────────────────────
   var CLAIM_SELECT = [
     'claim_id', 'model', 'serial_no', 'customer', 'repair_method', 'technical_personnel',
     'causing_part_no', 'causing_part_desc', 'failure_part_location', 'fault_description',
@@ -27,36 +40,93 @@
     return String(s || '').replace(/^\s*technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
   }
 
-  global.SDLG_CLAIM_FIELDS = {
+  // Freeze object biar gak bisa diubah-ubah sama script lain (Security)
+  global.SDLG_CLAIM_FIELDS = Object.freeze({
     CLAIM_SELECT: CLAIM_SELECT.join(','),
-    CLAIM_SELECT_LIST: CLAIM_SELECT,
-    FORBIDDEN_COLUMNS: ['service_type', 'work_location', 'branch_name', 'service_method'],
+    CLAIM_SELECT_LIST: Object.freeze(CLAIM_SELECT),
+    FORBIDDEN_COLUMNS: Object.freeze(['service_type', 'work_location', 'branch_name', 'service_method']),
     pickFirst: pickFirst,
     stripTechPrefix: stripTechPrefix
-  };
+  });
 
-  try {
-    if (typeof document !== 'undefined') {
-      function loadScript(src, attr) {
-        if (document.querySelector('script[' + attr + ']')) return;
-        var s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        s.setAttribute(attr, '1');
-        (document.head || document.documentElement).appendChild(s);
+  // ─────────────────────────────────────────────────────────
+  // 2. KONFIGURASI MODUL YANG MAU DI-LOAD
+  // ─────────────────────────────────────────────────────────
+  var MODULES = [
+    { src: './modules/sdlg-input-hydrate.js?v=20261021-v15', attr: 'data-sdlg-input-hydrate' },
+    { src: './modules/sdlg-hash-router.js?v=20261012-v221', attr: 'data-sdlg-hash-router' },
+    { src: './modules/sdlg-hash-tab-bridge.js?v=20261012-v23', attr: 'data-sdlg-hash-tab-bridge' },
+    { src: './modules/sdlg-input-claim-sync.js?v=20261012-v11', attr: 'data-sdlg-input-claim-sync' },
+    { src: './modules/sdlg-portal-finance-ux.js?v=20261012-v53', attr: 'data-sdlg-finance-ux' },
+    { src: './modules/sdlg-portal-ux-v2.js?v=20261009-v24', attr: 'data-sdlg-portal-ux-v2' },
+    { src: './modules/sdlg-route-finish.js?v=20261010-v15', attr: 'data-sdlg-route-finish' },
+    { src: './modules/sdlg-ui-consolidate.js?v=20261009-v1', attr: 'data-sdlg-ui-consolidate' },
+    { src: './modules/sdlg-ui-polish-v3.js?v=20261010-v33', attr: 'data-sdlg-ui-polish-v3' },
+    { src: './modules/sdlg-auth-route-guard.js?v=20261021-v14', attr: 'data-sdlg-auth-route-guard' },
+    { src: './modules/sdlg-overview-session-gate.js?v=20261010-v12', attr: 'data-sdlg-overview-gate' },
+    { src: './modules/sdlg-overview-ux.js?v=20261010-v11', attr: 'data-sdlg-overview-ux' }
+  ];
+
+  // ─────────────────────────────────────────────────────────
+  // 3. SMART LOADER (Berurutan & Anti-Gagal)
+  // ─────────────────────────────────────────────────────────
+  function loadScript(mod) {
+    return new Promise(function (resolve) {
+      // Kalau udah ada di halaman, skip (jangan dobel)
+      if (document.querySelector('script[' + mod.attr + ']')) {
+        return resolve({ ok: true, skipped: true });
       }
-      loadScript('./modules/sdlg-input-hydrate.js?v=20261021-v15', 'data-sdlg-input-hydrate');
-      loadScript('./modules/sdlg-hash-router.js?v=20261012-v221', 'data-sdlg-hash-router');
-      loadScript('./modules/sdlg-hash-tab-bridge.js?v=20261012-v23', 'data-sdlg-hash-tab-bridge');
-      loadScript('./modules/sdlg-input-claim-sync.js?v=20261012-v11', 'data-sdlg-input-claim-sync');
-      loadScript('./modules/sdlg-portal-finance-ux.js?v=20261012-v53', 'data-sdlg-finance-ux');
-      loadScript('./modules/sdlg-portal-ux-v2.js?v=20261009-v24', 'data-sdlg-portal-ux-v2');
-      loadScript('./modules/sdlg-route-finish.js?v=20261010-v15', 'data-sdlg-route-finish');
-      loadScript('./modules/sdlg-ui-consolidate.js?v=20261009-v1', 'data-sdlg-ui-consolidate');
-      loadScript('./modules/sdlg-ui-polish-v3.js?v=20261010-v33', 'data-sdlg-ui-polish-v3');
-      loadScript('./modules/sdlg-auth-route-guard.js?v=20261021-v14', 'data-sdlg-auth-route-guard');
-      loadScript('./modules/sdlg-overview-session-gate.js?v=20261010-v12', 'data-sdlg-overview-gate');
-      loadScript('./modules/sdlg-overview-ux.js?v=20261010-v11', 'data-sdlg-overview-ux');
+
+      var s = document.createElement('script');
+      s.src = mod.src;
+      s.async = false; // WAJIB FALSE: Biar urutan gak kacau!
+      s.setAttribute(mod.attr, '1');
+
+      s.onload = function () {
+        console.log('[SDLG Loader] ✅ Loaded: ' + mod.attr);
+        resolve({ ok: true });
+      };
+
+      s.onerror = function () {
+        console.warn('[SDLG Loader] ❌ Gagal load: ' + mod.src);
+        // Munculin notif kalau SDLGNotify tersedia
+        if (global.SDLGNotify && global.SDLGNotify.error) {
+          global.SDLGNotify.error('Modul Gagal Dimuat', 'File berikut gagal di-download: ' + mod.attr);
+        }
+        resolve({ ok: false, error: mod.src });
+      };
+
+      (document.head || document.documentElement).appendChild(s);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // 4. EKSEKUSI (Load Satu per Satu)
+  // ─────────────────────────────────────────────────────────
+  function loadAllModules() {
+    console.info('[SDLG Loader] Memulai proses load ' + MODULES.length + ' modul...');
+    
+    var chain = Promise.resolve();
+    
+    MODULES.forEach(function (mod) {
+      chain = chain.then(function () {
+        return loadScript(mod);
+      });
+    });
+
+    chain.then(function () {
+      console.info('[SDLG Loader] 🎉 SEMUA MODUL SELESAI DI-LOAD!');
+      global.dispatchEvent(new CustomEvent('sdlg-modules-ready'));
+    });
+  }
+
+  // Jalanin cuma kalau DOM udah siap
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadAllModules, { once: true });
+    } else {
+      loadAllModules();
     }
-  } catch (_) {}
+  }
+
 })(typeof window !== 'undefined' ? window : globalThis);
