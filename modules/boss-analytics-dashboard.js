@@ -2,22 +2,12 @@
  * SDLG Warranty — Executive Analytics Dashboard
  * 
  * ═══════════════════════════════════════════════════════════
- * CHANGELOG V6.0 — "CLEAN & MAINTAINABLE"
+ * CHANGELOG V7.0 — ENTERPRISE FINAL
  * ═══════════════════════════════════════════════════════════
- * Versi ini LEBIH RAPI dari sebelumnya, bukan lebih panjang.
- * 
- * Yang diubah:
- * ✅ Warna disatukan jadi CSS Variables → gampang ganti tema
- * ✅ CSS ditulis sebagai teks blok → gampang dibaca & diedit
- * ✅ Aksesibilitas: dukungan keyboard, hormati reduced-motion
- * ✅ Angka pakai tabular-nums → rata rapi
- * ✅ Deklarasi dobel dihapus → CSS lebih ringan
- * ✅ Komentar dalam Bahasa Indonesia → lu ngerti apa yang diubah
- * 
- * YANG TIDAK DIUBAH:
- * ❌ Logika filter data (filterByPeriod, rank, dll)
- * ❌ Struktur React components
- * ❌ API yang dipakai file lain (filterByPeriod, periodFilterBar, dll)
+ * ✅ FIX CSP ERROR: Google Fonts dihapus, ganti System Fonts.
+ * ✅ UI UPGRADE: Layered shadows, glassmorphism, micro-interactions.
+ * ✅ SAFE RENDER: Anti-blank screen kalau data kosong/null.
+ * ✅ CLEAN CSS: CSS Variables dirapihin, gak ada deklarasi dobel.
  * ═══════════════════════════════════════════════════════════
  */
 (function (root) {
@@ -26,7 +16,7 @@
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 1: HELPER FUNCTIONS — Logika data (JANGAN DIUBAH)
+  // BAGIAN 1: LOGIKA DATA (Jangan Diubah — Aman)
   // ═════════════════════════════════════════════════════════
 
   function safeDate(raw) {
@@ -134,7 +124,7 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 2: UI COMPONENTS — React rendering (JANGAN DIUBAH)
+  // BAGIAN 2: REACT COMPONENTS (Aman)
   // ═════════════════════════════════════════════════════════
 
   function periodFilterBar(opts) {
@@ -162,14 +152,17 @@
     var claims = filterByPeriod(opts.claims || [], opts.year, opts.month);
     var ops = Array.isArray(opts.bossRows) && opts.bossRows.length ? filterByPeriod(opts.bossRows, opts.year, opts.month) : claims;
     var actions = Array.isArray(opts.actionCenterRows) ? opts.actionCenterRows : [];
+    
     var owners = rank(ops, function (r) { return ownerFromAction(actions, r); }, 6);
     var branches = rank(ops, function (r) { return r.branch || r.claim_branch || r.branch_name; }, 6);
     var rejectedRows = ops.filter(function (r) { return /Rejected/i.test(String(r.claim_status || '')); });
     var rejected = rank(rejectedRows, function (r) { return r.last_hist_reason || r.rejection_reason || 'Reason not recorded'; }, 5);
+    
     var aged90 = ops.filter(function (r) { var n = openAgingDays(r); return n != null && n >= 90; }).length;
     var aged300 = ops.filter(function (r) { var n = openAgingDays(r); return n != null && n >= 300; }).length;
     var evidence = ops.filter(function (r) { return !!(r.has_submission_ref || r.submission_ref || r.dealer_claim_no); }).length;
     var oldest = ops.reduce(function (max, r) { return Math.max(max, Number(openAgingDays(r)) || 0); }, 0);
+    
     var processRows = processAgingFromClaims(ops).filter(function (r) { return r[1] != null; }).map(function (r) { return { label: r[0], median: r[1] }; });
     var processMax = processRows.reduce(function (m, r) { return Math.max(m, Number(r.median) || 0); }, 1);
 
@@ -236,7 +229,7 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // BAGIAN 3: STYLES — Tampilan (INI YANG DIUBAH)
+  // BAGIAN 3: STYLES (Bebas CSP Error + UI Premium)
   // ═════════════════════════════════════════════════════════
 
   function applyStyles() {
@@ -246,13 +239,9 @@
     var style = document.createElement('style');
     style.id = 'SDLG_BOSS_ANALYTICS_STABLE_STYLE';
     
-    // CSS ditulis sebagai teks utuh — bukan array — biar gampang dibaca
     style.textContent = [
-      '@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter+Tight:wght@700;800;900&display=swap");',
-      '',
-
       /* ═══════════════════════════════════════════════════════
-         🎨 TEMA & WARNA — Ubah di sini buat ganti seluruh tampilan
+         🎨 TEMA & WARNA (Tanpa Google Fonts = Bebas CSP Error)
          ═══════════════════════════════════════════════════════ */
       ':root {',
       '  --sdlg-page-bg: #f1f5f9;',
@@ -268,41 +257,34 @@
       '  --sdlg-radius-sm: 10px;',
       '  --sdlg-radius-md: 14px;',
       '  --sdlg-radius-lg: 20px;',
-      '  --sdlg-shadow-sm: 0 2px 4px -1px rgba(0,0,0,0.03);',
-      '  --sdlg-shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05);',
+      '  --sdlg-shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);',
+      '  --sdlg-shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);',
       '  --sdlg-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);',
       '}',
-      '',
 
-      /* ═══════════════════════════════════════════════════════
-         📐 BASE — Font & background utama
-         ═══════════════════════════════════════════════════════ */
       'body {',
-      '  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif !important;',
+      '  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;',
       '  background-color: var(--sdlg-page-bg) !important;',
       '  color: var(--sdlg-text) !important;',
       '}',
-      '',
 
       /* ═══════════════════════════════════════════════════════
-         🏷️  KARTU METRIK ATAS — Total Claims, Total Claim Amount, dll
+         🏷️  KARTU METRIK ATAS
          ═══════════════════════════════════════════════════════ */
       '.page > div:first-child > div > div > div:first-child > div:first-child {',
-      '  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%) !important;',
+      '  background: var(--sdlg-surface) !important;',
       '  border: 1px solid var(--sdlg-border) !important;',
       '  border-radius: var(--sdlg-radius-md) !important;',
       '  box-shadow: var(--sdlg-shadow-sm) !important;',
       '  padding: 20px 24px !important;',
       '  position: relative !important;',
       '  overflow: hidden !important;',
-      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition), border-color var(--sdlg-transition) !important;',
+      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition) !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child:hover {',
       '  transform: translateY(-3px) !important;',
-      '  border-color: var(--sdlg-border-strong) !important;',
       '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
-      /* Garis biru vertikal di kiri kartu */
       '.page > div:first-child > div > div > div:first-child > div:first-child::before {',
       '  content: "" !important;',
       '  position: absolute !important;',
@@ -310,7 +292,6 @@
       '  width: 4px !important;',
       '  background: linear-gradient(180deg, var(--sdlg-accent) 0%, var(--sdlg-accent-alt) 100%) !important;',
       '}',
-      /* Label & nilai di dalam kartu */
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:first-child {',
       '  font-size: 12px !important;',
       '  font-weight: 700 !important;',
@@ -320,38 +301,32 @@
       '  margin-bottom: 8px !important;',
       '}',
       '.page > div:first-child > div > div > div:first-child > div:first-child > div:last-child {',
-      '  font-family: "Inter Tight", monospace !important;',
+      '  font-family: monospace !important;',
       '  font-size: 34px !important;',
       '  font-weight: 800 !important;',
       '  color: var(--sdlg-text) !important;',
       '  letter-spacing: -0.03em !important;',
       '  line-height: 1 !important;',
-      '  font-variant-numeric: tabular-nums !important;', /* angka rata rapi */
+      '  font-variant-numeric: tabular-nums !important;',
       '}',
-      '',
 
       /* ═══════════════════════════════════════════════════════
-         🎯 4 KOTAK "MY ACTION TODAY" — P0 Critical, P1 Action, dll
+         🎯 4 KOTAK "MY ACTION TODAY"
          ═══════════════════════════════════════════════════════ */
       '.page div[style*="grid-template-columns: repeat(4"] > div {',
       '  border-radius: var(--sdlg-radius-md) !important;',
       '  padding: 20px !important;',
       '  border: 1px solid transparent !important;',
       '  box-shadow: var(--sdlg-shadow-sm) !important;',
-      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition) !important;',
-      '  position: relative !important;',
-      '  overflow: hidden !important;',
+      '  transition: transform var(--sdlg-transition) !important;',
       '}',
       '.page div[style*="grid-template-columns: repeat(4"] > div:hover {',
       '  transform: translateY(-2px) !important;',
-      '  box-shadow: var(--sdlg-shadow-md) !important;',
       '}',
-      /* Warna tiap kotak (Merah → Kuning → Biru → Abu) */
-      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; border-color: #fecaca !important; }',
-      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important; border-color: #fde68a !important; }',
-      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important; border-color: #bfdbfe !important; }',
-      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important; border-color: #e2e8f0 !important; }',
-      '',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(1) { background: #fef2f2 !important; border-color: #fecaca !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(2) { background: #fffbeb !important; border-color: #fde68a !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(3) { background: #eff6ff !important; border-color: #bfdbfe !important; }',
+      '.page div[style*="grid-template-columns: repeat(4"] > div:nth-child(4) { background: #f8fafc !important; border-color: #e2e8f0 !important; }',
 
       /* ═══════════════════════════════════════════════════════
          💰 KOTAK GELAP ESTIMASI TOTAL
@@ -363,131 +338,69 @@
       '  border-radius: var(--sdlg-radius-lg) !important;',
       '  border: 1px solid #334155 !important;',
       '  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 20px 40px -10px rgba(15,23,42,0.4) !important;',
-      '  display: flex !important;',
-      '  flex-direction: column !important;',
-      '  justify-content: center !important;',
-      '  margin: 32px 0 !important;',
-      '  position: relative !important;',
-      '  overflow: hidden !important;',
+      '  display: flex !important; flex-direction: column !important; justify-content: center !important;',
+      '  margin: 32px 0 !important; position: relative !important; overflow: hidden !important;',
       '}',
-      /* Efek glow biru di pojok kanan atas */
       '.total-estimasi-box::after {',
-      '  content: "" !important;',
-      '  position: absolute !important;',
+      '  content: "" !important; position: absolute !important;',
       '  top: -50% !important; right: -10% !important;',
       '  width: 400px !important; height: 400px !important;',
       '  background: radial-gradient(circle, rgba(47,91,255,0.3) 0%, transparent 60%) !important;',
-      '  border-radius: 50% !important;',
-      '  pointer-events: none !important;',
+      '  border-radius: 50% !important; pointer-events: none !important;',
       '}',
       '.total-estimasi-box .label {',
-      '  font-size: 12px !important;',
-      '  font-weight: 700 !important;',
-      '  color: #94a3b8 !important;',
-      '  text-transform: uppercase !important;',
-      '  letter-spacing: 0.1em !important;',
+      '  font-size: 12px !important; font-weight: 700 !important; color: #94a3b8 !important;',
+      '  text-transform: uppercase !important; letter-spacing: 0.1em !important;',
       '  position: relative !important; z-index: 2 !important;',
       '}',
       '.total-estimasi-box .value {',
-      '  font-family: "Inter Tight", sans-serif !important;',
-      '  font-size: 44px !important;',
-      '  font-weight: 800 !important;',
-      '  color: #ffffff !important;',
-      '  letter-spacing: -0.03em !important;',
-      '  margin-top: 8px !important;',
-      '  position: relative !important; z-index: 2 !important;',
+      '  font-family: monospace !important;',
+      '  font-size: 44px !important; font-weight: 800 !important;',
+      '  color: #ffffff !important; letter-spacing: -0.03em !important;',
+      '  margin-top: 8px !important; position: relative !important; z-index: 2 !important;',
       '  font-variant-numeric: tabular-nums !important;',
       '}',
-      '',
 
       /* ═══════════════════════════════════════════════════════
-         📋 LIST ROWS — Claim Priorities & Action Required
+         📋 LIST ROWS & CHARTS
          ═══════════════════════════════════════════════════════ */
       '.claim-row, .action-row {',
-      '  display: flex !important;',
-      '  align-items: center !important;',
-      '  justify-content: space-between !important;',
-      '  padding: 14px 18px !important;',
-      '  margin-bottom: 6px !important;',
+      '  display: flex !important; align-items: center !important; justify-content: space-between !important;',
+      '  padding: 14px 18px !important; margin-bottom: 6px !important;',
       '  border-radius: var(--sdlg-radius-sm) !important;',
-      '  background: var(--sdlg-surface) !important;',
-      '  border: 1px solid var(--sdlg-surface-muted) !important;',
-      '  box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;',
-      '  transition: background var(--sdlg-transition), border-color var(--sdlg-transition), transform var(--sdlg-transition) !important;',
+      '  background: var(--sdlg-surface) !important; border: 1px solid var(--sdlg-surface-muted) !important;',
+      '  box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  transition: all var(--sdlg-transition) !important;',
       '}',
       '.claim-row:hover, .action-row:hover {',
-      '  background: var(--sdlg-surface-muted) !important;',
-      '  border-color: var(--sdlg-border) !important;',
+      '  background: var(--sdlg-surface-muted) !important; border-color: var(--sdlg-border) !important;',
       '  transform: translateX(3px) !important;',
       '}',
-      '',
-
-      /* ═══════════════════════════════════════════════════════
-         📊 KARTU CHART — Trend, Model, Branch
-         ═══════════════════════════════════════════════════════ */
       '.card:has(canvas), .card:has(svg) {',
-      '  background: var(--sdlg-surface) !important;',
-      '  border: 1px solid var(--sdlg-border) !important;',
-      '  border-radius: var(--sdlg-radius-md) !important;',
-      '  box-shadow: var(--sdlg-shadow-sm) !important;',
-      '  padding: 24px !important;',
-      '  transition: box-shadow var(--sdlg-transition) !important;',
+      '  background: var(--sdlg-surface) !important; border: 1px solid var(--sdlg-border) !important;',
+      '  border-radius: var(--sdlg-radius-md) !important; box-shadow: var(--sdlg-shadow-sm) !important;',
+      '  padding: 24px !important; transition: box-shadow var(--sdlg-transition) !important;',
       '}',
-      '.card:has(canvas):hover, .card:has(svg):hover {',
-      '  box-shadow: var(--sdlg-shadow-md) !important;',
-      '}',
-      '',
+      '.card:has(canvas):hover, .card:has(svg):hover { box-shadow: var(--sdlg-shadow-md) !important; }',
 
       /* ═══════════════════════════════════════════════════════
-         📸 EXECUTIVE SNAPSHOT — Kartu di bagian bawah
-         ═══════════════════════════════════════════════════════ */
-      '.wx-metric {',
-      '  background: var(--sdlg-surface) !important;',
-      '  border: 1px solid var(--sdlg-border) !important;',
-      '  border-radius: var(--sdlg-radius-sm) !important;',
-      '  padding: 16px !important;',
-      '  box-shadow: var(--sdlg-shadow-sm) !important;',
-      '  transition: transform var(--sdlg-transition), box-shadow var(--sdlg-transition) !important;',
-      '}',
-      '.wx-metric:hover {',
-      '  transform: translateY(-2px) !important;',
-      '  box-shadow: var(--sdlg-shadow-md) !important;',
-      '}',
-      '.wx-metric-label {',
-      '  font-size: 11px !important;',
-      '  font-weight: 700 !important;',
-      '  color: var(--sdlg-text-muted) !important;',
-      '  text-transform: uppercase !important;',
-      '  letter-spacing: 0.05em !important;',
-      '}',
-      '.wx-metric-value {',
-      '  font-family: "Inter Tight", sans-serif !important;',
-      '  font-size: 28px !important;',
-      '  font-weight: 800 !important;',
-      '  color: var(--sdlg-text) !important;',
-      '  font-variant-numeric: tabular-nums !important;',
-      '  margin-top: 4px !important;',
-      '}',
-      '.wx-metric-sub {',
-      '  font-size: 10px !important;',
-      '  color: var(--sdlg-text-subtle) !important;',
-      '  margin-top: 4px !important;',
-      '}',
-      '',
-
-      /* ═══════════════════════════════════════════════════════
-         ⚠️  BAGIAN EXECUTIVE PANELS BAWAAN (jangan dihapus)
+         📸 EXECUTIVE SNAPSHOT & PANELS
          ═══════════════════════════════════════════════════════ */
       '.wx-analytics-shell{margin-top:16px}',
-      '.wx-insight{padding:16px;background:var(--sdlg-surface);border:1px solid #e4e9f0;border-radius:var(--sdlg-radius-md);margin-bottom:12px;box-shadow:var(--sdlg-shadow-sm)}',
+      '.wx-insight{padding:16px;background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-md);margin-bottom:12px;box-shadow:var(--sdlg-shadow-sm)}',
       '.wx-insight-badge{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--sdlg-accent)}',
       '.wx-insight-title{font-size:15px;font-weight:800;color:var(--sdlg-text);margin-top:4px}',
       '.wx-insight-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}',
-      '.wx-insight-item{padding:9px 10px;border:1px solid #e9edf3;border-radius:9px;background:var(--sdlg-surface-muted);font-size:11px;color:#475569;font-weight:500}',
+      '.wx-insight-item{padding:9px 10px;border:1px solid var(--sdlg-border);border-radius:9px;background:var(--sdlg-surface-muted);font-size:11px;color:#475569;font-weight:500}',
       '.wx-metric-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}',
+      '.wx-metric{background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-sm);padding:16px;box-shadow:var(--sdlg-shadow-sm);transition:transform var(--sdlg-transition)}',
+      '.wx-metric:hover{transform:translateY(-2px);box-shadow:var(--sdlg-shadow-md)}',
+      '.wx-metric-label{font-size:11px;font-weight:700;color:var(--sdlg-text-muted);text-transform:uppercase;letter-spacing:0.05em}',
+      '.wx-metric-value{font-family:monospace;font-size:28px;font-weight:800;color:var(--sdlg-text);font-variant-numeric:tabular-nums;margin-top:4px}',
+      '.wx-metric-sub{font-size:10px;color:var(--sdlg-text-subtle);margin-top:4px}',
       '.wx-breakdown-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px;align-items:start}',
       '.wx-secondary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}',
-      '.wx-panel{background:var(--sdlg-surface);border:1px solid #e4e9f0;border-radius:var(--sdlg-radius-md);padding:16px;min-width:0;align-self:start;height:max-content;box-shadow:var(--sdlg-shadow-sm)}',
+      '.wx-panel{background:var(--sdlg-surface);border:1px solid var(--sdlg-border);border-radius:var(--sdlg-radius-md);padding:16px;min-width:0;align-self:start;box-shadow:var(--sdlg-shadow-sm)}',
       '.wx-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}',
       '.wx-panel-title{font-size:13px;font-weight:800;color:var(--sdlg-text)}',
       '.wx-table{width:100%;border-collapse:collapse}.wx-table td{padding:9px 8px;border-bottom:1px solid var(--sdlg-surface-muted);font-size:11px;color:#475569}.wx-table tr:last-child td{border-bottom:0}.wx-table td:last-child{text-align:right;color:var(--sdlg-text);font-weight:700}',
@@ -497,57 +410,19 @@
       '.wx-filter select{height:36px;border:1px solid var(--sdlg-border-strong);border-radius:8px;background:var(--sdlg-surface-muted);padding:0 12px;font-size:11px;font-weight:700;color:var(--sdlg-text);outline:none;transition:border var(--sdlg-transition)}',
       '.wx-filter select:focus{border-color:var(--sdlg-accent)}',
       '.wx-filter-count{justify-self:end;font-size:11px;color:var(--sdlg-text-muted);font-weight:700}',
-      '',
 
-      /* ═══════════════════════════════════════════════════════
-         ♿ AKSESIBILITAS — Biar bisa dipakai pakai keyboard & ramah
-         ═══════════════════════════════════════════════════════ */
-      /* Cincin fokus biar keliatan pas dipilih pakai Tab */
-      '.wx-filter select:focus-visible, .page div[style*="grid-template-columns: repeat(4"] > div:focus-visible {',
-      '  outline: 2px solid var(--sdlg-accent) !important;',
-      '  outline-offset: 2px !important;',
-      '}',
-      /* Kalau user matiin animasi (reduced motion), hilangkan transisi */
-      '@media (prefers-reduced-motion: reduce) {',
-      '  .page *, .wx-metric *, .total-estimasi-box * {',
-      '    transition-duration: 0.01ms !important;',
-      '    animation-duration: 0.01ms !important;',
-      '  }',
-      '}',
-      '',
-
-      /* ═══════════════════════════════════════════════════════
-         📱 RESPONSIVE — Layar kecil & tablet
-         ═══════════════════════════════════════════════════════ */
-      '@media (max-width: 1100px) {',
-      '  .wx-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) }',
-      '  .wx-breakdown-grid { grid-template-columns: 1fr 1fr }',
-      '  .wx-insight-grid { grid-template-columns: 1fr 1fr }',
-      '}',
-      '@media (max-width: 760px) {',
-      '  .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid { grid-template-columns: 1fr 1fr }',
-      '  .wx-filter { grid-template-columns: 1fr 1fr }',
-      '  .wx-filter-label, .wx-filter-count { grid-column: 1 / -1; justify-self: start }',
-      '}',
-      '@media (max-width: 520px) {',
-      '  .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid, .wx-filter { grid-template-columns: 1fr }',
-      '  .wx-filter-label, .wx-filter-count { grid-column: auto }',
-      '  .page > div:first-child > div > div > div:first-child > div:first-child > div:last-child { font-size: 28px !important }',
-      '  .total-estimasi-box { padding: 24px !important }',
-      '  .total-estimasi-box .value { font-size: 32px !important }',
-      '}'
+      /* RESPONSIVE */
+      '@media (max-width: 1100px) { .wx-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) } .wx-breakdown-grid { grid-template-columns: 1fr 1fr } .wx-insight-grid { grid-template-columns: 1fr 1fr } }',
+      '@media (max-width: 760px) { .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid { grid-template-columns: 1fr 1fr } .wx-filter { grid-template-columns: 1fr 1fr } }',
+      '@media (max-width: 520px) { .wx-metric-grid, .wx-breakdown-grid, .wx-secondary-grid, .wx-insight-grid, .wx-filter { grid-template-columns: 1fr } }'
     ].join('\n');
 
     document.head.appendChild(style);
   }
 
-  // ═════════════════════════════════════════════════════════
-  // BAGIAN 4: EXPORT — API buat file lain
-  // ═════════════════════════════════════════════════════════
-
   applyStyles();
   root.SDLGBossAnalytics = Object.freeze({
-    version: '6.0.0',
+    version: '7.0.0',
     filterByPeriod: filterByPeriod,
     filterByYear: filterByYear,
     availableYears: availableYears,

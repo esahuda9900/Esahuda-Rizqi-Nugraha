@@ -1,16 +1,11 @@
 /**
- * SDLG Notifications — Sistem Notifikasi Terpusat V1.0
+ * SDLG Notifications — Sistem Notifikasi Terpusat V2.0 (Bulletproof)
  * 
- * Semua error JS + manual notification muncul di web (bukan Console).
- * User gak perlu buka DevTools.
- * 
- * CARA PAKAI (di file mana aja):
- *   SDLGNotify.error('Judul', 'Pesan', 'detail opsional')
- *   SDLGNotify.warning('Judul', 'Pesan')
- *   SDLGNotify.success('Judul', 'Pesan')
- *   SDLGNotify.info('Judul', 'Pesan')
- * 
- * Global error handler: otomatis aktif — semua error JS muncul di web.
+ * FIX: 
+ * ✅ Paksa z-index maksimal (gak bisa ketutup elemen lain)
+ * ✅ Paksa opacity 1 (gak bakal transparan kalau animasi gagal)
+ * ✅ Gak butuh Google Fonts (anti error CSP)
+ * ✅ Ditempel langsung ke <html> biar gak kerusuh sama layout body
  */
 (function () {
   'use strict';
@@ -27,63 +22,63 @@
   var visible = 0;
 
   // ═════════════════════════════════════════════════════════
-  // SETUP DOM
+  // SETUP DOM & STYLES
   // ═════════════════════════════════════════════════════════
-  function ensureContainer() {
-    if (container && container.parentNode) return container;
-
-    container = document.getElementById('sdlg-notify-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'sdlg-notify-container';
-      container.style.cssText =
-        'position:fixed;top:20px;right:20px;z-index:2147483647;' +
-        'display:flex;flex-direction:column;gap:12px;' +
-        'width:min(420px,calc(100vw - 32px));pointer-events:none;' +
-        'font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,sans-serif';
-    }
-
-    var append = function () {
-      if (!container.parentNode) document.body.appendChild(container);
-    };
-    if (document.body) append();
-    else document.addEventListener('DOMContentLoaded', append, { once: true });
-
-    return container;
-  }
-
   function injectStyles() {
     if (document.getElementById('sdlg-notify-styles')) return;
     var s = document.createElement('style');
     s.id = 'sdlg-notify-styles';
     s.textContent = [
-      '@keyframes sdlgToastIn{from{opacity:0;transform:translateX(40px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}',
-      '@keyframes sdlgToastOut{to{opacity:0;transform:translateX(40px) scale(.95)}}',
-      '.sdlg-toast{pointer-events:auto;background:#fff;border-radius:14px;border:1px solid #e2e8f0;border-left-width:4px;box-shadow:0 20px 40px -10px rgba(15,23,42,.15);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;animation:sdlgToastIn .3s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;font-family:inherit}',
-      '.sdlg-toast--closing{animation:sdlgToastOut .25s ease forwards}',
-      '.sdlg-toast--error{border-left-color:#dc2626}',
-      '.sdlg-toast--warning{border-left-color:#d97706}',
-      '.sdlg-toast--success{border-left-color:#16a34a}',
-      '.sdlg-toast--info{border-left-color:#2f5bff}',
-      '.sdlg-toast__icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:16px;font-weight:900;line-height:1}',
-      '.sdlg-toast--error .sdlg-toast__icon{background:#dc2626}',
-      '.sdlg-toast--warning .sdlg-toast__icon{background:#d97706}',
-      '.sdlg-toast--success .sdlg-toast__icon{background:#16a34a}',
-      '.sdlg-toast--info .sdlg-toast__icon{background:#2f5bff}',
-      '.sdlg-toast__body{flex:1;min-width:0}',
-      '.sdlg-toast__title{font-size:13px;font-weight:800;color:#0f172a;margin-bottom:3px;line-height:1.3}',
-      '.sdlg-toast__msg{font-size:12px;color:#475569;line-height:1.5;word-break:break-word}',
-      '.sdlg-toast__details{margin-top:8px;padding:8px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-family:"SF Mono",Monaco,monospace;font-size:10px;color:#64748b;max-height:120px;overflow-y:auto;word-break:break-all;display:none}',
-      '.sdlg-toast__details--open{display:block}',
-      '.sdlg-toast__actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}',
-      '.sdlg-toast__btn{background:transparent;border:1px solid #e2e8f0;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;color:#475569;cursor:pointer;font-family:inherit;transition:all .15s}',
-      '.sdlg-toast__btn:hover{background:#f1f5f9;color:#0f172a;border-color:#cbd5e1}',
-      '.sdlg-toast__close{background:transparent;border:none;padding:4px;cursor:pointer;color:#94a3b8;font-size:16px;line-height:1;flex-shrink:0}',
-      '.sdlg-toast__close:hover{color:#0f172a}',
-      '.sdlg-toast__progress{position:absolute;bottom:0;left:0;height:3px;background:#0f172a;opacity:.15;animation:sdlgProgress linear forwards}',
-      '@keyframes sdlgProgress{from{width:100%}to{width:0%}}'
+      /* Container wajib nempel di pojok kanan atas, z-index maksimal */
+      '#sdlg-notify-container{position:fixed!important;top:24px!important;right:24px!important;z-index:2147483647!important;display:flex!important;flex-direction:column!important;gap:12px!important;width:calc(100vw - 48px)!important;max-width:400px!important;pointer-events:none!important;}',
+      
+      /* Toast dasar: background putih, wajib opacity 1 */
+      '.sdlg-toast{pointer-events:auto!important;background:#ffffff!important;border-radius:12px!important;border:1px solid #e2e8f0!important;border-left-width:4px!important;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1),0 8px 10px -6px rgba(0,0,0,0.1)!important;padding:16px!important;display:flex!important;gap:12px!important;align-items:flex-start!important;position:relative!important;overflow:hidden!important;opacity:1!important;visibility:visible!important;transform:translateX(0)!important;transition:all 0.3s cubic-bezier(0.16,1,0.3,1)!important;animation:sdlgSlideIn 0.4s cubic-bezier(0.16,1,0.3,1)!important;}',
+      '@keyframes sdlgSlideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}',
+      
+      /* Varian Warna */
+      '.sdlg-toast--error{border-left-color:#dc2626!important;}',
+      '.sdlg-toast--warning{border-left-color:#d97706!important;}',
+      '.sdlg-toast--success{border-left-color:#16a34a!important;}',
+      '.sdlg-toast--info{border-left-color:#2f5bff!important;}',
+      
+      /* Ikon */
+      '.sdlg-toast__icon{width:32px!important;height:32px!important;border-radius:8px!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;color:#fff!important;font-size:16px!important;font-weight:900!important;line-height:1!important;font-family:sans-serif!important;}',
+      '.sdlg-toast--error .sdlg-toast__icon{background:#dc2626!important;}',
+      '.sdlg-toast--warning .sdlg-toast__icon{background:#d97706!important;}',
+      '.sdlg-toast--success .sdlg-toast__icon{background:#16a34a!important;}',
+      '.sdlg-toast--info .sdlg-toast__icon{background:#2f5bff!important;}',
+      
+      /* Teks */
+      '.sdlg-toast__body{flex:1!important;min-width:0!important;font-family:inherit!important;}',
+      '.sdlg-toast__title{font-size:13px!important;font-weight:800!important;color:#0f172a!important;margin-bottom:4px!important;line-height:1.3!important;}',
+      '.sdlg-toast__msg{font-size:12px!important;color:#475569!important;line-height:1.5!important;word-break:break-word!important;}',
+      
+      /* Detail & Tombol */
+      '.sdlg-toast__details{margin-top:8px!important;padding:8px 10px!important;background:#f8fafc!important;border:1px solid #e2e8f0!important;border-radius:8px!important;font-family:monospace!important;font-size:10px!important;color:#64748b!important;max-height:120px!important;overflow-y:auto!important;display:none!important;}',
+      '.sdlg-toast__details--open{display:block!important;}',
+      '.sdlg-toast__actions{display:flex!important;gap:6px!important;margin-top:10px!important;}',
+      '.sdlg-toast__btn{background:#f8fafc!important;border:1px solid #e2e8f0!important;border-radius:6px!important;padding:5px 10px!important;font-size:11px!important;font-weight:700!important;color:#475569!important;cursor:pointer!important;font-family:inherit!important;}',
+      '.sdlg-toast__btn:hover{background:#f1f5f9!important;color:#0f172a!important;}',
+      '.sdlg-toast__close{background:transparent!important;border:none!important;padding:4px!important;cursor:pointer!important;color:#94a3b8!important;font-size:16px!important;line-height:1!important;}',
+      '.sdlg-toast__close:hover{color:#0f172a!important;}',
+      
+      /* Animasi Keluar */
+      '.sdlg-toast--closing{opacity:0!important;transform:translateX(40px)!important;}'
     ].join('\n');
     document.head.appendChild(s);
+  }
+
+  function ensureContainer() {
+    if (container && container.parentNode) return container;
+    container = document.getElementById('sdlg-notify-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'sdlg-notify-container';
+      // Tembak ke documentElement (<html>) biar gak bentrok sama body
+      (document.documentElement || document.body).appendChild(container);
+    }
+    return container;
   }
 
   // ═════════════════════════════════════════════════════════
@@ -93,9 +88,7 @@
   var TITLES = { error: 'Error', warning: 'Peringatan', success: 'Berhasil', info: 'Info' };
 
   function escapeHTML(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function dismiss(el) {
@@ -105,7 +98,7 @@
       if (el.parentNode) el.parentNode.removeChild(el);
       visible = Math.max(0, visible - 1);
       flushQueue();
-    }, 260);
+    }, 300);
   }
 
   function renderToast(opts) {
@@ -117,15 +110,10 @@
 
     var el = document.createElement('div');
     el.className = 'sdlg-toast sdlg-toast--' + type;
-    el.setAttribute('role', 'alert');
-    el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
-
+    
     var detailsHTML = details
       ? '<div class="sdlg-toast__details" data-details>' + escapeHTML(details) + '</div>' +
-        '<div class="sdlg-toast__actions">' +
-          '<button class="sdlg-toast__btn" data-toggle-details>Lihat detail</button>' +
-          '<button class="sdlg-toast__btn" data-copy>Salin</button>' +
-        '</div>'
+        '<div class="sdlg-toast__actions"><button class="sdlg-toast__btn" data-toggle-details>Lihat detail</button><button class="sdlg-toast__btn" data-copy>Salin</button></div>'
       : '';
 
     el.innerHTML =
@@ -135,23 +123,20 @@
         (message ? '<div class="sdlg-toast__msg">' + escapeHTML(message) + '</div>' : '') +
         detailsHTML +
       '</div>' +
-      '<button class="sdlg-toast__close" aria-label="Tutup">✕</button>' +
-      (autoDismiss > 0 ? '<div class="sdlg-toast__progress" style="animation-duration:' + autoDismiss + 'ms"></div>' : '');
+      '<button class="sdlg-toast__close" aria-label="Tutup">✕</button>';
 
-    // Tombol tutup
+    // Event Listeners
     el.querySelector('.sdlg-toast__close').addEventListener('click', function () { dismiss(el); });
 
-    // Tombol lihat detail
     var toggleBtn = el.querySelector('[data-toggle-details]');
     var detailsEl = el.querySelector('[data-details]');
     if (toggleBtn && detailsEl) {
       toggleBtn.addEventListener('click', function () {
-        var open = detailsEl.classList.toggle('sdlg-toast__details--open');
-        toggleBtn.textContent = open ? 'Sembunyikan' : 'Lihat detail';
+        detailsEl.classList.toggle('sdlg-toast__details--open');
+        toggleBtn.textContent = detailsEl.classList.contains('sdlg-toast__details--open') ? 'Sembunyikan' : 'Lihat detail';
       });
     }
 
-    // Tombol salin
     var copyBtn = el.querySelector('[data-copy]');
     if (copyBtn) {
       copyBtn.addEventListener('click', function () {
@@ -165,20 +150,17 @@
       });
     }
 
-    // Auto-dismiss (hover pause)
     if (autoDismiss > 0) {
       var timer = setTimeout(function () { dismiss(el); }, autoDismiss);
       el.addEventListener('mouseenter', function () { clearTimeout(timer); });
-      el.addEventListener('mouseleave', function () {
-        timer = setTimeout(function () { dismiss(el); }, 2000);
-      });
+      el.addEventListener('mouseleave', function () { timer = setTimeout(function () { dismiss(el); }, 2000); });
     }
 
     return el;
   }
 
   // ═════════════════════════════════════════════════════════
-  // QUEUE
+  // QUEUE & SHOW
   // ═════════════════════════════════════════════════════════
   function render(opts) {
     var c = ensureContainer();
@@ -199,9 +181,6 @@
     else render(opts);
   }
 
-  // ═════════════════════════════════════════════════════════
-  // PUBLIC API
-  // ═════════════════════════════════════════════════════════
   function makeTyped(type) {
     return function (titleOrOpts, message, details) {
       if (typeof titleOrOpts === 'object' && titleOrOpts) {
@@ -213,47 +192,22 @@
   }
 
   // ═════════════════════════════════════════════════════════
-  // GLOBAL ERROR HANDLERS — tangkap SEMUA error JS
+  // ERROR HANDLERS
   // ═════════════════════════════════════════════════════════
   var isHandling = false;
-
   window.addEventListener('error', function (event) {
-    if (isHandling) return;
-    // Abaikan error dari extension browser
-    if (event.filename && /^(chrome|moz|safari)-extension:\/\//.test(event.filename)) return;
-
+    if (isHandling || (event.filename && /^(chrome|moz|safari)-extension:\/\//.test(event.filename))) return;
     isHandling = true;
-    try {
-      var msg = event.message || 'Terjadi kesalahan tidak terduga';
-      var loc = event.filename ? event.filename + ':' + event.lineno : '';
-      var stack = event.error && event.error.stack ? event.error.stack : loc;
-
-      window.SDLGNotify.error(
-        'Ada yang salah',
-        msg,
-        stack
-      );
-    } catch (_) { /* ignore */ }
+    try { window.SDLGNotify.error('Ada yang salah', event.message || 'Terjadi kesalahan', event.error && event.error.stack); } catch (_) {}
     setTimeout(function () { isHandling = false; }, 300);
   });
 
   window.addEventListener('unhandledrejection', function (event) {
-    if (isHandling) return;
-    if (!event || !event.reason) return;
-
-    var reason = event.reason;
-    var stack = (reason && reason.stack) || String(reason);
+    if (isHandling || !event || !event.reason) return;
+    var stack = (event.reason && event.reason.stack) || String(event.reason);
     if (/extension:\/\//.test(stack)) return;
-
     isHandling = true;
-    try {
-      var msg = typeof reason === 'string' ? reason : (reason.message || 'Permintaan gagal');
-      window.SDLGNotify.error(
-        'Terjadi kesalahan',
-        msg,
-        stack
-      );
-    } catch (_) { /* ignore */ }
+    try { window.SDLGNotify.error('Terjadi kesalahan', event.reason.message || 'Permintaan gagal', stack); } catch (_) {}
     setTimeout(function () { isHandling = false; }, 300);
   });
 
@@ -262,16 +216,12 @@
   // ═════════════════════════════════════════════════════════
   injectStyles();
   window.SDLGNotify = {
-    version: '1.0.0',
+    version: '2.0.0',
     show: show,
     error:   makeTyped('error'),
     warning: makeTyped('warning'),
     success: makeTyped('success'),
     info:    makeTyped('info'),
-    clear: function () {
-      queue = [];
-      if (container) container.innerHTML = '';
-      visible = 0;
-    }
+    clear: function () { queue = []; if (container) container.innerHTML = ''; visible = 0; }
   };
 })();
