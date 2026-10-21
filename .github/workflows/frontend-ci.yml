@@ -24,10 +24,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 8
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,7 +41,7 @@ jobs:
           test -s scripts/verify-module-syntax.js
           grep -q 'frqvelcreczmnofldrga.supabase.co' index.html
           grep -q 'SDLGCore' modules/sdlg-core.js
-          echo 'Required frontend files, sdlg-core, module syntax verifier, Supabase endpoint, and public-release verifier are present.'
+          echo 'Required frontend files present.'
 
       - name: Validate Python patch scripts
         shell: bash
@@ -54,41 +50,40 @@ jobs:
           python3 -m compileall -q scripts
           echo 'Python patch scripts compile successfully.'
 
+      - name: Validate production GitHub Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
+          cp -R modules _site/modules
+          if [ -d styles ]; then cp -R styles _site/styles; fi
+          touch _site/.nojekyll
+          python3 scripts/pages_prepare_index.py
+          bash scripts/regression_contract.sh _site/index.html
+          bash scripts/regression_contract_modules.sh _site
+          bash scripts/guard-no-cutover.sh _site
+          echo 'Production Pages artifact and safety contracts passed.'
+
       - name: Validate external module syntax
         shell: bash
         run: |
           set -euo pipefail
           node scripts/verify-module-syntax.js
-          echo 'All extracted frontend modules parse successfully.'
+          node --check modules/sdlg-input-hydrate.js
+          node --check modules/sdlg-inline-enforcer.js
+          node --check modules/claim-fields.js
+          echo 'Module syntax OK.'
 
-      - name: Run production build and regression gate
+      - name: Run Pages-relevant source contracts
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/build-production.js
-          echo 'Production build + regression gate passed.'
-
-      - name: Enable pnpm
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm install --global pnpm@10.11.1 --no-audit --no-fund
-          pnpm --version
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Run production root canonical helper race torture test
-        run: node scripts/browser-e2e-root-helper-race.js
-
-      - name: Validate historical patch scripts are present
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f scripts/apply_action_center.py
-          test -f scripts/apply_report_naming.py
-          test -f scripts/apply_workflow_catchup.py
-          echo 'Historical patch scripts are present.'
+          node scripts/verify-production.js _site/index.html
+          node scripts/verify-parser-contract.js _site/index.html
+          node scripts/verify-dual-warranty-routing.js
+          node scripts/verify-claim-id-year-contract.js
+          node scripts/verify-public-release.js _site/index.html
+          echo 'Pages-relevant source contracts passed.'

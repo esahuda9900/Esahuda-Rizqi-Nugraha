@@ -70,7 +70,7 @@ jobs:
           set -euo pipefail
           files=$(find .github/workflows -maxdepth 1 -type f ! -name 'architecture-guard.yml' -print)
           if [ -n "$files" ] && grep -InE 'netlify[[:space:]]+deploy|vercel[[:space:]]+deploy|supabase[[:space:]]+db[[:space:]]+(push|reset)' $files; then
-            echo 'Direct infrastructure mutation from CI is forbidden. Keep deploy authority in the platform integration.'
+            echo 'Direct infrastructure mutation from CI is forbidden.'
             exit 1
           fi
 
@@ -78,9 +78,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RInE 'VITE_BASE=/Esahuda-Rizqi-Nugraha/"|VITE_BASE=/"|cp -R dist/\.?[[:space:]]+_site/([^"]|$)' .github/workflows 2>/dev/null; then
-            echo 'FORBIDDEN: workflow appears to publish Vite dist to production root (cutover).'
-            echo 'See docs/CUTOVER-POLICY.md — requires owner AUTHORIZE CUTOVER.'
+          # Only flag explicit root cutover of Vite dist — not preview/ copies
+          if grep -RInE 'VITE_BASE=/"[[:space:]]*$|VITE_BASE=/Esahuda-Rizqi-Nugraha/"[[:space:]]*$' .github/workflows 2>/dev/null; then
+            echo 'FORBIDDEN: workflow sets VITE_BASE to site root (cutover).'
+            exit 1
+          fi
+          if grep -RInE 'cp -R[[:space:]]+dist(/\.)?[[:space:]]+_site/[[:space:]]*$|cp -R[[:space:]]+dist(/\.)?[[:space:]]+_site/"' .github/workflows 2>/dev/null; then
+            echo 'FORBIDDEN: workflow copies Vite dist onto production root.'
             exit 1
           fi
           if [ -f .github/workflows/static.yml ]; then
