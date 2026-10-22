@@ -1,14 +1,10 @@
-# SESSION_STATE — 2026-10-22 evening
+# SESSION_STATE — 2026-10-22
 
-## Structural slim (login freeze)
+## Emergency architecture
 
-| Data | Action |
-|------|--------|
-| MASTER_UNIT_SEED (~2.27MB) | emptied |
-| OSF_DEPARTURE_BY_SERIAL (~128KB) | emptied |
-| GPS_CURRENT_SNAPSHOTS (~16KB) | emptied |
-| data-pipeline-guard auto-boot | stubbed |
+- `index.html` (~5KB): login only → redirect `./app.html`
+- `app.html` (~745KB): full React app after session exists
 
-Index target size: ~740–800KB after maps strip.
+Heavy seed/maps stripped. Observer modules stubbed.
 
-Test: Incognito → login. Report A/B.
+Test: Incognito open site root → login form must appear instantly.
