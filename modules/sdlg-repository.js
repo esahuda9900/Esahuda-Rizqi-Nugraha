@@ -1,5 +1,5 @@
 /**
- * SDLG Repository — V5.0 (Enterprise Data Access Layer)
+ * SDLG Repository — V5.1 (listClaims safe + SDLG_REPOSITORY export)
  * 
  * ═══════════════════════════════════════════════════════════
  * UPGRADE V5.0:
@@ -99,7 +99,6 @@
       if (!client) return 0;
       
       try {
-        // Pakai head:true biar gak narik isi tabel (super cepat)
         var res = await client
           .from('claims')
           .select('*', { count: 'exact', head: true })
@@ -156,14 +155,13 @@
       if (!client) return [];
       
       try {
-        // Contoh kolom yang sering dipakai. Bisa disesuaikan.
         var cols = 'claim_id,dealer_claim_date,failure_date,dealer_repair_date,completion_date,model,serial_no,customer,branch,claim_status,total_amount,currency,dealer_wo_so,technical_personnel,hm_failure,mileage_km,archived_at';
         var res = await client
           .from('claims')
           .select(cols)
           .is('archived_at', null)
           .order('claim_id', { ascending: false })
-          .limit(500); // Limit default untuk initial load
+          .limit(500);
           
         if (res.error) throw res.error;
         return res.data || [];
@@ -173,7 +171,7 @@
       }
     },
 
-    // E. Lookup Machine VIN (Bersih dari Log Spam)
+    // E. Lookup Machine VIN
     async lookupMachineVIN(model, serialNo) {
       if (!serialNo) return null;
       
@@ -209,7 +207,38 @@
         return null;
       }
     },
-    
+
+    // C2. listClaims — API yang dipanggil index.html setelah login
+    // Cap 300 baris + kolom ringkas agar main-thread tidak freeze.
+    async listClaims() {
+      var client = getClient();
+      if (!client) return [];
+      try {
+        var cols = 'claim_id,dealer_claim_date,failure_date,dealer_repair_date,completion_date,model,serial_no,customer,branch,claim_status,total_amount,currency,dealer_wo_so,technical_personnel,hm_failure,mileage_km,archived_at,last_updated,created_at';
+        var res = await client
+          .from('claims')
+          .select(cols)
+          .is('archived_at', null)
+          .order('claim_id', { ascending: false })
+          .limit(300);
+        if (res.error) throw res.error;
+        var rows = res.data || [];
+        try {
+          if (root.SDLG_DATA_MODEL && typeof root.SDLG_DATA_MODEL.normalizeClaimCollection === 'function') {
+            return root.SDLG_DATA_MODEL.normalizeClaimCollection(rows).rows;
+          }
+        } catch (_) {}
+        return rows;
+      } catch (err) {
+        warn('listClaims failed:', err && err.message);
+        try {
+          return await this.listClaimsPage(0);
+        } catch (_) {
+          return [];
+        }
+      }
+    },
+
     // F. Utility: Get Page Size
     getPageSize: function () { return PAGE_SIZE; },
     
@@ -220,15 +249,18 @@
   };
 
   // ─────────────────────────────────────────────────────────
-  // 6. EXPORT (Immutable)
+  // 6. EXPORT
   // ─────────────────────────────────────────────────────────
-  var frozenRepo = Object.freeze(repo);
-  
+  var frozenRepo = repo;
+
   root.SDLGRepository = frozenRepo;
   root.sdlgRepository = frozenRepo;
-  
+  // KRITIS: index.html memakai window.SDLG_REPOSITORY (underscore).
+  // Tanpa ini, index memakai fallback listClaims yang loop semua halaman → browser hang setelah login.
+  root.SDLG_REPOSITORY = frozenRepo;
+
   try {
-    console.info('[SDLG] sdlg-repository.js V5.0 loaded (Enterprise Edition)');
+    console.info('[SDLG] sdlg-repository.js V5.1 loaded (listClaims safe + SDLG_REPOSITORY export)');
   } catch (_) {}
 
 })(typeof window !== 'undefined' ? window : this);
