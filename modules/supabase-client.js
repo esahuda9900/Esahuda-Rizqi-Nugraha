@@ -1,10 +1,14 @@
 /**
- * SDLG Supabase singleton v2.2 — legacy anon JWT + session recheck on SIGNED_IN
- * Root cause of blank Overview: REST grants only to authenticated; requests without JWT → 401.
+ * SDLG Supabase singleton v2.3 — session hard-timeout (anti stuck loading)
+ * Changes vs v2.2:
+ * - getSession / refreshSession raced with 4s timeout
+ * - dead sb-* tokens cleared on timeout so login screen can appear
+ * - waitForSupabaseReady default 8s (was 15s)
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_SUPABASE_SINGLETON_V22__) return;
+  if (root.__SDLG_SUPABASE_SINGLETON_V23__) return;
+  root.__SDLG_SUPABASE_SINGLETON_V23__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V22__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V2__ = true;
 
@@ -12,20 +16,17 @@
   var SUPABASE_ANON = root.__SDLG_SUPABASE_ANON__ ||
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZycXZlbGNyZWN6bW5vZmxkcmdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMzQyMDksImV4cCI6MjEwMzkxMDIwOX0.EQoGxEu8cNDF84tObZH13rwHiYt9EGcqnJiT3yRMa-w';
   var STORAGE_KEY = 'sb-frqvelcreczmnofldrga-auth-token';
+  var SESSION_TIMEOUT_MS = 4000;
 
   var client = null;
   var readyPromise = null;
   var originalCreateClient = null;
 
   function log() {
-    var args = Array.prototype.slice.call(arguments);
-    args.unshift('[SDLG supabase-client]');
-    try { console.info.apply(console, args); } catch (_) {}
+    try { console.info.apply(console, ['[SDLG supabase-client]'].concat([].slice.call(arguments))); } catch (_) {}
   }
   function warn() {
-    var args = Array.prototype.slice.call(arguments);
-    args.unshift('[SDLG supabase-client]');
-    try { console.warn.apply(console, args); } catch (_) {}
+    try { console.warn.apply(console, ['[SDLG supabase-client]'].concat([].slice.call(arguments))); } catch (_) {}
   }
 
   function isClient(c) {
@@ -65,7 +66,7 @@
         flowType: 'implicit'
       },
       global: {
-        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v22' }
+        headers: { 'X-Client-Info': 'sdlg-warranty-singleton-v23' }
       }
     };
   }
@@ -76,6 +77,40 @@
     auth.storageKey = STORAGE_KEY;
     try { if (!auth.storage) auth.storage = root.localStorage; } catch (_) {}
     return Object.assign({}, defaultOptions(), opts, { auth: auth });
+  }
+
+  function withTimeout(promise, ms, label) {
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) return;
+        done = true;
+        reject(new Error(label || 'timeout'));
+      }, ms);
+      Promise.resolve(promise).then(function (v) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        resolve(v);
+      }, function (e) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        reject(e);
+      });
+    });
+  }
+
+  function clearAuthStorage() {
+    try {
+      var keys = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && /^sb-/i.test(k)) keys.push(k);
+      }
+      keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    } catch (_) {}
   }
 
   function createRaw(url, key, opts) {
@@ -92,7 +127,7 @@
     if (!root.supabase || typeof root.supabase.createClient !== 'function') return null;
     try {
       var c = createRaw(SUPABASE_URL, SUPABASE_ANON, defaultOptions());
-      log('Supabase client initialized (singleton v2.2, legacy anon JWT)');
+      log('client ready (v2.3 timeout)');
       wireAuthRecheck(c);
       return remember(c);
     } catch (err) {
@@ -107,12 +142,8 @@
     originalCreateClient = root.supabase.createClient.bind(root.supabase);
     root.supabase.createClient = function patchedCreateClient(url, key, opts) {
       var existing = findExisting();
-      if (existing) {
-        log('createClient reused singleton');
-        return existing;
-      }
+      if (existing) return existing;
       var c = createRaw(SUPABASE_URL, SUPABASE_ANON, opts);
-      log('createClient first instance stored as singleton');
       wireAuthRecheck(c);
       return remember(c);
     };
@@ -140,54 +171,48 @@
     if (!c || !c.auth || typeof c.auth.getSession !== 'function') {
       return Promise.resolve({ session: null, error: new Error('No auth API') });
     }
-    return c.auth.getSession().then(function (res) {
-      var session = res && res.data ? res.data.session : null;
-      var error = res ? res.error : null;
-      if (error) warn('getSession error', error);
 
-      if (!session && hasTokenHint() && typeof c.auth.refreshSession === 'function') {
-        log('Token present but session null — refreshSession once');
-        return c.auth.refreshSession().then(function (ref) {
-          session = ref && ref.data ? ref.data.session : null;
-          error = ref ? ref.error : null;
-          if (session) {
-            log('Session recovered via refreshSession', session.user && session.user.email);
-          } else {
-            warn('refreshSession failed — clearing dead token');
-            try {
-              var keys = [];
-              for (var i = 0; i < localStorage.length; i++) {
-                var k = localStorage.key(i);
-                if (k && /^sb-/i.test(k)) keys.push(k);
+    return withTimeout(c.auth.getSession(), SESSION_TIMEOUT_MS, 'getSession timeout')
+      .then(function (res) {
+        var session = res && res.data ? res.data.session : null;
+        var error = res ? res.error : null;
+        if (error) warn('getSession error', error);
+
+        if (!session && hasTokenHint() && typeof c.auth.refreshSession === 'function') {
+          log('token hint without session — refresh once (4s cap)');
+          return withTimeout(c.auth.refreshSession(), SESSION_TIMEOUT_MS, 'refreshSession timeout')
+            .then(function (ref) {
+              session = ref && ref.data ? ref.data.session : null;
+              error = ref ? ref.error : null;
+              if (session) {
+                log('session recovered', session.user && session.user.email);
+              } else {
+                warn('refresh failed — clear dead tokens');
+                clearAuthStorage();
+                try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
               }
-              keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
-            } catch (_) {}
-            try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
-            applySessionFlags(c, null);
-            warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-          }
-          applySessionFlags(c, session);
-          return { session: session, error: error };
-        }).catch(function (err) {
-          warn('refreshSession threw', err);
-          applySessionFlags(c, null);
-          warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-          return { session: null, error: err };
-        });
-      }
+              applySessionFlags(c, session);
+              return { session: session, error: error };
+            })
+            .catch(function (err) {
+              warn('refresh timeout/throw — clear tokens', err && err.message);
+              clearAuthStorage();
+              try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
+              applySessionFlags(c, null);
+              return { session: null, error: err };
+            });
+        }
 
-      if (!session) {
-        warn('USER NOT AUTHENTICATED — RLS WILL BLOCK DATA (empty arrays, zeros)');
-      } else {
-        log('authenticated', session.user && session.user.email);
-      }
-      applySessionFlags(c, session);
-      return { session: session, error: error };
-    }).catch(function (err) {
-      warn('getSession threw', err);
-      applySessionFlags(c, null);
-      return { session: null, error: err };
-    });
+        applySessionFlags(c, session);
+        return { session: session, error: error };
+      })
+      .catch(function (err) {
+        warn('getSession timeout/throw — clear tokens', err && err.message);
+        clearAuthStorage();
+        try { if (c.auth) c.auth.signOut({ scope: 'local' }); } catch (_) {}
+        applySessionFlags(c, null);
+        return { session: null, error: err };
+      });
   }
 
   function wireAuthRecheck(c) {
@@ -217,7 +242,7 @@
   };
 
   root.waitForSupabaseReady = function waitForSupabaseReady(timeoutMs) {
-    timeoutMs = timeoutMs || 15000;
+    timeoutMs = timeoutMs || 8000;
     if (readyPromise) return readyPromise;
     readyPromise = new Promise(function (resolve, reject) {
       var started = Date.now();
@@ -245,6 +270,8 @@
     if (!c) return Promise.resolve(null);
     return checkSession(c).then(function (r) { return r.session; });
   };
+
+  root.sdlgClearAuthStorage = clearAuthStorage;
 
   function boot() {
     if (patchCreateClient()) {
