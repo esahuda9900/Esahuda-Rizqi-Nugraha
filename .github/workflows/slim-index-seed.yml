@@ -1,0 +1,85 @@
+name: Slim index (strip MASTER_UNIT_SEED)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/slim-index-seed.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  slim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Strip MASTER_UNIT_SEED from index.html
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          s = path.read_text(encoding='utf-8', errors='replace')
+          marker = 'MASTER_UNIT_SEED = ['
+          i = s.find(marker)
+          if i < 0:
+              print('MASTER_UNIT_SEED not found — nothing to do')
+              raise SystemExit(0)
+          j = i + len(marker) - 1
+          depth = 0
+          end = None
+          in_str = False
+          esc = False
+          quote = None
+          for k in range(j, len(s)):
+              c = s[k]
+              if in_str:
+                  if esc:
+                      esc = False
+                      continue
+                  if c == '\\':
+                      esc = True
+                      continue
+                  if c == quote:
+                      in_str = False
+                  continue
+              if c in ('"', "'", '`'):
+                  in_str = True
+                  quote = c
+                  continue
+              if c == '[':
+                  depth += 1
+              elif c == ']':
+                  depth -= 1
+                  if depth == 0:
+                      end = k + 1
+                      break
+          if end is None:
+              raise SystemExit('Failed to find end of MASTER_UNIT_SEED array')
+          while end < len(s) and s[end] in ' \t\r\n':
+              end += 1
+          if end < len(s) and s[end] == ';':
+              end += 1
+          seed_bytes = end - i
+          fixed = s[:i] + 'MASTER_UNIT_SEED = [];' + s[end:]
+          path.write_text(fixed, encoding='utf-8')
+          print(f'Stripped {seed_bytes} bytes; new size {len(fixed)}')
+          PY
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "sdlg-slim-bot"
+          git config user.email "sdlg-slim-bot@users.noreply.github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix(perf): strip MASTER_UNIT_SEED from index (~2.3MB) to stop browser hang
+
+          Root cause: 3682 machine rows inlined in index.html forced Chrome to
+          parse ~3MB JS on the main thread → not responding / stuck loading.
+          Admin unit sync still works with empty seed (no-op loop)."
+          git push origin HEAD:main
