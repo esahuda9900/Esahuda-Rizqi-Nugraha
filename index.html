@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <base href="./">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SDLG Warranty — Login</title>
@@ -17,6 +18,8 @@
     .err { color: #fca5a5; font-size: .85rem; min-height: 1.2em; margin: 0 0 10px; }
     .ok { color: #86efac; font-size: .85rem; }
   </style>
+  <!-- SDLGHashRouter showBottomTaskbar sdlg-hash-router (runtime modules) -->
+  <!-- routes: #/overview #/claims #/sdlg-input #/master-data -->
 </head>
 <body>
   <div class="card">
@@ -32,6 +35,13 @@
     </form>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"></script>
+  <script src="./modules/supabase-client.js"></script>
+  <script src="./modules/data-pipeline-guard.js"></script>
+  <script src="./modules/claim-fields.js"></script>
+  <script src="./modules/sdlg-repository.js"></script>
+  <script src="./modules/paste-parse-ux.js"></script>
+  <script src="./modules/wo-claim-policy.js"></script>
+  <script src="./modules/wo-collision-modal.js"></script>
   <script>
 (function () {
   var URL = 'https://frqvelcreczmnofldrga.supabase.co';
@@ -122,5 +132,9 @@ return;
   });
 })();
   </script>
+  <script src="./modules/sdlg-hash-router.js"></script>
+  <script src="./modules/sdlg-hash-tab-bridge.js"></script>
+  <script src="./modules/sdlg-input-claim-lock.js"></script>
+  <script src="./modules/sdlg-portal-finance-ux.js"></script>
 </body>
 </html>
