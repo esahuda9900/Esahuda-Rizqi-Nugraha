@@ -1,0 +1,187 @@
+name: Emergency split login
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/emergency-split-login.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy full app then write minimal login index
+        run: |
+          set -e
+          # Preserve current monolith as app.html (post-login shell)
+          if [ ! -f app.html ] || [ index.html -nt app.html ]; then
+            cp -f index.html app.html
+            echo "app.html updated from index.html ($(wc -c < app.html) bytes)"
+          fi
+
+          cat > index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="id">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>SDLG Warranty — Login</title>
+            <style>
+              * { box-sizing: border-box; }
+              body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+              .card { width: 100%; max-width: 400px; background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,.35); }
+              h1 { margin: 0 0 6px; font-size: 1.35rem; }
+              p.sub { margin: 0 0 20px; color: #94a3b8; font-size: .9rem; }
+              label { display: block; font-size: .8rem; color: #94a3b8; margin-bottom: 6px; }
+              input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: #f8fafc; margin-bottom: 14px; font-size: 1rem; }
+              button { width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #2563eb; color: #fff; font-weight: 600; font-size: 1rem; cursor: pointer; }
+              button:disabled { opacity: .6; cursor: wait; }
+              .err { color: #fca5a5; font-size: .85rem; min-height: 1.2em; margin: 0 0 10px; }
+              .ok { color: #86efac; font-size: .85rem; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h1>SDLG Warranty</h1>
+              <p class="sub">Masuk untuk melanjutkan</p>
+              <div id="msg" class="err"></div>
+              <form id="f">
+                <label for="email">Email</label>
+                <input id="email" type="email" autocomplete="username" required />
+                <label for="password">Password</label>
+                <input id="password" type="password" autocomplete="current-password" required />
+                <button id="btn" type="submit">Masuk</button>
+              </form>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"></script>
+            <script>
+          (function () {
+            var URL = 'https://frqvelcreczmnofldrga.supabase.co';
+            var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZycXZlbGNyZWN6bW5vZmxkcmdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMzQyMDksImV4cCI6MjEwMzkxMDIwOX0.EQoGxEu8cNDF84tObZH13rwHiYt9EGcqnJiT3yRMa-w';
+            var msg = document.getElementById('msg');
+            var btn = document.getElementById('btn');
+            var client = null;
+
+            function show(t, ok) {
+              msg.textContent = t || '';
+              msg.className = ok ? 'ok' : 'err';
+            }
+
+            function getClient() {
+              if (client) return client;
+              if (!window.supabase || !window.supabase.createClient) throw new Error('Supabase CDN gagal dimuat');
+              client = window.supabase.createClient(URL, ANON, {
+                auth: {
+                  persistSession: true,
+                  autoRefreshToken: true,
+                  detectSessionInUrl: false,
+                  storageKey: 'sb-frqvelcreczmnofldrga-auth-token'
+                }
+              });
+              return client;
+            }
+
+            function goApp() {
+              window.location.replace('./app.html');
+            }
+
+            // If already logged in, skip form
+            setTimeout(function () {
+              try {
+                var c = getClient();
+                var t = setTimeout(function () { /* ignore slow session */ }, 4000);
+                c.auth.getSession().then(function (res) {
+                  clearTimeout(t);
+                  if (res && res.data && res.data.session) goApp();
+                }).catch(function () {});
+              } catch (e) {}
+            }, 100);
+
+            document.getElementById('f').addEventListener('submit', function (e) {
+              e.preventDefault();
+              show('');
+              btn.disabled = true;
+              btn.textContent = 'Memproses...';
+              var email = document.getElementById('email').value.trim();
+              var password = document.getElementById('password').value;
+              var done = false;
+              var timer = setTimeout(function () {
+                if (done) return;
+                done = true;
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+                show('Koneksi terlalu lama. Coba lagi.');
+              }, 12000);
+              try {
+                var c = getClient();
+                c.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
+                  if (done) return;
+                  done = true;
+                  clearTimeout(timer);
+                  if (res.error) {
+                    btn.disabled = false;
+                    btn.textContent = 'Masuk';
+                    show(res.error.message || 'Login gagal');
+                    return;
+                  }
+                  show('Berhasil. Membuka aplikasi...', true);
+                  setTimeout(goApp, 300);
+                }).catch(function (err) {
+                  if (done) return;
+                  done = true;
+                  clearTimeout(timer);
+                  btn.disabled = false;
+                  btn.textContent = 'Masuk';
+                  show((err && err.message) || 'Login gagal');
+                });
+              } catch (err) {
+                done = true;
+                clearTimeout(timer);
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+                show((err && err.message) || 'Gagal memulai login');
+              }
+            });
+          })();
+            </script>
+          </body>
+          </html>
+          HTMLEOF
+
+          # Fix heredoc leading spaces from YAML indent - strip common leading spaces
+          python3 -c "
+          from pathlib import Path
+          p=Path('index.html')
+          lines=p.read_text().splitlines(True)
+          # remove accidental 2-space or more indent if whole file indented
+          import re
+          text=p.read_text()
+          # write clean without leading 10 spaces from workflow
+          cleaned='\n'.join([ln[10:] if ln.startswith('          ') else ln for ln in text.splitlines()])
+          if not cleaned.lstrip().startswith('<!DOCTYPE'):
+              # try 2-tab style
+              cleaned=text
+          p.write_text(cleaned if cleaned.lstrip().startswith('<!') else text)
+          print('index bytes', p.stat().st_size)
+          print('app bytes', Path('app.html').stat().st_size)
+          print(p.read_text()[:80])
+          "
+
+      - name: Commit and push
+        run: |
+          git config user.name "sdlg-slim-bot"
+          git config user.email "sdlg-slim-bot@users.noreply.github.com"
+          git add index.html app.html
+          if git diff --staged --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "fix(emergency): split login — lightweight index.html, full app at app.html
+
+          Login no longer parses the React monolith. After auth, redirect to app.html."
+          git push origin HEAD:main
