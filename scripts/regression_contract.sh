@@ -11,6 +11,14 @@ else
   REPO_ROOT="$ROOT"
 fi
 
+# Emergency split-login: lightweight index + full app at app.html
+if [[ -f "$ROOT/app.html" ]] && grep -qE 'ReactDOM\.createRoot|createRoot\(' "$ROOT/app.html" 2>/dev/null; then
+  if ! grep -qE 'ReactDOM\.createRoot|selectedClaim\.repair_method' "$HTML" 2>/dev/null; then
+    echo "CONTRACT INFO: index is login shell — validating app.html instead"
+    HTML="$ROOT/app.html"
+  fi
+fi
+
 fail() { echo "CONTRACT FAIL: $*"; exit 1; }
 ok() { echo "CONTRACT OK: $*"; }
 warn() { echo "CONTRACT WARN: $*"; }
