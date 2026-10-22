@@ -1,8 +1,7 @@
 /**
- * SDLG Perf Runtime v1.0
- * - Polyfill listClaimsPage if build patch not yet applied
+ * SDLG Perf Runtime v1.0 — soft-restore from stable
+ * - Polyfill listClaimsPage if needed
  * - Ensure SheetJS loads on demand before export
- * - No business logic changes
  */
 (function () {
   'use strict';
@@ -75,5 +74,5 @@
     boot();
   }
 
-  window.SDLGPerfRuntime = { version: '1.0.0', tryPolyfillListPage: tryPolyfillListPage };
+  window.SDLGPerfRuntime = { version: '1.0.0-soft-restore', tryPolyfillListPage: tryPolyfillListPage };
 })();
