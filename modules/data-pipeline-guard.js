@@ -1,37 +1,30 @@
 /**
- * SDLG Data Pipeline Guard — V2.0 (Smart Health Monitor)
- * 
- * ═══════════════════════════════════════════════════════════
- * UPGRADE V2.0:
- * ✅ SMART NOTIFICATION: Pakai SDLGNotify (bukan banner norak lagi).
- * ✅ RLS DIAGNOSTICS: Deteksi kalau error-nya karena Row Level Security.
- * ✅ SMART POLLING: Nunggu client siap tanpa setTimeout kaku.
- * ✅ SAFE TOKEN CHECK: Cek localStorage lebih cepat & aman.
- * ✅ SELF-HEALING: Auto refresh session kalau expired.
- * ═══════════════════════════════════════════════════════════
+ * data-pipeline-guard.js — claim fetch diagnostics + session recovery
+ * v1.2.1 — do not show red "Belum login" banner on the login page
+ * - Self-heal: if token exists but getSession() null, try refreshSession once
  */
 (function (root) {
   'use strict';
+  if (root.__SDLG_DATA_PIPELINE_GUARD__) return;
+  root.__SDLG_DATA_PIPELINE_GUARD__ = true;
 
-  if (root.__SDLG_DATA_PIPELINE_GUARD_V2__) return;
-  root.__SDLG_DATA_PIPELINE_GUARD_V2__ = true;
-  root.__SDLG_DATA_PIPELINE_GUARD__ = true; // Backward compatibility
-
-  // ─────────────────────────────────────────────────────────
-  // 1. UTILITIES & LOGGING
-  // ─────────────────────────────────────────────────────────
-  function log(msg, data) { console.log('[SDLG Pipeline] ' + msg, data || ''); }
-  function warn(msg, data) { console.warn('[SDLG Pipeline] ' + msg, data || ''); }
-  function err(msg, data) { console.error('[SDLG Pipeline] ' + msg, data || ''); }
-
-  function notify(type, title, msg) {
-    if (root.SDLGNotify && root.SDLGNotify[type]) {
-      root.SDLGNotify[type](title, msg);
-    } else {
-      // Fallback kalau SDLGNotify belum siap
-      if (type === 'error') err(title, msg);
-      else log(title, msg);
-    }
+  function log() {
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.log.apply(console, a);
+    } catch (_) {}
+  }
+  function warn() {
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.warn.apply(console, a);
+    } catch (_) {}
+  }
+  function err() {
+    try {
+      var a = ['[SDLG pipeline]'].concat([].slice.call(arguments));
+      console.error.apply(console, a);
+    } catch (_) {}
   }
 
   function getClient() {
@@ -46,173 +39,182 @@
     return null;
   }
 
-  function waitForClient(maxMs) {
-    return new Promise(function (resolve, reject) {
-      var start = Date.now();
-      (function check() {
-        var c = getClient();
-        if (c) return resolve(c);
-        if (Date.now() - start > maxMs) return reject(new Error('Supabase client timeout'));
-        setTimeout(check, 150);
-      })();
-    });
-  }
-
-  function isLoginPage() {
-    try {
-      return !!document.querySelector('main.login-screen, .login-screen, #login-screen');
-    } catch (_) { return false; }
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // 2. SESSION RECOVERY (Self-Healing)
-  // ─────────────────────────────────────────────────────────
   function hasStoredTokenHint() {
     try {
       if (typeof localStorage === 'undefined') return false;
-      // Cek keys yang umum dipakai Supabase auth
-      return Object.keys(localStorage).some(function (k) {
-        return /sb-.*-auth-token/i.test(k);
-      });
-    } catch (_) { return false; }
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i) || '';
+        if (/sb-.*-auth-token/i.test(k)) return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
+  /** One-shot session recovery when token exists but getSession is empty */
   async function recoverSession(supabase) {
+    var sessionRes = null;
     try {
-      var res = await supabase.auth.getSession();
-      var session = res && res.data ? res.data.session : null;
-      if (session && session.access_token) return session;
+      sessionRes = await supabase.auth.getSession();
+    } catch (e) {
+      warn('getSession throw', e);
+    }
+    var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+    if (session && session.access_token) return session;
 
-      if (!hasStoredTokenHint()) return null;
+    if (!hasStoredTokenHint()) return null;
 
-      log('Token ditemukan tapi session kosong — mencoba refresh...');
+    log('Token present but session null — attempting refreshSession once');
+    try {
       var refreshed = await supabase.auth.refreshSession();
       session = refreshed && refreshed.data ? refreshed.data.session : null;
-      
       if (session && session.access_token) {
-        log('Session berhasil dipulihkan via refreshSession.');
+        log('Session recovered via refreshSession');
         return session;
       }
     } catch (e) {
-      warn('Gagal recover session:', e);
+      warn('refreshSession failed', e);
     }
-    return null;
+
+    try {
+      await new Promise(function (r) { setTimeout(r, 400); });
+      sessionRes = await supabase.auth.getSession();
+      session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+      if (session) log('Session appeared after delay');
+      return session;
+    } catch (_) {
+      return null;
+    }
   }
 
-  // ─────────────────────────────────────────────────────────
-  // 3. FETCH PROBE (Dengan Diagnostik RLS)
-  // ─────────────────────────────────────────────────────────
   async function fetchClaimsProbe(limit) {
     limit = limit || 5;
-    var supabase;
-    
-    try {
-      supabase = await waitForClient(10000);
-    } catch (e) {
-      return { ok: false, reason: 'NO_CLIENT', message: 'Supabase client tidak ditemukan.' };
+    var supabase = getClient();
+    if (!supabase) {
+      return { ok: false, reason: 'NO_CLIENT', message: 'Supabase client missing', rows: [] };
     }
 
     var session = await recoverSession(supabase);
     if (!session || !session.access_token) {
-      return { ok: false, reason: 'NOT_AUTHENTICATED', message: 'User belum login (session kosong).' };
+      return { ok: false, reason: 'NOT_AUTHENTICATED', message: 'No session', rows: [] };
     }
 
+    var result;
     try {
-      var result = await supabase
+      result = await supabase
         .from('claims')
         .select('claim_id')
         .is('archived_at', null)
         .limit(limit);
-
-      if (result.error) {
-        var code = result.error.code;
-        var msg = result.error.message;
-        
-        // Diagnostik Khusus RLS (Row Level Security)
-        if (code === '42501' || /row-level security/i.test(msg)) {
-          return { 
-            ok: false, 
-            reason: 'RLS_BLOCKED', 
-            message: 'Akses ditolak oleh RLS Supabase. Pastikan policy tabel "claims" sudah benar untuk user ini.' 
-          };
-        }
-        
-        return { ok: false, reason: 'FETCH_ERROR', message: msg, code: code };
-      }
-
-      var rows = Array.isArray(result.data) ? result.data : [];
-      if (rows.length === 0) {
-        return { ok: true, reason: 'EMPTY', message: 'Query OK, tapi 0 baris data.', rows: [] };
-      }
-
-      return { ok: true, reason: 'DATA', message: 'ok', rows: rows };
-
     } catch (e) {
-      return { ok: false, reason: 'FETCH_THROW', message: String(e && e.message || e) };
+      err('fetch throw', e);
+      return { ok: false, reason: 'FETCH_THROW', message: String(e && e.message || e), rows: [] };
     }
+
+    if (result && result.error) {
+      return {
+        ok: false,
+        reason: 'FETCH_ERROR',
+        message: result.error.message || JSON.stringify(result.error),
+        code: result.error.code,
+        rows: []
+      };
+    }
+
+    var rows = Array.isArray(result.data) ? result.data : [];
+    if (!rows.length) {
+      warn('Query OK but 0 rows');
+      return { ok: true, reason: 'EMPTY', message: 'Belum ada data yang cocok', rows: [] };
+    }
+
+    log('Fetch OK —', rows.length, 'row(s)');
+    return { ok: true, reason: 'DATA', message: 'ok', rows: rows };
   }
 
-  // ─────────────────────────────────────────────────────────
-  // 4. ORCHESTRATOR DIAGNOSTICS
-  // ─────────────────────────────────────────────────────────
+  function showBanner(kind, text) {
+    try {
+      var id = 'sdlg-data-pipeline-banner';
+      var el = document.getElementById(id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = id;
+        el.setAttribute('role', 'status');
+        el.style.cssText = 'position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;padding:12px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.18);';
+        document.body.appendChild(el);
+      }
+      if (kind === 'error') {
+        el.style.background = '#fef2f2';
+        el.style.color = '#991b1b';
+        el.style.border = '1px solid #fecaca';
+      } else if (kind === 'warn') {
+        el.style.background = '#fffbeb';
+        el.style.color = '#92400e';
+        el.style.border = '1px solid #fde68a';
+      } else {
+        el.style.background = '#ecfdf5';
+        el.style.color = '#065f46';
+        el.style.border = '1px solid #a7f3d0';
+      }
+      el.textContent = text;
+      if (kind === 'ok') {
+        clearTimeout(el.__sdlgHideTimer);
+        el.__sdlgHideTimer = setTimeout(function () {
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        }, 8000);
+      }
+    } catch (_) {}
+  }
+
   async function runDiagnostics() {
     var probe = await fetchClaimsProbe(5);
-
     if (probe.reason === 'NOT_AUTHENTICATED') {
-      if (!isLoginPage()) {
-        notify('error', 'Sesi Habis', 'Belum login. Silakan login ulang untuk mengakses data.');
+      var onLogin = false;
+      try { onLogin = !!document.querySelector('main.login-screen, .login-screen'); } catch (_) {}
+      if (!onLogin) {
+        showBanner('error', 'Belum login — session kosong. RLS memblokir data. Silakan login.');
       }
-    } 
-    else if (probe.reason === 'RLS_BLOCKED') {
-      notify('error', 'Akses Diblokir', probe.message);
-    } 
-    else if (probe.reason === 'FETCH_ERROR' || probe.reason === 'FETCH_THROW' || probe.reason === 'NO_CLIENT') {
-      notify('error', 'Gagal Fetch Data', probe.message);
-    } 
-    else if (probe.reason === 'EMPTY') {
-      notify('warning', 'Data Kosong', 'Koneksi sukses, tapi belum ada data claims.');
-    } 
-    else if (probe.reason === 'DATA') {
-      // Silent success (gak perlu munculin notif tiap load)
-      log('✅ Koneksi Database Sehat — ' + probe.rows.length + ' data terbaca.');
+    } else if (probe.reason === 'FETCH_ERROR' || probe.reason === 'FETCH_THROW' || probe.reason === 'NO_CLIENT') {
+      showBanner('error', 'Gagal fetch data. Cek console. (' + probe.message + ')');
+    } else if (probe.reason === 'EMPTY') {
+      showBanner('warn', 'Query sukses, 0 baris claims. Belum ada data yang cocok.');
+    } else if (probe.reason === 'DATA') {
+      showBanner('ok', 'Data loaded successfully — ' + probe.rows.length + ' claim(s) readable from Supabase.');
     }
-
     return probe;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // 5. UTILITY EXPORT (Bawaan lu yang tetap dipertahankan)
-  // ─────────────────────────────────────────────────────────
+  root.SDLGDataPipeline = {
+    version: '1.2.1',
+    getClient: getClient,
+    recoverSession: recoverSession,
+    fetchClaimsProbe: fetchClaimsProbe,
+    runDiagnostics: runDiagnostics
+  };
+
   root.SDLGDisplayValue = function SDLGDisplayValue(value, emptyText) {
-    emptyText = emptyText == null ? '—' : emptyText;
+    emptyText = emptyText == null ? '\u2014' : emptyText;
     if (value == null) return emptyText;
     if (typeof value === 'string' && value.trim() === '') return emptyText;
     if (Array.isArray(value) && value.length === 0) return emptyText;
     return value;
   };
 
-  // ─────────────────────────────────────────────────────────
-  // 6. PUBLIC API & BOOT
-  // ─────────────────────────────────────────────────────────
-  root.SDLGDataPipeline = Object.freeze({
-    version: '2.0.0',
-    getClient: getClient,
-    recoverSession: recoverSession,
-    fetchClaimsProbe: fetchClaimsProbe,
-    runDiagnostics: runDiagnostics
-  });
-
-  // Jalanin otomatis setelah halaman siap
   function boot() {
-    setTimeout(function () {
-      runDiagnostics().catch(function (e) { err('Diagnostics failed:', e); });
-    }, 500); // Delay dikit biar React & Supabase sempet inisialisasi
+    var client = getClient();
+    if (!client) {
+      setTimeout(function () {
+        if (!getClient()) warn('No supabase client after boot delay. Cek console.');
+        else runDiagnostics().catch(function (e) { err(e); });
+      }, 1200);
+    } else {
+      setTimeout(function () {
+        runDiagnostics().catch(function (e) { err(e); });
+      }, 800);
+    }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 300); }, { once: true });
   } else {
-    boot();
+    setTimeout(boot, 300);
   }
-
 })(typeof window !== 'undefined' ? window : globalThis);
