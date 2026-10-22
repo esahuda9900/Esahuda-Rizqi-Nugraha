@@ -41,6 +41,11 @@ jobs:
           mkdir -p _site
           # PRODUCTION = legacy web only (CUTOVER FORBIDDEN without owner AUTHORIZE CUTOVER)
           cp index.html _site/index.html
+          # Split-login: full React shell lives in app.html after lightweight auth
+          if [ -f app.html ]; then
+            cp app.html _site/app.html
+            echo "Included app.html ($(wc -c < app.html) bytes)"
+          fi
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
           cp -R modules _site/modules
           if [ -d styles ]; then cp -R styles _site/styles; fi
