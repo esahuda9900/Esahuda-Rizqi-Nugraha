@@ -1,77 +1,75 @@
 /**
- * SDLG Navigation State + Smart Core Router — V2.0
- * 
- * ═══════════════════════════════════════════════════════════
- * UPGRADE V2.0:
- * ✅ ZERO POLLING: Hapus setInterval & bootLoop 60x.
- * ✅ PROMISE QUEUE: File JS di-load berurutan (Anti-Race Condition).
- * ✅ SAFE CLICK: Pakai dispatchEvent biar React pasti nangkep.
- * ✅ DEBOUNCED OBSERVER: Cuma ngawasin area klaim (bukan seluruh DOM).
- * ✅ MODULAR: Pecah logika jadi NavState, Restore, dan Loader.
- * ═══════════════════════════════════════════════════════════
+ * Navigation state — emergency stable (2026-10-22)
+ * Hang fix: no absolute /modules/ loads, no full-document MutationObserver storm.
+ * Restored behavior aligned with v12 stable path-resolve + claim restore on list only.
  */
 (function () {
   'use strict';
+  if (window.__SDLG_NAV_STATE_EMERGENCY__) return;
+  window.__SDLG_NAV_STATE_EMERGENCY__ = true;
 
-  if (window.__SDLG_NAV_STATE_V2__) return;
-  window.__SDLG_NAV_STATE_V2__ = true;
-
-  // ─────────────────────────────────────────────────────────
-  // KONFIGURASI
-  // ─────────────────────────────────────────────────────────
   var PREFIX = 'sdlg-warranty:nav:v2';
-  var CLAIM_KEY = 'sdlg-warranty:last-claim:v2';
-  var SKIP_KEY = 'sdlg-warranty:skip-claim-restore:v2';
+  var LEGACY_TAB = 'sdlg-warranty:last-tab:v1';
+  var CLAIM_KEY = 'sdlg-warranty:last-claim:v1';
+  var SKIP_KEY = 'sdlg-warranty:skip-claim-restore:v1';
   var VALID_TABS = new Set(['dashboard', 'list', 'paste', 'sdlginput', 'masters', 'quality', 'unit360']);
-  var CLAIM_REGEX = /\b(\d{3,4}-\d{4}-SDLG(?:-PFR)?)\b/i;
 
-  // ─────────────────────────────────────────────────────────
-  // BAGIAN 1: NAVIGATION STATE (Sama persis, tapi lebih aman)
-  // ─────────────────────────────────────────────────────────
   function normalizeTab(value, fallback) {
     var next = String(value || '').trim();
-    return VALID_TABS.has(next) ? next : fallback || 'list';
+    return VALID_TABS.has(next) ? next : (fallback || 'list');
   }
-
   function normalizeDetailId(value) {
     var id = String(value || '').trim();
     if (!id) return null;
-    if (/^\d{4}-\d{4}-SDLG-PFR$/i.test(id) || /^[A-Za-z0-9._:-]{4,80}$/.test(id)) return id;
+    if (/^\d{4}-\d{4}-SDLG-PFR$/i.test(id)) return id;
+    if (/^[A-Za-z0-9._:-]{4,80}$/.test(id)) return id;
     return null;
   }
-
-  function getKey(user) {
+  function keyFor(user) {
     var identity = String((user && (user.id || user.email)) || 'guest').trim().toLowerCase() || 'guest';
     return PREFIX + ':' + identity;
   }
-
-  function readJSON(key) {
-    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (_) { return null; }
+  function readRaw(key) {
+    try { return window.localStorage.getItem(key); } catch (_) { return null; }
   }
-
-  function writeJSON(key, val) {
-    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (_) {}
+  function writeRaw(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (_) {}
   }
-
-  function getState(user) {
-    var raw = readJSON(getKey(user)) || readJSON(getKey(null)) || { tab: 'list', detailId: null };
-    return { tab: normalizeTab(raw.tab, 'list'), detailId: normalizeDetailId(raw.detailId) };
-  }
-
-  function setState(tab, detailId, user) {
-    var payload = { tab: normalizeTab(tab, 'list'), detailId: normalizeDetailId(detailId), at: Date.now() };
-    writeJSON(getKey(null), payload);
-    if (user) writeJSON(getKey(user), payload);
-    
-    if (detailId) {
-      try { window.localStorage.setItem(CLAIM_KEY, detailId); } catch (_) {}
-      syncHash(detailId);
-    } else {
-      try { window.localStorage.removeItem(CLAIM_KEY); } catch (_) {}
-      syncHash(null);
+  function readState(user) {
+    var raw = user ? readRaw(keyFor(user)) : null;
+    if (!raw) raw = readRaw(keyFor(null));
+    if (!raw) {
+      var legacy = readRaw(LEGACY_TAB + ':guest') || readRaw(LEGACY_TAB);
+      if (legacy) return { tab: normalizeTab(legacy, 'list'), detailId: null };
+      return { tab: 'list', detailId: null };
     }
+    try {
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return { tab: normalizeTab(parsed.tab, 'list'), detailId: normalizeDetailId(parsed.detailId) };
+      }
+    } catch (_) {
+      return { tab: normalizeTab(raw, 'list'), detailId: null };
+    }
+    return { tab: 'list', detailId: null };
   }
-
+  function writeState(tab, detailId, user) {
+    var payload = JSON.stringify({ tab: normalizeTab(tab, 'list'), detailId: normalizeDetailId(detailId), at: Date.now() });
+    writeRaw(keyFor(null), payload);
+    if (user) writeRaw(keyFor(user), payload);
+    writeRaw(LEGACY_TAB + ':guest', normalizeTab(tab, 'list'));
+    if (detailId) writeRaw(CLAIM_KEY, String(detailId));
+  }
+  function hashDetailId() {
+    try {
+      var h = String(window.location.hash || '').replace(/^#/, '');
+      var m = h.match(/^claim\/([^/?#]+)/i);
+      if (m) return normalizeDetailId(decodeURIComponent(m[1]));
+      m = h.match(/^(\d{4}-\d{4}-SDLG-PFR)$/i);
+      if (m) return normalizeDetailId(m[1]);
+    } catch (_) {}
+    return null;
+  }
   function syncHash(detailId) {
     try {
       var id = normalizeDetailId(detailId);
@@ -85,71 +83,68 @@
   window.SDLGNavState = {
     validTabs: Array.from(VALID_TABS),
     normalize: normalizeTab,
-    restore: function (fallback, user) { return getState(user).tab || fallback || 'list'; },
+    restore: function (fallback, user) {
+      return normalizeTab(readState(user).tab, fallback || 'list');
+    },
     restoreDetailId: function (user) {
-      var hashM = String(window.location.hash || '').match(/^#claim\/([^/?#]+)/i);
-      if (hashM) return normalizeDetailId(decodeURIComponent(hashM[1]));
-      try {
-        var stored = window.localStorage.getItem(CLAIM_KEY);
-        if (stored) return normalizeDetailId(stored);
-      } catch (_) {}
-      return getState(user).detailId;
+      var fromHash = hashDetailId();
+      if (fromHash) return fromHash;
+      var fromClaim = normalizeDetailId(readRaw(CLAIM_KEY));
+      if (fromClaim) return fromClaim;
+      return readState(user).detailId;
     },
     persist: function (tab, user, detailId) {
-      var id = arguments.length >= 3 ? detailId : getState(user).detailId;
-      setState(tab, id, user);
+      var id = arguments.length >= 3 ? detailId : readState(user).detailId;
+      writeState(tab, id, user);
+      syncHash(id);
     },
-    persistDetailId: function (detailId, user) { setState(getState(user).tab, detailId, user); },
+    persistDetailId: function (detailId, user) {
+      writeState(readState(user).tab, detailId, user);
+      syncHash(detailId);
+    },
     clearDetail: function (user) {
-      setState(getState(user).tab, null, user);
+      writeState(readState(user).tab, null, user);
       try { window.localStorage.removeItem(CLAIM_KEY); } catch (_) {}
-      try { window.localStorage.setItem(SKIP_KEY, '1'); } catch (_) {}
+      syncHash(null);
     }
   };
 
-  // ─────────────────────────────────────────────────────────
-  // BAGIAN 2: CLAIM RESTORE (Event-Driven, No Polling)
-  // ─────────────────────────────────────────────────────────
-  function isDetailPage() { return !!document.querySelector('.page.claim-detail-page, [data-sdlg-claim-detail="1"]'); }
-  function extractClaimId(text) { var m = String(text || '').match(CLAIM_REGEX); return m ? m[1].toUpperCase() : ''; }
-
+  // Claim restore — list only, no progressive absolute /modules loader
+  var restoring = false;
+  function claimIdFromText(text) {
+    var m = String(text || '').match(/\b(\d{4}-\d{4}-SDLG-PFR)\b/i);
+    return m ? m[1].toUpperCase() : '';
+  }
+  function isDetailPage() {
+    return !!document.querySelector('.page.claim-detail-page, [data-sdlg-claim-detail="1"]');
+  }
   function findClaimRow(claimId) {
-    var rows = document.querySelectorAll('.claim-row');
-    for (var i = 0; i < rows.length; i++) {
-      if ((rows[i].textContent || '').indexOf(claimId) >= 0) return rows[i];
-    }
-    var trs = document.querySelectorAll('.claims-table-shell tbody tr, table tbody tr');
-    for (var j = 0; j < trs.length; j++) {
-      if ((trs[j].textContent || '').indexOf(claimId) >= 0) return trs[j];
+    var nodes = document.querySelectorAll('.claim-row, .claims-table-shell tbody tr, table tbody tr');
+    for (var i = 0; i < nodes.length; i++) {
+      if ((nodes[i].textContent || '').indexOf(claimId) >= 0) return nodes[i];
     }
     return null;
   }
-
-  var isRestoring = false;
   function attemptRestore() {
-    if (isRestoring || isDetailPage()) return;
+    if (restoring || isDetailPage()) return;
     try { if (window.localStorage.getItem(SKIP_KEY) === '1') return; } catch (_) {}
-
     var id = window.SDLGNavState.restoreDetailId(null);
     if (!id) return;
-    
     var row = findClaimRow(id);
-    if (!row) return; // Kalau row belum muncul, observer bakal nangkep nanti
-
-    isRestoring = true;
-    if (window.SDLGNotify) window.SDLGNotify.info('Memulihkan Klaim', 'Kembali ke: ' + id);
-
+    if (!row) return;
+    restoring = true;
     try {
-      // Gunakan MouseEvent biar React SyntheticEvent nangkep
       row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-    } catch (_) { row.click(); }
-
-    setTimeout(function () { isRestoring = false; }, 1000);
+    } catch (_) {
+      try { row.click(); } catch (__) {}
+    }
+    setTimeout(function () { restoring = false; }, 800);
   }
 
-  // Event Listener (Back button / Tab click)
   document.addEventListener('click', function (e) {
-    var btn = e.target.closest('button, a, .nav-btn, [data-tab]');
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var btn = t.closest('button, a, .nav-btn, [data-tab]');
     if (btn) {
       var label = String(btn.textContent || btn.getAttribute('data-tab') || '').toLowerCase();
       if (/kembali|back to list|semua klaim/i.test(label) || /quality|unit\s*360|master|input|overview|dashboard/i.test(label)) {
@@ -157,9 +152,9 @@
         window.SDLGNavState.clearDetail(null);
       }
     }
-    var row = e.target.closest('.claim-row, .claims-table-shell tr');
+    var row = t.closest('.claim-row, .claims-table-shell tr');
     if (row && !isDetailPage()) {
-      var cid = extractClaimId(row.textContent || '');
+      var cid = claimIdFromText(row.textContent || '');
       if (cid) {
         try { window.localStorage.removeItem(SKIP_KEY); } catch (_) {}
         window.SDLGNavState.persistDetailId(cid, null);
@@ -167,162 +162,20 @@
     }
   }, true);
 
-  // Observer pintar (Cuma ngawasin list)
-  function setupRestoreObserver() {
-    var container = document.querySelector('.claims-list, .claims-table-shell');
-    if (!container) return;
-    
-    var debounce;
-    var obs = new MutationObserver(function () {
-      clearTimeout(debounce);
-      debounce = setTimeout(attemptRestore, 150);
-    });
-    obs.observe(container, { childList: true, subtree: true });
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // BAGIAN 3: SMART MODULE LOADER (Anti-Race Condition)
-  // ─────────────────────────────────────────────────────────
-  function resolveAsset(path) {
-    if (!path) return path;
-    if (/^https?:\/\//i.test(path)) return path;
-    try {
-      var host = String(location.hostname || '');
-      if (/github\.io$/i.test(host)) {
-        var parts = String(location.pathname || '').split('/').filter(Boolean);
-        if (parts.length >= 1 && parts[0].indexOf('.') < 0) {
-          return '/' + parts[0] + (path.charAt(0) === '/' ? path : '/' + path);
-        }
-      }
-    } catch (_) {}
-    return path;
-  }
-
-  var loadedModules = new Set();
-  function loadScript(url) {
-    return new Promise(function (resolve) {
-      if (!url) return resolve();
-      var src = resolveAsset(url);
-      if (loadedModules.has(src) || document.querySelector('script[src="' + src + '"]')) return resolve();
-
-      var s = document.createElement('script');
-      s.src = src;
-      s.async = false; // WAJIB: Biar urutan gak kacau
-      s.onload = function () { loadedModules.add(src); resolve(); };
-      s.onerror = function () { console.warn('[SDLG Loader] Gagal:', src); resolve(); }; // Tetep lanjut walau gagal
-      (document.head || document.documentElement).appendChild(s);
-    });
-  }
-
-  function loadStylesheet(href) {
-    if (!href) return;
-    var src = resolveAsset(href);
-    if (document.querySelector('link[href="' + src + '"]')) return;
-    var l = document.createElement('link');
-    l.rel = 'stylesheet';
-    l.href = src;
-    (document.head || document.documentElement).appendChild(l);
-  }
-
-  // ─────────────────────────────────────────────────────────
-  // BAGIAN 4: ORCHESTRATOR (Eksekusi Load)
-  // ─────────────────────────────────────────────────────────
-  function detectContext() {
-    var page = document.querySelector('.page');
-    var title = String((page && page.querySelector('.page-title')?.textContent) || '').toLowerCase();
-    var activeNav = String((document.querySelector('.nav-btn.active, [data-tab].active')?.textContent) || '').toLowerCase();
-    
-    return {
-      claimDetail: !!document.querySelector('.page.claim-detail-page'),
-      claimsList: !!document.querySelector('.claims-list, .claims-table-shell'),
-      sdlgInput: /sdlg/.test(title) || /sdlginput|input helper/.test(activeNav) || !!document.querySelector('[data-sdlg-field]'),
-      quality: /quality|unmatched/.test(title) || /quality/.test(activeNav),
-      unit360: /unit 360|360/.test(title) || /unit.?360/.test(activeNav)
-    };
-  }
-
-  // File yang WAJIB ada (Loading berurutan)
-  var BASE_MODULES = [
-    '/modules/perf-runtime.js',
-    '/modules/warranty-helper-fastpath.js',
-    '/modules/claim-detail-layout-fix.js',
-    '/modules/mobile-layout-fix.js',
-    '/modules/feedback-person-fix.js',
-    '/modules/sdlg-input-helper-ux.js',
-    '/modules/machine-360.js',
-    '/modules/unmatched-wo-queue.js',
-    '/modules/warranty-tracking-ux.js',
-    '/modules/warranty-assessment-ux.js'
-  ];
-
-  function loadContextModules() {
-    var ctx = detectContext();
-    if (ctx.claimDetail || ctx.claimsList) {
-      loadScript('/modules/warranty-tracking-ux.js');
-      loadScript('/modules/warranty-assessment-ux.js');
-      loadScript('/modules/claim-detail-layout-fix.js');
-    }
-    if (ctx.sdlgInput) loadScript('/modules/sdlg-input-helper-ux.js');
-    if (ctx.quality) loadScript('/modules/unmatched-wo-queue.js');
-    if (ctx.unit360) loadScript('/modules/machine-360.js');
-  }
-
   function boot() {
-    loadStylesheet('/styles/sdlg-alive-recolor-v1.css?v=1');
-    loadStylesheet('/styles/sdlg-claim-detail-clean-v2.css?v=3');
-
-    // 1. Load base modules secara berurutan
-    BASE_MODULES.reduce(function (chain, src) {
-      return chain.then(function () { return loadScript(src); });
-    }, Promise.resolve()).then(function () {
-      console.log('[SDLG Loader] ✅ Base modules siap.');
-      loadContextModules();
-    });
-
-    // 2. Claim Restore & Observer
-    attemptRestore();
-    setupRestoreObserver();
-    
-    // 3. Fallback observer (Kalau list dirender super lama)
-    setTimeout(attemptRestore, 1000);
-    setTimeout(attemptRestore, 2500);
-  }
-
-  // SPA Route Watcher (Event-driven, tanpa setInterval)
-  function watchSPARoute() {
-    var lastSig = '';
-    function checkRoute() {
-      var page = document.querySelector('.page');
-      var sig = (page ? page.className : '') + '|' + String((page && page.querySelector('.page-title')?.textContent) || '').slice(0, 50);
-      if (sig !== lastSig) {
-        lastSig = sig;
-        loadContextModules();
-      }
-    }
-    
-    if (window.MutationObserver) {
-      var obs = new MutationObserver(function () {
-        clearTimeout(window.__sdlgSpaTimer);
-        window.__sdlgSpaTimer = setTimeout(checkRoute, 150);
-      });
-      obs.observe(document.documentElement, { childList: true, subtree: true });
-    }
-    window.addEventListener('popstate', checkRoute);
+    // Delayed, limited restore only — no MutationObserver on documentElement
+    setTimeout(attemptRestore, 600);
+    setTimeout(attemptRestore, 1800);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      boot();
-      watchSPARoute();
-    }, { once: true });
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
   } else {
     boot();
-    watchSPARoute();
   }
 
-  // Export API untuk backward compatibility
   window.SDLGNavClaimRestore = {
-    version: '2.0.0',
+    version: '2026-10-22-emergency',
     restore: attemptRestore,
     isDetail: isDetailPage
   };
