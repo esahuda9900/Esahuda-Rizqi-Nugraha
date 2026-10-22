@@ -1,0 +1,100 @@
+name: Slim index (strip heavy maps)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/slim-index-heavy-maps.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  slim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strip heavy Object.freeze maps
+        run: |
+          python3 << 'PY'
+          from pathlib import Path
+
+          def strip_freeze(s, name):
+              marker = f'const {name} = Object.freeze({{'
+              i = s.find(marker)
+              if i < 0:
+                  marker2 = f'var {name} = Object.freeze({{'
+                  i = s.find(marker2)
+                  if i < 0:
+                      print(f'{name}: not found')
+                      return s, 0
+                  marker = marker2
+              j = i + len(marker) - 1  # {
+              depth = 0
+              end = None
+              in_str = False
+              esc = False
+              quote = None
+              for k in range(j, len(s)):
+                  c = s[k]
+                  if in_str:
+                      if esc:
+                          esc = False
+                          continue
+                      if c == '\\':
+                          esc = True
+                          continue
+                      if c == quote:
+                          in_str = False
+                      continue
+                  if c in ('"', "'", '`'):
+                      in_str = True
+                      quote = c
+                      continue
+                  if c == '{':
+                      depth += 1
+                  elif c == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = k + 1
+                          break
+              if end is None:
+                  raise SystemExit(f'{name}: failed to find end')
+              while end < len(s) and s[end] in ' \t':
+                  end += 1
+              if end < len(s) and s[end] == ')':
+                  end += 1
+              if end < len(s) and s[end] == ';':
+                  end += 1
+              stripped = end - i
+              # Keep same binding so references do not throw
+              replacement = f'const {name} = Object.freeze({{}});'
+              print(f'{name}: stripped {stripped} bytes')
+              return s[:i] + replacement + s[end:], stripped
+
+          path = Path('index.html')
+          s = path.read_text(encoding='utf-8', errors='replace')
+          orig = len(s)
+          total = 0
+          for name in ('OSF_DEPARTURE_BY_SERIAL', 'GPS_CURRENT_SNAPSHOTS'):
+              s, n = strip_freeze(s, name)
+              total += n
+          path.write_text(s, encoding='utf-8')
+          print(f'done: {orig} -> {len(s)} (saved {total})')
+          PY
+
+      - name: Commit and push
+        run: |
+          git config user.name "sdlg-slim-bot"
+          git config user.email "sdlg-slim-bot@users.noreply.github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git commit -m "fix(perf): empty OSF_DEPARTURE_BY_SERIAL + GPS_CURRENT_SNAPSHOTS
+
+          Login page still froze after MASTER_UNIT_SEED strip because a
+          128KB one-line Object.freeze map remained in the main script."
+          git push origin HEAD:main
