@@ -23,11 +23,10 @@ jobs:
         with:
           node-version: "22"
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Typecheck / build (vite)
         run: |
-          # tsc may fail until types generated; vite build is the hard gate for preview
-          npx tsc -b --noEmit || true
-          npx vite build
+          npm test
+          npm run build
         env:
           VITE_BASE: /Esahuda-Rizqi-Nugraha/preview/

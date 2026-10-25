@@ -1,19 +1,20 @@
+import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/features/auth/AuthProvider';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
-import { OverviewPage } from '@/features/overview/OverviewPage';
-import { ClaimsListPage } from '@/features/claims/ClaimsListPage';
-import { ClaimDetailPage } from '@/features/claims/ClaimDetailPage';
-import { ParsePage } from '@/features/parse/ParsePage';
-import { MastersPage } from '@/features/masters/MastersPage';
-import { Unit360Page } from '@/features/unit/Unit360Page';
-import { DataQualityPage } from '@/features/quality/DataQualityPage';
-import { SdlgHelperPage } from '@/features/sdlg-helper/SdlgHelperPage';
-import { ExportBackupPage } from '@/features/export/ExportBackupPage';
-import { AdminCenterPage } from '@/features/admin/AdminCenterPage';
-import { BulkStatusPage } from '@/features/admin/BulkStatusPage';
+const OverviewPage = lazy(() => import('@/features/overview/OverviewPage').then(m => ({ default: m.OverviewPage })));
+const ClaimsListPage = lazy(() => import('@/features/claims/ClaimsListPage').then(m => ({ default: m.ClaimsListPage })));
+const ClaimDetailPage = lazy(() => import('@/features/claims/ClaimDetailPage').then(m => ({ default: m.ClaimDetailPage })));
+const ParsePage = lazy(() => import('@/features/parse/ParsePage').then(m => ({ default: m.ParsePage })));
+const MastersPage = lazy(() => import('@/features/masters/MastersPage').then(m => ({ default: m.MastersPage })));
+const Unit360Page = lazy(() => import('@/features/unit/Unit360Page').then(m => ({ default: m.Unit360Page })));
+const DataQualityPage = lazy(() => import('@/features/quality/DataQualityPage').then(m => ({ default: m.DataQualityPage })));
+const SdlgHelperPage = lazy(() => import('@/features/sdlg-helper/SdlgHelperPage').then(m => ({ default: m.SdlgHelperPage })));
+const ExportBackupPage = lazy(() => import('@/features/export/ExportBackupPage').then(m => ({ default: m.ExportBackupPage })));
+const AdminCenterPage = lazy(() => import('@/features/admin/AdminCenterPage').then(m => ({ default: m.AdminCenterPage })));
+const BulkStatusPage = lazy(() => import('@/features/admin/BulkStatusPage').then(m => ({ default: m.BulkStatusPage })));
 import { AppShell } from './AppShell';
 
 const queryClient = new QueryClient({
@@ -27,7 +28,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter basename={basename}>
-          <Routes>
+          <Suspense fallback={<div className="center-state" role="status">Memuat halaman…</div>}><Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
               <Route element={<AppShell />}>
@@ -45,7 +46,7 @@ export function App() {
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          </Routes></Suspense>
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
