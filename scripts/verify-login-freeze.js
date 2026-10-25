@@ -49,3 +49,11 @@ assert.equal(writes, 1, 'repeated errors must not rewrite the DOM');
 context.dispatchEvent({ type: 'error', message: 'different failure' });
 assert.equal(writes, 2, 'new errors must remain visible');
 console.log('LOGIN FREEZE REGRESSION: PASS (boot, debounce, diagnostics isolation, repeated/new errors)');
+
+// Both entrypoints must bypass an older cached registry, not just version its child.
+for (const file of ['index.html', 'app.html']) {
+  const entry = fs.readFileSync(path.join(root, file), 'utf8');
+  assert.match(entry, /src="\.\/modules\/claim-fields\.js\?v=20261026-login-freeze"/);
+}
+assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /location\.replace\('\.\/app\.html\?v=20261026-login-freeze'\)/);
+console.log('ENTRYPOINT CACHE REGRESSION: PASS');
