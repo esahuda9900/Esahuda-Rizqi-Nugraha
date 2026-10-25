@@ -38,6 +38,7 @@
 
   var isChecking = false;
   var lastSignature = '';
+  var debounceTimer = null;
 
   // ─────────────────────────────────────────────────────────
   // 2. UTILITIES
@@ -328,6 +329,10 @@
     var obs = new MutationObserver(function (mutations) {
       // Cek apakah ada perubahan yang relevan
       var relevant = mutations.some(function (m) {
+        // Diagnostics must never schedule claim work: an error raised by that
+        // work updates this panel and would otherwise feed back into itself.
+        var target = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+        if (target && target.closest && target.closest('#sdlg-boot-error')) return false;
         if (m.type === 'characterData') return true;
         if (m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length)) return true;
         return false;

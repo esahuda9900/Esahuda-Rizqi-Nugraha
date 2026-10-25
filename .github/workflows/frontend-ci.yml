@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'app.html'
       - 'canonical-warranty-helper.js'
       - 'modules/**'
       - 'scripts/**'
@@ -74,6 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/verify-module-syntax.js
+          node scripts/verify-login-freeze.js
           node --check modules/sdlg-input-hydrate.js
           node --check modules/sdlg-inline-enforcer.js
           node --check modules/claim-fields.js
