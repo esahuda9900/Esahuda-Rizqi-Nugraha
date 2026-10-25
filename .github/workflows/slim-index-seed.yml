@@ -2,9 +2,6 @@ name: Slim index (strip MASTER_UNIT_SEED)
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/slim-index-seed.yml'
 
 permissions:
   contents: write
