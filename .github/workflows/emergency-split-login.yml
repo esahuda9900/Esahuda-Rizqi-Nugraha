@@ -2,9 +2,6 @@ name: Emergency split login
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/emergency-split-login.yml'
 
 permissions:
   contents: write
