@@ -7,3 +7,4 @@ Catat bug di luar lingkup tugas aktif. Jangan "selipkan fix" di PR lain.
 | 2026-10-16 | apps/web parse (sebelum TSV fix) | Field parse kosong pada form tab-separated | high | fixed (parser TSV v0.3) |
 | 2026-10-21 | auth / route-guard | Console spam berulang `auth event SIGNED_IN` setelah login | low | **fixed** (auth-guard v1.4 log dedupe on main) |
 | 2026-10-21 | legacy form | Flicker / kontaminasi data antar klaim | high | **fixed** (#9) — owner A↔B manual test passed 2026-10-21 |
+| 2026-10-26 | CI Architecture Guard | Existing push-triggered repository writers `emergency-split-login.yml`, `slim-index-heavy-maps.yml`, `slim-index-seed.yml` fail the automatic mutation guard. Predates login repair; do not bypass guard. | medium | open; separate workflow cleanup |

@@ -23,3 +23,8 @@
 
 ## Next release check
 Owner review -> merge -> successful Pages deployment -> anonymous/login/session/dashboard checks in a real browser. Keep `/preview/` separate; no cutover.
+
+## PR checks
+- Repair PR #10: `fix/login-observer-freeze`.
+- Initial Frontend CI exposed an existing split-login artifact omission: CI copied index.html without app.html, unlike production. Repair CI now copies both so legacy contracts inspect the actual application.
+- Architecture Guard fails on three existing automatic repository-mutating workflows; tracked in docs/BUGS.md, not bypassed by this repair.
