@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'index.html'
+      - 'app.html'
       - 'canonical-warranty-helper.js'
       - 'modules/**'
       - 'scripts/**'
@@ -59,6 +60,7 @@ jobs:
           rm -rf _site
           mkdir -p _site
           cp index.html _site/index.html
+          cp app.html _site/app.html
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
           cp -R modules _site/modules
           if [ -d styles ]; then cp -R styles _site/styles; fi
@@ -74,6 +76,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/verify-module-syntax.js
+          node scripts/verify-login-freeze.js
           node --check modules/sdlg-input-hydrate.js
           node --check modules/sdlg-inline-enforcer.js
           node --check modules/claim-fields.js

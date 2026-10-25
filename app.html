@@ -3593,7 +3593,7 @@ input[type="checkbox"],input[type="radio"]{
       function showSDLGStartupError(msg){
         var box=document.getElementById('sdlg-boot-error');
         var text=document.getElementById('sdlg-boot-error-text');
-        if(box&&text){ box.style.display='block'; text.textContent=String(msg||'Unknown startup error'); }
+        if(box&&text){ box.style.display='block'; var next=String(msg||'Unknown startup error'); if(text.textContent!==next) text.textContent=next; }
       }
       window.addEventListener('error',function(e){
         if(e && e.error) showSDLGStartupError((e.error.stack||e.message)+ (e.filename ? "\nSource: "+e.filename+":"+(e.lineno||"?")+":"+(e.colno||"?") : ""));

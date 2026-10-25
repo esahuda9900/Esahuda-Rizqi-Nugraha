@@ -56,7 +56,7 @@
     { src: './modules/sdlg-input-hydrate.js?v=20261021-v15', attr: 'data-sdlg-input-hydrate' },
     { src: './modules/sdlg-hash-router.js?v=20261012-v221', attr: 'data-sdlg-hash-router' },
     { src: './modules/sdlg-hash-tab-bridge.js?v=20261012-v23', attr: 'data-sdlg-hash-tab-bridge' },
-    { src: './modules/sdlg-input-claim-sync.js?v=20261012-v11', attr: 'data-sdlg-input-claim-sync' },
+    { src: './modules/sdlg-input-claim-sync.js?v=20261026-login-freeze', attr: 'data-sdlg-input-claim-sync' },
     { src: './modules/sdlg-portal-finance-ux.js?v=20261012-v53', attr: 'data-sdlg-finance-ux' },
     { src: './modules/sdlg-portal-ux-v2.js?v=20261009-v24', attr: 'data-sdlg-portal-ux-v2' },
     { src: './modules/sdlg-route-finish.js?v=20261010-v15', attr: 'data-sdlg-route-finish' },
