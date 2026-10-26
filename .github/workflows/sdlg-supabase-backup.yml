@@ -1,9 +1,9 @@
-name: SDLG Supabase Free Backup
+name: SDLG Application Database Backup
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 1 * * *'
+    - cron: '17 1 * * *' # 08:17 WIB
 
 permissions:
   contents: read
@@ -14,63 +14,113 @@ concurrency:
 
 jobs:
   backup:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      PGSSLMODE: require
+      PGCONNECT_TIMEOUT: '15'
+      PGOPTIONS: '-c statement_timeout=0'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install pinned Supabase CLI
-        run: npm install -g supabase@2.117.0 --ignore-scripts
-
-      - name: Prepare backup directory
-        run: mkdir -p backup
-
-      - name: Backup schema
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: supabase db dump --db-url "$DB_URL" --schema public -f backup/public_schema.sql
-
-      - name: Backup public data
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: supabase db dump --db-url "$DB_URL" --schema public --data-only --use-copy -f backup/public_data.sql
-
-      - name: Backup custom roles
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: supabase db dump --db-url "$DB_URL" --role-only -f backup/roles.sql
-
-      - name: Verify backup files
+      - name: Validate connection configuration
         shell: bash
         run: |
           set -euo pipefail
-          test -s backup/public_schema.sql
-          test -s backup/public_data.sql
-          test -s backup/roles.sql
+          # Never trace commands or print the connection URI.
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit, parse_qs
 
-      - name: Create manifest and checksums
-        env:
-          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          def fail(message):
+              raise SystemExit(message)
+
+          raw = os.environ.get('SUPABASE_DB_URL', '')
+          if not raw or raw != raw.strip():
+              fail('SUPABASE_DB_URL is missing or has surrounding whitespace.')
+          try:
+              url = urlsplit(raw)
+              port = url.port
+              host = url.hostname
+          except ValueError:
+              fail('SUPABASE_DB_URL is malformed.')
+          if url.scheme not in ('postgres', 'postgresql'):
+              fail('Use a PostgreSQL connection URI.')
+          if not host or not url.username or not url.password:
+              fail('Explicit host, username and password are required.')
+          if host in ('localhost', '127.0.0.1', '::1'):
+              fail('Local database endpoints are forbidden.')
+          if port != 5432:
+              fail('Use explicit port 5432: direct or session pooler, not transaction mode.')
+          if url.path != '/postgres':
+              fail('Expected database name postgres.')
+          query = parse_qs(url.query, keep_blank_values=True)
+          if query.get('sslmode') not in (['require'], ['verify-ca'], ['verify-full']):
+              fail('Connection URI must require SSL.')
+          if any(key in query for key in (
+              'host', 'hostaddr', 'port', 'user', 'password', 'dbname', 'service'
+          )):
+              fail('Connection overrides in URI query parameters are forbidden.')
+          print('Database connection configuration validated.')
+          PY
+
+      - name: Prepare backup directory
+        shell: bash
         run: |
           set -euo pipefail
-          printf 'project_ref=%s\ncreated_utc=%s\n' "$PROJECT_REF" "$(date -u +%FT%TZ)" > backup/manifest.txt
-          sha256sum backup/public_schema.sql backup/public_data.sql backup/roles.sql > backup/SHA256SUMS.txt
+          install -d -m 700 "$GITHUB_WORKSPACE/backup"
 
-      - name: Compress backup artifact
-        run: tar -czf sdlg-supabase-backup.tar.gz backup/
+      - name: Dump application schema and data
+        shell: bash
+        run: |
+          set -euo pipefail
+          # One PostgreSQL 17 archive: one consistent schema/data snapshot.
+          docker run --rm \
+            --env SUPABASE_DB_URL \
+            --env PGSSLMODE \
+            --env PGCONNECT_TIMEOUT \
+            --env PGOPTIONS \
+            --volume "$GITHUB_WORKSPACE/backup:/backup" \
+            postgres:17 \
+            sh -eu -c '
+              umask 077
+              psql --dbname="$SUPABASE_DB_URL" --no-password --no-psqlrc \
+                --set=ON_ERROR_STOP=1 --command="SELECT 1" >/dev/null
+              pg_dump --dbname="$SUPABASE_DB_URL" --no-password \
+                --format=custom --schema=public --schema=private \
+                --lock-wait-timeout=30s --file=/backup/application.dump
+              test -s /backup/application.dump
+              pg_restore --list /backup/application.dump > /backup/archive-list.txt
+              # Keep grants and RLS; do not use --no-privileges.
+              pg_restore --schema-only --no-owner \
+                --file=/backup/application_schema.sql /backup/application.dump
+              pg_restore --data-only --no-owner \
+                --file=/backup/application_data.sql /backup/application.dump
+              test -s /backup/application_schema.sql
+              test -s /backup/application_data.sql
+            '
 
-      - name: Verify compressed artifact
-        run: test -s sdlg-supabase-backup.tar.gz
+      - name: Create manifest and verify checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/backup"
+          printf 'project_ref=%s\ncreated_utc=%s\nscope=%s\n' \
+            'frqvelcreczmnofldrga' "$(date -u +%FT%TZ)" \
+            'public,private application schemas/data; excludes Auth, Storage and global roles' \
+            > manifest.txt
+          sha256sum application.dump application_schema.sql application_data.sql \
+            archive-list.txt manifest.txt > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
 
-      - name: Upload compressed backup artifact
+      - name: Upload verified application backup
         uses: actions/upload-artifact@v4
         with:
-          name: sdlg-supabase-backup-${{ github.run_number }}
-          path: sdlg-supabase-backup.tar.gz
+          name: sdlg-application-backup-${{ github.run_id }}
+          path: backup/
+          if-no-files-found: error
           retention-days: 7
+
+      - name: Clean runner files
+        if: always()
+        shell: bash
+        run: sudo rm -rf "$GITHUB_WORKSPACE/backup"

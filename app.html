@@ -38,7 +38,7 @@
   <script src="./modules/supabase-client.js?v=20261026-session-v24"></script>
   <script src="./modules/data-pipeline-guard.js"></script>
   <script src="./modules/claim-fields.js?v=20261026-session-v24"></script>
-  <script src="./modules/sdlg-repository.js"></script>
+  <script src="./modules/sdlg-repository.js?v=20261026-integrity-v1"></script>
   <script src="./modules/paste-parse-ux.js"></script>
   <script>
 window.SDLG_LOAD_XLSX = function () {
@@ -6438,13 +6438,21 @@ function App() {
             return claimId;
         },
         async updateClaim(command) {
+            if (!command?.claimId || !command.claim?._expected_last_updated) {
+                throw new Error("Versi klaim tidak tersedia. Salin perubahan Anda sebelum memuat ulang klaim.");
+            }
+            // One complete RPC only. Never retry with a reduced payload.
             const result = await sdlgSupabase.rpc("update_sdlg_claim", {
                 p_claim_id: command.claimId,
                 p_claim: command.claim,
                 p_status_history: command.statusHistory || []
             });
-            if (result?.error)
-                throw result.error;
+            if (!result || result.error || result.status >= 400) {
+                const error = new Error(result?.error?.message || "Respons penyimpanan tidak dapat dikonfirmasi.");
+                error.code = result?.error?.code;
+                error.status = result?.status;
+                throw error;
+            }
             return true;
         },
         async updateStatus(command) {
@@ -9022,12 +9030,24 @@ SDLG_REPOSITORY.listClaims = async function () {
             });
             showToast(autoTransitions.length ? `✅ Data diupdate · workflow otomatis sampai ${finalAutoStatus}` : "✅ Data berhasil diupdate");
             setEditing(false);
-            await loadClaims();
+            try {
+                await loadClaims();
+            } catch (_) {
+                showToast("Perubahan berhasil disimpan, tetapi daftar belum berhasil diperbarui.");
+            }
         }
         catch (e) {
-            showToast("Gagal update: " + e.message);
+            const conflict = e?.code === "40001" || e?.status === 409;
+            const uncertain = e?.status === 0 || /network|fetch|timeout|connection|respons.*tidak/i.test(String(e?.message || e));
+            showToast(conflict
+                ? "Klaim berubah di tab atau pengguna lain. Perubahan tetap di form. Salin perubahan sebelum memuat ulang dan membandingkan versi."
+                : uncertain
+                    ? "Status penyimpanan belum dapat dipastikan karena koneksi atau respons terputus. Perubahan tetap di form. Periksa data server sebelum mencoba lagi."
+                    : "Penyimpanan gagal. Perubahan tetap di form. " + (e?.message || "Server menolak permintaan."));
+            // Preserve editForm and editing state. No reload or navigation on failure.
         }
         finally {
+            saveInFlightRef.current = false;
             setSaving(false);
         }
     };
@@ -11199,90 +11219,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
 
 
 
-<!-- SDLG_WO_SAVE_FALLBACK_V1 -->
-<script>
-(() => {
-  if (window.__sdlgWoSaveFallbackV1) return;
-  window.__sdlgWoSaveFallbackV1 = true;
 
-  const originalFetch = window.fetch;
-
-  const isUpdateClaimRpc = (url) => {
-    try {
-      return String(url || '').includes('/rest/v1/rpc/update_sdlg_claim');
-    } catch (_) {
-      return false;
-    }
-  };
-
-  const extractBody = (input, init) => {
-    if (init && typeof init.body === 'string') return init.body;
-    if (input && typeof input === 'object' && typeof input.body === 'string') return input.body;
-    return null;
-  };
-
-  const buildRetryRequest = (input, init, body) => {
-    const parsed = JSON.parse(body);
-    const claim = parsed && parsed.p_claim;
-    if (!parsed || !claim || typeof claim !== 'object') return null;
-
-    const wo = typeof claim.dealer_wo_so === 'string' ? claim.dealer_wo_so.trim() : '';
-    const claimId = typeof parsed.p_claim_id === 'string' ? parsed.p_claim_id.trim() : '';
-    if (!wo || !claimId) return null;
-
-    // Narrow recovery: persist only the corrected WO/SO.
-    // Do not resend the full claim payload, which is what may have failed validation.
-    const retryPayload = JSON.stringify({
-      p_claim_id: claimId,
-      p_claim: { dealer_wo_so: wo },
-      p_status_history: []
-    });
-
-    if (init && typeof init === 'object') {
-      return { input, init: { ...init, body: retryPayload }, body: retryPayload };
-    }
-
-    if (input instanceof Request) {
-      return { input: new Request(input, { body: retryPayload }), init: undefined, body: retryPayload };
-    }
-
-    return { input, init: { method: 'POST', body: retryPayload }, body: retryPayload };
-  };
-
-  window.fetch = async function(input, init) {
-    const url = input && typeof input === 'object' && 'url' in input ? input.url : input;
-
-    if (!isUpdateClaimRpc(url)) {
-      return originalFetch.apply(this, arguments);
-    }
-
-    const body = extractBody(input, init);
-    let firstResponse;
-    try {
-      firstResponse = await originalFetch.apply(this, arguments);
-    } catch (err) {
-      throw err;
-    }
-
-    if (firstResponse.ok || !body) return firstResponse;
-
-    try {
-      const retry = buildRetryRequest(input, init, body);
-      if (!retry) return firstResponse;
-
-      const retryResponse = await originalFetch.call(this, retry.input, retry.init);
-      if (retryResponse.ok) {
-        console.warn('[SDLG] Full claim save failed; WO/SO-only recovery succeeded.');
-        return retryResponse;
-      }
-    } catch (err) {
-      console.warn('[SDLG] WO/SO recovery skipped:', err);
-    }
-
-    return firstResponse;
-  };
-})();
-</script>
 <script src="./canonical-warranty-helper.js?v=20261006-mirror155"></script>
 
 
@@ -11389,7 +11326,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   <script src="./modules/sdlg-hash-tab-bridge.js"></script>
   <script src="./modules/sdlg-input-claim-lock.js"></script>
   <script src="./modules/sdlg-portal-finance-ux.js"></script>
-  <script src="modules/sdlg-repository.js?v=4.2"></script>
+  <script src="modules/sdlg-repository.js?v=20261026-integrity-v1"></script>
 <script src="modules/vin-auto-lookup.js?v=1.0"></script>
 </body>
 </html>

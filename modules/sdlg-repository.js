@@ -200,12 +200,21 @@
     async updateClaim(command) {
       var client = getClient();
       if (!client) throw new Error('Supabase client not ready');
+      if (!command || !command.claimId || !command.claim || !command.claim._expected_last_updated) {
+        throw new Error('Versi klaim tidak tersedia. Salin perubahan Anda sebelum memuat ulang klaim.');
+      }
+      // One complete RPC only. Never retry with a reduced payload.
       var result = await client.rpc('update_sdlg_claim', {
         p_claim_id: command.claimId,
         p_claim: command.claim,
         p_status_history: command.statusHistory || []
       });
-      if (result && result.error) throw result.error;
+      if (!result || result.error || result.status >= 400) {
+        var error = new Error((result && result.error && result.error.message) || 'Respons penyimpanan tidak dapat dikonfirmasi.');
+        error.code = result && result.error && result.error.code;
+        error.status = result && result.status;
+        throw error;
+      }
       return true;
     },
 
