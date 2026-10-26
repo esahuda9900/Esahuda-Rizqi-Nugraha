@@ -104,6 +104,33 @@ jobs:
 
           echo "Prepared SDLG static frontend for GitHub Pages (contract OK, no cutover)."
 
+      - name: Validate production JavaScript before publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          const html = fs.readFileSync('_site/app.html', 'utf8');
+          const head = html.split(/<\\/head\\s*>/i)[0] || '';
+          if (/(?:^|\\n)\\s*\\.\\.\\.\\s*(?:\\n|$)/.test(head)) {
+            throw new Error('Stray ellipsis text found in HTML head');
+          }
+          let checked = 0;
+          for (const match of html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)) {
+            const attrs = match[1] || '';
+            const source = match[2] || '';
+            if (!source.trim() || /\\bsrc\\s*=/.test(attrs) || /type\\s*=\\s*['"](?:application\\/json|importmap)['"]/i.test(attrs)) continue;
+            new vm.Script(source, { filename: 'app.html:inline-' + (++checked) });
+          }
+          for (const file of ['modules/navigation-state.js','modules/sdlg-hash-router.js','modules/wo-claim-policy.js','modules/wo-collision-modal.js']) {
+            new vm.Script(fs.readFileSync('_site/' + file, 'utf8'), { filename: file });
+            checked++;
+          }
+          if (checked < 10) throw new Error('Unexpectedly few JavaScript blocks checked: ' + checked);
+          console.log('Production syntax gate passed for', checked, 'script blocks');
+          NODE
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
