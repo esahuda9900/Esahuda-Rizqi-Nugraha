@@ -60,52 +60,54 @@
     writeRaw(LEGACY_TAB + ':guest', normalizeTab(tab, 'list'));
     if (detailId) writeRaw(CLAIM_KEY, String(detailId));
   }
-  function hashDetailId() {
-    try {
-      var h = String(window.location.hash || '').replace(/^#/, '');
-      var m = h.match(/^claim\/([^/?#]+)/i);
-      if (m) return normalizeDetailId(decodeURIComponent(m[1]));
-      m = h.match(/^(\d{4}-\d{4}-SDLG-PFR)$/i);
-      if (m) return normalizeDetailId(m[1]);
-    } catch (_) {}
+  // Canonical hash routes. GitHub Pages serves one app.html, so paths live after #.
+  var TAB_ROUTES = { dashboard:'overview', list:'claims', paste:'new-claim', sdlginput:'sdlg-input', masters:'master-data', quality:'data-quality', unit360:'unit360' };
+  function routeFromHash() {
+    var h = '';
+    try { h = decodeURIComponent(String(window.location.hash || '').replace(/^#\\/?/, '')); } catch (_) { return null; }
+    var match = h.match(/^claims\\/([A-Za-z0-9._:-]{4,80})\\/?$/i) || h.match(/^claim\\/([A-Za-z0-9._:-]{4,80})\\/?$/i);
+    if (match) return { tab:'list', detailId:normalizeDetailId(match[1]) };
+    for (var tab in TAB_ROUTES) if (h.toLowerCase() === TAB_ROUTES[tab]) return { tab:tab, detailId:null };
+    if (h === 'dashboard') return { tab:'dashboard', detailId:null };
+    if (h === 'list') return { tab:'list', detailId:null };
     return null;
   }
-  function syncHash(detailId) {
+  function syncRoute(tab, detailId) {
     try {
       var id = normalizeDetailId(detailId);
-      var next = id ? ('#claim/' + encodeURIComponent(id)) : '';
-      if (String(window.location.hash || '') === next) return;
-      if (next) window.history.replaceState(null, '', next);
-      else if (window.location.hash) window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      var next = id && tab === 'list' ? '#/claims/' + encodeURIComponent(id) : '#/' + (TAB_ROUTES[tab] || 'claims');
+      if (window.location.hash !== next) window.history.replaceState(null, '', window.location.pathname + window.location.search + next);
     } catch (_) {}
   }
 
   window.SDLGNavState = {
     validTabs: Array.from(VALID_TABS),
     normalize: normalizeTab,
+    routeFromHash: routeFromHash,
     restore: function (fallback, user) {
-      return normalizeTab(readState(user).tab, fallback || 'list');
+      var route = routeFromHash();
+      return route ? route.tab : normalizeTab(readState(user).tab, fallback || 'list');
     },
     restoreDetailId: function (user) {
-      var fromHash = hashDetailId();
-      if (fromHash) return fromHash;
-      var fromClaim = normalizeDetailId(readRaw(CLAIM_KEY));
-      if (fromClaim) return fromClaim;
-      return readState(user).detailId;
+      var route = routeFromHash();
+      return route ? route.detailId : null;
     },
     persist: function (tab, user, detailId) {
-      var id = arguments.length >= 3 ? detailId : readState(user).detailId;
+      // React calls persist(tab) and persist(tab,null,detailId). Keep route authoritative.
+      var id = arguments.length >= 3 ? detailId : (routeFromHash()?.tab === 'list' && tab === 'list' ? routeFromHash().detailId : null);
+      if (tab !== 'list') id = null;
       writeState(tab, id, user);
-      syncHash(id);
+      if (!id) try { window.localStorage.removeItem(CLAIM_KEY); } catch (_) {}
+      syncRoute(tab, id);
     },
     persistDetailId: function (detailId, user) {
-      writeState(readState(user).tab, detailId, user);
-      syncHash(detailId);
+      writeState('list', detailId, user);
+      syncRoute('list', detailId);
     },
     clearDetail: function (user) {
-      writeState(readState(user).tab, null, user);
+      writeState('list', null, user);
       try { window.localStorage.removeItem(CLAIM_KEY); } catch (_) {}
-      syncHash(null);
+      syncRoute('list', null);
     }
   };
 
@@ -126,18 +128,14 @@
     return null;
   }
   function attemptRestore() {
-    if (restoring || isDetailPage()) return;
-    try { if (window.localStorage.getItem(SKIP_KEY) === '1') return; } catch (_) {}
-    var id = window.SDLGNavState.restoreDetailId(null);
-    if (!id) return;
-    var row = findClaimRow(id);
+    // Only a deep link may restore a detail. Never auto-click a stale claim
+    // when the user explicitly selected Overview, New Claim or another module.
+    var route = routeFromHash();
+    if (!route || route.tab !== 'list' || !route.detailId || restoring || isDetailPage()) return;
+    var row = findClaimRow(route.detailId);
     if (!row) return;
     restoring = true;
-    try {
-      row.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-    } catch (_) {
-      try { row.click(); } catch (__) {}
-    }
+    try { row.click(); } catch (_) {}
     setTimeout(function () { restoring = false; }, 800);
   }
 
