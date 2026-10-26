@@ -6183,6 +6183,7 @@ function App() {
             if (!route) return;
             setTab(route.tab);
             setDetailId(route.tab === "list" ? route.detailId : null);
+            setSdlgInputClaimId(route.tab === "sdlginput" ? route.portalClaimId || "" : "");
             setEditing(false);
         };
         window.addEventListener("hashchange", onRoute);
@@ -6220,7 +6221,12 @@ function App() {
         })();
         return () => { cancelled = true; };
     }, []);
-    const [sdlgInputClaimId, setSdlgInputClaimId] = useState("");
+    const [sdlgInputClaimId, setSdlgInputClaimId] = useState(() => window.SDLGNavState?.routeFromHash?.()?.portalClaimId || "");
+    const selectSdlgInputClaim = (id) => {
+        const safeId = String(id || "").trim();
+        setSdlgInputClaimId(safeId);
+        window.SDLGNavState?.setPortalClaimId?.(safeId);
+    };
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [authRetry, setAuthRetry] = useState(0);
@@ -7234,6 +7240,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             return () => { mounted = false; };
         let profileTimer = null;
         const { data: { subscription } } = sdlgSupabase.auth.onAuthStateChange((_event, session) => {
+            // Refreshing an existing token is not a logout/login navigation event.
+            // Avoid clearing role and hiding the page on Chrome focus/session refresh.
+            if (_event === "TOKEN_REFRESHED" || _event === "USER_UPDATED") return;
             const version = ++authEventVersion;
             ++profileGeneration.current;
             ++claimsLoadGeneration.current;
@@ -10089,7 +10098,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 } },
                     React.createElement("button", { onClick: () => setShowMasterModal(false), style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, cursor: "pointer" } }, "Batal"),
                     React.createElement("button", { onClick: saveMaster, disabled: !isOnline, style: { padding: "8px 14px", border: 0, background: "#1e40af", color: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 700 } }, "Simpan"))))),
-        tab === "sdlginput" && isAdmin && (React.createElement(SDLGPortalInputPage, { claims, selectedClaimId: sdlgInputClaimId || (claims.find(c => !c.archived_at)?.claim_id || ""), onSelectClaim: (id) => setSdlgInputClaimId(id), onBack: () => setTab("list") })),
+        tab === "sdlginput" && isAdmin && (React.createElement(SDLGPortalInputPage, { claims, selectedClaimId: sdlgInputClaimId, onSelectClaim: selectSdlgInputClaim, onBack: () => setTab("list") })),
         tab === "sdlginput" && !isAdmin && (React.createElement("div", { className: "page" }, React.createElement("div", { style: { maxWidth: 700, margin: "80px auto", textAlign: "center" } }, React.createElement("div", { style: { fontSize: 42 } }, "🔒"), React.createElement("div", { className: "page-title", style: { marginTop: 8 } }, "Akses terbatas"), React.createElement("div", { style: { color: "#64748b", marginTop: 5 } }, "Akun Viewer tidak dapat menyiapkan input Dealer Portal.")))),
         tab === "paste" && !isAdmin && (React.createElement("div", { style: { maxWidth: 780, margin: "0 auto", padding: "60px 16px", textAlign: "center" } },
             React.createElement("div", { style: { fontSize: 40, marginBottom: 10 } }, "\uD83D\uDD12"),
@@ -11013,7 +11022,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement(Pill, { color: claimTypeMeta(detail).color, size: "lg" }, claimTypeMeta(detail).label),
                 React.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 6 } },
                     isAdmin && !editing && (React.createElement("button", { onClick: startEdit, className: "primary-btn" }, "\u270F\uFE0F Edit")),
-                    isAdmin && (React.createElement("button", { onClick: () => { setSdlgInputClaimId(detail.claim_id); setTab("sdlginput"); setDetailId(null); setEditing(false); }, className: "secondary-btn" }, "🖥️ SDLG Input")),
+                    isAdmin && (React.createElement("button", { onClick: () => { selectSdlgInputClaim(detail.claim_id); setTab("sdlginput"); setDetailId(null); setEditing(false); }, className: "secondary-btn" }, "🖥️ SDLG Input")),
                     isAdmin && editing && (React.createElement(React.Fragment, null,
                         React.createElement("button", { onClick: () => setEditing(false), style: {
                                 padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
