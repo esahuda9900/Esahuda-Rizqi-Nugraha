@@ -116,14 +116,23 @@ jobs:
       - name: Snapshot backup branch (auto)
         if: success()
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          git config user.name "sdlg-backup-bot"
-          git config user.email "sdlg-backup-bot@users.noreply.github.com"
+          # GitHub already has GITHUB_SHA on main. Update refs via API instead
+          # of pushing shallow/partial local Git objects to backup branches.
           DATE=$(date -u +%Y-%m-%d)
-          DAY_BRANCH="backup/auto-${DATE}"
-          git branch -f backup/latest-green "${GITHUB_SHA}"
-          git branch -f "${DAY_BRANCH}" "${GITHUB_SHA}"
-          git push -f origin backup/latest-green
-          git push -f origin "${DAY_BRANCH}"
-          echo "Backup snapshots: backup/latest-green and ${DAY_BRANCH} -> ${GITHUB_SHA}"
+          update_snapshot() {
+            local branch="$1"
+            local endpoint="repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+            if gh api "$endpoint" >/dev/null 2>&1; then
+              gh api --method PATCH "$endpoint" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+            else
+              gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+                -f ref="refs/heads/${branch}" -f sha="$GITHUB_SHA" >/dev/null
+            fi
+            echo "Snapshot ${branch} -> ${GITHUB_SHA}"
+          }
+          update_snapshot "backup/latest-green"
+          update_snapshot "backup/auto-${DATE}"
