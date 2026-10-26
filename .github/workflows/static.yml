@@ -101,6 +101,7 @@ jobs:
           bash scripts/regression_contract.sh _site/index.html
           bash scripts/regression_contract_modules.sh _site
           bash scripts/guard-no-cutover.sh _site
+          node scripts/verify-navigation-contract.js
 
           echo "Prepared SDLG static frontend for GitHub Pages (contract OK, no cutover)."
 
