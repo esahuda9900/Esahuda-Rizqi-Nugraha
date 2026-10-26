@@ -67,6 +67,8 @@
     try { h = decodeURIComponent(String(window.location.hash || '').replace(/^#\/?/, '')); } catch (_) { return null; }
     var match = h.match(/^claims\/([A-Za-z0-9._:-]{4,80})\/?$/i) || h.match(/^claim\/([A-Za-z0-9._:-]{4,80})\/?$/i);
     if (match) return { tab:'list', detailId:normalizeDetailId(match[1]) };
+    var portal = h.match(/^sdlg-input\/([A-Za-z0-9._:-]{4,80})\/?$/i);
+    if (portal) return { tab:'sdlginput', detailId:null, portalClaimId:normalizeDetailId(portal[1]) };
     for (var tab in TAB_ROUTES) if (h.toLowerCase() === TAB_ROUTES[tab]) return { tab:tab, detailId:null };
     if (h === 'dashboard') return { tab:'dashboard', detailId:null };
     if (h === 'list') return { tab:'list', detailId:null };
@@ -75,7 +77,10 @@
   function syncRoute(tab, detailId) {
     try {
       var id = normalizeDetailId(detailId);
-      var next = id && tab === 'list' ? '#/claims/' + encodeURIComponent(id) : '#/' + (TAB_ROUTES[tab] || 'claims');
+      var existing = routeFromHash();
+      var next = id && tab === 'list' ? '#/claims/' + encodeURIComponent(id)
+        : tab === 'sdlginput' && existing?.tab === 'sdlginput' && existing.portalClaimId ? '#/sdlg-input/' + encodeURIComponent(existing.portalClaimId)
+        : '#/' + (TAB_ROUTES[tab] || 'claims');
       if (window.location.hash !== next) window.history.replaceState(null, '', window.location.pathname + window.location.search + next);
     } catch (_) {}
   }
@@ -84,6 +89,11 @@
     validTabs: Array.from(VALID_TABS),
     normalize: normalizeTab,
     routeFromHash: routeFromHash,
+    setPortalClaimId: function (id) {
+      var claimId = normalizeDetailId(id);
+      var next = '#/sdlg-input' + (claimId ? '/' + encodeURIComponent(claimId) : '');
+      try { if (window.location.hash !== next) window.history.replaceState(null, '', window.location.pathname + window.location.search + next); } catch (_) {}
+    },
     restore: function (fallback, user) {
       var route = routeFromHash();
       return route ? route.tab : normalizeTab(readState(user).tab, fallback || 'list');
