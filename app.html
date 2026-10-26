@@ -7784,6 +7784,17 @@ SDLG_REPOSITORY.listClaims = async function () {
                 "Attach relevent photos", "Attach relevant photos"
             ]);
             if (commentFinal) cleaned.comment = commentFinal;
+            // An empty Comment cell is authoritative; never borrow the following
+            // Causing Part field when the Excel row has no comment value.
+            const commentRow = String(parserInput || "").split(/\r?\n/).find(line =>
+                line.split("\t").some(cell => /^comment\s*:?$/i.test(cleanSourceCell(cell))));
+            if (commentRow != null) {
+                const cells = commentRow.split("\t").map(cleanSourceCell);
+                const index = cells.findIndex(cell => /^comment\s*:?$/i.test(cell));
+                const after = cells.slice(index + 1).filter(Boolean);
+                if (!after.length || /^causing part number/i.test(after[0]))
+                    cleaned.comment = null;
+            }
             const handlingFinal = extractHandlingResultDetails(parserInput);
             if (handlingFinal.repairMethod) cleaned.repairMethod = handlingFinal.repairMethod;
             if (handlingFinal.labourHrs != null) cleaned.labourHrs = handlingFinal.labourHrs;
@@ -8181,7 +8192,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         // Do NOT raise a review issue for this expected canonicalization.
 
         const matchedPart = matches?.part?.candidates?.find(x => matches?.part?.selectedId === x.id) || (matches?.part?.confidence === "exact" ? matches?.part?.candidates?.[0] : null);
-        if (matchedPart && p.causingPartDesc && similarityScore(p.causingPartDesc, matchedPart.part_name || "") < 0.55)
+        if (matchedPart && p.causingPartDesc && String(p.causingPartNo || "").trim().toUpperCase() !== String(matchedPart.part_no || "").trim().toUpperCase() && similarityScore(p.causingPartDesc, matchedPart.part_name || "") < 0.55)
             add("part:description", `PART description berbeda: source="${p.causingPartDesc}" vs master="${matchedPart.part_name || "—"}"`, "Pilih master part yang benar atau pakai description source", "part");
         const parts = Array.isArray(p.parts) ? p.parts : [];
         const sourceHasParts = /Failure\s+Parts\s+Number/i.test(rawText || "") && /Replacement\s+Parts\s+Number/i.test(rawText || "");
