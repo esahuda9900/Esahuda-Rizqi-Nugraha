@@ -4327,6 +4327,10 @@ const sourceScalarValue = (rawText, labels) => {
             if (value != null && value !== "") return value;
         }
     }
+    // Dealer WO/SO is a strict identity: an empty field must remain empty.
+    // Generic next-row fallback previously stole the App. Code from the row below.
+    // Real WO values on the label row were already resolved above.
+    if (wanted.includes(normSourceLabel("Dealer WO/SO"))) return null;
     // Fallback: value on the next row, same column (vertical Excel layout).
     for (let li = 0; li < lines.length - 1; li++) {
         const cells = lines[li].split("\t");
