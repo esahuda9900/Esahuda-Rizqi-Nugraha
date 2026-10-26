@@ -3926,13 +3926,15 @@ const claimAging = (c) => {
     const submit = claimSubmitDate(c);
     const failureToRepair = daysBetween(c?.failure_date, c?.dealer_repair_date);
     const repairToCompletion = daysBetween(c?.dealer_repair_date, c?.completion_date);
-    const repairToSubmitOrToday = daysBetween(c?.dealer_repair_date, submit || now);
+    // Mirror claim_policy_aging_v.repair_end_date: completion first, repair fallback.
+    const repairEndDate = c?.completion_date || c?.dealer_repair_date;
+    const repairToSubmitOrToday = daysBetween(repairEndDate, submit || now);
     const completionToSubmit = daysBetween(c?.completion_date, submit);
     const failureToSubmitOrToday = daysBetween(c?.failure_date, submit || now);
     const submitAge = submit ? daysBetween(submit, now) : null;
     const currentStatusAge = statusAgingDays(c);
     let bucket = "NO REPAIR DATE", risk = "DATA GAP";
-    if (c?.dealer_repair_date) {
+    if (repairEndDate && repairToSubmitOrToday != null) {
         if (!submit) {
             bucket = repairToSubmitOrToday <= SDLG_POLICY.claimSubmitDays ? "OPEN ≤10D" : repairToSubmitOrToday <= SDLG_POLICY.claimGeneralWindowDays ? "OPEN 11-90D" : "OPEN >90D";
             risk = repairToSubmitOrToday <= SDLG_POLICY.claimSubmitDays ? "OPEN / WITHIN POLICY WINDOW" : repairToSubmitOrToday <= SDLG_POLICY.claimGeneralWindowDays ? "WARNING / OVER TARGET" : "CRITICAL / POLICY CUTOFF";
@@ -6859,6 +6861,9 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [dqSaving, setDqSaving] = useState(false);
     const [legacyImporting, setLegacyImporting] = useState(false);
     const [statusHistoryDb, setStatusHistoryDb] = useState([]);
+    const activeHistoryClaimRef = useRef(null);
+    const historyRequestRef = useRef(0);
+    activeHistoryClaimRef.current = tab === "list" ? detailId : null;
     const [masterMatches, setMasterMatches] = useState(null);
     const [matchLoading, setMatchLoading] = useState(false);
     const [masterTab, setMasterTab] = useState("customers");
@@ -8775,16 +8780,23 @@ SDLG_REPOSITORY.listClaims = async function () {
         await SDLG_USE_CASES.ChangeStatus.execute(claimId, status, date, reason);
     };
     const loadClaimStatusHistory = async (claimId) => {
+        const requestId = ++historyRequestRef.current;
         if (!claimId) {
             setStatusHistoryDb([]);
             return;
         }
+        const isCurrent = () => requestId === historyRequestRef.current && activeHistoryClaimRef.current === claimId;
+        // Do not display the previous claim's history while the new request is pending.
+        if (isCurrent()) setStatusHistoryDb([]);
         try {
-            setStatusHistoryDb(await SDLG_REPOSITORY.getStatusHistory(claimId));
+            const history = await SDLG_REPOSITORY.getStatusHistory(claimId);
+            if (isCurrent()) setStatusHistoryDb(history);
         }
         catch (e) {
-            console.error("Status history load failed:", e);
-            setStatusHistoryDb([]);
+            if (isCurrent()) {
+                console.error("Status history load failed:", e);
+                setStatusHistoryDb([]);
+            }
         }
     };
     const handleUpdateStatus = async (claimId, status) => {
@@ -9051,8 +9063,10 @@ SDLG_REPOSITORY.listClaims = async function () {
             setSaving(false);
         }
     };
-    useEffect(() => { if (tab === "list" && detailId)
-        loadClaimStatusHistory(detailId); }, [tab, detailId]);
+    useEffect(() => {
+        if (tab === "list" && detailId) loadClaimStatusHistory(detailId);
+        else { ++historyRequestRef.current; setStatusHistoryDb([]); }
+    }, [tab, detailId]);
     const branches = [...new Set(claims.map(c => String(c.branch || "").trim()).filter(Boolean))].sort();
     const statuses = [...new Set(WORKFLOW_STATUSES.concat(["Claimed to SDLG"]))];
     const years = [...new Set(claims.map(c => {
