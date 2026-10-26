@@ -6893,6 +6893,7 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [editForm, setEditForm] = useState({});
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
+    const [claimSort, setClaimSort] = useState("claim_desc");
     const PAGE_SIZE = 50;
     const [statusReasonModal, setStatusReasonModal] = useState(null);
     const [statusReason, setStatusReason] = useState("");
@@ -9195,7 +9196,25 @@ SDLG_REPOSITORY.listClaims = async function () {
         return matchYear && matchBranch && matchStatus && matchSearch;
     });
     /* __SDLG_CLAIM_NEWEST_FIRST_V1__ */
-    const orderedFiltered = window.SDLGClaimListSort?.sortNewest(filtered) || filtered;
+    const sortDate = (value) => {
+        const d = String(value || "").trim();
+        return /^\d{4}-\d{2}-\d{2}/.test(d) ? Date.parse(d.slice(0, 10) + "T00:00:00") || 0 : 0;
+    };
+    const orderedFiltered = [...filtered].sort((a, b) => {
+        const idCompare = String(a.claim_id || "").localeCompare(String(b.claim_id || ""), "en", { numeric: true });
+        const compare = (x, y) => String(x || "").localeCompare(String(y || ""), "id", { numeric: true, sensitivity: "base" });
+        let value = 0;
+        switch (claimSort) {
+            case "claim_asc": value = idCompare; break;
+            case "date_desc": value = sortDate(b.dealer_claim_date || b.input_date) - sortDate(a.dealer_claim_date || a.input_date); break;
+            case "date_asc": value = sortDate(a.dealer_claim_date || a.input_date) - sortDate(b.dealer_claim_date || b.input_date); break;
+            case "status": value = compare(a.claim_status, b.claim_status); break;
+            case "customer": value = compare(a.customer, b.customer); break;
+            case "amount_desc": value = (Number(b.total_amount) || 0) - (Number(a.total_amount) || 0); break;
+            default: value = -idCompare;
+        }
+        return value || -idCompare;
+    });
     // Pagination helpers
     const totalPages = Math.max(1, Math.ceil(orderedFiltered.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
@@ -10602,6 +10621,10 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("select", { value: statusFilter, onChange: e => setStatusFilter(e.target.value), className: "sdlg-select", style: { width: "auto" } },
                     React.createElement("option", { value: "all" }, "Semua Status"),
                     statuses.map(st => React.createElement("option", { key: st, value: st }, st))),
+                React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--sdlg-text-main)" } },
+                    "Urutkan",
+                    React.createElement("select", { "aria-label": "Urutkan daftar klaim", value: claimSort, onChange: e => { setClaimSort(e.target.value); setPage(1); }, className: "sdlg-select", style: { width: "auto", maxWidth: "100%" } },
+                        [["claim_desc", "No. Claim · Terbaru"], ["claim_asc", "No. Claim · Terlama"], ["date_desc", "Tanggal · Terbaru"], ["date_asc", "Tanggal · Terlama"], ["status", "Status · A–Z"], ["customer", "Customer · A–Z"], ["amount_desc", "Nominal · Terbesar"]].map(([v, label]) => React.createElement("option", { key: v, value: v }, label)))),
                 isAdmin && React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--sdlg-text-muted)", border: "1px solid var(--sdlg-border)", borderRadius: "var(--sdlg-radius-input)", background: "var(--sdlg-surface)", padding: "0 var(--sdlg-spacing-3)", height: 32, boxSizing: "border-box" } },
                     React.createElement("input", { type: "checkbox", checked: showArchived, onChange: e => setShowArchived(e.target.checked) }),
                     " Tampilkan arsip"),
