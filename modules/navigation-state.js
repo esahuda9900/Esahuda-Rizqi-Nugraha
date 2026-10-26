@@ -64,8 +64,8 @@
   var TAB_ROUTES = { dashboard:'overview', list:'claims', paste:'new-claim', sdlginput:'sdlg-input', masters:'master-data', quality:'data-quality', unit360:'unit360' };
   function routeFromHash() {
     var h = '';
-    try { h = decodeURIComponent(String(window.location.hash || '').replace(/^#\\/?/, '')); } catch (_) { return null; }
-    var match = h.match(/^claims\\/([A-Za-z0-9._:-]{4,80})\\/?$/i) || h.match(/^claim\\/([A-Za-z0-9._:-]{4,80})\\/?$/i);
+    try { h = decodeURIComponent(String(window.location.hash || '').replace(/^#\/?/, '')); } catch (_) { return null; }
+    var match = h.match(/^claims\/([A-Za-z0-9._:-]{4,80})\/?$/i) || h.match(/^claim\/([A-Za-z0-9._:-]{4,80})\/?$/i);
     if (match) return { tab:'list', detailId:normalizeDetailId(match[1]) };
     for (var tab in TAB_ROUTES) if (h.toLowerCase() === TAB_ROUTES[tab]) return { tab:tab, detailId:null };
     if (h === 'dashboard') return { tab:'dashboard', detailId:null };
