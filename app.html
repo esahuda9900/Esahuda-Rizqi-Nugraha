@@ -5954,7 +5954,11 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         if (all) {
             allHandler = async () => {
                 const rows = Array.from(root.querySelectorAll("[data-sdlg-field]"));
-                const requiredMissing = rows.filter(el => el.closest("div")?.parentElement?.querySelector("label span") && !String(el.value || "").trim()).map(el => el.getAttribute("data-label") || "");
+                if (!claimPolicy || warrantyError || warrantyLoading) {
+                    window.alert("Copy All ditahan: klasifikasi part atau pemeriksaan warranty belum terverifikasi. Review policy terlebih dahulu; field lain tetap bisa dicopy satu per satu.");
+                    return;
+                }
+                const requiredMissing = rows.filter(el => el.parentElement?.querySelector("label span") && !String(el.value || "").trim()).map(el => el.getAttribute("data-label") || "");
                 if (requiredMissing.length) {
                     window.alert("Copy All ditahan. Isi field wajib dahulu: " + requiredMissing.join(", "));
                     return;
@@ -5975,7 +5979,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
             if (reportBtn && reportHandler) reportBtn.removeEventListener("click", reportHandler);
             if (all && allHandler) all.removeEventListener("click", allHandler);
         };
-    }, [selectedClaimId, warrantyMatrix]);
+    }, [selectedClaimId, warrantyMatrix, warrantyLoading, warrantyError]);
 
     if (!selectedClaim) {
         const activeClaims = (claims || []).filter(c => !c.archived_at);
