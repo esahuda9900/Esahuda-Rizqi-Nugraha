@@ -5954,6 +5954,11 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         if (all) {
             allHandler = async () => {
                 const rows = Array.from(root.querySelectorAll("[data-sdlg-field]"));
+                const requiredMissing = rows.filter(el => el.closest("div")?.parentElement?.querySelector("label span") && !String(el.value || "").trim()).map(el => el.getAttribute("data-label") || "");
+                if (requiredMissing.length) {
+                    window.alert("Copy All ditahan. Isi field wajib dahulu: " + requiredMissing.join(", "));
+                    return;
+                }
                 const lines = rows.map(el => `${el.getAttribute("data-label") || ""}\t${el.value || ""}`);
                 const parts = Array.from(root.querySelectorAll("[data-sdlg-part]")).map(el => el.getAttribute("data-sdlg-part") || "");
                 const text = lines.join("\n") + (parts.length ? `\n\nReplacement Record Details\n${parts.join("\n")}` : "");
@@ -6041,12 +6046,13 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     };
 
     const defaultFeedbackPerson = sdlgFeedbackPerson(selectedClaim);
-    const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "xxx";
+    const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "";
     const wo = selectedClaim.dealer_wo_so || selectedClaim.wo_so || "";
     const branch = selectedClaim.branch || "";
     const customer = selectedClaim.customer || "";
-    const machineLocation = [wo, branch, customer].map(v => String(v || "").trim()).filter(Boolean).join(" ");
-    const wholeMachineWarranty = warrantyLoading
+    // A branch/customer/WO is not a verified physical machine location.
+    const machineLocation = selectedClaim.machine_location || selectedClaim.service_location || selectedClaim.iov_address || "";
+    const wholeMachineWarranty = !claimPolicy ? "" : warrantyLoading
         ? "Checking warranty policy…"
         : warrantyError
             ? "Policy check failed"
@@ -6078,10 +6084,25 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         iovAddress: selectedClaim.iov_address || ""
     };
 
+    const missingPortalFields = [
+        ["Feedback Contact Information", feedbackContact],
+        ["Machine Location", machineLocation],
+        ["Whole Machine Warranty", wholeMachineWarranty]
+    ].filter(([, v]) => !String(v || "").trim()).map(([label]) => label);
+    const financeNeedsReview = parts.some(p => Number(p.unit_price ?? p.unitPrice ?? 0) === 0) || Number(selectedClaim.total_amount || 0) === 0;
+    const reviewReady = !warrantyLoading && !warrantyError && !!claimPolicy && !missingPortalFields.length;
+    const reviewBanner = reviewReady && !financeNeedsReview
+        ? "Data dasar siap dicek ulang sebelum dikirim ke SDLG."
+        : "REVIEW WAJIB: " + [
+            !claimPolicy ? "kategori part belum mapped" : "",
+            ...missingPortalFields.map(x => x + " belum terverifikasi"),
+            financeNeedsReview ? "nominal/harga part bernilai nol atau kosong" : "",
+            warrantyError ? "policy engine error" : ""
+        ].filter(Boolean).join(" · ");
     const policyRows = policies.map((p, i) => {
         const label = p.component_category || `Policy ${i + 1}`;
         const st = String(p.status || "").toUpperCase();
-        return `<tr><td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800">${esc(label)}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${statusIcon(st)} ${esc(statusLabel(st))}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(p.warranty_months ?? "—")} mo / ${esc(p.warranty_hours ?? "—")} h</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(portalDate(p.after_sales_expiry_date) || "—")}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(portalDate(p.after_departure_expiry_date) || "—")}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800">${esc(portalDate(p.effective_expiry_date) || "—")}</td></tr>`;
+        return `<tr><td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800">${esc(label)}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${statusIcon(st)} ${esc(statusLabel(st))}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(p.warranty_months ?? "—")} mo / ${esc(p.warranty_hours ?? "—")} h</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(portalDate(p.sales_expiry_date) || "—")}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9">${esc(portalDate(p.bill_of_lading_expiry_date) || "—")}</td><td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800">${esc(portalDate(p.effective_expiry_date) || "—")}</td></tr>`;
     }).join("");
 
     const partsRows = parts.map((p, i) => {
@@ -6092,11 +6113,12 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         const unitPrice = p.unit_price ?? p.unitPrice ?? "";
         const amount = p.amount ?? "";
         const line = `${i + 1}\t${failure}\t${replace}\t${desc}\t${qty}\t${unitPrice}\t${amount}`;
-        return `<tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${i + 1}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(failure || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(replace || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(desc || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(qty || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(unitPrice || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(amount || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><button type="button" data-sdlg-copy data-value="${esc(line)}" style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">Copy</button></td></tr>`;
+        return `<tr><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${i + 1}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(failure || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(replace || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(desc || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(qty || "—")}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(unitPrice === "" ? "—" : unitPrice)}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9">${esc(amount === "" ? "—" : amount)}</td><td style="padding:7px 8px;border-bottom:1px solid #f1f5f9"><button type="button" data-sdlg-copy data-value="${esc(line)}" style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">Copy</button></td></tr>`;
     }).join("");
 
     const html = `
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#9a3412"><b>Catatan:</b> halaman ini hanya membantu copy/paste. Tidak mengirim data otomatis ke Dealer Portal SDLG.</div>
+      <div role="alert" style="background:${reviewReady && !financeNeedsReview ? "#effcf4" : "#fff7ed"};border:1px solid ${reviewReady && !financeNeedsReview ? "#86efac" : "#fdba74"};border-radius:12px;padding:13px 14px;margin-bottom:12px;font-size:12px;line-height:1.65;color:#7c2d12"><b>🛡️ Portal Readiness Check</b> · ${esc(reviewBanner)}<div style="font-size:11px;color:#64748b;margin-top:4px">Sumber: Supabase Claims + Warranty Policy Matrix. Belum ada pengiriman otomatis. Kolom kosong harus diisi manual sebelum Copy All.</div></div>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
           <div><div class="eyebrow">Warranty Engine · Supabase</div><div style="font-size:16px;font-weight:800;color:#0f172a">Warranty Policy Check</div><div style="font-size:11px;color:#64748b;margin-top:4px">Multi-category · Standard vs Contract · B/L ceiling · Failure Date + HM</div></div>
@@ -6106,7 +6128,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
           ${[["Warranty Tier", effectiveTier || "—"],["B/L Date", portalDate(warrantyMatrix?.bill_of_lading_date) || portalDate(selectedClaim.bill_of_lading_date) || "—"],["Failure Date", portalDate(warrantyMatrix?.failure_date) || portalDate(selectedClaim.failure_date) || "—"],["Failure HM", numberText(warrantyMatrix?.hm_failure ?? selectedClaim.hm_failure) || "—"]].map(([k,v]) => `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:9px"><div style="font-size:10px;font-weight:800;color:#64748b">${esc(k)}</div><div style="font-size:12px;font-weight:800;color:#0f172a;margin-top:3px">${esc(v)}</div></div>`).join("")}
         </div>
         ${warrantyError ? `<div style="margin-top:10px;color:#b91c1c;font-size:11px;font-weight:700">⚠ ${esc(warrantyError)}</div>` : ""}
-        ${policies.length ? `<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #e2e8f0"><thead><tr>${["Component Category","Status","Warranty","After Sales","After Departure","Out of Warranty"].map(h => `<th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b;white-space:nowrap">${h}</th>`).join("")}</tr></thead><tbody>${policyRows}</tbody></table></div>` : `<div style="margin-top:10px;color:#64748b;font-size:11px">Belum ada policy matrix yang dapat ditampilkan.</div>`}
+        ${policies.length ? `<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #e2e8f0"><thead><tr>${["Component Category","Status","Warranty","Sales Expiry (DB)","B/L Expiry (DB)","Effective Expiry (DB)"].map(h => `<th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b;white-space:nowrap">${h}</th>`).join("")}</tr></thead><tbody>${policyRows}</tbody></table></div>` : `<div style="margin-top:10px;color:#64748b;font-size:11px">Belum ada policy matrix yang dapat ditampilkan.</div>`}
         ${claimPolicy ? `<div style="margin-top:10px;padding:10px;border-radius:10px;background:#fff;border:1px dashed #cbd5e1;font-size:11px"><b>Claim component policy:</b> ${esc(claimPolicy.component_category || "—")} · ${statusIcon(claimPolicy.status)} ${esc(statusLabel(claimPolicy.status))} · ${esc(claimPolicy.reason || "—")}</div>` : `<div style="margin-top:10px;padding:10px;border-radius:10px;background:#fff7ed;border:1px dashed #fdba74;font-size:11px;color:#9a3412"><b>Claim component policy:</b> <b>UNMAPPED</b> · Part <b>${esc(selectedClaim.causing_part_no || "—")}</b> (${esc(selectedClaim.causing_part_desc || "—")}) belum memiliki mapping kategori warranty yang authoritative di database. Engine sengaja tetap menampilkan seluruh policy unit dan tidak mengarang klasifikasi part.</div>`}
       </div>
       <div class="card card-pad" style="margin-bottom:14px"><div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px"><div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px">CLAIM</div><div style="padding:9px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:800">${esc(selectedClaim.claim_id)}</div></div><div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px">MODEL</div><div style="padding:9px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">${esc(selectedClaim.model || "—")}</div></div><div><div style="font-size:10px;font-weight:800;color:#64748b;margin-bottom:4px">CUSTOMER</div><div style="padding:9px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px">${esc(selectedClaim.customer || "—")}</div></div></div></div>
