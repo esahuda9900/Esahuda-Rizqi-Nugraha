@@ -1,30 +1,29 @@
 # SESSION_STATE — 2026-10-26
 
-## Current status
-- Production Pages deployment succeeded at commit `36b87f5`; this does not establish runtime health.
-- Anonymous root login renders. Direct `app.html` rendered login, logged `ReferenceError: debounceTimer is not defined`, and then a later browser inspection timed out.
-- Reproduced causal feedback in a DOM harness: claim-sync observer throws -> global startup error handler replaces error text -> observer receives that mutation -> throws again, starving subsequent work.
-- Fix prepared: initialize the debounce timer, ignore diagnostics mutations, avoid identical startup-error DOM writes, and bump the claim-sync asset version.
-- Production has NOT received this fix until the owner reviews and merges the repair PR.
+## Production baseline
+- Main production remains the legacy index.html -> app.html application.
+- Login freeze repaired and deployed through PRs #10/#11/#13 (baseline commit 9770389). Owner confirmed the error is gone.
+- Owner requested upgrades to MAIN production only; preview PR #12 is HOLD. No cutover.
 
-## Validation
-- Built-in Node regression passes: delayed boot, debouncing, diagnostic isolation, duplicate error deduplication, and visibility of new errors.
-- Same regression against baseline fails with the reported ReferenceError (negative control).
-- Syntax checks pass for 67 modules.
-- Pages preparation, legacy regression contract, singleton module contract, and no-cutover guard pass.
-- DOM harness no longer produces the ReferenceError feedback storm after the fix. External CDN dependencies could not load in that harness, so this is not full browser/authentication validation.
-- Local Chromium installation failed (download returned an invalid archive); authenticated end-to-end and post-deploy browser checks remain outstanding.
+## Current stability upgrade
+- Preserve stored sessions on getSession timeout/offline/refresh failures. Scope explicit token recovery to this Supabase project.
+- API 401 triggers session revalidation instead of erasing all Supabase tokens or forcing sign-out.
+- Defer session-ready/profile query work until the auth callback returns. Ignore obsolete session/profile responses and cancel deferred work on unmount.
+- Bound login/profile/logout waits; surface actual connection errors; failed logout does not claim success.
+- Bound claims list loading; ignore obsolete responses after a newer load or logout. Keep the existing retry/error UI.
+- Version singleton/registry/guard URLs and the index-to-app redirect so existing browser caches receive the update.
+- No schema/RLS/role/business data changes. No mutation retries added.
 
-## Supabase (read-only verification)
-- Project `frqvelcreczmnofldrga`: ACTIVE_HEALTHY; claims count 551.
-- `authenticated` has SELECT on `claim_ops_boss_v`, `claim_stage_aging_summary_v`, `claim_status_dwell_v`; `anon` does not. All three are security invoker views. Do not broaden permissions based only on prior permission-denied logs.
-- Prior logs include PostgREST timeouts; not proven to cause the browser freeze. No schema, permissions, accounts, or business data changed.
-- Backup workflow failures are a separate outstanding issue.
+## Validation before merge
+- PASS: login freeze + entrypoint cache regression.
+- PASS: session resilience (timeout/offline/refresh rejection, other-project token isolation, stale auth responses, deferred events, API 401).
+- PASS: actual legacy auth-effect/profile tests (latest auth event wins, defer queries, unmount cleanup, stale role rejection).
+- PASS: actual claims-loader tests (latest request wins, logout invalidation, deadlines, timeout error state).
+- PASS: syntax of all 67 modules and both entrypoints' inline scripts.
+- PASS: Pages preparation, legacy contract, singleton module contract, no-cutover guard and diff whitespace checks.
+- These tests use simulated APIs/timers, not real credentials or production writes. Real-account authenticated end-to-end tests and staging save/status tests remain outstanding.
 
-## Next release check
-Owner review -> merge -> successful Pages deployment -> anonymous/login/session/dashboard checks in a real browser. Keep `/preview/` separate; no cutover.
-
-## PR checks
-- Repair PR #10: `fix/login-observer-freeze`.
-- Initial Frontend CI exposed an existing split-login artifact omission: CI copied index.html without app.html, unlike production. Repair CI now copies both so legacy contracts inspect the actual application.
-- Architecture Guard fails on three existing automatic repository-mutating workflows; tracked in docs/BUGS.md, not bypassed by this repair.
+## Backend health and remaining work
+- Supabase project ACTIVE_HEALTHY. Existing security advisor warnings for security-definer RPCs and password protection remain for separate review; this release does not change authorization.
+- Backup workflow previously failed; a successful restore test has not been established. Do not claim backup/restore readiness.
+- This release is session/read stability, not completion of all full-stack hardening. Save/update/idempotency and claim-detail A/B race audits remain separate tasks.

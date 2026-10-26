@@ -1,13 +1,8 @@
-/**
- * SDLG Supabase singleton v2.3 — session hard-timeout (anti stuck loading)
- * Changes vs v2.2:
- * - getSession / refreshSession raced with 4s timeout
- * - dead sb-* tokens cleared on timeout so login screen can appear
- * - waitForSupabaseReady default 8s (was 15s)
- */
+/** SDLG Supabase singleton v2.4 — transient failures never erase stored sessions. */
 (function (root) {
   'use strict';
-  if (root.__SDLG_SUPABASE_SINGLETON_V23__) return;
+  if (root.__SDLG_SUPABASE_SINGLETON_V24__) return;
+  root.__SDLG_SUPABASE_SINGLETON_V24__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V23__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V22__ = true;
   root.__SDLG_SUPABASE_SINGLETON_V2__ = true;
@@ -102,15 +97,8 @@
   }
 
   function clearAuthStorage() {
-    try {
-      var keys = [];
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && /^sb-/i.test(k)) keys.push(k);
-      }
-      keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (_) {} });
-      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-    } catch (_) {}
+    // Explicit recovery affects this project only, never other Supabase apps.
+    try { root.localStorage.removeItem(STORAGE_KEY); } catch (_) {}
   }
 
   function createRaw(url, key, opts) {
@@ -152,14 +140,7 @@
   }
 
   function hasTokenHint() {
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i) || '';
-        if (/sb-.*-auth-token/i.test(k)) return true;
-      }
-      if (localStorage.getItem(STORAGE_KEY)) return true;
-    } catch (_) {}
-    return false;
+    try { return !!root.localStorage.getItem(STORAGE_KEY); } catch (_) { return false; }
   }
 
   function applySessionFlags(c, session) {
@@ -172,9 +153,20 @@
       return Promise.resolve({ session: null, error: new Error('No auth API') });
     }
 
+    var authVersion = c.__SDLG_AUTH_VERSION__ || 0;
+    function finish(session, error) {
+      // A slow previous check must not overwrite a newer sign-in/sign-out event.
+      if ((c.__SDLG_AUTH_VERSION__ || 0) !== authVersion) {
+        return { session: c.__SDLG_LAST_SESSION__, error: null };
+      }
+      applySessionFlags(c, session);
+      return { session: session, error: error };
+    }
+
     return withTimeout(c.auth.getSession(), SESSION_TIMEOUT_MS, 'getSession timeout')
       .then(function (res) {
         var session = res && res.data ? res.data.session : null;
+        if ((c.__SDLG_AUTH_VERSION__ || 0) !== authVersion) return finish(session, null);
         var error = res ? res.error : null;
         if (error) warn('getSession error', error);
 
@@ -187,31 +179,21 @@
               if (session) {
                 log('session recovered', session.user && session.user.email);
               } else {
-                warn('refresh failed — clear dead tokens');
-                clearAuthStorage();
-                try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
+                warn('refresh unavailable — keep stored session for retry');
               }
-              applySessionFlags(c, session);
-              return { session: session, error: error };
+              return finish(session, error);
             })
             .catch(function (err) {
-              warn('refresh timeout/throw — clear tokens', err && err.message);
-              clearAuthStorage();
-              try { c.auth.signOut({ scope: 'local' }); } catch (_) {}
-              applySessionFlags(c, null);
-              return { session: null, error: err };
+              warn('refresh timeout/throw — keep stored session', err && err.message);
+              return finish(null, err);
             });
         }
 
-        applySessionFlags(c, session);
-        return { session: session, error: error };
+        return finish(session, error);
       })
       .catch(function (err) {
-        warn('getSession timeout/throw — clear tokens', err && err.message);
-        clearAuthStorage();
-        try { if (c.auth) c.auth.signOut({ scope: 'local' }); } catch (_) {}
-        applySessionFlags(c, null);
-        return { session: null, error: err };
+        warn('getSession timeout/throw — keep stored session', err && err.message);
+        return finish(null, err);
       });
   }
 
@@ -220,17 +202,20 @@
     c.__SDLG_AUTH_RECHECK__ = true;
     try {
       c.auth.onAuthStateChange(function (event, session) {
-        log('auth event', event, session && session.user && session.user.email);
+        c.__SDLG_AUTH_VERSION__ = (c.__SDLG_AUTH_VERSION__ || 0) + 1;
+        log('auth event', event);
         applySessionFlags(c, session);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
           readyPromise = null;
         }
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          try {
-            root.dispatchEvent(new CustomEvent('sdlg-session-ready', {
+          setTimeout(function () {
+            // Listeners may query Supabase; run after its auth callback releases the lock.
+            if (c.__SDLG_LAST_SESSION__ !== session) return;
+            try { root.dispatchEvent(new CustomEvent('sdlg-session-ready', {
               detail: { email: session && session.user && session.user.email, event: event }
-            }));
-          } catch (_) {}
+            })); } catch (_) {}
+          }, 0);
         }
       });
     } catch (_) {}

@@ -18,7 +18,6 @@
 
   const KEY = 'sdlg_redirect_after_login';
   let busy = false;
-  let clearing = false;
   let lastAuth = null;
   let lastLogKey = '';
   let enforceTimer = null;
@@ -111,35 +110,13 @@
   // 3. SESSION MANAGEMENT
   // ─────────────────────────────────────────────────────────
   function hasTokenHint() {
-    try {
-      // Cek cepet pake Object.keys().some()
-      return Object.keys(localStorage).some(k => /^sb-.*-auth-token/i.test(k));
-    } catch (_) { return false; }
+    try { return !!localStorage.getItem('sb-frqvelcreczmnofldrga-auth-token'); }
+    catch (_) { return false; }
   }
 
+  // Backward-compatible explicit recovery API, now scoped to this project.
   function clearAllSbKeys() {
-    if (clearing) return;
-    clearing = true;
-    
-    try {
-      const keys = Object.keys(localStorage).filter(k => /^sb-/i.test(k));
-      keys.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-      if (keys.length) log('Cleared ' + keys.length + ' sb-* localStorage keys');
-    } catch (_) {}
-
-    try {
-      const client = getClient();
-      if (client?.auth?.signOut) {
-        client.auth.signOut({ scope: 'local' }).catch(() => {});
-      }
-      if (client) {
-        client.__SDLG_LAST_SESSION__ = null;
-        client.__SDLG_AUTHENTICATED__ = false;
-      }
-    } catch (_) {}
-
-    root.dispatchEvent(new CustomEvent('sdlg-auth-cleared', { detail: { reason: 'dead-session' } }));
-    setTimeout(() => { clearing = false; }, 300);
+    if (typeof root.sdlgClearAuthStorage === 'function') root.sdlgClearAuthStorage();
   }
 
   async function getValidSession() {
@@ -175,12 +152,10 @@
           client.__SDLG_AUTHENTICATED__ = true;
           return s;
         }
-        log('refreshSession failed — dead token');
-        clearAllSbKeys();
+        log('refreshSession unavailable — retain storage for retry');
         return null;
       }
 
-      if (hasTokenHint()) clearAllSbKeys();
       return null;
     } catch (e) {
       log('getValidSession error', e);
@@ -242,10 +217,10 @@
           if (now - last401 > 2000) {
             last401 = now;
             if (!isLoginHash()) {
-              log('Supabase 401 — clearing session');
-              notifyUser('error', 'Sesi Ditinjau', 'Koneksi database menolak. Sesi akan di-reset.');
-              clearAllSbKeys();
-              goLogin(true, true);
+              // A rejected API request is not proof that the stored session is invalid.
+              // Let Auth validate it; never erase tokens or force sign-out here.
+              log('Supabase 401 — rechecking session');
+              safeEnforce();
             }
           }
         }

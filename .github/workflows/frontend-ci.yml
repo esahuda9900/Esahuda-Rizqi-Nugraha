@@ -77,6 +77,9 @@ jobs:
           set -euo pipefail
           node scripts/verify-module-syntax.js
           node scripts/verify-login-freeze.js
+          node scripts/verify-session-resilience.js
+          node scripts/verify-legacy-auth-ui.js
+          node scripts/verify-legacy-claims-loading.js
           node --check modules/sdlg-input-hydrate.js
           node --check modules/sdlg-inline-enforcer.js
           node --check modules/claim-fields.js

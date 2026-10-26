@@ -62,7 +62,7 @@
     { src: './modules/sdlg-route-finish.js?v=20261010-v15', attr: 'data-sdlg-route-finish' },
     { src: './modules/sdlg-ui-consolidate.js?v=20261009-v1', attr: 'data-sdlg-ui-consolidate' },
     { src: './modules/sdlg-ui-polish-v3.js?v=20261010-v33', attr: 'data-sdlg-ui-polish-v3' },
-    { src: './modules/sdlg-auth-route-guard.js?v=20261021-v14', attr: 'data-sdlg-auth-route-guard' },
+    { src: './modules/sdlg-auth-route-guard.js?v=20261026-session-v24', attr: 'data-sdlg-auth-route-guard' },
     { src: './modules/sdlg-overview-session-gate.js?v=20261010-v12', attr: 'data-sdlg-overview-gate' },
     { src: './modules/sdlg-overview-ux.js?v=20261010-v11', attr: 'data-sdlg-overview-ux' }
   ];

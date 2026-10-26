@@ -35,9 +35,9 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
           onerror="window.SDLGLoadDependencyFallback(this,'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js','ReactDOM runtime failed on both CDNs')"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"}))"></script>
-  <script src="./modules/supabase-client.js"></script>
+  <script src="./modules/supabase-client.js?v=20261026-session-v24"></script>
   <script src="./modules/data-pipeline-guard.js"></script>
-  <script src="./modules/claim-fields.js?v=20261026-login-freeze"></script>
+  <script src="./modules/claim-fields.js?v=20261026-session-v24"></script>
   <script src="./modules/sdlg-repository.js"></script>
   <script src="./modules/paste-parse-ux.js"></script>
   <script>
@@ -6161,6 +6161,8 @@ function App() {
     const [loginLoading, setLoginLoading] = useState(false);
     const [userRole, setUserRole] = useState("viewer");
     const [userBranchId, setUserBranchId] = useState(null);
+    const profileGeneration = useRef(0);
+    const claimsLoadGeneration = useRef(0);
     const isAdmin = userRole === "admin" || userRole === "warranty_admin";
     const isTransientSupabaseError = (error) => {
         const code = String(error?.code || error?.status || "");
@@ -6168,10 +6170,11 @@ function App() {
             || /network|fetch|timeout|gateway|temporar/i.test(String(error?.message || error || ""));
     };
     const sleepMs = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    const withTimeout = (promise, ms, message) => Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms))
-    ]);
+    const withTimeout = (promise, ms, message) => new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error(message)), ms);
+        Promise.resolve(promise).then(value => { clearTimeout(timer); resolve(value); },
+            error => { clearTimeout(timer); reject(error); });
+    });
     const runSupabaseRead = async (operation, maxAttempts = 3) => {
         let lastError = null;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -7080,6 +7083,7 @@ SDLG_REPOSITORY.listClaims = async function () {
     const filteredMasterRows = masterRows.filter(row => !masterSearch || MASTER_CONFIG[masterTab].search.some(k => String(row[k] ?? "").toLowerCase().includes(masterSearch.toLowerCase())));
     // ─── AUTH / USER ROLE ───────────────────────────────────────────────────
     const loadUserProfile = useCallback(async (currentUser) => {
+        const generation = ++profileGeneration.current;
         if (!currentUser?.id) {
             setUserRole("viewer");
             setUserBranchId(null);
@@ -7090,6 +7094,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             .select("role,branch_id,is_active")
             .eq("user_id", currentUser.id)
             .maybeSingle();
+        if (generation !== profileGeneration.current) return;
         if (error) {
             console.error("Failed loading user role:", error);
             setUserRole("viewer");
@@ -7108,7 +7113,9 @@ SDLG_REPOSITORY.listClaims = async function () {
     }, []);
     useEffect(() => {
         let mounted = true;
+        let authEventVersion = 0;
         const checkUser = async () => {
+            const version = authEventVersion;
             if (!sdlgSupabase?.auth) {
                 if (mounted) {
                     setUser(null);
@@ -7123,17 +7130,18 @@ SDLG_REPOSITORY.listClaims = async function () {
                 10000,
                 "Auth session check timed out."
             );
-            if (!mounted)
+            if (!mounted || version !== authEventVersion)
                 return;
             if (error)
                 console.error("Auth session check failed:", error);
             const nextUser = session?.user || null;
             setUser(nextUser);
             await withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.");
+            if (!mounted || version !== authEventVersion) return;
             setAuthLoading(false);
                 setLoginError("");
             } catch (error) {
-            if (!mounted) return;
+            if (!mounted || version !== authEventVersion) return;
             console.error("Auth initialization failed:", error);
             setUser(null);
             setAuthLoading(false);
@@ -7143,15 +7151,26 @@ SDLG_REPOSITORY.listClaims = async function () {
         checkUser();
         if (!sdlgSupabase?.auth)
             return () => { mounted = false; };
+        let profileTimer = null;
         const { data: { subscription } } = sdlgSupabase.auth.onAuthStateChange((_event, session) => {
-            if (mounted) {
+            const version = ++authEventVersion;
+            ++profileGeneration.current;
+            clearTimeout(profileTimer);
+            // Profile requests must start after the Supabase auth callback returns.
+            profileTimer = setTimeout(() => {
+                if (!mounted || version !== authEventVersion) return;
                 const nextUser = session?.user || null;
+                setUserRole("viewer");
+                setUserBranchId(null);
                 setUser(nextUser);
-                loadUserProfile(nextUser);
-            }
+                withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.")
+                    .catch(error => { if (mounted && version === authEventVersion) { setUserRole("viewer"); setUserBranchId(null); setLoginError(error.message); } })
+                    .finally(() => { if (mounted && version === authEventVersion) setAuthLoading(false); });
+            }, 0);
         });
         return () => {
             mounted = false;
+            clearTimeout(profileTimer);
             subscription?.unsubscribe();
         };
     }, [loadUserProfile, authRetry]);
@@ -7184,20 +7203,20 @@ SDLG_REPOSITORY.listClaims = async function () {
         setLoginLoading(true);
         setLoginError("");
         try {
-            const { data, error } = await sdlgSupabase.auth.signInWithPassword({
+            const { data, error } = await withTimeout(sdlgSupabase.auth.signInWithPassword({
                 email: loginEmail.trim(),
                 password: loginPassword,
-            });
+            }), 15000, "Koneksi login terlalu lama. Periksa jaringan lalu coba lagi.");
             if (error)
                 throw error;
             const loggedUser = data?.user || null;
             setUser(loggedUser);
-            await loadUserProfile(loggedUser);
+            await withTimeout(loadUserProfile(loggedUser), 10000, "Pemeriksaan akses terlalu lama. Coba lagi.");
             setLoginPassword("");
         }
         catch (error) {
             console.error("Login failed:", error);
-            setLoginError("Email atau password salah");
+            setLoginError(/invalid.*credentials/i.test(error?.message || "") ? "Email atau password salah" : (error?.message || "Login gagal. Coba lagi."));
         }
         finally {
             setLoginLoading(false);
@@ -7206,12 +7225,16 @@ SDLG_REPOSITORY.listClaims = async function () {
     const handleLogout = async () => {
         try {
             if (sdlgSupabase?.auth) {
-                const { error } = await sdlgSupabase.auth.signOut();
-                if (error)
-                    console.error("Logout failed:", error);
+                const { error } = await withTimeout(sdlgSupabase.auth.signOut({ scope: "local" }), 10000, "Logout terlalu lama. Periksa jaringan dan coba lagi.");
+                if (error) throw error;
             }
         }
-        finally {
+        catch (error) {
+            console.error("Logout failed:", error);
+            showToast(error?.message || "Logout gagal. Coba lagi.");
+            return;
+        }
+        {
             setUser(null);
             setUserRole("viewer");
             setUserBranchId(null);
@@ -7231,12 +7254,15 @@ SDLG_REPOSITORY.listClaims = async function () {
     }, [loading]);
     // Load claims with pagination so the app keeps working beyond the Data API row cap.
     const loadClaims = useCallback(async () => {
+        const generation = ++claimsLoadGeneration.current;
+        const current = () => generation === claimsLoadGeneration.current;
         let effectiveUser = user;
         if (!effectiveUser) {
             try {
                 const _c = (typeof window.getSdlgSupabase === "function" && window.getSdlgSupabase()) || window.sdlgSupabase || sdlgSupabase;
                 if (_c && _c.auth) {
-                    const _s = await _c.auth.getSession();
+                    const _s = await withTimeout(_c.auth.getSession(), 10000, "Pemeriksaan sesi terlalu lama.");
+                    if (!current()) return;
                     effectiveUser = _s?.data?.session?.user || null;
                     if (effectiveUser) {
                         setUser(effectiveUser);
@@ -7263,19 +7289,21 @@ SDLG_REPOSITORY.listClaims = async function () {
         try {
             /* PERF: first page for fast interactive list; full hydrate in background */
             const firstPage = typeof SDLG_REPOSITORY.listClaimsPage === "function"
-                ? await SDLG_REPOSITORY.listClaimsPage(0)
+                ? await withTimeout(SDLG_REPOSITORY.listClaimsPage(0), 15000, "Daftar klaim terlalu lama dimuat. Coba lagi.")
                 : null;
+            if (!current()) return;
             if (firstPage && firstPage.length) {
                 setClaims(firstPage);
                 setLoading(false);
             }
-            const [all, actionRows] = await Promise.all([
+            const [all, actionRows] = await withTimeout(Promise.all([
                 SDLG_REPOSITORY.listClaims(),
                 runSupabaseRead(async () => {
                     const result = await sdlgSupabase.from("claim_action_center_v").select("*");
                     return result;
                 })
-            ]);
+            ]), 20000, "Pemuatan klaim terlalu lama. Periksa jaringan lalu coba lagi.");
+            if (!current()) return;
             setClaims(all);
             setClaimsLoadError(null);
             if (actionRows?.error) throw actionRows.error;
@@ -7283,6 +7311,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             setActionCenterLoadError(null);
         }
         catch (e) {
+            if (!current()) return;
             console.error(e);
             const msg = e?.message || "Unknown error";
             setClaimsLoadError(msg);
@@ -7290,12 +7319,13 @@ SDLG_REPOSITORY.listClaims = async function () {
             showToast("Gagal load data: " + msg);
         }
         finally {
-            setLoading(false);
+            if (current()) setLoading(false);
         }
     }, [user]);
     useEffect(() => { if (user)
         loadClaims();
     else {
+        ++claimsLoadGeneration.current;
         setClaims([]);
         setActionCenterRows([]);
         setActionCenterLoadError(null);
