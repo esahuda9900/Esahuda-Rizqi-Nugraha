@@ -9,7 +9,7 @@ const end=html.indexOf('    }, [loadUserProfile, authRetry]);',start)+'    }, [l
 assert.ok(start>0 && end>start);
 (async()=>{
  let event,cleanup,complete;let profiles=0;const users=[],roles=[],timers=new Map();let id=0;
- const context={console,profileGeneration:{current:0},authRetry:0,
+ const context={console,profileGeneration:{current:0},claimsLoadGeneration:{current:0},authRetry:0,
   sdlgSupabase:{auth:{getSession:()=>new Promise(r=>{complete=r;}),onAuthStateChange(fn){event=fn;return {data:{subscription:{unsubscribe(){}}}};}}},
   withTimeout:work=>Promise.resolve(work),loadUserProfile:async()=>{profiles++;},
   setUser:u=>users.push(u),setUserRole:r=>roles.push(r),setUserBranchId(){},setAuthLoading(){},setLoginError(){},
@@ -18,7 +18,7 @@ assert.ok(start>0 && end>start);
  };
  vm.createContext(context);vm.runInContext(html.slice(start,end),context);
  const alice={id:'fixture-alice'},bob={id:'fixture-bob'};
- event('SIGNED_IN',{user:alice});assert.equal(profiles,0,'no profile queries inside auth callback');
+ event('SIGNED_IN',{user:alice});assert.equal(context.claimsLoadGeneration.current,1,'auth event invalidates in-flight claim reads immediately');assert.equal(profiles,0,'no profile queries inside auth callback');
  event('SIGNED_IN',{user:bob});assert.equal(timers.size,1,'new auth events cancel queued profile work');
  for(const [key,fn] of [...timers]){timers.delete(key);fn();}await flush();
  assert.deepEqual(users,[bob]);assert.equal(profiles,1);assert.deepEqual(roles,['viewer']);

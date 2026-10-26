@@ -7155,6 +7155,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         const { data: { subscription } } = sdlgSupabase.auth.onAuthStateChange((_event, session) => {
             const version = ++authEventVersion;
             ++profileGeneration.current;
+            ++claimsLoadGeneration.current;
             clearTimeout(profileTimer);
             // Profile requests must start after the Supabase auth callback returns.
             profileTimer = setTimeout(() => {
@@ -7170,6 +7171,8 @@ SDLG_REPOSITORY.listClaims = async function () {
         });
         return () => {
             mounted = false;
+            ++profileGeneration.current;
+            ++claimsLoadGeneration.current;
             clearTimeout(profileTimer);
             subscription?.unsubscribe();
         };
@@ -7235,6 +7238,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             return;
         }
         {
+            ++claimsLoadGeneration.current;
+            ++profileGeneration.current;
             setUser(null);
             setUserRole("viewer");
             setUserBranchId(null);
