@@ -197,7 +197,7 @@ async function run() {
     console.log('AUTH E2E: claim detail identity survived hard reload: ' + selectedId);
 
     // Only the warranty_admin/admin role has access to this surface.
-    const inputLink = page.getByRole('button',{name:/SDLG Input/i}).first();
+    const inputLink = page.locator('.claim-detail-page').getByRole('button',{name:/SDLG Input/i}).first();
     if (await inputLink.count()) {
       await inputLink.click();
       await page.locator('[data-sdlg-input-helper]').waitFor({state:'visible',timeout:30000});
