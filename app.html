@@ -11217,7 +11217,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 detail.currency,
                                 " ",
                                 fmt2(detail.total_amount))))))))))),
-            React.createElement("section", { id: "sdlg-detail-all", style: { scrollMarginTop: 96, background: "#fff", border: "1px solid #dbe3ef", borderRadius: 12, padding: 16, marginTop: 12 } },
+            tab === "list" && detailId && detail && React.createElement("section", { id: "sdlg-detail-all", style: { scrollMarginTop: 96, background: "#fff", border: "1px solid #dbe3ef", borderRadius: 12, padding: 16, marginTop: 12 } },
                 React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 5 } }, "Semua Data Klaim · Database Explorer"),
                 React.createElement("p", { style: { fontSize: 12, color: "#64748b", marginBottom: 12 } }, "Seluruh field yang sudah dimuat untuk klaim ini. Panel asli di atas tetap tersedia; nilai kosong ditandai dengan jelas."),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 8 } },
