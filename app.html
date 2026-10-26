@@ -11221,7 +11221,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 5 } }, "Semua Data Klaim · Database Explorer"),
                 React.createElement("p", { style: { fontSize: 12, color: "#64748b", marginBottom: 12 } }, "Seluruh field yang sudah dimuat untuk klaim ini. Panel asli di atas tetap tersedia; nilai kosong ditandai dengan jelas."),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 8 } },
-                    Object.entries(detail).filter(([key]) => !["source_raw_text", "source_fields"].includes(key)).map(([key, value]) =>
+                    Object.entries(detail && typeof detail === "object" && !Array.isArray(detail) ? detail : {}).filter(([key]) => !["source_raw_text", "source_fields"].includes(key)).map(([key, value]) =>
                         React.createElement("div", { key, style: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "9px 11px", overflowWrap: "anywhere" } },
                             React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 3 } }, key.replace(/_/g, " ")),
                             React.createElement("div", { style: { fontSize: 12, color: "#0f172a", whiteSpace: "pre-wrap" } },
