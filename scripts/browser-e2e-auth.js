@@ -178,6 +178,39 @@ async function run() {
       console.log('AUTH E2E: Export affordance present.');
     }
 
+    // --- Claim identity continuity: read-only, no claim writes ---
+    // Use an explicit known claim rather than the first row (order can change).
+    const selectedId = process.env.E2E_CLAIM_ID || '0258-2026-SDLG-PFR';
+    if (!/^\\d{4}-\\d{4}-SDLG-PFR$/.test(selectedId)) {
+      fail('Invalid E2E_CLAIM_ID; refusing ambiguous browser routing test');
+    }
+    const appUrl = new URL('app.html', baseUrl).toString();
+    const claimPath = '#/claims/' + encodeURIComponent(selectedId);
+    await page.goto(appUrl + claimPath, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.locator('.claim-detail-page').waitFor({state:'visible',timeout:30000});
+    const detailId = await page.locator('.claim-detail-page').locator('span').filter({hasText:selectedId}).first().innerText();
+    if (!detailId.includes(selectedId)) fail('Claim detail did not show the exact routed ID');
+    await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+    await page.locator('.claim-detail-page').waitFor({state:'visible',timeout:30000});
+    if (!page.url().endsWith(claimPath)) fail('Claim detail URL changed after hard reload');
+    if (!(await page.locator('.claim-detail-page').innerText()).includes(selectedId)) fail('Claim detail changed identity after reload');
+    console.log('AUTH E2E: claim detail identity survived hard reload: ' + selectedId);
+
+    // Only the warranty_admin/admin role has access to this surface.
+    const inputLink = page.getByRole('button',{name:/SDLG Input/i}).first();
+    if (await inputLink.count()) {
+      await inputLink.click();
+      await page.locator('[data-sdlg-input-helper]').waitFor({state:'visible',timeout:30000});
+      const inputPath = '#/sdlg-input/' + encodeURIComponent(selectedId);
+      if (!page.url().endsWith(inputPath)) fail('SDLG Input did not retain routed claim ID');
+      await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+      await page.locator('[data-sdlg-input-helper]').waitFor({state:'visible',timeout:30000});
+      if (!page.url().endsWith(inputPath)) fail('SDLG Input route changed on hard reload');
+      const body = await page.locator('[data-sdlg-input-helper]').innerText();
+      if (!body.includes(selectedId)) fail('SDLG Input switched to another claim after reload');
+      console.log('AUTH E2E: SDLG Input identity survived hard reload: ' + selectedId);
+    }
+
     // --- Authenticated mobile regression ---
     const storageState = await page.context().storageState();
     const mobileContext = await page.context().browser().newContext({
