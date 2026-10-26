@@ -53,7 +53,7 @@ console.log('LOGIN FREEZE REGRESSION: PASS (boot, debounce, diagnostics isolatio
 // Both entrypoints must bypass an older cached registry, not just version its child.
 for (const file of ['index.html', 'app.html']) {
   const entry = fs.readFileSync(path.join(root, file), 'utf8');
-  assert.match(entry, /src="\.\/modules\/claim-fields\.js\?v=20261026-login-freeze"/);
+  assert.match(entry, /src="\.\/modules\/claim-fields\.js\?v=20261026-session-v24"/);
 }
-assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /location\.replace\('\.\/app\.html\?v=20261026-login-freeze'\)/);
+assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /location\.replace\('\.\/app\.html\?v=20261026-session-v24'\)/);
 console.log('ENTRYPOINT CACHE REGRESSION: PASS');
