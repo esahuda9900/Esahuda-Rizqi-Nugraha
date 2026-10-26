@@ -121,70 +121,11 @@
     }
   };
 
-  // Claim restore — list only, no progressive absolute /modules loader
-  var restoring = false;
-  function claimIdFromText(text) {
-    var m = String(text || '').match(/\b(\d{4}-\d{4}-SDLG-PFR)\b/i);
-    return m ? m[1].toUpperCase() : '';
-  }
-  function isDetailPage() {
-    return !!document.querySelector('.page.claim-detail-page, [data-sdlg-claim-detail="1"]');
-  }
-  function findClaimRow(claimId) {
-    var nodes = document.querySelectorAll('.claim-row, .claims-table-shell tbody tr, table tbody tr');
-    for (var i = 0; i < nodes.length; i++) {
-      if ((nodes[i].textContent || '').indexOf(claimId) >= 0) return nodes[i];
-    }
-    return null;
-  }
-  function attemptRestore() {
-    // Only a deep link may restore a detail. Never auto-click a stale claim
-    // when the user explicitly selected Overview, New Claim or another module.
-    var route = routeFromHash();
-    if (!route || route.tab !== 'list' || !route.detailId || restoring || isDetailPage()) return;
-    var row = findClaimRow(route.detailId);
-    if (!row) return;
-    restoring = true;
-    try { row.click(); } catch (_) {}
-    setTimeout(function () { restoring = false; }, 800);
-  }
-
-  document.addEventListener('click', function (e) {
-    var t = e.target;
-    if (!t || !t.closest) return;
-    var btn = t.closest('button, a, .nav-btn, [data-tab]');
-    if (btn) {
-      var label = String(btn.textContent || btn.getAttribute('data-tab') || '').toLowerCase();
-      if (/kembali|back to list|semua klaim/i.test(label) || /quality|unit\s*360|master|input|overview|dashboard/i.test(label)) {
-        try { window.localStorage.setItem(SKIP_KEY, '1'); } catch (_) {}
-        window.SDLGNavState.clearDetail(null);
-      }
-    }
-    var row = t.closest('.claim-row, .claims-table-shell tr');
-    if (row && !isDetailPage()) {
-      var cid = claimIdFromText(row.textContent || '');
-      if (cid) {
-        try { window.localStorage.removeItem(SKIP_KEY); } catch (_) {}
-        window.SDLGNavState.persistDetailId(cid, null);
-      }
-    }
-  }, true);
-
-  function boot() {
-    // Delayed, limited restore only — no MutationObserver on documentElement
-    setTimeout(attemptRestore, 600);
-    setTimeout(attemptRestore, 1800);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
-
-  window.SDLGNavClaimRestore = {
-    version: '2026-10-22-emergency',
-    restore: attemptRestore,
-    isDetail: isDetailPage
-  };
+  // React owns navigation and claim identity. Never simulate row clicks or
+  // infer routes from button text: those mechanisms caused cross-claim jumps.
+  window.SDLGNavClaimRestore = Object.freeze({
+    version: '2026-10-26-url-authoritative',
+    restore: function () { return routeFromHash(); },
+    isDetail: function () { var r = routeFromHash(); return !!(r && r.tab === 'list' && r.detailId); }
+  });
 })();
