@@ -3,7 +3,7 @@
  * Match + confirm via SDLGWoCollisionModal (fallback window.confirm).
  *
  * v1.5.0: ALWAYS show modal+diff on Update Klaim (not only risky matches).
- * v1.4.1: Simpan Baru no longer clears dealerWoSo.
+ * v1.6.0: Simpan Baru detaches an already-used WO before persisting.
  */
 (function (root) {
   'use strict';
@@ -133,7 +133,7 @@
       shortText(parsed && parsed.faultDescription, 60) +
       ' / ' +
       shortText(parsed && parsed.causingPartNo, 24) +
-      '\n\nSimpan Baru? Klaim baru tetap memakai WO yang sama (multi-claim). Utamakan Update jika ini revisi klaim yang sama.'
+      '\n\nSimpan Baru? Nomor WO akan dilepas dari klaim baru agar tidak bentrok dengan klaim lama. Gunakan Update jika ini revisi klaim yang sama.'
     );
   }
 
@@ -198,13 +198,69 @@
   /** @returns {Promise<boolean>} */
   function confirmAndPrepareNewSave(parsed, matchedClaim) {
     if (!isStrictWoMatch(parsed, matchedClaim)) return Promise.resolve(true);
-    return askUser('new', parsed, matchedClaim).then(function (ok) {
+    return showDetachConfirmation(parsed, matchedClaim).then(function (ok) {
       if (!ok) return false;
-      if (parsed && parsed.dealerWoSo) {
-        parsed.sourceDealerWoSo = String(parsed.dealerWoSo).trim();
-      }
-      parsed.woClearedForCollision = false;
+      clearWoOnParsed(parsed);
       return true;
+    });
+  }
+
+  function showDetachConfirmation(parsed, matchedClaim) {
+    if (!root.document || !root.document.body) {
+      return Promise.resolve(typeof root.confirm === 'function' &&
+        root.confirm(collisionConfirmMessage(parsed, matchedClaim)));
+    }
+    return new Promise(function (resolve) {
+      var doc = root.document;
+      var overlay = doc.createElement('div');
+      overlay.setAttribute('role', 'presentation');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;padding:18px';
+      var card = doc.createElement('div');
+      card.setAttribute('role', 'dialog');
+      card.setAttribute('aria-modal', 'true');
+      card.setAttribute('aria-label', 'Konfirmasi WO sama, kerusakan beda');
+      card.style.cssText = 'background:#fff;border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.28);font:14px/1.55 system-ui,sans-serif;color:#0f172a';
+      var heading = doc.createElement('h2');
+      heading.textContent = 'WO sama · kerusakan beda';
+      heading.style.cssText = 'font-size:19px;margin:0 0 12px;font-weight:800';
+      var body = doc.createElement('p');
+      body.textContent = 'WO ' + normalizeWo(parsed.dealerWoSo) + ' sudah tercatat pada klaim ' +
+        String(matchedClaim.claim_id || 'sebelumnya') +
+        '. Jika disimpan sebagai klaim baru, nomor WO akan dilepas (dikosongkan) dari klaim baru. Klaim lama tidak berubah.';
+      body.style.cssText = 'margin:0 0 16px;color:#475569';
+      var note = doc.createElement('p');
+      note.textContent = 'Pilih Update Klaim jika ini sebenarnya revisi untuk kerusakan yang sama.';
+      note.style.cssText = 'margin:0 0 20px;color:#92400e;background:#fffbeb;padding:10px;border-radius:8px';
+      var actions = doc.createElement('div');
+      actions.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap';
+      function button(text, bg, color, callback) {
+        var el = doc.createElement('button');
+        el.type = 'button'; el.textContent = text;
+        el.style.cssText = 'padding:10px 14px;border:0;border-radius:9px;background:' + bg +
+          ';color:' + color + ';font-weight:700;cursor:pointer';
+        el.addEventListener('click', callback);
+        return el;
+      }
+      function finish(ok) {
+        doc.removeEventListener('keydown', onKey);
+        overlay.remove();
+        resolve(ok);
+      }
+      function onKey(event) {
+        if (event.key === 'Escape') finish(false);
+        if (event.key === 'Tab') {
+          var focus = card.querySelectorAll('button');
+          if (event.shiftKey && doc.activeElement === focus[0]) { event.preventDefault(); focus[focus.length - 1].focus(); }
+          else if (!event.shiftKey && doc.activeElement === focus[focus.length - 1]) { event.preventDefault(); focus[0].focus(); }
+        }
+      }
+      var cancel = button('Batal', '#e2e8f0', '#334155', function () { finish(false); });
+      actions.appendChild(cancel);
+      actions.appendChild(button('Simpan Baru tanpa WO', '#2563eb', '#fff', function () { finish(true); }));
+      card.appendChild(heading); card.appendChild(body); card.appendChild(note); card.appendChild(actions);
+      overlay.appendChild(card); doc.body.appendChild(overlay);
+      doc.addEventListener('keydown', onKey);
+      cancel.focus();
     });
   }
 
@@ -224,11 +280,11 @@
     if (kind === 'strong') {
       return ' Match kuat (part/fault mirip) — Update lebih aman bila ini revisi klaim yang sama.';
     }
-    return ' Match lemah (part/fault beda) — Simpan Baru boleh; WO tetap dipakai (multi-claim). Hindari Update kecuali yakin timpa klaim lama.';
+    return ' Match lemah (part/fault beda) — Simpan Baru boleh; WO akan dilepas dari klaim baru. Hindari Update kecuali yakin timpa klaim lama.';
   }
 
   root.SDLGWoClaimPolicy = Object.freeze({
-    version: '1.5.0',
+    version: '1.6.0',
     MULTI_CLAIM_WO_ALLOWLIST: MULTI_CLAIM_WO_ALLOWLIST,
     normalizeWo: normalizeWo,
     isMultiClaimAllowed: isMultiClaimAllowed,
