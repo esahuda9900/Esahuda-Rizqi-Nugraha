@@ -6173,6 +6173,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
 function App() {
     /* __SDLG_NAV_STATE_WIRING_V1__ */
     const [tab, setTab] = useState(() => window.SDLGNavState?.restore("list") || "list"); // dashboard | list | paste | sdlginput | masters | quality
+    const applyingBrowserRouteRef = useRef(false);
     // Single route writer below owns URL persistence; a second writer could
     // overwrite a claim-specific route during a transient tab transition.
     // Browser Back/Forward and restored Chrome tabs follow the URL, not a stale overview default.
@@ -6180,6 +6181,7 @@ function App() {
         const onRoute = () => {
             const route = window.SDLGNavState?.routeFromHash?.();
             if (!route) return;
+            applyingBrowserRouteRef.current = true;
             setTab(route.tab);
             setDetailId(route.tab === "list" ? route.detailId : null);
             setSdlgInputClaimId(route.tab === "sdlginput" ? route.portalClaimId || "" : "");
@@ -6925,9 +6927,11 @@ SDLG_REPOSITORY.listClaims = async function () {
         ++historyRequestRef.current;
     }, [detailId]);
     useEffect(() => {
-        // Never let a stale React render overwrite Back/Forward or deep links.
-        const current = window.SDLGNavState?.routeFromHash?.();
-        if (current && current.tab !== tab) return;
+        // Browser Back/Forward owns its route; normal menu clicks own theirs.
+        if (applyingBrowserRouteRef.current) {
+            applyingBrowserRouteRef.current = false;
+            return;
+        }
         try { window.SDLGNavState?.persist(tab, null, tab === "list" ? detailId : null); } catch (_) {}
     }, [tab, detailId]);
     const [search, setSearch] = useState(() => { try { return sessionStorage.getItem("sdlg:list:search") || ""; } catch (_) { return ""; } });
