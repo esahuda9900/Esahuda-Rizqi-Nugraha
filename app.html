@@ -7705,6 +7705,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 cleaned.parts = cleaned.parts.map(x => ({ ...x }));
             // Final source-first reconciliation: every labeled source value wins over AI/recovery.
             Object.assign(cleaned, reconcileDeterministicSourceFields(cleaned, parserInput));
+            Object.assign(cleaned, preventAppCodeAsWo(cleaned));
             const extractLabeledBlock = (labels, nextLabels) => {
                 const wanted = labels.map(normSourceLabel);
                 const stops = nextLabels.map(normSourceLabel);
@@ -7775,6 +7776,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             // Re-apply source-first scalar/date reconciliation after multiline extraction so
             // helper-row parsing can never overwrite a deterministic labeled field.
             Object.assign(cleaned, reconcileDeterministicSourceFields(cleaned, parserInput));
+            Object.assign(cleaned, preventAppCodeAsWo(cleaned));
             // Dedicated multiline/table fields are re-applied AFTER the generic source
             // reconciliation so they can never be truncated/blanked by scalar extraction.
             const commentFinal = sourceMultilineBlock(parserInput, ["Comment"], [
@@ -7803,7 +7805,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             const resolvedMatches = await getMasterMatches(cleaned);
             const resolved = applyDeterministicMasterResolution(cleaned, resolvedMatches);
             const sourcePartsFinal = extractSourcePartsForClient(parserInput);
-            const resolvedWithSourceParts = { ...(resolved || cleaned), parts: sourcePartsFinal.length ? sourcePartsFinal : ((resolved || cleaned).parts || []) };
+            const resolvedWithSourceParts = preventAppCodeAsWo({ ...(resolved || cleaned), parts: sourcePartsFinal.length ? sourcePartsFinal : ((resolved || cleaned).parts || []) });
             const _sourceCustomerName = sourceScalarValue(parserInput, ["Customer Name"]) || "";
             const finalParsed = { ...resolvedWithSourceParts, source_raw_text: parserInput, source_fields: buildSourceSnapshot(parserInput, resolvedWithSourceParts), source_parse_version: "2.35.16", sourceCustomerName: cleanSourceCell(_sourceCustomerName) || null, source_customer_name: cleanSourceCell(_sourceCustomerName) || null };
             // SOURCE CUSTOMER PROVENANCE V2: preserve explicit form customer before master enrichment.
@@ -7812,6 +7814,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 const _wo = sourceScalarValue(parserInput, ["Dealer WO/SO"]);
                 if (_wo) finalParsed.dealerWoSo = _wo;
             }
+            Object.assign(finalParsed, preventAppCodeAsWo(finalParsed));
             const finalLockIssues = validateSourceLock(finalParsed, parserInput);
             if (runId !== parseRunRef.current)
                 return;
@@ -7830,6 +7833,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             const issues = validateParsed(finalParsed, parserInput);
             if (finalLockIssues.length)
                 setErr("⚠️ SOURCE LOCK: " + finalLockIssues.join(" • "));
+            else if (finalParsed.woIdentityCorrected)
+                setErr("⚠️ Dealer WO/SO dikosongkan: nilainya sama dengan App Code. Periksa sebelum simpan.");
             else if (issues.length)
                 setErr("⚠️ Periksa data: " + issues.join(" • "));
             else if (initialLockIssues.length)
@@ -8668,6 +8673,14 @@ SDLG_REPOSITORY.listClaims = async function () {
             advance("Paid", form.payment_date, "Otomatis: Payment Date diisi.");
         return out;
     };
+    // Prevent App Code from being used as Dealer WO, including after master enrichment.
+    const preventAppCodeAsWo = (item) => {
+        if (!item || typeof item !== "object") return item;
+        const code = String(item.appCode || "").trim().toUpperCase();
+        const wo = String(item.dealerWoSo || "").trim().toUpperCase();
+        if (!code || !wo || code !== wo) return item;
+        return { ...item, dealerWoSo: "", woIdentityCorrected: true };
+    };
     // Save new claim
     const handleSave = async () => {
         if (!parsed || saving || saveInFlightRef.current)
@@ -8675,7 +8688,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         // Final source-truth check immediately before any database write.
         const sourcePartsForSave = extractSourcePartsForClient(raw);
         const effectiveParsed = {
-            ...parsed,
+            ...preventAppCodeAsWo(parsed),
             model: canonicalMasterModelName(parsed.model, masterMatches),
             currency: normalizeClaimCurrency(parsed.currency, raw, parsed.dealerClaimNo),
             parts: sourcePartsForSave.length ? sourcePartsForSave : (Array.isArray(parsed.parts) ? parsed.parts.filter(part => String(part?.failurePartNo || part?.replacementPartNo || "").trim()) : [])
@@ -8717,6 +8730,11 @@ SDLG_REPOSITORY.listClaims = async function () {
                 input_date: today(),
                 last_updated: new Date().toISOString(),
             };
+            // Defend the actual payload too, regardless of intermediate parsing.
+            if (String(effectiveParsed.appCode || "").trim() && String(row.dealer_wo_so || "").trim().toUpperCase() === String(effectiveParsed.appCode || "").trim().toUpperCase()) {
+                row.dealer_wo_so = null;
+                effectiveParsed.dealerWoSo = "";
+            }
             // Hard Rule #2: never send the collided WO to the create RPC.
             if (effectiveParsed.woClearedForCollision) {
                 effectiveParsed.dealerWoSo = '';
@@ -8757,7 +8775,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         // Final source-truth check immediately before any database write.
         const sourcePartsForSave = extractSourcePartsForClient(raw);
         const effectiveParsed = {
-            ...parsed,
+            ...preventAppCodeAsWo(parsed),
             model: canonicalMasterModelName(parsed.model, masterMatches),
             currency: normalizeClaimCurrency(parsed.currency, raw, parsed.dealerClaimNo),
             parts: sourcePartsForSave.length ? sourcePartsForSave : (Array.isArray(parsed.parts) ? parsed.parts.filter(part => String(part?.failurePartNo || part?.replacementPartNo || "").trim()) : [])
