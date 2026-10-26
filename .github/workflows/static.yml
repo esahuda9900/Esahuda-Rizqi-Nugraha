@@ -112,15 +112,15 @@ jobs:
           const fs = require('node:fs');
           const vm = require('node:vm');
           const html = fs.readFileSync('_site/app.html', 'utf8');
-          const head = html.split(/<\\/head\\s*>/i)[0] || '';
-          if (/(?:^|\\n)\\s*\\.\\.\\.\\s*(?:\\n|$)/.test(head)) {
+          const head = html.split(/<\/head\s*>/i)[0] || '';
+          if (/(?:^|\n)\s*\.\.\.\s*(?:\n|$)/.test(head)) {
             throw new Error('Stray ellipsis text found in HTML head');
           }
           let checked = 0;
-          for (const match of html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)) {
+          for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
             const attrs = match[1] || '';
             const source = match[2] || '';
-            if (!source.trim() || /\\bsrc\\s*=/.test(attrs) || /type\\s*=\\s*['"](?:application\\/json|importmap)['"]/i.test(attrs)) continue;
+            if (!source.trim() || /\bsrc\s*=/.test(attrs) || /type\s*=\s*['"](?:application\/json|importmap)['"]/i.test(attrs)) continue;
             new vm.Script(source, { filename: 'app.html:inline-' + (++checked) });
           }
           for (const file of ['modules/navigation-state.js','modules/sdlg-hash-router.js','modules/wo-claim-policy.js','modules/wo-collision-modal.js']) {
