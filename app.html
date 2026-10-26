@@ -56,6 +56,8 @@ window.SDLG_LOAD_XLSX = function () {
 };
 </script>
   <style>
+    @keyframes sdlgSlaCriticalPulse { 0%,100% { opacity:1; } 50% { opacity:.48; } }
+    @media (prefers-reduced-motion: reduce) { [role="status"] { animation:none !important; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     button { font-family: inherit; }
     textarea, input, select { font-family: inherit; }
@@ -3947,6 +3949,31 @@ const claimAging = (c) => {
     return { submit, failureToRepair, repairToCompletion, repairToSubmitOrToday, completionToSubmit, failureToSubmitOrToday, submitAge, currentStatusAge, bucket, risk,
         daysTo10: repairToSubmitOrToday == null ? null : SDLG_POLICY.claimSubmitDays - repairToSubmitOrToday,
         daysTo90: repairToSubmitOrToday == null ? null : SDLG_POLICY.claimGeneralWindowDays - repairToSubmitOrToday };
+};
+const claimSlaBadge = (c) => {
+    const aging = claimAging(c);
+    if (aging.submit || aging.repairToSubmitOrToday == null) return null;
+    const days = aging.repairToSubmitOrToday;
+    const critical = days >= SDLG_POLICY.claimGeneralWindowDays - 10;
+    const warning = days >= 7;
+    return {
+        label: critical ? "CRITICAL SDLG LIMIT" : warning ? "Target OLDP Close" : "Aman",
+        days: days,
+        critical: critical,
+        color: critical ? "#b91c1c" : warning ? "#92400e" : "#047857",
+        background: critical ? "#fef2f2" : warning ? "#fef9c3" : "#dcfce7"
+    };
+};
+const renderClaimSlaBadge = (c) => {
+    const sla = claimSlaBadge(c);
+    return sla && React.createElement("span", {
+        role: "status",
+        title: sla.days + " hari sejak selesai repair; target 10 hari, batas 90 hari",
+        style: { display: "inline-flex", alignItems: "center", padding: "4px 9px", borderRadius: 999,
+            border: "1px solid currentColor", fontSize: 11, fontWeight: 800,
+            color: sla.color, background: sla.background,
+            animation: sla.critical ? "sdlgSlaCriticalPulse 1.5s ease-in-out infinite" : "none" }
+    }, sla.label + " · " + sla.days + " hari");
 };
 const percentile = (arr, p) => {
     const a = arr.filter(v => Number.isFinite(v)).sort((x, y) => x - y);
@@ -8690,6 +8717,11 @@ SDLG_REPOSITORY.listClaims = async function () {
                 input_date: today(),
                 last_updated: new Date().toISOString(),
             };
+            // Hard Rule #2: never send the collided WO to the create RPC.
+            if (effectiveParsed.woClearedForCollision) {
+                effectiveParsed.dealerWoSo = '';
+                row.dealer_wo_so = null;
+            }
             // One database transaction chooses the next number and inserts the row.
             // This eliminates gaps caused by preview/reserve calls or failed inserts.
             const id = await SDLG_USE_CASES.CreateClaim.execute(effectiveParsed, matches, row.id, autoTransitions || []);
@@ -10153,7 +10185,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                             background: "#fff", color: "#64748b", cursor: "pointer", fontSize: 13,
                         } }, "\u2715 Batal"),
                     matchedClaim ? (React.createElement(React.Fragment, null,
-                        React.createElement("button", { onClick: () => { (async () => { if (window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.confirmAndPrepareNewSave === "function" && matchedClaim && parsed) { const ok = await window.SDLGWoClaimPolicy.confirmAndPrepareNewSave(parsed, matchedClaim); if (!ok) return; } proceedSaveAfterReview("new"); })(); }, disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
+                        React.createElement("button", { onClick: () => { (async () => { if (window.SDLGWoClaimPolicy && typeof window.SDLGWoClaimPolicy.confirmAndPrepareNewSave === "function" && matchedClaim && parsed) { const ok = await window.SDLGWoClaimPolicy.confirmAndPrepareNewSave(parsed, matchedClaim); if (!ok) return; if (parsed.woClearedForCollision) setParsed({ ...parsed }); } proceedSaveAfterReview("new"); })(); }, disabled: sourceLockIssues.length > 0 || saving || !isOnline, style: {
                                 padding: "9px 16px", borderRadius: 8, border: "1px solid #e2e8f0",
                                 background: "#fff", color: "#475569", cursor: "pointer", fontWeight: 600, fontSize: 13,
                             } }, "\uD83D\uDCBE Simpan sebagai Baru"),
@@ -10571,6 +10603,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement(Pill, { color: claimTypeMeta(c).color }, claimTypeMeta(c).label),
                         claimAging(c)?.repairToSubmitOrToday != null && React.createElement(Pill, { color: claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimGeneralWindowDays ? "#b3261e" : claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimSubmitDays ? "#b86e00" : "#6b7280" },
                             claimAging(c).repairToSubmitOrToday + " hari \u00B7 " + (claimAging(c).submit ? "Repair \u2192 Claim" : "Repair \u2192 Today")),
+                        renderClaimSlaBadge(c),
                         c.archived_at && React.createElement(Pill, { color: "#6b7280" }, "ARCHIVED")),
                     React.createElement("div", { style: { fontSize: 13, fontWeight: 500 } },
                         c.model,
@@ -10929,6 +10962,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                             "\u23F1\uFE0F Repair \u2192 Claim: ",
                             processAging.repairToSubmitOrToday,
                             " hari")),
+                    renderClaimSlaBadge(detail),
                     meta.reason && React.createElement("div", { style: { fontSize: 12, color: "#475569", marginTop: 7, whiteSpace: "pre-wrap" } },
                         React.createElement("b", null, "Catatan:"),
                         " ",
