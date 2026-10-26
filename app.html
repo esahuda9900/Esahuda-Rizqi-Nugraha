@@ -10911,15 +10911,6 @@ SDLG_REPOSITORY.listClaims = async function () {
                     : null));
         })(),
         tab === "list" && detailId && detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
-            React.createElement("div", { style: { position: "sticky", top: 0, zIndex: 15, background: "rgba(248,250,252,.97)", border: "1px solid #dbe3ef", borderRadius: 12, padding: "10px 12px", marginBottom: 14, boxShadow: "0 6px 22px rgba(15,23,42,.07)" } },
-                React.createElement("div", { style: { fontWeight: 800, fontSize: 12, color: "#0f172a", marginBottom: 7 } }, "⌘ Claim Detail 360° · Navigasi Cepat"),
-                React.createElement("div", { style: { display: "flex", gap: 7, flexWrap: "wrap" } },
-                    [["Status", "status"], ["Policy", "policy"], ["Identitas", "identity"], ["Technical", "technical"], ["Evidence", "evidence"], ["Parts & Biaya", "parts"], ["Semua Data", "all"]].map(([label, section]) =>
-                        React.createElement("button", { key: section, type: "button", onClick: () => {
-                            const el = document.getElementById("sdlg-detail-" + section);
-                            if (el && el.closest("[data-sdlg-claim-detail]")?.querySelector("[data-claim-id]")?.getAttribute("data-claim-id") === String(detail.claim_id)) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }, style: { border: "1px solid #dbe3ef", background: "#fff", color: "#1e40af", borderRadius: 9, padding: "7px 11px", fontSize: 12, fontWeight: 700, cursor: "pointer" } }, label))))),
-            React.createElement("span", { "data-claim-id": String(detail.claim_id), hidden: true }),
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" } },
                 React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {
                         padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
@@ -10955,8 +10946,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 " pada ",
                 new Date(detail.archived_at).toLocaleString("id-ID"),
                 ". Data arsip lama hanya muncul sebagai legacy record."),
-            React.createElement("div", { id: "sdlg-detail-status", style: {
-                    scrollMarginTop: 96, background: "#fff", borderRadius: 10, padding: "12px 14px",
+            React.createElement("div", { style: {
+                    background: "#fff", borderRadius: 10, padding: "12px 14px",
                     border: "1px solid #e2e8f0", marginBottom: 12, display: "flex",
                     alignItems: "center", gap: 8, flexWrap: "wrap",
                 } },
@@ -11053,9 +11044,9 @@ SDLG_REPOSITORY.listClaims = async function () {
                     "\u26A0\uFE0F Claim saat ini berada di status ",
                     React.createElement("b", null, detail.claim_status),
                     ". Periksa reason/history sebelum melanjutkan.")),
-            React.createElement("div", { id: "sdlg-detail-policy", style: { scrollMarginTop: 96 } }, React.createElement(PolicyDecisionCard, { claim: detail })),
-            React.createElement("div", { id: "sdlg-detail-identity", style: {
-                    scrollMarginTop: 96, background: "#fff", borderRadius: 10, padding: "14px 16px",
+            React.createElement(PolicyDecisionCard, { claim: detail }),
+            React.createElement("div", { style: {
+                    background: "#fff", borderRadius: 10, padding: "14px 16px",
                     border: "1px solid #e2e8f0", marginBottom: 12,
                 } },
                 React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } }, editing ? "✏️ Edit Info" : "Info"),
@@ -11149,8 +11140,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 hm.expectedHigh.toLocaleString('en-US'),
                                 " hr"))));
             })(),
-            React.createElement("div", { id: "sdlg-detail-technical", style: {
-                    scrollMarginTop: 96, background: "#fff", borderRadius: 10, padding: "14px 16px",
+            React.createElement("div", { style: {
+                    background: "#fff", borderRadius: 10, padding: "14px 16px",
                     border: "1px solid #e2e8f0", marginBottom: 12,
                 } },
                 React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } }, editing ? "✏️ Kerusakan & Perbaikan" : "Kerusakan & Perbaikan"),
@@ -11178,12 +11169,12 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement(Row, { label: "Failure Part Location", value: detail.failure_part_location }),
                     React.createElement(Row, { label: "Customer Approval Date", value: detail.customer_approval_date }),
                     React.createElement(Row, { label: "Comment", value: detail.comment })))),
-            (!editing && detail.evidence_items && Array.isArray(detail.evidence_items) && detail.evidence_items.length > 0) && (React.createElement("div", { id: "sdlg-detail-evidence", style: { scrollMarginTop: 96, background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", marginBottom: 12 } },
+            (!editing && detail.evidence_items && Array.isArray(detail.evidence_items) && detail.evidence_items.length > 0) && (React.createElement("div", { style: { background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", marginBottom: 12 } },
                 React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } }, "Evidence / Photo Context"),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 } }, detail.evidence_items.map((e, i) => React.createElement("div", { key: i, style: { padding: "8px 10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 } },
                     React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#64748b" } }, e?.label || "Evidence"),
                     React.createElement("div", { style: { fontSize: 12, color: "#1e293b", marginTop: 3, whiteSpace: "pre-wrap" } }, e?.value || "")))))),
-            (editing || (detail.parts && detail.parts.length > 0)) && (React.createElement("div", { id: "sdlg-detail-parts", style: { scrollMarginTop: 96,
+            (editing || (detail.parts && detail.parts.length > 0)) && (React.createElement("div", { style: {
                     background: "#fff", borderRadius: 10, padding: "14px 16px",
                     border: "1px solid #e2e8f0", marginBottom: 12, overflowX: "auto",
                 } },
@@ -11216,16 +11207,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                             React.createElement("span", { style: { color: "#60a5fa" } },
                                 detail.currency,
                                 " ",
-                                fmt2(detail.total_amount))))))))))),
-            tab === "list" && detailId && detail && React.createElement("section", { id: "sdlg-detail-all", style: { scrollMarginTop: 96, background: "#fff", border: "1px solid #dbe3ef", borderRadius: 12, padding: 16, marginTop: 12 } },
-                React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 5 } }, "Semua Data Klaim · Database Explorer"),
-                React.createElement("p", { style: { fontSize: 12, color: "#64748b", marginBottom: 12 } }, "Seluruh field yang sudah dimuat untuk klaim ini. Panel asli di atas tetap tersedia; nilai kosong ditandai dengan jelas."),
-                React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 8 } },
-                    Object.entries(detail && typeof detail === "object" && !Array.isArray(detail) ? detail : {}).filter(([key]) => !["source_raw_text", "source_fields"].includes(key)).map(([key, value]) =>
-                        React.createElement("div", { key, style: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "9px 11px", overflowWrap: "anywhere" } },
-                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginBottom: 3 } }, key.replace(/_/g, " ")),
-                            React.createElement("div", { style: { fontSize: 12, color: "#0f172a", whiteSpace: "pre-wrap" } },
-                                value == null || value === "" ? "Belum tersedia" : typeof value === "object" ? JSON.stringify(value) : String(value)))))));
+                                fmt2(detail.total_amount)))))))))))));
 }
 // V2.28 design-system smoke test: verifies the public UI contract without mutating app state.
 window.SDLGWebDesignStressTest = function () {
