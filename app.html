@@ -8463,7 +8463,15 @@ SDLG_REPOSITORY.listClaims = async function () {
                 branchCandidates = branchesActive.map(x => ({ ...x, _score: similarityScore(branchValue, x.branch_name) + 0.1 * (normalizeCompact(x.branch_code) === bn) })).filter(x => x._score >= 0.70).sort((x, y) => y._score - x._score).slice(0, 5);
             // Model: exact master match; if serial contains a compact model token, use that as a strong suggestion (E621F -> E6210F, G913F -> G9138F, etc.).
             const inputModel = normalizeModel(window.SDLGCanonicalModel(p.model));
-            let modelCandidates = modelsActive.filter(x => window.SDLGModelsEquivalent(x.model_name, inputModel) || window.SDLGModelsEquivalent(x.model_code, inputModel));
+            // An explicitly prefixed SDLG model can use the matching single L-series
+            // master code (SDLG 956HE -> L956HE); never infer unrelated variants.
+            const sourceModelToken = normalizeCompact(p.model).replace(/^SDLG/, "");
+            const modelEquivalent = (masterName) => {
+                const original = String(masterName || "");
+                return window.SDLGModelsEquivalent(original, inputModel) ||
+                    (!!sourceModelToken && normalizeCompact(original) === "L" + sourceModelToken);
+            };
+            let modelCandidates = modelsActive.filter(x => modelEquivalent(x.model_name) || modelEquivalent(x.model_code));
             // Prefix-free model forms: "SDLG 933F" is a known alias for master L933F.
             if (!modelCandidates.length && MODEL_ALIASES[normalizeCompact(p.model)]) {
                 const aliasNorm = normalizeModel(MODEL_ALIASES[normalizeCompact(p.model)]);
@@ -8514,7 +8522,19 @@ SDLG_REPOSITORY.listClaims = async function () {
                 const master = machinesActive.find(x => x.id === row.machine_id);
                 return master ? { ...master, resolution: row } : null;
             }).filter(Boolean);
+            const machineIdentityMatches = (machine) => {
+                const inputSn = String(p.sourceSerialNo || p.originalSerialNo || p.serialNo || "").trim().toUpperCase();
+                const masterSn = String(machine?.serial_no || "").trim().toUpperCase();
+                const sourceIndent = normalizeCompact(p.indentNo);
+                const masterIndent = normalizeCompact(machine?.indent_no);
+                if (!inputSn || !masterSn || !masterSn.endsWith(inputSn)) return false;
+                if (!p.model || !modelEquivalent(machine.model_name)) return false;
+                // If an indent is supplied, it is mandatory corroborating evidence.
+                if (sourceIndent && sourceIndent !== masterIndent) return false;
+                return true;
+            };
             const resolverWinner = resolverCandidates.length === 1 &&
+                machineIdentityMatches(resolverCandidates[0]) &&
                 ["very_high", "high"].includes(String(resolverCandidates[0].resolution?.confidence || "").toLowerCase())
                 ? resolverCandidates[0] : null;
             // Exact full serial remains valid, but a high-confidence database result takes
@@ -8528,8 +8548,10 @@ SDLG_REPOSITORY.listClaims = async function () {
                 // constrain the suffix candidates by the explicitly parsed Model.
                 // Never use a broad serial suffix alone when model evidence is available.
                 if (machineCandidates.length > 1 && p.model) {
-                    const byModel = machineCandidates.filter(x => window.SDLGModelsEquivalent(x.model_name || x.model_code, window.SDLGCanonicalModel(p.model)));
-                    if (byModel.length) machineCandidates = byModel;
+                    // Collapse ambiguity only when the master model and supplied
+                    // indent both corroborate the serial. Otherwise retain review.
+                    const verified = machineCandidates.filter(machineIdentityMatches);
+                    if (verified.length === 1) machineCandidates = verified;
                 }
             }
             const inputCanonicalModel = window.SDLGCanonicalModel(p.model);
@@ -8565,7 +8587,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             const m = {
                 customer: { candidates: customerCandidates, confidence: customerCandidates.length === 1 && !!(cc.length || ca.length) ? "exact" : customerCandidates.length ? "review" : historicalCustomerRows.length ? "historical" : "source-only", reason: customerCandidates.length ? (customerCandidates.length === 1 && !!(cc.length || ca.length) ? "Exact customer master/alias match." : "Nama mirip dengan master customer; pilih canonical bila diperlukan.") : historicalCustomerRows.length ? `Exact customer ditemukan di histori claim (${historicalCustomerRows.length} claim); master customer belum tersedia.` : "Customer belum ada di Master Customer; nilai source dipakai sebagai canonical claim.", historical: historicalCustomerRows },
                 branch: { candidates: branchCandidates, confidence: branchCandidates.length === 1 && (normalizeCompact(branchCandidates[0].branch_name) === normalizeCompact(branchValue) || normalizeCompact(branchCandidates[0].branch_code) === normalizeCompact(branchValue)) ? "exact" : branchCandidates.length ? "review" : "source-only", reason: branchCandidates.length ? "Ada kandidat branch berdasarkan nama/kode; pilih yang benar bila branch diperlukan." : "Branch tidak tersedia di source; tidak menghalangi penyimpanan claim." },
-                model: make(modelCandidates, modelCandidates.length === 1 && (window.SDLGModelsEquivalent(modelCandidates[0].model_code || modelCandidates[0].model_name, inputModel)), modelCandidates.length ? `Kandidat model canonical untuk input ${p.model || ""}; pilih canonical bila perlu.` : "Tidak ada model yang cukup mirip; isi manual."),
+                model: make(modelCandidates, modelCandidates.length === 1 && (modelEquivalent(modelCandidates[0].model_code) || modelEquivalent(modelCandidates[0].model_name)), modelCandidates.length ? `Kandidat model canonical untuk input ${p.model || ""}; pilih canonical bila perlu.` : "Tidak ada model yang cukup mirip; isi manual."),
                 part: { candidates: partCandidates, confidence: partCandidates.length === 1 && pn && String(partCandidates[0].part_no).toUpperCase() === pn ? "exact" : partCandidates.length ? "review" : "source-only", reason: partCandidates.length ? "Nomor part exact match; description master menjadi referensi canonical." : "Part source belum ada di Master Part; nomor dan description source tetap dipakai." },
                 machine: { candidates: machineCandidates, confidence: machineCandidates.length === 1 ? "exact" : machineCandidates.length ? "review" : historicalMachineRows.length ? "historical" : "review", reason: machineReason, suggestions: machineSuggestions, historical: historicalMachineRows },
                 dealer: make(dealerCandidates, dealerCandidates.length === 1, dealerCandidates.length ? "Dealer ditemukan dari dealer code." : "Dealer belum ditemukan; gunakan master dealer current/legacy.")
