@@ -13,6 +13,8 @@
  */
 (function () {
   'use strict';
+  // React is the sole owner of SDLG Input. Legacy DOM modifiers must not boot.
+  if (typeof window !== 'undefined' && window.__SDLG_REACT_INPUT_SINGLE_OWNER__) return;
 
   if (window.__SDLG_COPY_FIX_V2__) return;
   window.__SDLG_COPY_FIX_V2__ = true;
