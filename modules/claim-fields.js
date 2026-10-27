@@ -55,12 +55,8 @@
   var MODULES = [
     { src: './modules/sdlg-input-hydrate.js?v=20261021-v15', attr: 'data-sdlg-input-hydrate' },
     { src: './modules/sdlg-hash-router.js?v=20261012-v221', attr: 'data-sdlg-hash-router' },
-    { src: './modules/sdlg-hash-tab-bridge.js?v=20261012-v23', attr: 'data-sdlg-hash-tab-bridge' },
-    { src: './modules/sdlg-input-claim-sync.js?v=20261026-login-freeze', attr: 'data-sdlg-input-claim-sync' },
     { src: './modules/sdlg-portal-finance-ux.js?v=20261012-v53', attr: 'data-sdlg-finance-ux' },
-    { src: './modules/sdlg-portal-ux-v2.js?v=20261009-v24', attr: 'data-sdlg-portal-ux-v2' },
     { src: './modules/sdlg-route-finish.js?v=20261010-v15', attr: 'data-sdlg-route-finish' },
-    { src: './modules/sdlg-ui-consolidate.js?v=20261009-v1', attr: 'data-sdlg-ui-consolidate' },
     { src: './modules/sdlg-ui-polish-v3.js?v=20261010-v33', attr: 'data-sdlg-ui-polish-v3' },
     { src: './modules/sdlg-auth-route-guard.js?v=20261026-session-v24', attr: 'data-sdlg-auth-route-guard' },
     { src: './modules/sdlg-overview-session-gate.js?v=20261010-v12', attr: 'data-sdlg-overview-gate' },
