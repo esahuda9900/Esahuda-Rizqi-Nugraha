@@ -3,6 +3,7 @@
 <head>
   <base href="./">
   <meta charset="UTF-8" />
+  <script>window.__SDLG_REACT_INPUT_SINGLE_OWNER__ = true;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
@@ -56,6 +57,12 @@ window.SDLG_LOAD_XLSX = function () {
 };
 </script>
   <style>
+    /* SDLG Input: React owns every field/copy action; no legacy sticky toolbar. */
+    .page[data-sdlg-input-helper] [data-sdlg-copy],
+    .page[data-sdlg-input-helper] [data-sdlg-copy-all] { display:inline-flex!important; visibility:visible!important; opacity:1!important; align-items:center; justify-content:center; }
+    .page[data-sdlg-input-helper] [data-sdlg-copy] { flex-shrink:0; min-height:28px; }
+    .page[data-sdlg-input-helper] [data-sdlg-field] { min-width:0; }
+    @media (max-width:700px) { .page[data-sdlg-input-helper] [style*="grid-template-columns"] { grid-template-columns:minmax(0,1fr)!important; } }
     @keyframes sdlgSlaCriticalPulse { 0%,100% { opacity:1; } 50% { opacity:.48; } }
     @media (prefers-reduced-motion: reduce) { [role="status"] { animation:none !important; } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
