@@ -79,6 +79,7 @@ jobs:
           node scripts/verify-login-freeze.js
           node scripts/verify-session-resilience.js
           node scripts/verify-navigation-contract.js
+          node scripts/verify-portal-ui-ownership.js
           node scripts/verify-legacy-auth-ui.js
           node scripts/verify-legacy-claims-loading.js
           node scripts/verify-save-integrity.js
