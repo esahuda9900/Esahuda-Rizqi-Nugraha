@@ -1,15 +1,16 @@
-/* =========================================================
-   SDLG CORE FOUNDATION & TYPOGRAPHY
-   Fonts, Reset, Baseline & Layout Utilities.
-   ========================================================= */
+/* ========================================================================
+   SDLG CORE FOUNDATION & TYPOGRAPHY V2 (PRO UPGRADE)
+   Optimized for CSS Variables Sync, Fluid Layouts, and Strict Accessibility
+   ======================================================================== */
 
-/* 1. FONT FACES (Pastikan folder 'fonts' ada di root, bukan di dalam 'styles') */
+/* 1. OPTIMIZED FONT FACES (Mencegah Layout Shift & Efisiensi Bandwidth) */
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url('../fonts/ibm-plex-sans-400.woff2') format('woff2');
+  font-sharpness: antialiased;
 }
 
 @font-face {
@@ -28,7 +29,6 @@
   src: url('../fonts/ibm-plex-sans-600.woff2') format('woff2');
 }
 
-/* Tambahan untuk Bold (700) agar heading lebih tegas */
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
@@ -37,17 +37,17 @@
   src: url('../fonts/ibm-plex-sans-700.woff2') format('woff2');
 }
 
-/* =========================================================
-   2. DESIGN TOKENS (Fallback Variables)
-   ========================================================= */
+/* ========================================================================
+   2. SYSTEM DESIGN TOKENS (Sinkron dengan Alive Recolor V2 & Skala Global)
+   ======================================================================== */
 :root {
-  /* Typography */
+  /* Typography Scale (Rem System dengan Rasio Harmonis) */
   --sdlg-font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --sdlg-font-size-xs: 0.75rem;   /* 12px */
-  --sdlg-font-size-sm: 0.875rem;  /* 14px */
-  --sdlg-font-size-md: 1rem;      /* 16px */
-  --sdlg-font-size-lg: 1.25rem;   /* 20px */
-  --sdlg-font-size-xl: 1.5rem;    /* 24px */
+  --sdlg-font-size-xs: 0.75rem;   /* 12px - Keterangan / Meta */
+  --sdlg-font-size-sm: 0.875rem;  /* 14px - Teks Sekunder / Input */
+  --sdlg-font-size-md: 1rem;      /* 16px - Teks Utama / Body */
+  --sdlg-font-size-lg: 1.25rem;   /* 20px - Sub-heading */
+  --sdlg-font-size-xl: 1.625rem;  /* 26px - Heading Utama Terbaca */
   
   --sdlg-font-weight-regular: 400;
   --sdlg-font-weight-medium: 500;
@@ -55,31 +55,39 @@
   --sdlg-font-weight-bold: 700;
   
   --sdlg-line-height-body: 1.6;
-  --sdlg-line-height-heading: 1.25;
+  --sdlg-line-height-heading: 1.3;
 
-  /* Spacing */
-  --sdlg-spacing-1: 4px;
-  --sdlg-spacing-2: 8px;
-  --sdlg-spacing-3: 12px;
-  --sdlg-spacing-4: 16px;
-  --sdlg-spacing-5: 24px;
-  --sdlg-spacing-6: 32px;
+  /* Spacing Scale (8pt Grid System + 4px Microgap) */
+  --sdlg-spacing-1: 0.25rem; /* 4px */
+  --sdlg-spacing-2: 0.5rem;  /* 8px */
+  --sdlg-spacing-3: 0.75rem; /* 12px */
+  --sdlg-spacing-4: 1rem;    /* 16px */
+  --sdlg-spacing-5: 1.5rem;  /* 24px */
+  --sdlg-spacing-6: 2rem;    /* 32px */
 
-  /* Colors (Sinkron dengan ALIVE RECOLOR) */
-  --sdlg-bg: #eef1f7;
+  /* Sync Color Tokens & Depth (Sesuai Upgrade V2) */
+  --sdlg-bg: #f3f6fa;
   --sdlg-surface: #ffffff;
-  --sdlg-border: #e2e8f2;
-  --sdlg-text-main: #0c1526;
-  --sdlg-text-muted: #5a6578;
-  --sdlg-primary: #2f5bff;
+  --sdlg-border: #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
+  --sdlg-text-main: #0f172a;
+  --sdlg-text-muted: #64748b;
+  --sdlg-primary: #2563eb;
   --sdlg-radius-card: 12px;
+  
+  /* Shared Animation */
+  --sdlg-transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* =========================================================
-   3. CSS RESET & BASELINE
-   ========================================================= */
+/* ========================================================================
+   3. MODERN CSS RESET & GLOBAL BASELINE
+   ======================================================================= */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+/* Reset Margin & Padding Terukur */
+html, body, h1, h2, h3, p, label, input, select, textarea {
   margin: 0;
   padding: 0;
 }
@@ -92,6 +100,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -101,17 +110,18 @@ body {
   font-family: var(--sdlg-font-family);
   font-weight: var(--sdlg-font-weight-regular);
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport untuk mobile browser layout */
 }
 
-/* =========================================================
-   4. TYPOGRAPHY BASE CLASSES
-   ========================================================= */
+/* ========================================================================
+   4. ADVANCED TYPOGRAPHY CLASSES
+   ======================================================================== */
 h1, .sdlg-h1 {
   font-size: var(--sdlg-font-size-xl);
   font-weight: var(--sdlg-font-weight-bold);
   line-height: var(--sdlg-line-height-heading);
   color: var(--sdlg-text-main);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em; /* Lebih rapat untuk ukuran besar agar elegan */
   margin-bottom: var(--sdlg-spacing-4);
 }
 
@@ -120,7 +130,7 @@ h2, .sdlg-h2 {
   font-weight: var(--sdlg-font-weight-semibold);
   line-height: var(--sdlg-line-height-heading);
   color: var(--sdlg-text-main);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   margin-bottom: var(--sdlg-spacing-3);
 }
 
@@ -139,49 +149,86 @@ label, .sdlg-label {
   display: inline-block;
   margin-bottom: var(--sdlg-spacing-1);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.075em; /* Kontras keterbacaan untuk huruf kapital */
+  user-select: none;
 }
 
 small, .sdlg-small {
   font-size: var(--sdlg-font-size-xs);
   font-weight: var(--sdlg-font-weight-regular);
   color: var(--sdlg-text-muted);
+  line-height: 1.4;
 }
 
-/* =========================================================
-   5. STRUCTURAL LAYOUT CONTAINER & UTILITIES
-   ========================================================= */
+/* ========================================================================
+   5. FLEXIBLE STRUCTURAL LAYOUT SYSTEM
+   ======================================================================== */
 .sdlg-app-container {
   max-width: 1280px;
-  margin: 0 auto;
+  margin-inline: auto; /* Menggunakan Logical Properties */
   padding: var(--sdlg-spacing-5);
   display: flex;
   flex-direction: column;
   gap: var(--sdlg-spacing-4);
 }
 
-/* Common Layout Utilities */
+/* Flexbox & Grid Utility Engine */
 .sdlg-flex { display: flex; }
 .sdlg-flex-col { flex-direction: column; }
+.sdlg-flex-wrap { flex-wrap: wrap; }
 .sdlg-align-center { align-items: center; }
 .sdlg-justify-between { justify-content: space-between; }
-.sdlg-grid { display: grid; }
+.sdlg-justify-center { justify-content: center; }
 
-/* =========================================================
-   6. CARDS & ACCESSIBILITY
-   ========================================================= */
-/* Standardized ERP Card Style (Solid borders, no shadow) */
+/* Grid dengan Gap Otomatis */
+.sdlg-grid { 
+  display: grid; 
+}
+.sdlg-grid-2 { 
+  display: grid; 
+  grid-template-columns: repeat(2, minmax(0, 1fr)); 
+  gap: var(--sdlg-spacing-4);
+}
+.sdlg-grid-3 { 
+  display: grid; 
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: var(--sdlg-spacing-4);
+}
+
+/* ========================================================================
+   6. ENTERPRISE CARDS & WEB ACCESSIBILITY (A11Y)
+   ======================================================================== */
+/* Modernized ERP Card Style */
 .sdlg-card {
   background-color: var(--sdlg-surface);
   border: 1px solid var(--sdlg-border);
   border-radius: var(--sdlg-radius-card);
   padding: var(--sdlg-spacing-4) var(--sdlg-spacing-5);
   margin-bottom: var(--sdlg-spacing-3);
+  transition: var(--sdlg-transition-base);
 }
 
-/* Accessibility Focus Ring Control */
+/* Interaksi halus pada card internal ERP */
+.sdlg-card:hover {
+  border-color: var(--sdlg-border-strong);
+}
+
+/* Strict Accessibility Focus Control (Memenuhi Standar WCAG) */
 *:focus-visible {
-  outline: 2px solid var(--sdlg-primary);
-  outline-offset: 2px;
-  border-radius: 4px; /* Biar ring-nya ngikutin sudut elemen */
+  outline: 2px solid var(--sdlg-primary) !important;
+  outline-offset: 3px !important;
+  border-radius: calc(var(--sdlg-radius-card) - 6px) !important;
+}
+
+/* Utilitas untuk menyembunyikan elemen secara visual namun tetap terbaca oleh Screen Reader */
+.sdlg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
