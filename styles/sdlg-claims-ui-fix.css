@@ -36,16 +36,26 @@
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div {
   min-width: 0;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3),
+/* The claim's information column contains plain text rows. Global input/card
+   styling was painting each nested DIV like a separate bordered field. Reset
+   only those DIVs; keep status Pills and the outer claim card untouched. */
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div {
-  border-color: transparent !important;
+  border: 0 !important;
   outline: 0 !important;
   box-shadow: none !important;
-  background-color: transparent;
+  background: transparent !important;
+  border-radius: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div {
-  padding-left: 0;
-  padding-right: 0;
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card {
