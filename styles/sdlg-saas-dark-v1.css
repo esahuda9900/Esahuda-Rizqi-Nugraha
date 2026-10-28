@@ -1,256 +1,593 @@
 /* =========================================================
-   SDLG SAAS DARK V4.0 (EXPERT REVISED)
-   Full dark surface map. Final cascade.
-   Harmonized with Master Tokens & Tracking Panel.
+   SDLG DARK THEME (V5.0)
+   Expert Upgrade · Full Component Coverage · Bug Fixes
+   Harmonized with sdlg-styles-v15.css
    ========================================================= */
 
-/* =========================================
-   1. DARK THEME TOKENS (Single Source of Truth)
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   1. THEME TOKENS  (Single Source of Truth for Dark)
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] {
   color-scheme: dark;
-  
+
   /* Foundation */
-  --sdlg-bg: #0b1120;
-  --sdlg-surface: #111827;
-  --sdlg-surface-muted: #1a2332;
-  --sdlg-border: #243044;
+  --sdlg-bg:            #0b1120;
+  --sdlg-surface:       #111827;
+  --sdlg-surface-2:     #1a2332;     /* = surface-muted */
+  --sdlg-border:        #243044;
   --sdlg-border-strong: #334155;
-  
+
   /* Text */
-  --sdlg-text: #e2e8f0;
-  --sdlg-muted: #94a3b8;
-  --sdlg-faint: #64748b;
-  
-  /* Brand Primary */
-  --sdlg-primary: #818cf8; /* Indigo terang */
-  --sdlg-primary-strong: #a5b4fc;
-  --sdlg-primary-soft: rgba(129, 140, 248, 0.15);
-  
-  /* Status Colors (Menggunakan transparansi untuk Dark Mode) */
-  --sdlg-success: #34d399;
-  --sdlg-success-bg: rgba(52, 211, 153, 0.12);
-  --sdlg-success-border: rgba(52, 211, 153, 0.3);
+  --sdlg-text:          #e2e8f0;
+  --sdlg-text-muted:    #94a3b8;     /* = muted */
+  --sdlg-text-xs:       #64748b;     /* = faint */
 
-  --sdlg-warning: #fbbf24;
-  --sdlg-warning-bg: rgba(251, 191, 36, 0.12);
-  --sdlg-warning-border: rgba(251, 191, 36, 0.3);
+  /* Brand — digeser ke indigo agar kontras di dark surface */
+  --sdlg-brand:         #818cf8;
+  --sdlg-brand-dark:    #6366f1;
+  --sdlg-brand-light:   rgba(129, 140, 248, 0.15);
+  --sdlg-border-focus:  #818cf8;
+  --sdlg-accent:        #fbbf24;
 
-  --sdlg-danger: #f87171;
-  --sdlg-danger-bg: rgba(248, 113, 113, 0.12);
-  --sdlg-danger-border: rgba(248, 113, 113, 0.3);
+  /* Status */
+  --sdlg-success:         #34d399;
+  --sdlg-success-bg:      rgba(52, 211, 153, 0.12);
+  --sdlg-success-border:  rgba(52, 211, 153, 0.30);
+
+  --sdlg-warning:         #fbbf24;
+  --sdlg-warning-bg:      rgba(251, 191, 36, 0.12);
+  --sdlg-warning-border:  rgba(251, 191, 36, 0.30);
+
+  --sdlg-danger:          #f87171;
+  --sdlg-danger-bg:       rgba(248, 113, 113, 0.12);
+  --sdlg-danger-border:   rgba(248, 113, 113, 0.30);
+
+  --sdlg-info:            #60a5fa;
+  --sdlg-info-bg:         rgba(96, 165, 250, 0.12);
+  --sdlg-info-border:     rgba(96, 165, 250, 0.30);
+
+  /* Shadow (lebih dalam karena latar gelap) */
+  --shadow-sm:  0 1px 4px rgba(0,0,0,.25);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.35);
+  --shadow-lg:  0 10px 32px rgba(0,0,0,.45);
 }
 
-/* =========================================
-   2. BASE & LAYOUT
-   ========================================= */
-html[data-theme="dark"], 
+
+/* ─────────────────────────────────────────────────────────
+   2. SMOOTH THEME TRANSITION
+   Aktifkan sebelum js toggle, matikan setelah selesai.
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"],
+html[data-theme="dark"] * {
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    color            0.20s ease,
+    box-shadow       0.25s ease !important;
+}
+
+/* Matikan transisi untuk elemen yang tidak perlu (performa) */
+html[data-theme="dark"] img,
+html[data-theme="dark"] video,
+html[data-theme="dark"] svg,
+html[data-theme="dark"] canvas,
+html[data-theme="dark"] .skeleton {
+  transition: none !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   3. BASE & LAYOUT
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"],
 html[data-theme="dark"] body {
   background: var(--sdlg-bg) !important;
   color: var(--sdlg-text) !important;
 }
 
-/* =========================================
-   3. NAVBAR & TOPBAR
-   ========================================= */
-html[data-theme="dark"] header,
+/* Checkbox & radio accent */
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"] {
+  accent-color: var(--sdlg-brand) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   4. TOPBAR & NAVIGATION
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] .topbar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(17, 24, 39, 0.95) !important;
+html[data-theme="dark"] header,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .topbar,
+html[data-theme="dark"] .app-shell:not(:has(.login-screen)) header {
+  background: rgba(11, 17, 32, 0.92) !important;
   border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35) !important;
   backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
 
 html[data-theme="dark"] .nav-scroll {
-  background: var(--sdlg-surface-muted) !important;
+  background: var(--sdlg-surface-2) !important;
   border-color: var(--sdlg-border) !important;
 }
 
 html[data-theme="dark"] .nav-btn {
-  color: var(--sdlg-muted) !important;
+  color: var(--sdlg-text-muted) !important;
+  border-color: transparent !important;
 }
 
 html[data-theme="dark"] .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255,255,255,.06) !important;
   color: var(--sdlg-text) !important;
 }
 
-html[data-theme="dark"] .nav-btn.active {
+html[data-theme="dark"] .nav-btn.active,
+html[data-theme="dark"] .nav-btn[aria-current="page"] {
   background: var(--sdlg-surface) !important;
-  color: var(--sdlg-primary-strong) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* =========================================
-   4. SURFACES (Cards, Panels, Tables)
-   ========================================= */
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .metric-card,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="card"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) [class*="panel"],
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .table-wrap,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-table-shell,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-filter-bar,
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .claims-searchbar {
-  background: var(--sdlg-surface) !important;
-  border: 1px solid var(--sdlg-border) !important;
-  color: var(--sdlg-text) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* Hover effect khusus Dark Mode */
-html[data-theme="dark"] .app-shell:not(:has(.login-screen)) .card:hover:not(#sdlg-tracking-panel) {
+  color: var(--sdlg-brand) !important;
   border-color: var(--sdlg-border-strong) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25) !important;
 }
 
-/* Typography Override */
+
+/* ─────────────────────────────────────────────────────────
+   5. SURFACES — Cards, Panels, Wrappers
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] [class*="card"],
+html[data-theme="dark"] [class*="panel"],
+html[data-theme="dark"] .table-wrap,
+html[data-theme="dark"] .claims-table-wrap,
+html[data-theme="dark"] .claims-table-shell,
+html[data-theme="dark"] .claims-filter-bar,
+html[data-theme="dark"] .claims-searchbar,
+html[data-theme="dark"] #sdlg-tracking-panel {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+  color: var(--sdlg-text) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Hover surface (kecuali tracking panel punya efek sendiri) */
+html[data-theme="dark"] .card:hover:not(#sdlg-tracking-panel),
+html[data-theme="dark"] .metric-card:hover {
+  border-color: var(--sdlg-border-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Metric card accent stripe tetap terlihat di dark */
+html[data-theme="dark"] .metric-card::before {
+  opacity: 0.85;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   6. TYPOGRAPHY
+   ───────────────────────────────────────────────────────── */
+/* BUG FIX dari V4: h2, h3 sebelumnya tidak di-scope ke dark */
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
 html[data-theme="dark"] .page-title,
 html[data-theme="dark"] .section-title,
+html[data-theme="dark"] .card-title,
 html[data-theme="dark"] .metric-value,
-html[data-theme="dark"] h1, h2, h3,
 html[data-theme="dark"] label,
 html[data-theme="dark"] td,
-html[data-theme="dark"] th {
+html[data-theme="dark"] th,
+html[data-theme="dark"] p {
   color: var(--sdlg-text) !important;
 }
 
 html[data-theme="dark"] .page-sub,
 html[data-theme="dark"] .section-sub,
 html[data-theme="dark"] .metric-label,
-html[data-theme="dark"] .brand-sub {
-  color: var(--sdlg-muted) !important;
+html[data-theme="dark"] .metric-sub,
+html[data-theme="dark"] .brand-sub,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .form-label,
+html[data-theme="dark"] small {
+  color: var(--sdlg-text-muted) !important;
 }
 
-/* Tables */
+html[data-theme="dark"] .form-label.required::after {
+  color: var(--sdlg-danger) !important;
+}
+
+/* Seleksi teks */
+html[data-theme="dark"] ::selection {
+  background: rgba(129, 140, 248, 0.30);
+  color: #fff;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   7. TABLE
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .claims-table {
+  background: var(--sdlg-surface) !important;
+}
+
 html[data-theme="dark"] thead th,
-html[data-theme="dark"] th,
-html[data-theme="dark"] .claims-table-head {
-  background: var(--sdlg-surface-muted) !important;
-  color: var(--sdlg-muted) !important;
-  border-bottom: 1px solid var(--sdlg-border) !important;
+html[data-theme="dark"] .claims-table-head th {
+  background: var(--sdlg-surface-2) !important;
+  color: var(--sdlg-text-muted) !important;
+  border-bottom-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .claim-row td {
+  border-bottom-color: var(--sdlg-border) !important;
 }
 
 html[data-theme="dark"] tbody tr:hover td,
+html[data-theme="dark"] .claim-row:hover td,
 html[data-theme="dark"] .claims-list .claim-row:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255,255,255,.03) !important;
 }
 
-/* =========================================
-   5. INPUTS & FORMS
-   ========================================= */
-html[data-theme="dark"] input,
+
+/* ─────────────────────────────────────────────────────────
+   8. CLAIM CARDS (Mobile card view)
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .page:has(.claims-searchbar) .claims-list .claim-row,
+html[data-theme="dark"] .page:has(.claims-searchbar) tbody .claim-row {
+  background: var(--sdlg-surface) !important;
+  border-color: var(--sdlg-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+html[data-theme="dark"] .page:has(.claims-searchbar) .claims-list .claim-row:active,
+html[data-theme="dark"] .page:has(.claims-searchbar) tbody .claim-row:active {
+  background: var(--sdlg-brand-light) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html[data-theme="dark"] .page:has(.claims-searchbar) .claim-row td {
+  border-bottom-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .page:has(.claims-searchbar) .claim-row td[data-label]::before {
+  color: var(--sdlg-text-muted) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   9. FORM INPUTS
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input[type="date"],
+html[data-theme="dark"] input[type="email"],
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] input[type="tel"],
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea {
-  background: var(--sdlg-surface-muted) !important;
-  border: 1px solid var(--sdlg-border-strong) !important;
+  background: var(--sdlg-surface-2) !important;
+  border-color: var(--sdlg-border-strong) !important;
   color: var(--sdlg-text) !important;
 }
 
 html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder {
-  color: var(--sdlg-faint) !important;
+  color: var(--sdlg-text-xs) !important;
 }
 
 html[data-theme="dark"] input:focus,
 html[data-theme="dark"] select:focus,
 html[data-theme="dark"] textarea:focus {
-  border-color: var(--sdlg-primary) !important;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+  border-color: var(--sdlg-brand) !important;
+  box-shadow: 0 0 0 3px rgba(129,140,248,.22) !important;
   background: var(--sdlg-surface) !important;
 }
 
-/* =========================================
-   6. BUTTONS
-   ========================================= */
-html[data-theme="dark"] .primary-btn,
-html[data-theme="dark"] button[class*="primary"] {
-  background: var(--sdlg-primary) !important;
-  color: #0b1120 !important; /* Teks gelap di tombol terang */
-  font-weight: 700 !important;
+html[data-theme="dark"] input:disabled,
+html[data-theme="dark"] select:disabled,
+html[data-theme="dark"] textarea:disabled {
+  background: var(--sdlg-surface-2) !important;
+  color: var(--sdlg-text-xs) !important;
+  border-color: var(--sdlg-border) !important;
+  opacity: .6 !important;
 }
 
-html[data-theme="dark"] .primary-btn:hover,
-html[data-theme="dark"] button[class*="primary"]:hover {
-  background: var(--sdlg-primary-strong) !important;
+/* Warna kalender/date picker native di dark */
+html[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(.6);
 }
 
-html[data-theme="dark"] .secondary-btn,
-html[data-theme="dark"] .icon-btn {
-  background: var(--sdlg-surface-muted) !important;
-  border: 1px solid var(--sdlg-border-strong) !important;
+html[data-theme="dark"] select option {
+  background: var(--sdlg-surface-2) !important;
   color: var(--sdlg-text) !important;
 }
 
-html[data-theme="dark"] .secondary-btn:hover,
-html[data-theme="dark"] .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+
+/* ─────────────────────────────────────────────────────────
+   10. BUTTONS
+   ───────────────────────────────────────────────────────── */
+/* Primary — teks gelap di atas brand terang */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .primary-btn,
+html[data-theme="dark"] button[class*="primary"] {
+  background: var(--sdlg-brand) !important;
+  border-color: var(--sdlg-brand) !important;
+  color: #0b1120 !important;
+  font-weight: 700 !important;
 }
 
-/* =========================================
-   7. TRACKING PANEL (Proteksi Khusus)
-   ========================================= */
-/* Pastikan kotak merah (Why Blocked) tetap kontras di mode gelap */
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .primary-btn:hover {
+  background: var(--sdlg-brand-dark) !important;
+  border-color: var(--sdlg-brand-dark) !important;
+}
+
+/* Secondary */
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .secondary-btn,
+html[data-theme="dark"] .icon-btn {
+  background: var(--sdlg-surface-2) !important;
+  border-color: var(--sdlg-border-strong) !important;
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .btn-secondary:hover,
+html[data-theme="dark"] .secondary-btn:hover,
+html[data-theme="dark"] .icon-btn:hover {
+  background: rgba(255,255,255,.08) !important;
+}
+
+/* Ghost */
+html[data-theme="dark"] .btn-ghost {
+  background: transparent !important;
+  color: var(--sdlg-brand) !important;
+}
+
+html[data-theme="dark"] .btn-ghost:hover {
+  background: var(--sdlg-brand-light) !important;
+}
+
+/* Danger */
+html[data-theme="dark"] .btn-danger {
+  background: var(--sdlg-danger) !important;
+  border-color: var(--sdlg-danger) !important;
+  color: #0b1120 !important;
+  font-weight: 700 !important;
+}
+
+/* Success */
+html[data-theme="dark"] .btn-success {
+  background: var(--sdlg-success) !important;
+  border-color: var(--sdlg-success) !important;
+  color: #0b1120 !important;
+  font-weight: 700 !important;
+}
+
+/* Disabled state */
+html[data-theme="dark"] button:disabled,
+html[data-theme="dark"] .btn:disabled {
+  opacity: .4 !important;
+  cursor: not-allowed !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   11. STATUS BADGES
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .badge--pending  {
+  background: var(--sdlg-warning-bg) !important;
+  color: var(--sdlg-warning) !important;
+}
+
+html[data-theme="dark"] .badge--approved {
+  background: var(--sdlg-success-bg) !important;
+  color: var(--sdlg-success) !important;
+}
+
+html[data-theme="dark"] .badge--rejected {
+  background: var(--sdlg-danger-bg) !important;
+  color: var(--sdlg-danger) !important;
+}
+
+html[data-theme="dark"] .badge--process {
+  background: var(--sdlg-info-bg) !important;
+  color: var(--sdlg-info) !important;
+}
+
+html[data-theme="dark"] .badge--draft {
+  background: rgba(100,116,139,.18) !important;
+  color: #cbd5e1 !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   12. ALERTS
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .alert-success {
+  background: var(--sdlg-success-bg) !important;
+  border-color: var(--sdlg-success-border) !important;
+  color: var(--sdlg-success) !important;
+}
+
+html[data-theme="dark"] .alert-warning {
+  background: var(--sdlg-warning-bg) !important;
+  border-color: var(--sdlg-warning-border) !important;
+  color: var(--sdlg-warning) !important;
+}
+
+html[data-theme="dark"] .alert-danger {
+  background: var(--sdlg-danger-bg) !important;
+  border-color: var(--sdlg-danger-border) !important;
+  color: var(--sdlg-danger) !important;
+}
+
+html[data-theme="dark"] .alert-info {
+  background: var(--sdlg-info-bg) !important;
+  border-color: var(--sdlg-info-border) !important;
+  color: var(--sdlg-info) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   13. TRACKING PANEL (Proteksi Khusus)
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] #sdlg-tracking-panel {
   background: var(--sdlg-surface) !important;
   border-color: var(--sdlg-border) !important;
 }
 
-html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__list {
-  background: var(--sdlg-danger-bg) !important;
-  border-color: var(--sdlg-danger-border) !important;
+html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__title {
+  color: var(--sdlg-text) !important;
+  border-bottom-color: var(--sdlg-border) !important;
 }
 
-html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__list li {
-  color: var(--sdlg-danger) !important;
+html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__item-label {
+  color: var(--sdlg-text-muted) !important;
 }
 
-/* Pastikan kotak hijau (Next Action) tetap cantik */
+html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__item-value {
+  color: var(--sdlg-text) !important;
+}
+
+/* Next Action — kotak hijau */
 html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__item--next {
   background: var(--sdlg-success-bg) !important;
   border-color: var(--sdlg-success-border) !important;
+  border-radius: 10px;
+  padding: 12px;
 }
 
 html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__value--next {
   color: var(--sdlg-success) !important;
 }
 
+/* Handoff */
 html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
-  background: var(--sdlg-surface-muted) !important;
+  background: var(--sdlg-surface-2) !important;
   border-color: var(--sdlg-border) !important;
+  border-radius: 10px;
+  padding: 12px;
 }
 
-/* =========================================
-   8. MODALS, TOASTS & THEME SWITCHER
-   ========================================= */
+/* Why Blocked — kotak merah */
+html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__list {
+  background: var(--sdlg-danger-bg) !important;
+  border-color: var(--sdlg-danger-border) !important;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+html[data-theme="dark"] #sdlg-tracking-panel .sdlg-tracking-panel__list li {
+  color: var(--sdlg-danger) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   14. SDLG INPUT HELPER
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .page[data-sdlg-input-helper] [data-sdlg-copy] {
+  background: var(--sdlg-surface-2) !important;
+  color: var(--sdlg-brand) !important;
+  border-color: var(--sdlg-border-strong) !important;
+}
+
+html[data-theme="dark"] .page[data-sdlg-input-helper] [data-sdlg-copy]:hover {
+  background: var(--sdlg-brand) !important;
+  color: #0b1120 !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   15. MODAL & DIALOG
+   ───────────────────────────────────────────────────────── */
+/* Backdrop */
+html[data-theme="dark"] .modal-backdrop,
+html[data-theme="dark"] .dialog-backdrop,
+html[data-theme="dark"] [role="dialog"]::backdrop {
+  background: rgba(0,0,0,.65) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Panel */
 html[data-theme="dark"] .modal,
 html[data-theme="dark"] .dialog,
 html[data-theme="dark"] [role="dialog"] {
   background: var(--sdlg-surface) !important;
   border-color: var(--sdlg-border) !important;
   color: var(--sdlg-text) !important;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55) !important;
 }
 
+/* Header & Footer modal */
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer {
+  background: var(--sdlg-surface-2) !important;
+  border-color: var(--sdlg-border) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   16. EMPTY STATE
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .empty-state {
+  color: var(--sdlg-text-muted) !important;
+}
+
+html[data-theme="dark"] .empty-state__title {
+  color: var(--sdlg-text) !important;
+}
+
+html[data-theme="dark"] .empty-state__icon {
+  opacity: .4 !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   17. FLOATING ACTION BUTTON
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] .sdlg-fab {
+  background: var(--sdlg-brand) !important;
+  color: #0b1120 !important;
+  box-shadow: 0 4px 20px rgba(129,140,248,.35) !important;
+}
+
+html[data-theme="dark"] .sdlg-fab:active {
+  box-shadow: 0 2px 10px rgba(129,140,248,.25) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   18. THEME SWITCHER
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] .sdlg-theme-switcher {
-  background: rgba(17, 24, 39, 0.92) !important;
-  border: 1px solid var(--sdlg-border) !important;
+  background: rgba(17,24,39,.95) !important;
+  border-color: var(--sdlg-border) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 html[data-theme="dark"] .sdlg-theme-switcher button {
-  color: var(--sdlg-muted) !important;
+  color: var(--sdlg-text-muted) !important;
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .sdlg-theme-switcher button:hover {
+  background: rgba(255,255,255,.06) !important;
+  color: var(--sdlg-text) !important;
 }
 
 html[data-theme="dark"] .sdlg-theme-switcher button[aria-pressed="true"] {
-  background: var(--sdlg-primary) !important;
+  background: var(--sdlg-brand) !important;
   color: #0b1120 !important;
+  font-weight: 700 !important;
 }
 
-/* =========================================
-   9. LOGIN SCREEN
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   19. LOGIN SCREEN
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] .login-screen {
   background: var(--sdlg-bg) !important;
 }
@@ -258,7 +595,7 @@ html[data-theme="dark"] .login-screen {
 html[data-theme="dark"] .login-card {
   background: var(--sdlg-surface) !important;
   border: 1px solid var(--sdlg-border) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 10px 48px rgba(0,0,0,.40) !important;
 }
 
 html[data-theme="dark"] .login-intro h1,
@@ -273,32 +610,116 @@ html[data-theme="dark"] .login-card-head p,
 html[data-theme="dark"] .login-help,
 html[data-theme="dark"] .login-brand-company,
 html[data-theme="dark"] .login-meta {
-  color: var(--sdlg-muted) !important;
+  color: var(--sdlg-text-muted) !important;
 }
 
 html[data-theme="dark"] .login-field input {
-  background: var(--sdlg-surface-muted) !important;
+  background: var(--sdlg-surface-2) !important;
   border-color: var(--sdlg-border-strong) !important;
   color: var(--sdlg-text) !important;
 }
 
-/* =========================================
-   10. SKELETON LOADER & MISC
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   20. SKELETON LOADER
+   ───────────────────────────────────────────────────────── */
 html[data-theme="dark"] .skeleton {
-  background: linear-gradient(90deg, #1a2332 25%, #243044 50%, #1a2332 75%) !important;
+  background: linear-gradient(
+    90deg,
+    var(--sdlg-surface-2) 25%,
+    var(--sdlg-border)    50%,
+    var(--sdlg-surface-2) 75%
+  ) !important;
   background-size: 200% 100% !important;
+  animation: skeleton-sweep 1.5s infinite !important;
 }
 
-/* Sembunyikan scrollbar jadul di Dark Mode */
+
+/* ─────────────────────────────────────────────────────────
+   21. SCROLLBAR (Webkit + Firefox)
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] {
+  scrollbar-color: var(--sdlg-border-strong) var(--sdlg-bg); /* Firefox */
+  scrollbar-width: thin;
+}
+
 html[data-theme="dark"] ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
+
 html[data-theme="dark"] ::-webkit-scrollbar-track {
   background: var(--sdlg-bg);
 }
+
 html[data-theme="dark"] ::-webkit-scrollbar-thumb {
   background: var(--sdlg-border-strong);
   border-radius: 4px;
+  border: 2px solid var(--sdlg-bg);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
+}
+
+/* Nav scroll & horizontal scroll tetap tanpa scrollbar */
+html[data-theme="dark"] .nav-scroll::-webkit-scrollbar { display: none; }
+
+
+/* ─────────────────────────────────────────────────────────
+   22. LINKS & FOCUS RINGS
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] a {
+  color: var(--sdlg-brand) !important;
+}
+
+html[data-theme="dark"] a:hover {
+  color: #a5b4fc !important; /* Lebih terang saat hover */
+}
+
+/* Focus ring universal */
+html[data-theme="dark"] *:focus-visible {
+  outline: 2px solid var(--sdlg-brand) !important;
+  outline-offset: 2px !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   23. DIVIDER & BORDERS
+   ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] hr,
+html[data-theme="dark"] .divider {
+  border-color: var(--sdlg-border) !important;
+}
+
+html[data-theme="dark"] .border {
+  border-color: var(--sdlg-border) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   24. PRINT — Jangan print dalam dark mode
+   ───────────────────────────────────────────────────────── */
+@media print {
+  html[data-theme="dark"],
+  html[data-theme="dark"] body,
+  html[data-theme="dark"] * {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-color: #ddd !important;
+    transition: none !important;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   25. REDUCED MOTION
+   ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="dark"],
+  html[data-theme="dark"] * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
