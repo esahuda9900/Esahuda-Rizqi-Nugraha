@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -11,7 +11,35 @@ import {
 import { dash, formatDateDisplay, formatMoney } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
 
-const STATUSES = ['Draft', 'SDLG Audit', 'Paid', 'Rejected'] as const;
+/** Full set matching public.claims.claim_status check constraint (legacy parity) */
+const STATUSES = [
+  'Draft',
+  'Ready to Claim',
+  'Submitted to Warranty Admin',
+  'Submitted to SDLG',
+  'Claimed to SDLG',
+  'SDLG Audit',
+  'Approved',
+  'Rejected',
+  'Billing',
+  'Paid',
+  'Completed',
+  'On Hold',
+] as const;
+
+type Status = (typeof STATUSES)[number];
+
+function suggestNextStatus(current: string | null | undefined): Status {
+  const c = String(current || '').trim();
+  const idx = STATUSES.findIndex((s) => s === c);
+  if (idx >= 0 && idx < STATUSES.length - 1) {
+    // skip Rejected as auto-next
+    const next = STATUSES[idx + 1];
+    if (next === 'Rejected') return (STATUSES[idx + 2] as Status) || 'SDLG Audit';
+    return next as Status;
+  }
+  return 'SDLG Audit';
+}
 
 function Field({
   label,
@@ -61,7 +89,7 @@ export function ClaimDetailPage() {
   const id = decodeURIComponent(claimId);
   const qc = useQueryClient();
   const [showStatus, setShowStatus] = useState(false);
-  const [nextStatus, setNextStatus] = useState('SDLG Audit');
+  const [nextStatus, setNextStatus] = useState<Status>('SDLG Audit');
   const [reason, setReason] = useState('');
   const [statusDate, setStatusDate] = useState(() =>
     new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }),
@@ -84,8 +112,18 @@ export function ClaimDetailPage() {
     staleTime: 15_000,
   });
 
+  // Keep nextStatus sensible when claim loads / changes
+  useEffect(() => {
+    if (q.data?.claim_status) {
+      setNextStatus(suggestNextStatus(q.data.claim_status));
+    }
+  }, [q.data?.claim_status]);
+
   const statusMut = useMutation({
     mutationFn: async () => {
+      if (nextStatus === 'Rejected' && !reason.trim()) {
+        throw new Error('Alasan wajib diisi untuk status Rejected');
+      }
       await updateClaimStatusRpc({
         claimId: id,
         status: nextStatus,
@@ -94,9 +132,10 @@ export function ClaimDetailPage() {
       });
     },
     onSuccess: async () => {
-      setStatusMsg(`Status → ${nextStatus}`);
+      setStatusMsg(`Status berhasil diubah → ${nextStatus}`);
       setStatusErr(null);
       setShowStatus(false);
+      setReason('');
       await qc.invalidateQueries({ queryKey: ['claim', id] });
       await qc.invalidateQueries({ queryKey: ['claim-history', id] });
       await qc.invalidateQueries({ queryKey: ['claims'] });
@@ -140,7 +179,15 @@ export function ClaimDetailPage() {
           ) : null}
         </div>
         <div className="header-actions">
-          <button type="button" className="ghost" onClick={() => setShowStatus(true)}>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => {
+              setStatusErr(null);
+              setStatusMsg(null);
+              setShowStatus(true);
+            }}
+          >
             Ubah status
           </button>
           {q.data ? (
@@ -148,9 +195,7 @@ export function ClaimDetailPage() {
               type="button"
               className="ghost"
               disabled={archMut.isPending}
-              onClick={() =>
-                archMut.mutate(isArchived ? 'unarchive' : 'archive')
-              }
+              onClick={() => archMut.mutate(isArchived ? 'unarchive' : 'archive')}
             >
               {isArchived ? 'Unarchive' : 'Archive'}
             </button>
@@ -186,9 +231,15 @@ export function ClaimDetailPage() {
             <div className="modal-accent" />
             <div className="modal-body">
               <h2>Ubah status klaim</h2>
+              <p className="muted small" style={{ marginTop: -4, marginBottom: 12 }}>
+                Status mengikuti aturan database & RPC web lama. Rejected wajib isi alasan.
+              </p>
               <label>
                 Status
-                <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)}>
+                <select
+                  value={nextStatus}
+                  onChange={(e) => setNextStatus(e.target.value as Status)}
+                >
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {s}
@@ -198,18 +249,35 @@ export function ClaimDetailPage() {
               </label>
               <label>
                 Tanggal status (YYYY-MM-DD)
-                <input value={statusDate} onChange={(e) => setStatusDate(e.target.value)} />
+                <input
+                  value={statusDate}
+                  onChange={(e) => setStatusDate(e.target.value)}
+                  placeholder="2026-10-28"
+                />
               </label>
               <label>
                 Alasan {nextStatus === 'Rejected' ? '(wajib)' : '(opsional)'}
-                <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+                <textarea
+                  rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={
+                    nextStatus === 'Rejected'
+                      ? 'Wajib diisi untuk Rejected…'
+                      : 'Catatan perubahan status (opsional)'
+                  }
+                />
               </label>
             </div>
             <div className="modal-actions">
               <button type="button" className="ghost" onClick={() => setShowStatus(false)}>
                 Batal
               </button>
-              <button type="button" disabled={statusMut.isPending} onClick={() => statusMut.mutate()}>
+              <button
+                type="button"
+                disabled={statusMut.isPending}
+                onClick={() => statusMut.mutate()}
+              >
                 {statusMut.isPending ? 'Menyimpan…' : 'Simpan status'}
               </button>
             </div>
@@ -274,6 +342,7 @@ export function ClaimDetailPage() {
               <Field label="Dealer code" value={q.data.dealer_code} mono />
               <Field label="WO" value={q.data.dealer_wo_so} mono />
               <Field label="Dealer claim no" value={q.data.dealer_claim_no} mono />
+              <Field label="Distributor no" value={q.data.distributor_no} mono />
             </dl>
           </section>
 
@@ -367,6 +436,15 @@ export function ClaimDetailPage() {
               </div>
             )}
           </section>
+
+          {q.data.source_raw_text ? (
+            <section className="panel">
+              <h2 className="section-title">Source (raw text)</h2>
+              <pre className="source-raw mono small" style={{ whiteSpace: 'pre-wrap', maxHeight: 280, overflow: 'auto' }}>
+                {q.data.source_raw_text}
+              </pre>
+            </section>
+          ) : null}
         </>
       ) : null}
     </div>
