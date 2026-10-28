@@ -4,7 +4,7 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VITE_BASE || '/Esahuda-Rizqi-Nugraha/',
+  base: process.env.VITE_BASE || '/Esahuda-Rizqi-Nugraha/preview/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

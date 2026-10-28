@@ -2,6 +2,7 @@
  * Single Supabase client for the entire app.
  * Never call createClient elsewhere (dual GoTrue = empty UI under RLS).
  */
+import { boundedFetch } from './request';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const url =
@@ -17,6 +18,8 @@ let client: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient {
   if (!client) {
     client = createClient(url, anon, {
+      db: { retry: false },
+      global: { fetch: boundedFetch },
       auth: {
         persistSession: true,
         autoRefreshToken: true,

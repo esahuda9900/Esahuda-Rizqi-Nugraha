@@ -98,7 +98,7 @@ export async function fetchActiveClaims(limit = 500): Promise<ClaimListRow[]> {
 
 export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
   const sb = getSupabase();
-  const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', claimId).maybeSingle();
+  const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', claimId).maybeSingle().overrideTypes<ClaimDetail, { merge: false }>();
   if (error) throw error;
   if (!data) throw new Error(`Claim ${claimId} tidak ditemukan`);
   return data as ClaimDetail;
