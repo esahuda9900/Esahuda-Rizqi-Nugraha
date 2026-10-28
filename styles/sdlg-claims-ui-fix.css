@@ -95,8 +95,15 @@
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar > button {
     width: 100%;
   }
+  /* Keep claim amount/date visible on narrow screens; let the row wrap instead. */
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
+    flex-wrap: wrap;
+  }
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:last-child {
-    display: none;
+    flex: 0 1 auto;
+    max-width: 100%;
+    margin-left: auto;
+    overflow-wrap: anywhere;
   }
 }
 @media (prefers-reduced-motion: reduce) {
