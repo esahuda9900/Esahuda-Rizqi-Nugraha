@@ -1,17 +1,20 @@
-/* ========================================================================
-   SDLG INPUT HELPER V3.0 (PRODUCTION ENTERPRISE)
+/* ==========================================================================
+   SDLG INPUT HELPER V4.0 — ENTERPRISE PRO MAX
    Visual polish for SDLG Dealer Portal Input Helper.
-   Strictly scoped to [data-sdlg-input-helper="1"] to prevent global bleed.
-   Harmonized with MASTER DESIGN TOKENS V4.0 & GPU Layer Paint.
-   ======================================================================== */
+   Strictly scoped to [data-sdlg-input-helper="1"] — zero global bleed.
+   Harmonized with MASTER DESIGN TOKENS V5 + Alive Recolor V3.
+   Zero HTML changes. All V3 selectors preserved.
+   ========================================================================== */
 
-/* =========================================
+/* ==========================================================================
    1. SELECTED CLAIM IDENTITY BAR (Sticky)
-   ========================================= */
+   ========================================================================== */
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
   position: sticky;
-  top: 68px; /* Disesuaikan dengan tinggi navbar premium enterprise */
-  z-index: 25;
+  /* Token-based topbar height — consistent kalau theme/responsive ubah height */
+  top: var(--sdlg-header-height, 68px);
+  /* Token-based z-index — konsisten dengan sticky header lain */
+  z-index: var(--sdlg-z-sticky, 200);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -19,11 +22,16 @@
   padding: 12px 16px;
   margin-bottom: var(--sdlg-spacing-4, 16px);
   border: 1px solid var(--sdlg-border-strong, #cbd5e1);
-  border-left: 4px solid var(--sdlg-primary, #2563eb);
+  /* 🎯 RTL-safe: border-inline-start instead of border-left */
+  border-inline-start: 4px solid var(--sdlg-primary, #2563eb);
   border-radius: var(--sdlg-radius, 12px);
   background: var(--sdlg-surface, #ffffff);
-  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05));
-  will-change: transform;
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.05));
+  /* 🧹 REMOVED: will-change: transform (perf leak — permanent composite layer) */
+  /* Perf: skip paint untuk bagian off-screen saat scroll */
+  contain: layout paint;
+  /* Cegah stacking context bocor */
+  isolation: isolate;
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__id {
@@ -31,34 +39,39 @@
   font-size: var(--sdlg-font-size-sm, 0.875rem);
   color: var(--sdlg-text-main, #0f172a);
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__meta {
   font-size: var(--sdlg-font-size-sm, 0.875rem);
   color: var(--sdlg-text-muted, #64748b);
+  text-wrap: pretty;
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__status {
-  margin-left: auto;
+  margin-inline-start: auto;
   font-size: 11px;
   font-weight: var(--sdlg-font-weight-bold, 700);
   padding: 4px 10px;
-  border-radius: 99px;
+  border-radius: var(--sdlg-radius-full, 99px);
   background: var(--sdlg-success-soft, #ecfdf5);
   color: var(--sdlg-success, #10b981);
   border: 1px solid var(--sdlg-success-border, #a7f3d0);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  /* Numeric badge lebih rapi */
+  font-variant-numeric: tabular-nums;
 }
 
-/* =========================================
+/* ==========================================================================
    2. CLAIM PICKER LISTBOX (select[size])
-   ========================================= */
+   ========================================================================== */
 [data-sdlg-input-helper="1"] select[size],
 [data-sdlg-input-helper="1"] select[size][size] {
   width: 100% !important;
-  min-height: 240px !important;
-  max-height: 320px !important;
+  /* Responsive height — di HP landscape tidak terlalu tinggi */
+  min-height: min(240px, 40vh) !important;
+  max-height: min(320px, 50vh) !important;
   padding: 6px !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
@@ -72,18 +85,37 @@
   appearance: listbox !important;
   -webkit-appearance: listbox !important;
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
-  will-change: scroll-position;
+  /* 🧹 REMOVED: will-change: scroll-position (deprecated — no effect) */
+
+  /* Cegah scroll chaining ke page */
+  overscroll-behavior: contain !important;
+  /* Cegah layout shift saat scrollbar muncul */
+  scrollbar-gutter: stable !important;
+  /* Firefox + Chrome 121+ + Safari 18.2+ scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--sdlg-border-strong, #cbd5e1) transparent;
+  /* Native accent untuk highlight */
+  accent-color: var(--sdlg-primary, #2563eb);
 }
 
+/* Focus state — mouse click */
 [data-sdlg-input-helper="1"] select[size]:focus {
   border-color: var(--sdlg-primary, #2563eb) !important;
   outline: none !important;
   box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
 }
 
-/* High-Performance Premium Scrollbar */
+/* Focus-visible — keyboard only (lebih kuat) */
+[data-sdlg-input-helper="1"] select[size]:focus-visible {
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  outline: none !important;
+  box-shadow: var(--sdlg-ring-strong, 0 0 0 4px rgba(37, 99, 235, 0.25)) !important;
+}
+
+/* --- Webkit scrollbar (legacy support) --- */
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
+  height: 6px;
 }
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-track {
   background: transparent;
@@ -91,12 +123,13 @@
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-thumb {
   background: var(--sdlg-border-strong, #cbd5e1);
   border-radius: 99px;
+  transition: background 0.15s ease;
 }
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-thumb:hover {
   background: var(--sdlg-text-muted, #64748b);
 }
 
-/* Item di dalam Listbox */
+/* --- Item di dalam Listbox --- */
 [data-sdlg-input-helper="1"] select[size] option {
   display: block !important;
   padding: 10px 12px !important;
@@ -110,6 +143,8 @@
   height: auto !important;
   color: var(--sdlg-text-main, #0f172a) !important;
   transition: background 0.15s ease !important;
+  /* Numeric claim IDs sejajar sempurna */
+  font-variant-numeric: tabular-nums;
 }
 
 [data-sdlg-input-helper="1"] select[size] option:checked,
@@ -119,15 +154,22 @@
   font-weight: var(--sdlg-font-weight-semibold, 600) !important;
 }
 
-/* =========================================
+/* Focus-visible dari keyboard saat option di-navigate */
+[data-sdlg-input-helper="1"] select[size]:focus-visible option:checked {
+  background: var(--sdlg-primary-soft, #eff6ff) !important;
+  color: var(--sdlg-primary-strong, #1d4ed8) !important;
+}
+
+/* ==========================================================================
    3. SEARCH INPUT & CARD WRAPPER
-   ========================================= */
+   ========================================================================== */
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
   padding: 16px 20px !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.03)) !important;
+  isolation: isolate;
 }
 
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
@@ -142,18 +184,29 @@
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   color: var(--sdlg-text-main, #0f172a) !important;
   transition: var(--sdlg-transition-base) !important;
+  caret-color: var(--sdlg-primary, #2563eb);
+}
+
+[data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input::placeholder {
+  color: var(--sdlg-text-muted, #64748b) !important;
+  opacity: 0.75 !important;
+}
+
+[data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input:hover {
+  border-color: var(--sdlg-text-muted, #64748b) !important;
 }
 
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input:focus {
-  background: #ffffff !important;
+  /* 🐛 FIX: sebelumnya hard-coded #ffffff = dark mode broken */
+  background: var(--sdlg-surface, #ffffff) !important;
   border-color: var(--sdlg-primary, #2563eb) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37,99,235,0.15)) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
   outline: none !important;
 }
 
-/* =========================================
+/* ==========================================================================
    4. EXTRA PORTAL MAPPING CARD
-   ========================================= */
+   ========================================================================== */
 [data-sdlg-input-helper="1"] #sdlg-input-portal-extras {
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
@@ -173,6 +226,7 @@
   text-transform: uppercase;
   color: var(--sdlg-text-muted, #64748b);
   margin-bottom: 4px;
+  text-wrap: balance;
 }
 
 [data-sdlg-input-helper="1"] #sdlg-input-portal-extras .sdlg-extra-note {
@@ -183,16 +237,30 @@
   padding-top: 12px;
   margin-top: 4px;
   border-top: 1px dashed var(--sdlg-border-strong, #cbd5e1);
+  text-wrap: pretty;
 }
 
-/* =========================================
+/* ==========================================================================
    5. TABLE & BUTTONS (Scoped to Input Helper Only)
-   ========================================= */
+   ========================================================================== */
 [data-sdlg-input-helper="1"] button.secondary-btn {
   min-height: 34px !important;
   font-size: 12.5px !important;
   border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
   transition: var(--sdlg-transition-base) !important;
+}
+
+[data-sdlg-input-helper="1"] button.secondary-btn:hover {
+  filter: brightness(1.03);
+}
+
+[data-sdlg-input-helper="1"] button.secondary-btn:active {
+  transform: scale(0.98);
+}
+
+[data-sdlg-input-helper="1"] button.secondary-btn:focus-visible {
+  outline: 2px solid var(--sdlg-primary, #2563eb) !important;
+  outline-offset: 2px !important;
 }
 
 [data-sdlg-input-helper="1"] table {
@@ -216,57 +284,260 @@
   padding: 10px 12px !important;
   border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
   color: var(--sdlg-text-main, #0f172a) !important;
+  font-variant-numeric: tabular-nums;
 }
 
-/* =========================================
+[data-sdlg-input-helper="1"] table tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ==========================================================================
    6. RESPONSIVE LAYER (Mobile Optimization)
-   ========================================= */
-@media (max-width: 760px) {
+   ------------------------------------------------------------------------
+   Breakpoint 760.98px untuk hindari overlap dengan min-width: 761px di
+   file lain (compact-claim-detail).
+   ========================================================================== */
+@media (max-width: 760.98px) {
   [data-sdlg-input-helper="1"] select[size] {
-    min-height: 180px !important;
-    max-height: 240px !important;
+    min-height: min(180px, 30vh) !important;
+    max-height: min(240px, 40vh) !important;
+    /* 🐛 iOS zoom fix: font-size < 16px trigger auto-zoom saat fokus */
+    font-size: 16px !important;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] option {
+    /* Mobile: min touch target 44px (WCAG 2.5.5) */
+    min-height: 44px !important;
+    /* Mobile: wrap long text instead of ellipsis */
+    white-space: normal !important;
+    padding: 12px 14px !important;
   }
 
   [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
+    /* Sticky tidak berguna di mobile (viewport kecil) */
     position: static;
   }
 
   [data-sdlg-input-helper="1"] #sdlg-input-portal-extras {
     grid-template-columns: 1fr !important;
   }
+
+  /* 🐛 iOS zoom fix untuk search input juga */
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
+    font-size: 16px !important;
+    min-height: 44px !important;
+    padding: 12px 14px !important;
+  }
+
+  /* Touch target buttons */
+  [data-sdlg-input-helper="1"] button.secondary-btn {
+    min-height: 44px !important;
+    font-size: 14px !important;
+  }
 }
 
-/* =========================================
-   7. SEAMLESS DARK THEME ARCHITECTURE
-   ========================================= */
+/* ==========================================================================
+   7. DARK MODE — Combined support for BOTH auto AND explicit theme
+   ------------------------------------------------------------------------
+   - `prefers-color-scheme: dark` → auto-follow OS
+   - `html[data-theme="dark"]`     → explicit user toggle
+   Kedua selector diterapkan — kalau salah satu aktif, dark mode berlaku.
+   ========================================================================== */
+
+/* --- Auto mode (OS preference) --- */
+@media (prefers-color-scheme: dark) {
+  [data-sdlg-input-helper="1"] {
+    color-scheme: dark;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] {
+    background: var(--sdlg-surface-muted, #0f172a) !important;
+    border-color: var(--sdlg-border, #1e293b) !important;
+    color: var(--sdlg-text, #e2e8f0) !important;
+    scrollbar-color: var(--sdlg-border-strong, #334155) transparent;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] option {
+    color: var(--sdlg-text, #e2e8f0) !important;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] option:checked,
+  [data-sdlg-input-helper="1"] select[size] option:hover {
+    background: rgba(37, 99, 235, 0.2) !important;
+    color: var(--sdlg-primary, #60a5fa) !important;
+  }
+
+  [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
+    background: var(--sdlg-surface, #131c31) !important;
+    border-color: var(--sdlg-border-strong, #334155) !important;
+  }
+
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
+    background: var(--sdlg-surface, #131c31) !important;
+    border-color: var(--sdlg-border, #1e293b) !important;
+  }
+
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
+    background: var(--sdlg-surface-muted, #0f172a) !important;
+    border-color: var(--sdlg-border-strong, #334155) !important;
+    color: var(--sdlg-text, #e2e8f0) !important;
+  }
+
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input:focus {
+    background: var(--sdlg-surface, #131c31) !important;
+  }
+
+  [data-sdlg-input-helper="1"] #sdlg-input-portal-extras {
+    background: var(--sdlg-surface-muted, #0f172a) !important;
+    border-color: var(--sdlg-border, #1e293b) !important;
+  }
+
+  [data-sdlg-input-helper="1"] table th {
+    background: var(--sdlg-surface-muted, #0f172a) !important;
+    border-color: var(--sdlg-border, #1e293b) !important;
+  }
+
+  [data-sdlg-input-helper="1"] table td {
+    border-color: var(--sdlg-border, #1e293b) !important;
+  }
+}
+
+/* --- Explicit theme override (user toggle via html[data-theme="dark"]) --- */
+html[data-theme="dark"] [data-sdlg-input-helper="1"] {
+  color-scheme: dark;
+}
+
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] {
-  background: var(--sdlg-surface-muted, #1e293b) !important;
-  border-color: var(--sdlg-border, #334155) !important;
-  color: var(--sdlg-text-main, #f8fafc) !important;
+  background: var(--sdlg-surface-muted, #0f172a) !important;
+  border-color: var(--sdlg-border, #1e293b) !important;
+  color: var(--sdlg-text, #e2e8f0) !important;
+  scrollbar-color: var(--sdlg-border-strong, #334155) transparent;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option {
-  color: var(--sdlg-text-main, #f8fafc) !important;
+  color: var(--sdlg-text, #e2e8f0) !important;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option:checked,
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option:hover {
   background: rgba(37, 99, 235, 0.2) !important;
-  color: var(--sdlg-primary, #3b82f6) !important;
+  color: var(--sdlg-primary, #60a5fa) !important;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
-  background: var(--sdlg-surface, #0f172a) !important;
+  background: var(--sdlg-surface, #131c31) !important;
   border-color: var(--sdlg-border-strong, #334155) !important;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
-  background: var(--sdlg-surface, #0f172a) !important;
+  background: var(--sdlg-surface, #131c31) !important;
   border-color: var(--sdlg-border, #1e293b) !important;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
-  background: var(--sdlg-surface-muted, #1e293b) !important;
+  background: var(--sdlg-surface-muted, #0f172a) !important;
   border-color: var(--sdlg-border-strong, #334155) !important;
-  color: var(--sdlg-text-main, #f8fafc) !important;
+  color: var(--sdlg-text, #e2e8f0) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input:focus {
+  background: var(--sdlg-surface, #131c31) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] #sdlg-input-portal-extras {
+  background: var(--sdlg-surface-muted, #0f172a) !important;
+  border-color: var(--sdlg-border, #1e293b) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] table th {
+  background: var(--sdlg-surface-muted, #0f172a) !important;
+  border-color: var(--sdlg-border, #1e293b) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] table td {
+  border-color: var(--sdlg-border, #1e293b) !important;
+}
+
+/* ==========================================================================
+   8. REDUCED MOTION (A11Y)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  [data-sdlg-input-helper="1"] select[size],
+  [data-sdlg-input-helper="1"] select[size] option,
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input,
+  [data-sdlg-input-helper="1"] button.secondary-btn {
+    transition-duration: 0.01ms !important;
+  }
+
+  [data-sdlg-input-helper="1"] button.secondary-btn:active {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   9. HIGH CONTRAST (A11Y)
+   ========================================================================== */
+@media (prefers-contrast: more) {
+  [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+    border-width: 2px !important;
+  }
+
+  [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__meta,
+  [data-sdlg-input-helper="1"] #sdlg-input-portal-extras .sdlg-extra-note {
+    color: var(--sdlg-text-main, #0f172a) !important;
+  }
+}
+
+/* ==========================================================================
+   10. PRINT STYLES
+   ========================================================================== */
+@media print {
+  [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
+    position: static !important;
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] {
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 1px solid #999999 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    /* Print semua option terlihat */
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  [data-sdlg-input-helper="1"] select[size] option {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    padding: 6px 8px !important;
+    background: transparent !important;
+    color: #000000 !important;
+  }
+
+  [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  [data-sdlg-input-helper="1"] button.secondary-btn {
+    /* Hide action buttons saat print */
+    display: none !important;
+  }
+
+  [data-sdlg-input-helper="1"] table th {
+    background: #f0f0f0 !important;
+    color: #000000 !important;
+  }
 }

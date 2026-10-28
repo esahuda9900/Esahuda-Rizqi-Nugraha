@@ -1,15 +1,20 @@
-/* ========================================================================
-   SDLG DASHBOARD POLISH V5.2 (FINAL COGNITIVE ENTERPRISE)
+/* ==========================================================================
+   SDLG DASHBOARD POLISH V6.0 — FINAL COGNITIVE ENTERPRISE
    Dense Operations Dashboard Layer for Executive & Operational Views.
-   Optimized: Token alignment, GPU paint layers, and explicit selector fix.
-   ======================================================================== */
+   Zero HTML changes. All V5.2 selectors preserved.
+   Harmonized with Alive Recolor V3 + Foundation V3 + Components V4.
+   ========================================================================== */
 
-/* 1. BACKGROUND HALAMAN (Biar kartu putihnya "POP OUT") */
+/* ==========================================================================
+   1. BACKGROUND HALAMAN (kartu putih "POP OUT")
+   ========================================================================== */
 body {
   background-color: var(--sdlg-bg, #f3f6fa) !important;
 }
 
-/* 2. KARTU METRIK ATAS (Total Claims, Total Claim Amount, dll) */
+/* ==========================================================================
+   2. KARTU METRIK ATAS (Total Claims, Total Claim Amount, dll)
+   ========================================================================== */
 .metric-grid {
   gap: 20px !important;
   margin-bottom: var(--sdlg-spacing-6, 32px) !important;
@@ -21,30 +26,45 @@ body {
   border-radius: var(--sdlg-radius, 12px) !important;
   padding: 24px 28px !important;
   min-height: 120px !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.03)) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   position: relative !important;
   overflow: hidden !important;
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
-  will-change: transform, box-shadow, border-color;
+  /* 🧹 REMOVED: will-change (perf leak — permanent composite layer)
+     + box-shadow/border-color cannot composite — hints were wasted.
+     Browser auto-promotes on :hover transform. */
+  /* Perf: skip paint of off-screen cards in large dashboards */
+  contain: layout paint;
+  /* Cegah z-index bocor dari child (badge, tooltip) */
+  isolation: isolate;
 }
 
 .metric-card:hover {
   transform: translateY(-4px) !important;
-  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05)) !important;
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.05)) !important;
   border-color: var(--sdlg-primary, #2563eb) !important;
 }
 
-/* Garis Aksen Kiri Tebal Bergradasi Modern */
+/* A11Y: focus-visible shadow ring jika metric-card pernah jadi link/button */
+.metric-card:focus-within {
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
+}
+
+/* Garis Aksen Kiri Bergradasi — z-index 10 dikurung oleh isolation card */
 .metric-card::before {
   content: "" !important;
   position: absolute !important;
-  top: 0 !important; left: 0 !important; bottom: 0 !important;
-  width: 4px !important; /* Ketebalan dioptimalkan untuk estetika SaaS */
+  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 4px !important;
   background: linear-gradient(180deg, var(--sdlg-primary, #2563eb) 0%, #00d4ff 100%) !important;
   z-index: 10 !important;
+  pointer-events: none !important;
 }
 
 .metric-label {
@@ -54,25 +74,30 @@ body {
   text-transform: uppercase !important;
   letter-spacing: 0.06em !important;
   margin-bottom: var(--sdlg-spacing-2, 8px) !important;
+  text-wrap: balance;
 }
 
 .metric-value {
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif) !important;
-  font-size: 32px !important; /* Disesuaikan dengan skala token utama */
+  font-size: 32px !important;
   font-weight: 700 !important;
   color: var(--sdlg-text-main, #0f172a) !important;
   letter-spacing: -0.03em !important;
   line-height: 1 !important;
   font-variant-numeric: tabular-nums !important;
+  text-wrap: pretty;
 }
 
-/* 3. KOTAK "MY ACTION TODAY" (Kritikal, Action, dll) */
+/* ==========================================================================
+   3. KOTAK "MY ACTION TODAY" (Kritikal, Action, dll)
+   ========================================================================== */
 .card:has(.metric-grid) {
   padding: 28px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
+  isolation: isolate;
 }
 
 .card:has(.metric-grid) > div:first-child {
@@ -92,31 +117,61 @@ body {
   position: relative !important;
   overflow: hidden !important;
   transition: var(--sdlg-transition-base) !important;
+  /* Perf: skip paint off-screen */
+  contain: layout paint;
 }
 
 .card:has(.metric-grid) > div:first-child > div:hover {
   transform: translateY(-2px) !important;
 }
 
-/* Warna Kotak Adaptif Kontras Tinggi */
-.card:has(.metric-grid) > div:first-child > div:nth-child(1) { background: var(--sdlg-danger-soft, #fef2f2) !important; border-color: #fecaca !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(2) { background: #fffbeb !important; border-color: #fde68a !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(3) { background: var(--sdlg-primary-soft, #eff6ff) !important; border-color: #bfdbfe !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(4) { background: var(--sdlg-surface-muted, #f8fafc) !important; border-color: var(--sdlg-border, #e2e8f0) !important; }
+.card:has(.metric-grid) > div:first-child > div:active {
+  transform: translateY(0) scale(0.99) !important;
+}
 
-/* Angka Besar di dalam Kotak Action */
+/* --- Warna Kotak Adaptif Kontras Tinggi --- */
+.card:has(.metric-grid) > div:first-child > div:nth-child(1) {
+  background: var(--sdlg-danger-soft, #fef2f2) !important;
+  border-color: #fecaca !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(2) {
+  background: var(--sdlg-warning-soft, #fffbeb) !important;
+  border-color: #fde68a !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(3) {
+  background: var(--sdlg-primary-soft, #eff6ff) !important;
+  border-color: #bfdbfe !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(4) {
+  background: var(--sdlg-surface-muted, #f8fafc) !important;
+  border-color: var(--sdlg-border, #e2e8f0) !important;
+}
+
+/* --- Angka Besar di dalam Kotak Action --- */
 .card:has(.metric-grid) > div:first-child > div > div:first-child {
   font-size: 28px !important;
   font-weight: 700 !important;
   line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
 }
-.card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child { color: #dc2626 !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(2) > div:first-child { color: #d97706 !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child { color: var(--sdlg-primary, #2563eb) !important; }
-.card:has(.metric-grid) > div:first-child > div:nth-child(4) > div:first-child { color: var(--sdlg-text-main, #0f172a) !important; }
+.card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
+  color: #dc2626 !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(2) > div:first-child {
+  color: #d97706 !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child {
+  color: var(--sdlg-primary, #2563eb) !important;
+}
+.card:has(.metric-grid) > div:first-child > div:nth-child(4) > div:first-child {
+  color: var(--sdlg-text-main, #0f172a) !important;
+}
 
-/* 4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED" (Micro-translation Accelerated) */
-.claim-row, .action-row {
+/* ==========================================================================
+   4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED"
+   ========================================================================== */
+.claim-row,
+.action-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -126,23 +181,40 @@ body {
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   transition: var(--sdlg-transition-base) !important;
-  will-change: transform, background-color, border-color;
+  /* 🧹 REMOVED: will-change (perf leak) */
+  /* Perf: contain untuk list panjang */
+  contain: layout style;
 }
 
-.claim-row:hover, .action-row:hover {
+.claim-row:hover,
+.action-row:hover {
   background: var(--sdlg-surface, #ffffff) !important;
   border-color: var(--sdlg-border-strong, #cbd5e1) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
-  transform: translateX(4px) !important; /* Efek dorong kanan ikonik */
+  transform: translateX(4px) !important;
 }
 
-/* 5. TOTAL ESTIMASI (KOTAK GELAP PREMIUM) */
+.claim-row:focus-visible,
+.action-row:focus-visible {
+  outline: 2px solid var(--sdlg-primary, #2563eb) !important;
+  outline-offset: 2px !important;
+  background: var(--sdlg-surface, #ffffff) !important;
+}
+
+.claim-row:last-child,
+.action-row:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* ==========================================================================
+   5. TOTAL ESTIMASI (KOTAK GELAP PREMIUM)
+   ========================================================================== */
 .total-estimasi-box {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
   color: #ffffff !important;
   padding: 32px 40px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), var(--sdlg-shadow-md) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--sdlg-shadow-md) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -150,17 +222,22 @@ body {
   position: relative !important;
   overflow: hidden !important;
   border: 1px solid #1e293b !important;
+  /* Isolation untuk kurung z-index dari ::after glow */
+  isolation: isolate;
 }
 
 /* Efek Kilau Gradien (Glow Aura) */
 .total-estimasi-box::after {
   content: "" !important;
   position: absolute !important;
-  top: -50% !important; right: -10% !important;
-  width: 300px !important; height: 300px !important;
-  background: radial-gradient(circle, rgba(37,99,235,0.3) 0%, transparent 70%) !important;
+  top: -50% !important;
+  right: -10% !important;
+  width: 300px !important;
+  height: 300px !important;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%) !important;
   border-radius: 50% !important;
   pointer-events: none !important;
+  z-index: 1 !important;
 }
 
 .total-estimasi-box .label {
@@ -171,6 +248,7 @@ body {
   letter-spacing: 0.08em !important;
   position: relative !important;
   z-index: 2 !important;
+  text-wrap: balance;
 }
 
 .total-estimasi-box .value {
@@ -182,31 +260,67 @@ body {
   margin-top: 6px !important;
   position: relative !important;
   z-index: 2 !important;
+  font-variant-numeric: tabular-nums !important;
+  text-wrap: pretty;
 }
 
-/* 6. CHART SECTIONS (Trend, Model, Branch) */
-.card:has(canvas), .card:has(svg) {
+/* ==========================================================================
+   6. CHART SECTIONS (Trend, Model, Branch)
+   ========================================================================== */
+.card:has(canvas),
+.card:has(svg) {
   padding: 28px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
   transition: var(--sdlg-transition-base) !important;
+  isolation: isolate;
 }
-.card:has(canvas):hover, .card:has(svg):hover {
+
+.card:has(canvas):hover,
+.card:has(svg):hover {
   box-shadow: var(--sdlg-shadow-md) !important;
 }
 
-/* Paksa Bar Chart Dynamic UI jadi melengkung & bergradasi */
-div[style*="background-color: blue"], 
-div[style*="background: #3b82f6"],
-div[style*="background-color: rgb(59, 130, 246)"] {
+/* --- Dynamic bar chart styling ---
+   🐛 FIX: V5 hanya match Chrome's normalized format. Firefox/Safari normalize
+   inline styles differently. Added 8 variants + `i` flag for case-insensitive.
+   --- */
+div[style*="background-color: blue" i],
+div[style*="background-color: rgb(0, 0, 255)" i],
+div[style*="background-color: rgb(0,0,255)" i],
+div[style*="background-color: #0000ff" i],
+div[style*="background-color: #3b82f6" i],
+div[style*="background-color: rgb(59, 130, 246)" i],
+div[style*="background-color: rgb(59,130,246)" i],
+div[style*="background: #3b82f6" i],
+div[style*="background: rgb(59, 130, 246)" i],
+div[style*="background: blue" i] {
   border-radius: 99px !important;
   background: linear-gradient(90deg, var(--sdlg-primary, #2563eb) 0%, #6366f1 100%) !important;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
 }
 
-/* 7. EXECUTIVE SNAPSHOT GRID (Completed Fix) */
+/* Micro-interaction: bar hover (subtle glow) */
+div[style*="background-color: blue" i]:hover,
+div[style*="background-color: rgb(0, 0, 255)" i]:hover,
+div[style*="background-color: rgb(0,0,255)" i]:hover,
+div[style*="background-color: #0000ff" i]:hover,
+div[style*="background-color: #3b82f6" i]:hover,
+div[style*="background-color: rgb(59, 130, 246)" i]:hover,
+div[style*="background-color: rgb(59,130,246)" i]:hover,
+div[style*="background: #3b82f6" i]:hover,
+div[style*="background: rgb(59, 130, 246)" i]:hover,
+div[style*="background: blue" i]:hover {
+  filter: brightness(1.1) !important;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* ==========================================================================
+   7. EXECUTIVE SNAPSHOT GRID
+   ========================================================================== */
 .snapshot-grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
@@ -224,12 +338,20 @@ div[style*="background-color: rgb(59, 130, 246)"] {
   flex-direction: column !important;
   gap: 8px !important;
   transition: var(--sdlg-transition-base) !important;
-  will-change: transform, border-color;
+  /* 🧹 REMOVED: will-change */
+  contain: layout paint;
+  isolation: isolate;
 }
 
 .snapshot-item:hover {
   border-color: var(--sdlg-border-strong, #cbd5e1) !important;
   transform: translateY(-2px) !important;
+  box-shadow: var(--sdlg-shadow-md) !important;
+}
+
+.snapshot-item:focus-within {
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
 }
 
 .snapshot-item .label {
@@ -238,6 +360,7 @@ div[style*="background-color: rgb(59, 130, 246)"] {
   font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
+  text-wrap: balance;
 }
 
 .snapshot-item .value {
@@ -247,4 +370,228 @@ div[style*="background-color: rgb(59, 130, 246)"] {
   color: var(--sdlg-text-main, #0f172a) !important;
   letter-spacing: -0.02em !important;
   font-variant-numeric: tabular-nums !important;
+  text-wrap: pretty;
+}
+
+/* ==========================================================================
+   8. DARK MODE PATCHES (hard-coded light colors)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  /* Action boxes: pakai opacity-based backgrounds, bukan light tints */
+  .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div:nth-child(2) {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div:nth-child(3) {
+    background: rgba(37, 99, 235, 0.12) !important;
+    border-color: rgba(37, 99, 235, 0.3) !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div:nth-child(4) {
+    background: var(--sdlg-surface-muted, #0f172a) !important;
+    border-color: var(--sdlg-border, #1e293b) !important;
+  }
+
+  /* Text color di action boxes: lebih terang untuk kontras di dark bg */
+  .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
+    color: #f87171 !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div:nth-child(2) > div:first-child {
+    color: #fbbf24 !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child {
+    color: #60a5fa !important;
+  }
+
+  /* Total estimasi box: sedikit lebih gelap, glow lebih subtle */
+  .total-estimasi-box {
+    background: linear-gradient(135deg, #0f172a 0%, #020617 100%) !important;
+    border-color: #0f172a !important;
+  }
+  .total-estimasi-box::after {
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%) !important;
+  }
+
+  /* Metric card accent line: sedikit di-mute */
+  .metric-card::before {
+    background: linear-gradient(180deg, #3b82f6 0%, #06b6d4 100%) !important;
+  }
+}
+
+/* ==========================================================================
+   9. RESPONSIVE — grid collapse untuk mobile
+   ========================================================================== */
+
+/* Tablet: My Action Today grid 4 → 2 kolom */
+@media (max-width: 900px) {
+  .card:has(.metric-grid) > div:first-child {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .metric-grid {
+    gap: 16px !important;
+  }
+}
+
+/* Mobile: metric card padding reduce, action grid 1 kolom */
+@media (max-width: 767.98px) {
+  .metric-card {
+    padding: 20px 22px !important;
+    min-height: 100px !important;
+  }
+  .metric-value {
+    font-size: 28px !important;
+  }
+
+  .card:has(.metric-grid) {
+    padding: 20px !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div {
+    padding: 16px !important;
+  }
+  .card:has(.metric-grid) > div:first-child > div > div:first-child {
+    font-size: 24px !important;
+  }
+
+  .total-estimasi-box {
+    padding: 24px 28px !important;
+    margin: 24px 0 !important;
+  }
+  .total-estimasi-box .value {
+    font-size: 28px !important;
+  }
+
+  .snapshot-grid {
+    gap: 16px !important;
+    margin-top: 20px !important;
+  }
+  .snapshot-item {
+    padding: 20px !important;
+  }
+  .snapshot-item .value {
+    font-size: 22px !important;
+  }
+
+  .claim-row,
+  .action-row {
+    padding: 12px 16px !important;
+  }
+}
+
+/* Small mobile: action grid 1 kolom */
+@media (max-width: 480px) {
+  .card:has(.metric-grid) > div:first-child {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* ==========================================================================
+   10. REDUCED MOTION (A11Y)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .metric-card,
+  .snapshot-item,
+  .claim-row,
+  .action-row,
+  .total-estimasi-box,
+  div[style*="background-color: blue" i],
+  div[style*="background-color: #3b82f6" i],
+  div[style*="background-color: rgb(59, 130, 246)" i] {
+    transition-duration: 0.01ms !important;
+  }
+
+  .metric-card:hover,
+  .snapshot-item:hover,
+  .claim-row:hover,
+  .action-row:hover,
+  .card:has(.metric-grid) > div:first-child > div:hover {
+    transform: none !important;
+  }
+
+  div[style*="background-color: blue" i]:hover,
+  div[style*="background-color: #3b82f6" i]:hover,
+  div[style*="background-color: rgb(59, 130, 246)" i]:hover {
+    filter: none !important;
+  }
+}
+
+/* ==========================================================================
+   11. HIGH CONTRAST (A11Y)
+   ========================================================================== */
+@media (prefers-contrast: more) {
+  .metric-label,
+  .snapshot-item .label,
+  .total-estimasi-box .label {
+    color: var(--sdlg-text-main, #0f172a) !important;
+  }
+
+  .card:has(.metric-grid) > div:first-child > div {
+    border-width: 2px !important;
+  }
+
+  .claim-row,
+  .action-row {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+}
+
+/* ==========================================================================
+   12. PRINT STYLES
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .metric-card,
+  .card:has(.metric-grid),
+  .card:has(canvas),
+  .card:has(svg),
+  .snapshot-item,
+  .total-estimasi-box,
+  .claim-row,
+  .action-row {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    /* Disable containment untuk print (predictable layout) */
+    contain: none !important;
+  }
+
+  /* Expand grid untuk print */
+  .metric-grid,
+  .snapshot-grid {
+    gap: 12px !important;
+  }
+
+  .card:has(.metric-grid) > div:first-child {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  /* Hide chart interactives jika ada (SVG tetap tampil) */
+  .card:has(canvas) canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Total estimasi — dark box tetap dark untuk kontras */
+  .total-estimasi-box {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    /* Print engine tidak suka gradient — force solid */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hover effects → disable (tidak relevan) */
+  .metric-card:hover,
+  .snapshot-item:hover,
+  .claim-row:hover,
+  .action-row:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }

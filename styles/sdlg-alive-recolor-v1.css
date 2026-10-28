@@ -1,145 +1,474 @@
-/* 
-  ========================================================================
-  SDLG ALIVE RECOLOR V2 (PRO UPGRADE)
-  Optimized for Performance, Micro-Interactions, and Enterprise Aesthetics
-  ========================================================================
-*/
+/* ==========================================================================
+   SDLG ALIVE RECOLOR V3 — ENTERPRISE PRO MAX
+   Design System · Tokenized · Accessible · Dark-Mode Ready · Performance-Tuned
+   Zero HTML modifications required.
+   ========================================================================== */
 
+/* ==========================================================================
+   1. DESIGN TOKENS (Extended)
+   ========================================================================== */
 :root {
-  /* Core Palette (Refined for Higher Contrast & Sophistication) */
+  /* Core Surfaces */
   --sdlg-bg: #f3f6fa;
   --sdlg-surface: #ffffff;
   --sdlg-surface-muted: #f8fafc;
+  --sdlg-surface-elevated: #ffffff;
   --sdlg-border: #e2e8f0;
   --sdlg-border-strong: #cbd5e1;
+
+  /* Text Scale */
   --sdlg-text: #0f172a;
+  --sdlg-text-secondary: #334155;
   --sdlg-muted: #64748b;
-  
-  /* Brand Colors (Vibrant Tech Accents) */
+  --sdlg-muted-strong: #475569;
+
+  /* Brand */
   --sdlg-primary: #2563eb;
   --sdlg-primary-strong: #1d4ed8;
   --sdlg-primary-soft: #eff6ff;
+  --sdlg-primary-glow: rgba(37, 99, 235, 0.28);
+
+  /* Semantic */
   --sdlg-success: #10b981;
   --sdlg-success-soft: #ecfdf5;
+  --sdlg-success-glow: rgba(16, 185, 129, 0.22);
   --sdlg-danger: #ef4444;
   --sdlg-danger-soft: #fef2f2;
-  
-  /* Layout & Depth */
-  --sdlg-radius: 12px; /* Standard enterprise radius for tighter, professional look */
-  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
-  --sdlg-shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --sdlg-danger-glow: rgba(239, 68, 68, 0.22);
+  --sdlg-warning: #f59e0b;
+  --sdlg-warning-soft: #fffbeb;
+
+  /* Radius Scale */
+  --sdlg-radius-xs: 6px;
+  --sdlg-radius-sm: 8px;
+  --sdlg-radius: 12px;
+  --sdlg-radius-lg: 16px;
+  --sdlg-radius-xl: 20px;
+  --sdlg-radius-full: 9999px;
+
+  /* Layered Shadow System (realistic depth) */
+  --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --sdlg-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --sdlg-shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --sdlg-shadow-xl: 0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 10px 15px -5px rgba(15, 23, 42, 0.06);
+
+  /* Focus Rings */
   --sdlg-ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
-  
-  /* Motion */
-  --sdlg-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --sdlg-ring-strong: 0 0 0 4px rgba(37, 99, 235, 0.25);
+
+  /* Motion Curves */
+  --sdlg-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --sdlg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sdlg-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sdlg-transition: all 0.2s var(--sdlg-ease);
+  --sdlg-transition-slow: all 0.35s var(--sdlg-ease-out);
+
+  /* Spacing */
+  --sdlg-space-1: 4px;
+  --sdlg-space-2: 8px;
+  --sdlg-space-3: 12px;
+  --sdlg-space-4: 16px;
+  --sdlg-space-6: 24px;
 }
 
-/* Global Canvas Styling */
+/* ==========================================================================
+   2. GLOBAL CANVAS & TYPOGRAPHY
+   ========================================================================== */
 html, body {
-  background: 
-    radial-gradient(800px 400px at 90% -5%, rgba(37, 99, 235, 0.06), transparent 60%),
-    radial-gradient(600px 300px at 10% 0%, rgba(245, 158, 11, 0.04), transparent 50%),
+  background:
+    radial-gradient(1000px 500px at 90% -10%, rgba(37, 99, 235, 0.07), transparent 60%),
+    radial-gradient(800px 400px at 5% 0%, rgba(245, 158, 11, 0.05), transparent 55%),
+    radial-gradient(600px 400px at 50% 110%, rgba(16, 185, 129, 0.04), transparent 60%),
     var(--sdlg-bg) !important;
   background-attachment: fixed !important;
   color: var(--sdlg-text) !important;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* Anti-aliasing text optimization */
-  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01" !important;
+  font-kerning: normal !important;
+  font-variant-ligatures: common-ligatures !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  scrollbar-gutter: stable !important;
 }
 
-/* Premium Layout Headers */
+/* Custom Selection Color */
+::selection {
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Premium Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35) !important;
+  border-radius: var(--sdlg-radius-full) !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+  transition: background 0.2s ease !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6) !important;
+  background-clip: content-box !important;
+}
+
+/* ==========================================================================
+   3. HEADERS / TOPBARS (Glassmorphism Enhanced)
+   ========================================================================== */
 header, .topbar {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
   border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
-  backdrop-filter: blur(16px) !important; /* Enhanced glassmorphism blur */
-  -webkit-backdrop-filter: blur(16px) !important; /* Safari compatibility */
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02), 0 4px 16px -8px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: saturate(180%) blur(20px) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
 }
 
-/* Brand Mark / Logo Aesthetics */
+/* ==========================================================================
+   4. BRAND MARK (Gradient + Soft Glow)
+   ========================================================================== */
 .brand-mark, [class*="brand-mark"] {
   background: linear-gradient(135deg, #0f172a 0%, #2563eb 60%, #10b981 100%) !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
   transition: var(--sdlg-transition) !important;
+  will-change: transform, box-shadow !important;
 }
 .brand-mark:hover, [class*="brand-mark"]:hover {
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Enterprise Data & Metric Cards */
-.card, [class*="card"]:not(.sdlg-tracking-panel), .metric-card, .claims-table-shell {
+/* ==========================================================================
+   5. CARDS (Layered Elevation + Micro-Interaction)
+   ========================================================================== */
+.card,
+[class*="card"]:not(.sdlg-tracking-panel),
+.metric-card,
+.claims-table-shell {
   border: 1px solid var(--sdlg-border) !important;
   border-radius: var(--sdlg-radius) !important;
   background: var(--sdlg-surface) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
-  transition: var(--sdlg-transition) !important;
+  transition: var(--sdlg-transition-slow) !important;
+  will-change: transform, box-shadow !important;
 }
 
-/* Micro-interaction on card hovers */
-.card:hover, [class*="card"]:not(.sdlg-tracking-panel):hover, .metric-card:hover {
-  box-shadow: var(--sdlg-shadow-md) !important;
+.card:hover,
+[class*="card"]:not(.sdlg-tracking-panel):hover,
+.metric-card:hover {
+  box-shadow: var(--sdlg-shadow-lg) !important;
   border-color: var(--sdlg-border-strong) !important;
+  transform: translateY(-2px) !important;
 }
 
-/* High-Performance Interactive Buttons */
+/* ==========================================================================
+   6. BUTTONS (Full State Coverage: hover / active / focus / disabled)
+   ========================================================================== */
 button.primary, .btn-primary, [class*="btn-primary"] {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: #ffffff !important;
   border: none !important;
   border-radius: calc(var(--sdlg-radius) - 4px) !important;
   font-weight: 500 !important;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.12), 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  letter-spacing: 0.01em !important;
+  padding: 9px 18px !important;
+  min-height: 38px !important;
+  box-shadow:
+    0 1px 2px rgba(37, 99, 235, 0.18),
+    0 4px 12px -2px rgba(37, 99, 235, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
   transition: var(--sdlg-transition) !important;
-  cursor: pointer;
+  cursor: pointer !important;
+  will-change: transform, box-shadow !important;
 }
 
-button.primary:hover, .btn-primary:hover, [class*="btn-primary"]:hover {
-  filter: brightness(1.05);
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.16), 0 8px 20px rgba(37, 99, 235, 0.25) !important;
-  transform: translateY(-1px);
+button.primary:hover,
+.btn-primary:hover,
+[class*="btn-primary"]:hover {
+  filter: brightness(1.06) !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    0 2px 4px rgba(37, 99, 235, 0.2),
+    0 8px 20px -4px rgba(37, 99, 235, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
-button.primary:active, .btn-primary:active, [class*="btn-primary"]:active {
-  transform: translateY(0);
+button.primary:active,
+.btn-primary:active,
+[class*="btn-primary"]:active {
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow:
+    0 1px 2px rgba(37, 99, 235, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition-duration: 0.08s !important;
 }
 
-/* Clean & Readable Tables */
+button.primary:focus-visible,
+.btn-primary:focus-visible,
+[class*="btn-primary"]:focus-visible {
+  outline: none !important;
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.35),
+    0 4px 12px -2px rgba(37, 99, 235, 0.28) !important;
+}
+
+button.primary:disabled,
+.btn-primary:disabled,
+[class*="btn-primary"]:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  filter: grayscale(0.2) !important;
+}
+
+/* ==========================================================================
+   7. TABLES (Professional Data Readability)
+   ========================================================================== */
 tbody tr {
-  transition: background-color 0.15s ease !important;
+  transition: background-color 0.15s var(--sdlg-ease) !important;
 }
-tbody tr:nth-child(even) { 
-  background: rgba(248, 250, 252, 0.7) !important; 
+tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.65) !important;
 }
-tbody tr:hover { 
-  background: var(--sdlg-primary-soft) !important; 
+tbody tr:hover {
+  background: var(--sdlg-primary-soft) !important;
+}
+thead th {
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--sdlg-muted) !important;
+  border-bottom: 1px solid var(--sdlg-border-strong) !important;
+  background: var(--sdlg-surface-muted) !important;
+}
+td, th {
+  padding: 12px 16px !important;
 }
 
-/* Professional Form Controls */
-input, select, textarea {
+/* ==========================================================================
+   8. FORMS (Text, Select, Textarea, Checkbox, Radio)
+   ========================================================================== */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
   border: 1px solid var(--sdlg-border-strong) !important;
   border-radius: calc(var(--sdlg-radius) - 4px) !important;
-  background: #ffffff !important;
-  padding: 8px 12px !important;
+  background-color: #ffffff !important;
+  padding: 9px 12px !important;
   color: var(--sdlg-text) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  min-height: 38px !important;
   transition: var(--sdlg-transition) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02) !important;
 }
 
-input:focus, select:focus, textarea:focus {
+input:not([type="checkbox"]):not([type="radio"]):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--sdlg-muted-strong) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
   border-color: var(--sdlg-primary) !important;
-  box-shadow: var(--sdlg-ring) !important;
+  box-shadow: var(--sdlg-ring), inset 0 1px 2px rgba(37, 99, 235, 0.05) !important;
   outline: none !important;
 }
 
-/* Utilities for Badges (Success / Danger States) */
+input::placeholder,
+textarea::placeholder {
+  color: var(--sdlg-muted) !important;
+  opacity: 0.8 !important;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: var(--sdlg-surface-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+input:invalid:not(:placeholder-shown),
+textarea:invalid:not(:placeholder-shown) {
+  border-color: var(--sdlg-danger) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Custom Select Arrow */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 36px !important;
+}
+
+/* Checkbox & Radio (Modern Accent) */
+input[type="checkbox"],
+input[type="radio"] {
+  padding: 0 !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  accent-color: var(--sdlg-primary) !important;
+  cursor: pointer !important;
+  transition: var(--sdlg-transition) !important;
+}
+input[type="radio"] {
+  border-radius: 50% !important;
+}
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--sdlg-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ==========================================================================
+   9. BADGES (Pill Shape + Semantic Depth)
+   ========================================================================== */
+.badge-success,
+.badge-danger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 10px !important;
+  border-radius: var(--sdlg-radius-full) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.4 !important;
+}
+
 .badge-success {
   background-color: var(--sdlg-success-soft) !important;
-  color: var(--sdlg-success) !important;
-  font-weight: 600;
+  color: #047857 !important;
+  border: 1px solid rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.08) !important;
 }
+
 .badge-danger {
   background-color: var(--sdlg-danger-soft) !important;
-  color: var(--sdlg-danger) !important;
-  font-weight: 600;
+  color: #b91c1c !important;
+  border: 1px solid rgba(239, 68, 68, 0.22) !important;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* ==========================================================================
+   10. GLOBAL FOCUS-VISIBLE (Keyboard Accessibility)
+   ========================================================================== */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--sdlg-primary) !important;
+  outline-offset: 2px !important;
+  border-radius: var(--sdlg-radius-xs) !important;
+}
+
+/* ==========================================================================
+   11. DARK MODE (auto-detect)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sdlg-bg: #0b1220;
+    --sdlg-surface: #131c31;
+    --sdlg-surface-muted: #0f172a;
+    --sdlg-surface-elevated: #1a2540;
+    --sdlg-border: #1e293b;
+    --sdlg-border-strong: #334155;
+    --sdlg-text: #e2e8f0;
+    --sdlg-text-secondary: #cbd5e1;
+    --sdlg-muted: #94a3b8;
+    --sdlg-muted-strong: #cbd5e1;
+    --sdlg-primary-soft: rgba(37, 99, 235, 0.12);
+    --sdlg-success-soft: rgba(16, 185, 129, 0.12);
+    --sdlg-danger-soft: rgba(239, 68, 68, 0.12);
+    --sdlg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+    --sdlg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --sdlg-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.35);
+  }
+  html, body {
+    background:
+      radial-gradient(1000px 500px at 90% -10%, rgba(37, 99, 235, 0.12), transparent 60%),
+      radial-gradient(800px 400px at 5% 0%, rgba(16, 185, 129, 0.06), transparent 55%),
+      var(--sdlg-bg) !important;
+  }
+  header, .topbar {
+    background: rgba(19, 28, 49, 0.75) !important;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: var(--sdlg-surface) !important;
+  }
+  tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.4) !important;
+  }
+  thead th {
+    background: var(--sdlg-surface-muted) !important;
+  }
+}
+
+/* ==========================================================================
+   12. REDUCED MOTION (Accessibility)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card:hover,
+  .metric-card:hover,
+  button.primary:hover,
+  .btn-primary:hover {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   13. PRINT STYLES (Clean Output)
+   ========================================================================== */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, .topbar {
+    position: static !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  .card,
+  [class*="card"]:not(.sdlg-tracking-panel),
+  .metric-card,
+  .claims-table-shell {
+    box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+    page-break-inside: avoid !important;
+  }
+  button.primary,
+  .btn-primary,
+  [class*="btn-primary"] {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
 }

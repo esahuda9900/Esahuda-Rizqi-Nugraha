@@ -1,36 +1,51 @@
-/* ========================================================================
-   SDLG CONTAINER QUERIES V3.0 (PRODUCTION ENTERPRISE)
+/* ==========================================================================
+   SDLG CONTAINER QUERIES V4.0 — ENTERPRISE PRO MAX
    Source stylesheet. Runtime inject: modules/navigation-state.js
-   Visual only. Harmonized with Core, Component V3 & Alive Recolor V2.
-   ======================================================================== */
+   Visual only. Harmonized with Core V3 + Component V4 + Alive Recolor V3.
+   Zero HTML changes. All V3 selectors preserved.
+   ========================================================================== */
 
+/* ==========================================================================
+   1. DESIGN TOKENS (Local — Preserved from V3 for backward compat)
+   ------------------------------------------------------------------------
+   ⚠️ NOTE: --sdlg-spacing-5 di sini = 1.25rem (20px), sedangkan
+   Foundation V3 = 1.5rem (24px). Nilai ini SENGAJA dipertahankan untuk
+   preserve visual behavior existing (compact ERP density).
+   Kalau mau align ke 24px Foundation, ubah nilai di bawah + test visual.
+   ========================================================================== */
 :root {
-  /* Sinkronisasi Token dengan File Core & Alive Recolor V2 */
   --sdlg-spacing-1: 0.25rem; /* 4px */
   --sdlg-spacing-2: 0.5rem;  /* 8px */
   --sdlg-spacing-3: 0.75rem; /* 12px */
   --sdlg-spacing-4: 1rem;    /* 16px */
-  --sdlg-spacing-5: 1.25rem; /* 20px */
+  --sdlg-spacing-5: 1.25rem; /* 20px — ⚠️ differs from Foundation (1.5rem) */
 
-  --sdlg-radius-card: 12px; /* Disamakan ke 12px sesuai standar Enterprise V2 */
+  --sdlg-radius-card: 12px;
   --sdlg-col-min: 140px;
   --sdlg-page-max: 1440px;
   --sdlg-page-x: 24px;
   --sdlg-page-b: 64px;
 }
 
-/* ========================================================================
-   1. CONTAINMENT CONTEXTS (Layout Isolation Engine)
-   ======================================================================== */
+/* ==========================================================================
+   2. CONTAINMENT CONTEXTS (Layout Isolation Engine)
+   ========================================================================== */
 
-/* Page-level container isolation */
+/* Page-level container isolation
+   ⚠️ WARNING: container-type: inline-size implies `contain: layout style`.
+   This makes .page a CONTAINING BLOCK for position: fixed descendants.
+   → Modals, toasts, dropdowns MUST be mounted OUTSIDE .page (e.g. body).
+   → Otherwise they'll be trapped inside .page bounds (not full-screen).
+*/
 .page {
   container-type: inline-size;
   container-name: sdlg-page;
-  contain: layout style; /* Mengisolasi rendering halaman agar menghemat performa CPU */
+  /* contain: layout style — redundant (implied by container-type) but
+     kept explicit for maintainability. */
+  contain: layout style;
 }
 
-/* Grid Container */
+/* Grid container — auto-fit fallback works tanpa container query */
 .metric-grid {
   container-type: inline-size;
   container-name: sdlg-metrics;
@@ -39,7 +54,9 @@
   gap: var(--sdlg-spacing-3);
 }
 
-/* Card Containers (PENTING: Jangan pasang konteks kontainer di #sdlg-tracking-panel) */
+/* Card containers
+   PENTING: JANGAN pasang konteks container di #sdlg-tracking-panel
+   (dilindungi oleh shield di section 6) */
 .card:not(#sdlg-tracking-panel),
 .card-pad:not(#sdlg-tracking-panel),
 .metric-card,
@@ -51,56 +68,78 @@
   max-width: 100%;
   box-sizing: border-box;
   border-radius: var(--sdlg-radius-card);
+  /* Defensive: cegah z-index bocor dari child */
+  isolation: isolate;
 }
 
-/* ========================================================================
-   2. METRIC DENSITY BY CONTAINER
-   ======================================================================== */
+/* ==========================================================================
+   3. METRIC DENSITY BY CONTAINER
+   ========================================================================== */
 @container sdlg-metrics (max-width: 520px) {
-  .metric-grid { 
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important; 
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @container sdlg-metrics (max-width: 340px) {
-  .metric-grid { 
-    grid-template-columns: minmax(0, 1fr) !important; 
+  .metric-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
 @container sdlg-metrics (min-width: 900px) {
-  .metric-grid { 
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important; 
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
 
-/* ========================================================================
-   3. PER-CARD TYPE SCALE (Metric Cards Typography)
-   ======================================================================== */
-@container sdlg-card (max-width: 280px) {
-  .metric-value { 
-    font-size: 20px !important; 
+/* ==========================================================================
+   4. PER-CARD TYPE SCALE (Metric Cards Typography)
+   ========================================================================== */
+
+/* Nano tier — kartu sangat sempit */
+@container sdlg-card (max-width: 200px) {
+  .metric-value {
+    font-size: 18px !important;
+    font-variant-numeric: tabular-nums !important;
+    line-height: 1.2 !important;
   }
-  .metric-label, .section-sub { 
-    font-size: 10px !important; 
+  .metric-label,
+  .section-sub {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+  }
+}
+
+@container sdlg-card (max-width: 280px) {
+  .metric-value {
+    font-size: 20px !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+  .metric-label,
+  .section-sub {
+    font-size: 10px !important;
+    text-wrap: pretty;
   }
 }
 
 @container sdlg-card (min-width: 281px) and (max-width: 420px) {
-  .metric-value { 
-    font-size: 24px !important; 
+  .metric-value {
+    font-size: 24px !important;
+    font-variant-numeric: tabular-nums !important;
   }
 }
 
 @container sdlg-card (min-width: 421px) {
-  .metric-value { 
-    font-size: 28px !important; 
+  .metric-value {
+    font-size: 28px !important;
+    font-variant-numeric: tabular-nums !important;
   }
 }
 
-/* ========================================================================
-   4. FORM & FILTER ADAPTATION
-   ======================================================================== */
+/* ==========================================================================
+   5. FORM & FILTER ADAPTATION
+   ========================================================================== */
 @container sdlg-card (max-width: 560px) {
   .claims-filter-bar {
     flex-direction: column !important;
@@ -115,21 +154,22 @@
   }
 }
 
-/* ========================================================================
-   5. PAGE-LEVEL GRID ADAPTATION (AI-Robust Selectors)
-   ======================================================================== */
+/* ==========================================================================
+   6. PAGE-LEVEL GRID ADAPTATION (AI-Robust Selectors)
+   ------------------------------------------------------------------------
+   Toleransi spasi & atribut inline (mencegah hancur karena hasil render AI
+   berbeda spasi). Consolidated: [style*="repeat(4"] sudah match
+   [style*="repeat(4,"] — variant dengan koma redundant.
+   ========================================================================== */
 @container sdlg-page (max-width: 900px) {
   .detail-grid {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
-/* Toleransi Spasi & Atribut Inline (Mencegah Hancur Karena Hasil Render AI Berbeda Spasi) */
 @container sdlg-page (max-width: 560px) {
   .page [style*="repeat(4"],
-  .page [style*="repeat(3"],
-  .page [style*="repeat(4,"],
-  .page [style*="repeat(3,"] {
+  .page [style*="repeat(3"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
@@ -137,20 +177,160 @@
 @container sdlg-page (max-width: 400px) {
   .page [style*="repeat(4"],
   .page [style*="repeat(3"],
-  .page [style*="repeat(4,"],
-  .page [style*="repeat(3,"] {
+  .page [style*="repeat(2"] {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
-/* ========================================================================
-   6. ABSOLUTE SHIELD FOR TRACKING PANEL
-   ======================================================================== */
-/* Menjaga stabilitas susunan grid dan ukuran font panel tracking internal ERP */
+/* ==========================================================================
+   7. ABSOLUTE SHIELD FOR TRACKING PANEL
+   ------------------------------------------------------------------------
+   Menjaga stabilitas susunan grid & font panel tracking internal ERP.
+   `container-type: normal` menonaktifkan container query context di
+   dalam panel — mencegah child-nya kena efek `@container sdlg-card` dkk.
+   ========================================================================== */
 @container sdlg-page (max-width: 560px) {
   #sdlg-tracking-panel,
   #sdlg-tracking-panel [style*="repeat"] {
     grid-template-columns: inherit !important;
-    container-type: normal !important; /* Mematikan kueri kontainer mikro di dalam panel tracking */
+    container-type: normal !important;
+    /* Defensive: cegah scroll chaining keluar panel */
+    overscroll-behavior: contain;
+  }
+}
+
+/* ==========================================================================
+   8. FALLBACK — Browsers WITHOUT Container Query support
+   ------------------------------------------------------------------------
+   Firefox < 110, Chrome < 105, Safari < 16.
+   Approximate dengan media query (viewport-based, bukan container-based).
+   Semantics differ — media queries = viewport, CQ = container width.
+   Best-effort degradation, layout tetap terbaca.
+   ========================================================================== */
+@supports not (container-type: inline-size) {
+  /* Metric grid collapse */
+  @media (max-width: 640px) {
+    .metric-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .metric-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .metric-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+  }
+
+  /* Typography scale approximation */
+  @media (max-width: 480px) {
+    .metric-value {
+      font-size: 24px !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+    .metric-label,
+    .section-sub {
+      font-size: 10px !important;
+    }
+  }
+
+  /* Form & filter collapse */
+  @media (max-width: 560px) {
+    .claims-filter-bar {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: var(--sdlg-spacing-2) !important;
+    }
+    .detail-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+
+  /* Inline-style grids collapse */
+  @media (max-width: 560px) {
+    .page [style*="repeat(4"],
+    .page [style*="repeat(3"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .page [style*="repeat(4"],
+    .page [style*="repeat(3"],
+    .page [style*="repeat(2"] {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   9. REDUCED MOTION (A11Y — minimal, no animations here)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .metric-grid,
+  .metric-card,
+  .detail-grid {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   10. HIGH CONTRAST (A11Y)
+   ========================================================================== */
+@media (prefers-contrast: more) {
+  .metric-label,
+  .section-sub {
+    color: var(--sdlg-text-main, #0f172a) !important;
+  }
+}
+
+/* ==========================================================================
+   11. PRINT STYLES — Reset grids (container queries unpredictable in print)
+   ========================================================================== */
+@media print {
+  /* Disable container contexts untuk print (containment behaviour berbeda) */
+  .page {
+    container-type: normal !important;
+    contain: none !important;
+  }
+
+  .card:not(#sdlg-tracking-panel),
+  .card-pad:not(#sdlg-tracking-panel),
+  .metric-card,
+  .claims-filter-bar,
+  .detail-grid {
+    container-type: normal !important;
+  }
+
+  /* Predictable grid layout for print */
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .claims-filter-bar {
+    flex-direction: row !important;
+  }
+
+  /* Reset inline-style collapse untuk print (viewport = paper width) */
+  .page [style*="repeat(4"],
+  .page [style*="repeat(3"],
+  .page [style*="repeat(2"] {
+    /* Keep original inline layout — no override needed for print */
+  }
+
+  #sdlg-tracking-panel,
+  #sdlg-tracking-panel [style*="repeat"] {
+    container-type: normal !important;
+    grid-template-columns: unset !important;
   }
 }

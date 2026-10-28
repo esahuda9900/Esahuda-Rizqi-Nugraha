@@ -1,19 +1,21 @@
-/* ========================================================================
-   SDLG COMPONENT LIBRARY V3.0 (PRODUCTION ENTERPRISE)
-   Reusable Industrial ERP Components
-   Optimized: Token alignment, Web-accessibility, and GPU accelerated motion.
-   ======================================================================== */
+/* ==========================================================================
+   SDLG COMPONENT LIBRARY V4.0 — ENTERPRISE PRO MAX
+   Reusable Industrial ERP Components.
+   Zero HTML changes. All V3 selectors preserved.
+   Harmonized with ALIVE RECOLOR V3 + Foundation V3.
+   ========================================================================== */
 
-/* ==========================================
+/* ==========================================================================
    1. BUTTONS (Premium Micro-Interactions)
-   ========================================== */
+   ========================================================================== */
 .sdlg-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 36px; /* Disesuaikan untuk standar kenyamanan klik enterprise */
+  height: 36px;
+  min-height: 36px;
   padding: 0 var(--sdlg-spacing-4, 16px);
-  border-radius: calc(var(--sdlg-radius, 12px) - 4px); /* Nested radius proportional */
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px);
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
   font-size: var(--sdlg-font-size-sm, 0.875rem);
   font-weight: var(--sdlg-font-weight-medium, 500);
@@ -24,6 +26,15 @@
   background-color: transparent;
   color: var(--sdlg-text-main, #0f172a);
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1));
+  /* 🐛 FIX: tanpa ini, border 1px membuat button 38px vs input 36px */
+  box-sizing: border-box;
+  /* Cegah overflow pada tombol panjang di layout sempit */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Icon + text alignment gap */
+  gap: 6px;
+  /* Cegah double-tap zoom iOS */
+  touch-action: manipulation;
 }
 
 /* Strict Accessibility Focus Ring (Keyboard Tab Navigation) */
@@ -32,18 +43,30 @@
   box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
 }
 
-/* Primary Button Control */
+/* Global press feedback — semua varian */
+.sdlg-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+
+/* --- Primary Button --- */
 .sdlg-btn--primary {
   background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
   color: #ffffff !important;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.12) !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.12),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 .sdlg-btn--primary:hover:not(:disabled) {
   filter: brightness(1.05);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  transform: translateY(-1px);
+}
+.sdlg-btn--primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.12) !important;
 }
 
-/* Secondary Button Control */
+/* --- Secondary Button --- */
 .sdlg-btn--secondary {
   background-color: var(--sdlg-surface, #ffffff) !important;
   border-color: var(--sdlg-border, #e2e8f0) !important;
@@ -54,61 +77,80 @@
   border-color: var(--sdlg-border-strong, #cbd5e1) !important;
 }
 
-/* Danger Button Control */
+/* --- Danger Button --- */
 .sdlg-btn--danger {
   background-color: var(--sdlg-danger, #ef4444) !important;
   color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.15) !important;
 }
 .sdlg-btn--danger:hover:not(:disabled) {
-  background-color: #dc2626 !important; /* Red-600 */
+  background-color: #dc2626 !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
+  transform: translateY(-1px);
+}
+.sdlg-btn--danger:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.15) !important;
 }
 
-/* Success Button Control */
+/* --- Success Button --- */
 .sdlg-btn--success {
   background-color: var(--sdlg-success, #10b981) !important;
   color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.15) !important;
 }
 .sdlg-btn--success:hover:not(:disabled) {
-  background-color: #059669 !important; /* Emerald-600 */
+  background-color: #059669 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+  transform: translateY(-1px);
+}
+.sdlg-btn--success:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.15) !important;
 }
 
-/* Ghost Button Control */
+/* --- Ghost Button --- */
 .sdlg-btn--ghost {
   color: var(--sdlg-primary, #2563eb) !important;
   background-color: transparent !important;
   border: none !important;
+  box-shadow: none !important;
 }
 .sdlg-btn--ghost:hover:not(:disabled) {
   background-color: var(--sdlg-primary-soft, #eff6ff) !important;
 }
 
-/* State Disabled Control */
+/* --- Disabled State --- */
 .sdlg-btn:disabled {
   opacity: 0.5 !important;
   cursor: not-allowed !important;
   filter: grayscale(100%) !important;
   box-shadow: none !important;
+  transform: none !important;
 }
 
-/* Size Modifiers Engine */
+/* --- Size Modifiers --- */
 .sdlg-btn--normal {
   height: 40px !important;
+  min-height: 40px !important;
   padding: 0 var(--sdlg-spacing-5, 24px) !important;
 }
 .sdlg-btn--compact {
   height: 30px !important;
+  min-height: 30px !important;
   padding: 0 var(--sdlg-spacing-3, 12px) !important;
   font-size: var(--sdlg-font-size-xs, 0.75rem) !important;
 }
 
-/* ==========================================
+/* ==========================================================================
    2. INPUTS & SELECTION CONTROLS
-   ========================================== */
+   ========================================================================== */
 .sdlg-input,
 .sdlg-select {
   display: block;
   width: 100%;
   height: 36px;
+  min-height: 36px;
   padding: 0 var(--sdlg-spacing-3, 12px);
   border-radius: calc(var(--sdlg-radius, 12px) - 4px);
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
@@ -119,30 +161,71 @@
   outline: none;
   box-sizing: border-box;
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1));
+  caret-color: var(--sdlg-primary, #2563eb);
 }
 
+/* Placeholder styling — konsisten lintas browser */
+.sdlg-input::placeholder {
+  color: var(--sdlg-text-muted, #64748b);
+  opacity: 0.75;
+}
+
+/* Hover subtle — indikasi interaktif */
+.sdlg-input:hover:not(:disabled),
+.sdlg-select:hover:not(:disabled) {
+  border-color: var(--sdlg-text-muted, #64748b);
+}
+
+/* Focus state */
 .sdlg-input:focus,
 .sdlg-select:focus {
   border-color: var(--sdlg-primary, #2563eb);
   box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15));
 }
 
+/* --- Select-specific: custom arrow cross-browser --- */
+.sdlg-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+
+/* --- Error State --- */
 .sdlg-input--error,
 .sdlg-select--error {
   border-color: var(--sdlg-danger, #ef4444) !important;
   box-shadow: 0 0 0 3px var(--sdlg-danger-soft, rgba(239, 68, 68, 0.15)) !important;
 }
 
+/* Error + focus tetap merah */
+.sdlg-input--error:focus,
+.sdlg-select--error:focus {
+  border-color: var(--sdlg-danger, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+}
+
+/* --- Disabled State --- */
 .sdlg-input:disabled,
 .sdlg-select:disabled {
   background-color: var(--sdlg-surface-muted, #f8fafc);
   color: var(--sdlg-text-muted, #64748b);
   cursor: not-allowed;
+  opacity: 0.75;
 }
 
-/* ==========================================
+/* Disabled select: arrow lebih muted */
+.sdlg-select:disabled {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+/* ==========================================================================
    3. CLEAN STICKY TABLES
-   ========================================== */
+   ========================================================================== */
 .sdlg-table {
   width: 100%;
   border-collapse: collapse;
@@ -161,6 +244,8 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  /* Cegah bleed baris di belakang header saat sticky */
+  box-shadow: inset 0 -1px 0 var(--sdlg-border, #e2e8f0);
 }
 
 .sdlg-table tbody td {
@@ -170,40 +255,78 @@
   border-bottom: 1px solid var(--sdlg-border, #e2e8f0);
   height: 44px;
   box-sizing: border-box;
+  /* Numeric values lebih rapi & sejajar */
+  font-variant-numeric: tabular-nums;
 }
 
 .sdlg-table tbody tr {
   transition: background-color 0.15s ease;
 }
+
 .sdlg-table tbody tr:hover {
   background-color: var(--sdlg-primary-soft, #eff6ff);
 }
 
-/* ==========================================
+/* Row terakhir tanpa double-border */
+.sdlg-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* A11Y: keyboard row focus */
+.sdlg-table tbody tr:focus-within {
+  background-color: var(--sdlg-primary-soft, #eff6ff);
+  outline: 2px solid var(--sdlg-primary, #2563eb);
+  outline-offset: -2px;
+}
+
+/* ==========================================================================
    4. CARDS ARCHITECTURE
-   ========================================== */
+   ========================================================================== */
 .sdlg-card {
   background-color: var(--sdlg-surface, #ffffff) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   padding: var(--sdlg-spacing-4, 16px) !important;
   margin-bottom: var(--sdlg-spacing-3, 12px) !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.03)) !important;
+  /* Consistent transition untuk future hover states */
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1));
+  /* Cegah z-index bocor dari child */
+  isolation: isolate;
 }
 
-/* ==========================================
+/* ==========================================================================
    5. MODALS (Hardware Accelerated Motion)
-   ========================================== */
+   ========================================================================== */
 .sdlg-modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.4); /* Backdrop redup seimbang */
+  background-color: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(8px) !important; /* Efek blur ditingkatkan */
+  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
+  /* 🐛 FIX: Modal tinggi bisa overflow tanpa scroll */
+  overflow-y: auto;
+  padding: 20px;
+  /* Cegah scroll chaining dari backdrop ke body */
+  overscroll-behavior: contain;
+  /* Smooth fade-in backdrop (sebelumnya snap) */
+  animation: backdropFadeIn 0.2s ease forwards;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Fallback: browser tanpa backdrop-filter → backdrop lebih opaque */
+@supports not ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) {
+  .sdlg-modal-backdrop {
+    background-color: rgba(15, 23, 42, 0.6) !important;
+  }
 }
 
 .sdlg-modal {
@@ -211,14 +334,21 @@
   border: 1px solid var(--sdlg-border, #e2e8f0);
   border-radius: var(--sdlg-radius, 12px);
   padding: var(--sdlg-spacing-5, 24px);
-  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05));
-  max-width: 600px;
-  width: 90%;
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.05));
+  /* min() lebih aman: viewport 320px → 288px (sebelumnya bisa cramped) */
+  max-width: min(600px, 92vw);
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--sdlg-spacing-4, 16px);
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif);
-  will-change: transform, opacity; /* Mencegah patah animasi di monitor high-refresh rate */
+  /* 🐛 FIX: max-height + scroll — sebelumnya modal tinggi terpotong viewport */
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 🧹 REMOVED: will-change: transform, opacity (perf leak — permanent layer)
+     Animation sendiri sudah trigger composite layer otomatis */
   animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -234,6 +364,7 @@
   border-bottom: 1px solid var(--sdlg-border, #e2e8f0);
   padding-bottom: var(--sdlg-spacing-3, 12px);
   margin-bottom: var(--sdlg-spacing-2, 8px);
+  text-wrap: balance;
 }
 
 .sdlg-modal-footer {
@@ -243,11 +374,12 @@
   border-top: 1px solid var(--sdlg-border, #e2e8f0);
   padding-top: var(--sdlg-spacing-4, 16px);
   margin-top: var(--sdlg-spacing-2, 8px);
+  flex-wrap: wrap;
 }
 
-/* ==========================================
-   6. TOAST notifications (Completed Fix)
-   ========================================== */
+/* ==========================================================================
+   6. TOAST NOTIFICATIONS
+   ========================================================================== */
 .sdlg-toast {
   position: fixed;
   bottom: var(--sdlg-spacing-5, 24px);
@@ -262,9 +394,11 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sdlg-spacing-3, 12px);
-  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05));
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.05));
   z-index: 2000;
-  will-change: transform, opacity;
+  /* max-width cegah overflow di konten panjang */
+  max-width: min(420px, calc(100vw - 48px));
+  /* 🧹 REMOVED: will-change (perf leak) */
   animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -273,10 +407,157 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
-.sdlg-toast--success { 
-  border-left: 4px solid var(--sdlg-success, #10b981) !important; 
+.sdlg-toast--success {
+  border-left: 4px solid var(--sdlg-success, #10b981) !important;
 }
 
-.sdlg-toast--error { 
-  border-left: 4px solid var(--sdlg-danger, #ef4444) !important; 
+.sdlg-toast--error {
+  border-left: 4px solid var(--sdlg-danger, #ef4444) !important;
+}
+
+/* 🐛 FIX: dark mode — sebelumnya bg = --sdlg-text-main (light di dark mode)
+   + color: #fff = teks putih di bg putih = INVISIBLE */
+@media (prefers-color-scheme: dark) {
+  .sdlg-toast {
+    background-color: var(--sdlg-surface-elevated, #1a2540) !important;
+    color: var(--sdlg-text, #e2e8f0) !important;
+    border: 1px solid var(--sdlg-border, #1e293b);
+  }
+  .sdlg-toast--success {
+    border-left-color: var(--sdlg-success, #10b981) !important;
+  }
+  .sdlg-toast--error {
+    border-left-color: var(--sdlg-danger, #ef4444) !important;
+  }
+}
+
+/* ==========================================================================
+   7. RESPONSIVE — Mobile Polish (Touch + iOS Zoom)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+  /* Touch target 44px (WCAG 2.5.5 AA) — kecuali compact */
+  .sdlg-btn:not(.sdlg-btn--compact) {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 var(--sdlg-spacing-4, 16px) !important;
+  }
+
+  /* 🐛 iOS zoom fix: font-size < 16px trigger auto-zoom saat fokus */
+  .sdlg-input,
+  .sdlg-select {
+    font-size: 16px !important;
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+  }
+
+  .sdlg-select {
+    padding-right: 32px !important;
+  }
+
+  /* Toast: full-width di mobile agar tidak overflow */
+  .sdlg-toast {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+    justify-content: center;
+  }
+
+  /* Modal: padding lebih kecil di HP */
+  .sdlg-modal {
+    padding: var(--sdlg-spacing-4, 16px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+
+  /* Modal footer: column-reverse — primary button jadi di atas, lebih mudah dijangkau thumb */
+  .sdlg-modal-footer {
+    flex-direction: column-reverse;
+    gap: var(--sdlg-spacing-2, 8px);
+  }
+
+  .sdlg-modal-footer > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ==========================================================================
+   8. REDUCED MOTION (A11Y)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .sdlg-btn,
+  .sdlg-input,
+  .sdlg-select,
+  .sdlg-table tbody tr,
+  .sdlg-card {
+    transition-duration: 0.01ms !important;
+  }
+
+  .sdlg-modal,
+  .sdlg-modal-backdrop,
+  .sdlg-toast {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .sdlg-btn:active:not(:disabled),
+  .sdlg-btn--primary:hover:not(:disabled),
+  .sdlg-btn--danger:hover:not(:disabled),
+  .sdlg-btn--success:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   9. HIGH CONTRAST (A11Y)
+   ========================================================================== */
+@media (prefers-contrast: more) {
+  .sdlg-btn--secondary {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+
+  .sdlg-input,
+  .sdlg-select {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+
+  .sdlg-table thead th {
+    color: var(--sdlg-text-main, #0f172a);
+  }
+
+  .sdlg-card {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+}
+
+/* ==========================================================================
+   10. PRINT STYLES
+   ========================================================================== */
+@media print {
+  /* Modal & toast — elemen overlay, tidak relevan untuk print */
+  .sdlg-modal-backdrop,
+  .sdlg-toast {
+    display: none !important;
+  }
+
+  .sdlg-card {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .sdlg-table thead th {
+    position: static !important;
+    box-shadow: none !important;
+    background: #f0f0f0 !important;
+  }
+
+  .sdlg-btn {
+    box-shadow: none !important;
+    /* Sembunyikan tombol "aksi" saat print — hanya tampilkan label */
+    /* (Comment kalau butuh tombol tetap muncul sebagai teks) */
+  }
 }

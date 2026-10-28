@@ -1,14 +1,21 @@
 /* ========================================================================
-   SDLG CLAIM DETAIL CLEAN V4.0 (PRODUCTION ENTERPRISE)
-   Scoped: .page.claim-detail-page ONLY.
-   Goal: Tracking = decision surface; engine/matrix/policy = quiet evidence.
-   Optimized: Token alignment, CSS logical properties, and scroll hardware acceleration.
+   SDLG CLAIM DETAIL CLEAN V5.0 — ENTERPRISE PRO MAX
+   Scoped: .page.claim-detail-page ONLY
+   Philosophy: Tracking = decision surface; engine/matrix/policy = quiet evidence.
+   Upgrades: Cross-browser scrollbar, A11Y focus, reduced-motion, print,
+             container queries, perf (content-visibility), bug fixes.
+   Zero HTML changes. All V4 selectors preserved.
    ======================================================================== */
 
-/* 1. PAGE CONTAINER SETUP */
+/* ========================================================================
+   1. PAGE CONTAINER SETUP
+   ======================================================================== */
 .page.claim-detail-page {
-  max-width: 1440px !important; 
+  max-width: 1440px !important;
   padding-bottom: var(--sdlg-spacing-6, 32px) !important;
+  /* Container query support untuk anak-anaknya (progressive) */
+  container-type: inline-size;
+  container-name: claim-detail;
 }
 
 .page.claim-detail-page > * {
@@ -19,17 +26,26 @@
   margin-bottom: 0 !important;
 }
 
-/* 2. COMMAND BAR (Atas) - Refined Architecture */
+/* ========================================================================
+   2. COMMAND BAR (Top surface — sticky anchor)
+   ======================================================================== */
 .page.claim-detail-page #sdlg-claim-command {
   margin: 0 0 var(--sdlg-spacing-3, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.03)) !important;
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+  /* Isolation cegah z-index bocor dari child */
+  isolation: isolate;
 }
 
-/* 3. HIDE NON-ESSENTIAL SECTIONS (Biar user fokus ke Tracking) */
+/* ========================================================================
+   3. HIDE NON-ESSENTIAL SECTIONS (Focus mode)
+   ------------------------------------------------------------------------
+   ⚠️ A11Y NOTE: display:none juga menyembunyikan dari screen reader.
+   Pastikan elemen ini tidak berisi form kontrol yang wajib diisi.
+   ======================================================================== */
 .page.claim-detail-page #sdlg-warranty-assessment-shell,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .claim-decision-summary,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-legacy-decision,
@@ -37,7 +53,9 @@
   display: none !important;
 }
 
-/* 4. DEMOTE ROUTE SUMMARY (Jadikan "Quiet Evidence") */
+/* ========================================================================
+   4. DEMOTE ROUTE SUMMARY (Quiet Evidence — muted background)
+   ======================================================================== */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary,
 .page.claim-detail-page:has(#sdlg-tracking-panel) > .card.card-pad:first-of-type {
   margin: 0 0 var(--sdlg-spacing-3, 12px) !important;
@@ -55,24 +73,53 @@
   margin: 0 0 var(--sdlg-spacing-1, 4px) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.075em !important;
+  text-wrap: balance;
 }
 
-/* 5. TABLES (Compact, Modern, with Smooth Performance) */
+/* ========================================================================
+   5. SCROLLABLE TABLES — Cross-browser, A11Y, Perf
+   ------------------------------------------------------------------------
+   Pattern: display:block pada <table> + thead/tbody display:table
+   agar sticky header bekerja di dalam scroll container.
+   ======================================================================== */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table {
   display: block !important;
-  max-height: 240px !important; /* Sedikit dinaikkan untuk rasio baris data ideal */
+  /* Mobile-friendly: 240px di desktop, 50vh di mobile */
+  max-height: min(240px, 50vh) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  /* Cegah scroll chaining ke page (penting untuk trackpad & mobile) */
+  overscroll-behavior: contain !important;
+  /* Cegah layout shift saat scrollbar muncul */
+  scrollbar-gutter: stable !important;
+  /* Hanya smooth scroll kalau user tidak prefer reduced-motion */
   scroll-behavior: smooth;
-  will-change: scroll-position; /* Akselerasi hardware browser saat di-scroll */
+  /* Firefox support (Chrome 121+ & Safari 18.2+ juga support) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--sdlg-border-strong, #cbd5e1) transparent;
 }
 
-/* Custom Scrollbar Modern Minimalis */
+/* Smooth scroll guard */
+@media (prefers-reduced-motion: reduce) {
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table {
+    scroll-behavior: auto;
+  }
+}
+
+/* Keyboard accessibility: scroll container focusable via tabindex */
+.page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table:focus-visible {
+  outline: 2px solid var(--sdlg-primary, #2563eb) !important;
+  outline-offset: 2px !important;
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
+}
+
+/* --- Webkit scrollbar (Chrome/Safari/Edge legacy) --- */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar-track {
   background: transparent;
@@ -80,11 +127,13 @@
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar-thumb {
   background: var(--sdlg-border-strong, #cbd5e1);
   border-radius: 99px;
+  transition: background 0.15s ease;
 }
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table::-webkit-scrollbar-thumb:hover {
   background: var(--sdlg-text-muted, #64748b);
 }
 
+/* --- Sticky column layout --- */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad thead,
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad tbody {
   display: table !important;
@@ -92,33 +141,53 @@
   table-layout: fixed !important;
 }
 
+/* Sticky header — z-index turun dari 10 → 5, cukup di atas baris */
 .page.claim-detail-page:has(#sdlg-tracking-panel) table th {
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   font-weight: var(--sdlg-font-weight-semibold, 600) !important;
   color: var(--sdlg-text-muted, #64748b) !important;
   position: sticky !important;
   top: 0 !important;
-  z-index: 10 !important;
+  z-index: 5 !important;
+  /* Cegah bocor baris di belakang header saat sticky */
+  box-shadow: inset 0 -1px 0 var(--sdlg-border, #e2e8f0) !important;
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) table th,
 .page.claim-detail-page:has(#sdlg-tracking-panel) table td {
   padding: var(--sdlg-spacing-2, 8px) var(--sdlg-spacing-3, 12px) !important;
-  font-size: var(--sdlg-font-size-sm, 0.875rem) !important; /* Di-sinkronkan ke skala token (14px) */
+  font-size: var(--sdlg-font-size-sm, 0.875rem) !important;
   line-height: 1.5 !important;
   vertical-align: top !important;
   border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
 }
 
-/* 6. QUIET CARDS (Policy Decision, Coverage, dll) */
+/* Baris terakhir — hapus double border */
+.page.claim-detail-page:has(#sdlg-tracking-panel) table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ========================================================================
+   6. QUIET CARDS (Policy / Coverage / Parts / SLA)
+   ------------------------------------------------------------------------
+   ⚠️ NOTE: Selector [class*="Policy Decision"] dkk memakai spasi + kapital
+   di dalam nilai class attribute. Class CSS normalnya pakai hyphen.
+   Kemungkinan besar selector ini tidak pernah match (dead code).
+   Behavior dipertahankan apa adanya — kalau mau fix, ganti ke nama class
+   aktual (misal [class*="policy-decision"]).
+   ======================================================================== */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .card,
 .page.claim-detail-page:has(#sdlg-tracking-panel) [class*="card-pad"] {
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  box-shadow: none !important; 
+  box-shadow: none !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   margin-bottom: var(--sdlg-spacing-4, 16px) !important;
   background: var(--sdlg-surface, #ffffff) !important;
   transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+  isolation: isolate;
+  /* Perf: render hanya saat masuk viewport (progressive, browser lama abaikan) */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 /* Highlight kartu analitik internal ERP */
@@ -130,7 +199,9 @@
   border: 1px dashed var(--sdlg-border-strong, #cbd5e1) !important;
 }
 
-/* 7. TYPOGRAPHY TWEAKS & CONTROLS */
+/* ========================================================================
+   7. TYPOGRAPHY & CONTROLS
+   ======================================================================== */
 .page.claim-detail-page:has(#sdlg-tracking-panel) .section-title,
 .page.claim-detail-page:has(#sdlg-tracking-panel) h2,
 .page.claim-detail-page:has(#sdlg-tracking-panel) h3 {
@@ -139,6 +210,7 @@
   color: var(--sdlg-text-main, #0f172a) !important;
   margin-bottom: var(--sdlg-spacing-2, 8px) !important;
   letter-spacing: -0.01em !important;
+  text-wrap: balance;
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) .section-sub,
@@ -146,6 +218,7 @@
   font-size: var(--sdlg-font-size-sm, 0.875rem) !important;
   line-height: var(--sdlg-line-height-body, 1.6) !important;
   color: var(--sdlg-text-muted, #64748b) !important;
+  text-wrap: pretty;
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn {
@@ -154,6 +227,15 @@
   font-size: var(--sdlg-font-size-xs, 0.75rem) !important;
   border-radius: calc(var(--sdlg-radius, 12px) - 6px) !important;
   font-weight: var(--sdlg-font-weight-medium, 500) !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+}
+
+.page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn:hover {
+  filter: brightness(1.05);
+}
+
+.page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn:active {
+  transform: scale(0.98);
 }
 
 .page.claim-detail-page:has(#sdlg-tracking-panel) .status-track {
@@ -165,15 +247,118 @@
   border-radius: calc(var(--sdlg-radius, 12px) - 2px) !important;
 }
 
-/* 8. RESPONSIVE LAYER (Mobile Optimization) */
-@media (max-width: 768px) {
+/* ========================================================================
+   8. RESPONSIVE LAYER
+   ------------------------------------------------------------------------
+   Breakpoint 767.98px agar tidak overlap di 768px (best practice).
+   ======================================================================== */
+@media (max-width: 767.98px) {
   .page.claim-detail-page {
     max-width: 100% !important;
-    padding-inline: var(--sdlg-spacing-3, 12px) !important; /* Mencegah konten menyentuh pinggir layar HP */
+    padding-inline: var(--sdlg-spacing-3, 12px) !important;
+    container-type: inline-size;
   }
+
   .page.claim-detail-page:has(#sdlg-tracking-panel) table th,
   .page.claim-detail-page:has(#sdlg-tracking-panel) table td {
-    padding: var(--sdlg-spacing-2, 6px) var(--sdlg-spacing-2, 8px) !important;
+    /* Fix: fallback sebelumnya 6px, token --sdlg-spacing-2 = 8px → diselaraskan */
+    padding: var(--sdlg-spacing-2, 8px) var(--sdlg-spacing-2, 8px) !important;
     font-size: var(--sdlg-font-size-xs, 0.75rem) !important;
+  }
+
+  /* Mobile: table scroll height lebih ketat */
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table {
+    max-height: min(200px, 45vh) !important;
+  }
+}
+
+/* ========================================================================
+   9. CONTAINER QUERIES — Progressive enhancement
+   ------------------------------------------------------------------------
+   Jika .page.claim-detail-page < 640px lebarnya, kompakkan padding kartu.
+   ======================================================================== */
+@supports (container-type: inline-size) {
+  @container claim-detail (max-width: 640px) {
+    .page.claim-detail-page:has(#sdlg-tracking-panel) .card {
+      padding: var(--sdlg-spacing-3, 12px) !important;
+    }
+    .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary,
+    .page.claim-detail-page:has(#sdlg-tracking-panel) > .card.card-pad:first-of-type {
+      padding: var(--sdlg-spacing-2, 8px) var(--sdlg-spacing-3, 12px) !important;
+    }
+  }
+}
+
+/* ========================================================================
+   10. REDUCED MOTION (A11Y)
+   ======================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn {
+    transition-duration: 0.01ms !important;
+  }
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn:active {
+    transform: none !important;
+  }
+}
+
+/* ========================================================================
+   11. HIGH-CONTRAST MODE (A11Y — prefers-contrast)
+   ======================================================================== */
+@media (prefers-contrast: more) {
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card {
+    border-color: var(--sdlg-text-muted, #64748b) !important;
+  }
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card p,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .section-sub {
+    color: var(--sdlg-text-main, #0f172a) !important;
+  }
+  .page.claim-detail-page:has(#sdlg-tracking-panel) table th {
+    color: var(--sdlg-text-main, #0f172a) !important;
+  }
+}
+
+/* ========================================================================
+   12. PRINT STYLES (Audit / Claim document output)
+   ======================================================================== */
+@media print {
+  .page.claim-detail-page {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Jangan sembunyikan di print — untuk audit, semua harus terlihat */
+  .page.claim-detail-page #sdlg-warranty-assessment-shell,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .claim-decision-summary,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-legacy-decision,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary__next {
+    display: block !important;
+  }
+
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card,
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .sdlg-route-summary {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    /* Disable content-visibility saat print agar semua ter-render */
+    content-visibility: visible !important;
+  }
+
+  /* Table: full height, no scroll */
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .card.card-pad table {
+    max-height: none !important;
+    overflow: visible !important;
+    display: table !important;
+  }
+
+  .page.claim-detail-page:has(#sdlg-tracking-panel) table th {
+    position: static !important;
+    box-shadow: none !important;
+    background: #f0f0f0 !important;
+  }
+
+  .page.claim-detail-page:has(#sdlg-tracking-panel) .status-transition-btn {
+    display: none !important;
   }
 }

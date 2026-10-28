@@ -1,34 +1,58 @@
 /* =========================================================
-   SDLG LAYOUT GRID V16.0
+   SDLG LAYOUT GRID V17.0 — ENTERPRISE PRO MAX
    Struktur & grid saja (visual only, tanpa business logic).
-   Nama class sama dengan V15, jadi HTML/JS nggak perlu diubah.
+   Nama class SAMA 100% dengan V16 — zero HTML/JS change.
    Perubahan utama:
-   - Token spacing/radius dipusatkan di :root (nggak ada fallback beda-beda)
-   - Grid metric fluid tanpa lompatan kolom kasar
-   - Sidebar detail sticky di desktop
-   - Tabel scroll di dalam wrapper, bukan ngebuat halaman geser
-   - Container query: card menyesuaikan lebar dirinya, bukan layar
-   - Fokus keyboard, reduced motion, safe-area HP
+   - Fix sticky th background bleed (bug kritis)
+   - Fix sticky sidebar overlap topbar (--sdlg-sticky-offset)
+   - Fallback untuk color-mix, dvh, mask-image
+   - Print expand table, prefers-contrast, iOS zoom fix
+   - Perf: content-visibility, isolation, touch-action
+   - Preserve: radius 16px, spacing-6 = 32px (existing behavior)
    ========================================================= */
 
 /* =========================================
    0. TOKENS (fallback kalau theme file belum load)
+   -------------------------------------------------------------------
+   ⚠️ CONFLICT NOTE:
+   - --sdlg-radius-card: 16px di sini BEDA dengan Master V5 (12px)
+   - --sdlg-spacing-6: 32px di sini = Foundation V3, ≠ Master V5 (24px)
+   Preserved untuk zero visual regression. Kalau mau align ke Master,
+   ubah + test seluruh halaman (impact ~20+ elemen).
    ========================================= */
 :root {
+  /* Spacing — matches Foundation V3 (32px for spacing-6) */
   --sdlg-spacing-1: 4px;
   --sdlg-spacing-2: 8px;
   --sdlg-spacing-3: 12px;
   --sdlg-spacing-4: 16px;
-  --sdlg-spacing-5: 24px;
-  --sdlg-spacing-6: 32px;
-  --sdlg-radius-card: 16px;
-  --sdlg-radius-control: 10px;
+  --sdlg-spacing-5: 24px;   /* ⚠️ Master V5 = 20px */
+  --sdlg-spacing-6: 32px;   /* ⚠️ Master V5 = 24px */
 
+  /* Radius — existing 16px, preserved */
+  --sdlg-radius-card: 16px;
+  --sdlg-radius-control: var(--sdlg-radius-sm, 10px);
+
+  /* Layout */
   --sdlg-page-max: 1440px;
   --sdlg-page-gutter: clamp(12px, 2.2vw, 24px);
   --sdlg-sticky-top: 16px;
+  /* 🐛 FIX: account sticky topbar — cegah sticky sidebar overlap topbar.
+     Kalau tidak ada sticky topbar, header-height = 0px → hanya sticky-top.
+     Kalau ada sticky topbar (Command Center V5 = 68px), total = 84px. */
+  --sdlg-sticky-offset: calc(
+    var(--sdlg-header-height, 0px) + var(--sdlg-sticky-top)
+  );
 
-  --sdlg-focus-ring: 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent);
+  /* Focus ring — fallback + color-mix upgrade */
+  --sdlg-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+/* Progressive upgrade: color-mix if supported */
+@supports (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --sdlg-focus-ring: 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent);
+  }
 }
 
 /* =========================================
@@ -53,7 +77,6 @@
    ========================================= */
 .metric-grid {
   display: grid;
-  /* Kolom otomatis: sebanyak yang muat, minimal 190px per kartu */
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
   gap: var(--sdlg-spacing-4);
   margin-bottom: var(--sdlg-spacing-5);
@@ -61,13 +84,27 @@
 }
 
 .metric-card {
-  container-type: inline-size; /* font angka ikut lebar kartu */
+  container-type: inline-size;
   min-width: 0;
   min-height: 110px;
   border-radius: var(--sdlg-radius-card);
   /* clip supaya radius rapi, tapi focus ring anak tetap kelihatan */
   overflow: clip;
   overflow-clip-margin: 4px;
+  /* Perf: skip paint kalau off-screen di dashboard panjang */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 120px;
+  /* Cegah z-index bocor dari child */
+  isolation: isolate;
+  /* Default transition untuk future hover */
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus-visible ring untuk metric-card yang interaktif (link/button wrapper) */
+.metric-card:focus-within {
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15));
+  border-radius: var(--sdlg-radius-card);
 }
 
 .metric-value {
@@ -76,7 +113,9 @@
   line-height: 1.15;
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
+  /* font-feature-settings redundant dengan font-variant-numeric — preserved */
   font-feature-settings: "tnum" 1;
+  text-wrap: pretty;
 }
 
 /* =========================================
@@ -89,14 +128,29 @@
   align-items: start;
 }
 
-/* Panel kanan ikut terlihat saat scroll data panjang di kiri.
-   Pakai class .is-sticky di elemen sidebar (opsional). */
+/* Panel kanan ikut terlihat saat scroll data panjang di kiri. */
 .detail-grid > .is-sticky {
   position: sticky;
-  top: var(--sdlg-sticky-top);
-  max-height: calc(100dvh - (var(--sdlg-sticky-top) * 2));
+  /* 🐛 FIX: pakai offset yang sudah account header height */
+  top: var(--sdlg-sticky-offset);
+  /* 🐛 FIX: fallback 100vh untuk browser tanpa dvh support */
+  max-height: calc(100vh - (var(--sdlg-sticky-offset) * 2));
+  max-height: calc(100dvh - (var(--sdlg-sticky-offset) * 2));
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Prevent layout shift saat scrollbar muncul */
+  scrollbar-gutter: stable;
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+}
+
+/* Webkit scrollbar untuk sticky sidebar */
+.detail-grid > .is-sticky::-webkit-scrollbar {
+  width: 6px;
+}
+.detail-grid > .is-sticky::-webkit-scrollbar-thumb {
+  background: var(--sdlg-border-strong, #cbd5e1);
+  border-radius: 99px;
 }
 
 /* =========================================
@@ -108,6 +162,8 @@
   min-width: 0;
   max-width: 100%;
   border-radius: var(--sdlg-radius-card);
+  /* Cegah z-index bocor */
+  isolation: isolate;
 }
 
 .card-pad {
@@ -118,9 +174,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between; /* judul kiri, aksi kanan */
+  justify-content: space-between;
   gap: var(--sdlg-spacing-2) var(--sdlg-spacing-4);
   margin-bottom: var(--sdlg-spacing-4);
+}
+
+.section-head > * {
+  text-wrap: balance;
 }
 
 .claims-filter-bar {
@@ -137,29 +197,61 @@
   min-width: 0;
 }
 
-/* Bungkus <table> dengan .table-scroll supaya tabel lebar
-   geser di dalam kartunya sendiri, bukan seluruh halaman */
+/* Bungkus <table> dengan .table-scroll supaya tabel lebar geser di dalam */
 .table-scroll {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch; /* legacy iOS, preserved */
   overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   border-radius: inherit;
+  /* Cegah layout shift saat scrollbar muncul */
+  scrollbar-gutter: stable;
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--sdlg-border-strong, #cbd5e1) transparent;
+}
+
+/* Webkit scrollbar untuk table */
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--sdlg-border-strong, #cbd5e1);
+  border-radius: 99px;
+}
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--sdlg-text-muted, #64748b);
 }
 
 .table-scroll > table {
   width: 100%;
-  min-width: 640px;
+  /* 🐛 FIX: min() adaptif — kalau viewport < 640px, pakai 100% (no overflow
+     untuk table 2 kolom). Kalau > 640px, min 640px untuk readability. */
+  min-width: min(640px, 100%);
   border-collapse: separate;
   border-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 
-/* Header tabel tetap terlihat saat tabel panjang discroll */
+/* 🐛 FIX KRITIS: sticky header WAJIB punya background —
+   tanpa ini, konten di bawah "tembus" lewat header sticky. */
 .table-scroll thead th {
   position: sticky;
   top: 0;
   z-index: 1;
+  background: var(--sdlg-surface-muted, #f8fafc);
+  /* Inset shadow sebagai border bawah — tidak bloat saat sticky */
+  box-shadow: inset 0 -1px 0 var(--sdlg-border, #e2e8f0);
+}
+
+/* Row terakhir tanpa double border */
+.table-scroll tbody tr:last-child td {
+  border-bottom: none;
 }
 
 /* =========================================
@@ -171,6 +263,7 @@
   gap: var(--sdlg-spacing-2);
   padding: var(--sdlg-spacing-6) var(--sdlg-spacing-4);
   text-align: center;
+  text-wrap: balance;
 }
 
 .skeleton {
@@ -178,12 +271,25 @@
   border-radius: var(--sdlg-radius-control);
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, currentColor 8%, transparent) 25%,
-    color-mix(in srgb, currentColor 16%, transparent) 50%,
-    color-mix(in srgb, currentColor 8%, transparent) 75%
+    rgba(100, 116, 139, 0.08) 25%,
+    rgba(100, 116, 139, 0.16) 50%,
+    rgba(100, 116, 139, 0.08) 75%
   );
   background-size: 200% 100%;
   animation: sdlg-shimmer 1.4s linear infinite;
+}
+
+/* Progressive upgrade: color-mix variant */
+@supports (color: color-mix(in srgb, red, blue)) {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, currentColor 8%, transparent) 25%,
+      color-mix(in srgb, currentColor 16%, transparent) 50%,
+      color-mix(in srgb, currentColor 8%, transparent) 75%
+    );
+    background-size: 200% 100%;
+  }
 }
 
 @keyframes sdlg-shimmer {
@@ -198,12 +304,22 @@
   box-shadow: var(--sdlg-focus-ring);
 }
 
+/* Button press feedback (subtle) */
+:where(button, [role="button"]):active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Prevent double-tap zoom di iOS */
+:where(button, [role="button"], input[type="submit"], input[type="button"]) {
+  touch-action: manipulation;
+}
+
 /* =========================================
    7. TABLET (max 1024px)
    ========================================= */
 @media (max-width: 1024px) {
   .detail-grid {
-    grid-template-columns: minmax(0, 1fr); /* panel kanan turun ke bawah */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--sdlg-spacing-4);
   }
 
@@ -215,14 +331,18 @@
 }
 
 /* =========================================
-   8. PHONE (max 768px)
+   8. PHONE (max 767.98px)
+   -------------------------------------------------------------------
+   Breakpoint 767.98px untuk hindari overlap 1px dengan min-width: 768px
+   di file lain (responsive conventions).
    ========================================= */
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
   .app-shell:not(:has(.login-screen)) .page {
     /* ruang untuk bottom nav / theme switcher + area aman iPhone */
     padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-    padding-inline: max(var(--sdlg-page-gutter), env(safe-area-inset-left, 0px))
-                    max(var(--sdlg-page-gutter), env(safe-area-inset-right, 0px));
+    padding-inline:
+      max(var(--sdlg-page-gutter), env(safe-area-inset-left, 0px))
+      max(var(--sdlg-page-gutter), env(safe-area-inset-right, 0px));
   }
 
   .metric-grid {
@@ -239,6 +359,11 @@
     flex: 0 0 auto;
   }
 
+  /* 🐛 iOS zoom fix: font-size < 16px trigger auto-zoom */
+  .claims-filter-bar > :where(input, select, textarea) {
+    font-size: 16px;
+  }
+
   /* Navigasi horizontal, bisa digeser */
   .nav-scroll {
     display: flex;
@@ -249,8 +374,21 @@
     scroll-snap-type: x proximity;
     scrollbar-width: none;
     padding-bottom: var(--sdlg-spacing-1);
-    /* efek pudar di tepi menandakan masih bisa digeser */
-    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    /* fade effect di tepi — Safari < 15.4 butuh -webkit prefix */
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 12px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 12px),
+      transparent 100%
+    );
   }
 
   .nav-scroll::-webkit-scrollbar {
@@ -261,7 +399,7 @@
     flex: 0 0 auto;
     white-space: nowrap;
     scroll-snap-align: start;
-    min-height: 44px; /* target sentuh minimum */
+    min-height: 44px; /* target sentuh minimum WCAG 2.5.5 */
   }
 
   .sdlg-theme-switcher {
@@ -271,14 +409,18 @@
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%);
     z-index: 40;
-    box-shadow: var(--sdlg-shadow-md);
+    /* Fallback shadow jika Master V5 belum load */
+    box-shadow: var(
+      --sdlg-shadow-md,
+      0 4px 6px -1px rgba(15, 23, 42, 0.06),
+      0 2px 4px -2px rgba(15, 23, 42, 0.04)
+    );
   }
 }
 
 /* =========================================
    9. NARROW PHONE (max 480px)
-   Tetap 2 kolom sampai 360px supaya nggak scroll panjang.
-   Cuma di bawah 360px baru jadi 1 kolom.
+   Tetap 2 kolom sampai 360px — cuma di bawah 360px jadi 1 kolom.
    ========================================= */
 @media (max-width: 480px) {
   .metric-card {
@@ -297,30 +439,137 @@
    ========================================= */
 @media (min-width: 1440px) {
   .metric-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)); /* maksimal 4 kolom */
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 /* =========================================
-   11. PREFERENSI PENGGUNA
+   11. PREFERENSI PENGGUNA (A11Y)
    ========================================= */
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
+    /* Static fallback — shimmer hilang, ganti ke solid */
+    background: rgba(100, 116, 139, 0.12);
   }
 
   .nav-scroll {
     scroll-behavior: auto;
   }
+
+  :where(button, [role="button"]):active:not(:disabled) {
+    transform: none;
+  }
 }
 
+/* =========================================
+   12. HIGH CONTRAST (A11Y — new)
+   ========================================= */
+@media (prefers-contrast: more) {
+  .card,
+  .card-pad,
+  .metric-card {
+    border: 2px solid currentColor;
+  }
+
+  .table-scroll thead th {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .empty-state {
+    color: currentColor;
+  }
+}
+
+/* =========================================
+   13. HOVER GUARD (touch devices — new)
+   -------------------------------------------------------------------
+   Hover hanya aktif di device yang support hover (mouse, trackpad).
+   Cegah "stuck hover" di tablet touch.
+   ========================================= */
+@media (hover: hover) and (pointer: fine) {
+  .metric-card:hover {
+    box-shadow: var(
+      --sdlg-shadow-md,
+      0 4px 6px -1px rgba(15, 23, 42, 0.06),
+      0 2px 4px -2px rgba(15, 23, 42, 0.04)
+    );
+  }
+}
+
+/* =========================================
+   14. PRINT (new — expanded)
+   -------------------------------------------------------------------
+   Print = laporan eksekutif / audit claim. Tabel harus full, sticky
+   di-reset, theme switcher & nav hidden.
+   ========================================= */
 @media print {
   .sdlg-theme-switcher,
   .nav-scroll {
     display: none !important;
   }
 
+  .app-shell:not(:has(.login-screen)) .page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
   .detail-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail-grid > .is-sticky {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Expand table — no horizontal scroll saat print */
+  .table-scroll {
+    overflow: visible !important;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  .table-scroll > table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .table-scroll thead th {
+    position: static !important;
+    background: #f0f0f0 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Metric card — no shadow, solid border untuk print */
+  .metric-card {
+    box-shadow: none !important;
+    border: 1px solid #999999 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    /* Disable content-visibility — semua ter-render */
+    content-visibility: visible !important;
+  }
+
+  /* Expand grid untuk print */
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .card,
+  .card-pad {
+    box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Skeleton — print placeholder statis */
+  .skeleton {
+    animation: none !important;
+    background: #e0e0e0 !important;
   }
 }
