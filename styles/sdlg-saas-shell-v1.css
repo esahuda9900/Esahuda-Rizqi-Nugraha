@@ -1,162 +1,306 @@
 /* =========================================================
-   SDLG_SAAS_SHELL V3.0 (EXPERT REVISED)
-   Popular-SaaS visual system — full ops surface polish.
-   Linear / Stripe Dashboard inspired. Visual only.
+   SDLG_SAAS_SHELL V4.0 (EXPERT UPGRADE)
+   Linear / Stripe-inspired SaaS Design System.
+   Extends sdlg-styles-v15.css. Visual polish layer only.
    ========================================================= */
 
-/* =========================================
-   1. BASE & TYPOGRAPHY
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   1. SHELL TOKENS
+   Extend / override token dari V15 untuk SaaS aesthetic.
+   ───────────────────────────────────────────────────────── */
+:root {
+  /* Brand SaaS — Indigo lebih "tech" dari biru murni */
+  --sdlg-primary:         #2f5bff;
+  --sdlg-primary-strong:  #1a44e8;
+  --sdlg-primary-soft:    rgba(47, 91, 255, 0.07);
+  --sdlg-primary-ring:    rgba(47, 91, 255, 0.20);
+
+  /* Override brand dari V15 agar konsisten */
+  --sdlg-brand:           var(--sdlg-primary);
+  --sdlg-brand-dark:      var(--sdlg-primary-strong);
+  --sdlg-brand-light:     var(--sdlg-primary-soft);
+  --sdlg-border-focus:    var(--sdlg-primary);
+
+  /* Surface */
+  --sdlg-bg:              #f4f6fa;
+  --sdlg-surface:         #ffffff;
+  --sdlg-surface-muted:   #f8f9fb;  /* surface-2 alias */
+  --sdlg-surface-2:       #f8f9fb;
+
+  /* Border */
+  --sdlg-border:          #e5e9f0;
+  --sdlg-border-strong:   #d1d9e6;
+
+  /* Text */
+  --sdlg-text:            #0f172a;
+  --sdlg-muted:           #64748b;
+  --sdlg-text-muted:      #64748b;  /* alias */
+  --sdlg-faint:           #94a3b8;
+  --sdlg-text-xs:         #94a3b8;  /* alias */
+
+  /* Shadows — SaaS prefer sangat tipis */
+  --sdlg-shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --sdlg-shadow-sm: 0 1px 4px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sdlg-shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --sdlg-shadow-lg: 0 16px 40px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+
+  /* Override shadow dari V15 */
+  --shadow-sm: var(--sdlg-shadow-sm);
+  --shadow-md: var(--sdlg-shadow-md);
+  --shadow-lg: var(--sdlg-shadow-lg);
+
+  /* Focus Ring */
+  --sdlg-ring: 0 0 0 3px var(--sdlg-primary-ring);
+
+  /* Radius — SaaS sedikit lebih kecil dari default V15 */
+  --sdlg-radius-card:  12px;
+  --sdlg-radius-btn:   8px;
+  --sdlg-radius-input: 7px;
+  --sdlg-radius-modal: 16px;
+
+  /* Override radius dari V15 */
+  --radius-md: var(--sdlg-radius-input);
+  --radius-lg: var(--sdlg-radius-card);
+
+  /* Easing */
+  --sdlg-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Layout */
+  --sdlg-max-width: 1400px;
+  --topbar-height:  56px;  /* SaaS umumnya lebih compact dari default */
+
+  /* Font weight — HANYA pakai nilai valid CSS */
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   2. BASE & TYPOGRAPHY
+   ───────────────────────────────────────────────────────── */
 html, body {
-  background: var(--sdlg-bg, #f4f6fa) !important;
-  color: var(--sdlg-text, #0f172a) !important;
+  background: var(--sdlg-bg) !important;
+  color: var(--sdlg-text) !important;
 }
 
 body {
-  line-height: 1.5 !important;
+  line-height: 1.55 !important;
   letter-spacing: -0.01em !important;
-  -webkit-font-smoothing: antialiased;
-  font-family: var(--sdlg-font-family, sans-serif) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
+/* Heading scale — fluid dengan clamp */
 h1, .page-title {
-  font-size: clamp(22px, 2.2vw, 28px) !important;
-  font-weight: 700 !important;
+  font-size: clamp(20px, 2.2vw, 26px) !important;
+  font-weight: var(--fw-bold) !important;
   letter-spacing: -0.03em !important;
   line-height: 1.2 !important;
   color: var(--sdlg-text) !important;
 }
-h2 { font-size: 15px !important; font-weight: 650 !important; letter-spacing: -0.02em !important; }
-h3, .section-title { font-size: 13px !important; font-weight: 650 !important; letter-spacing: -0.01em !important; color: var(--sdlg-text) !important; }
 
-.page-sub, .section-sub, .brand-sub, .eyebrow, .metric-label {
-  color: var(--sdlg-muted, #64748b) !important;
-  font-size: 12.5px !important;
-  font-weight: 500 !important;
+h2, .card-title {
+  font-size: 15px !important;
+  font-weight: var(--fw-semi) !important;  /* FIX: 650 → 600 */
+  letter-spacing: -0.02em !important;
+  color: var(--sdlg-text) !important;
 }
+
+h3, .section-title {
+  font-size: 13px !important;
+  font-weight: var(--fw-semi) !important;  /* FIX: 650 → 600 */
+  letter-spacing: -0.01em !important;
+  color: var(--sdlg-text) !important;
+}
+
+h4, h5, h6 {
+  font-size: 12.5px !important;
+  font-weight: var(--fw-semi) !important;
+  color: var(--sdlg-text) !important;
+}
+
+/* Muted / label text */
+.page-sub, .section-sub, .brand-sub, .metric-label, .form-label {
+  font-size: 12.5px !important;
+  font-weight: var(--fw-medium) !important;
+  color: var(--sdlg-muted) !important;
+}
+
+/* Eyebrow label (uppercase) */
 .eyebrow, .login-kicker, .login-card-eyebrow {
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: var(--fw-bold) !important;
   letter-spacing: 0.06em !important;
   text-transform: uppercase !important;
   color: var(--sdlg-primary) !important;
 }
 
-/* =========================================
-   2. HEADER & NAVIGATION
-   ========================================= */
-.app-shell:not(:has(.login-screen)) header,
-.app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(255, 255, 255, 0.9) !important;
+/* Code */
+code, kbd, pre {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+  font-size: 12.5px !important;
+}
+
+code {
+  background: var(--sdlg-surface-muted) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  color: var(--sdlg-text) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   3. TOPBAR & NAVIGATION
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) .topbar,
+.app-shell:not(:has(.login-screen)) header {
+  background: rgba(255,255,255,.92) !important;
   border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  box-shadow: 0 1px 0 var(--sdlg-border) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  height: var(--topbar-height) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .topbar-inner {
-  max-width: 1400px !important;
+  max-width: var(--sdlg-max-width) !important;
+  margin: 0 auto !important;
+  padding: 0 24px !important;
   gap: 14px !important;
 }
 
+/* Brand mark icon */
 .brand-mark {
   border-radius: 10px !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
 }
 
+/* Nav container — pill group khas Linear */
 .app-shell:not(:has(.login-screen)) .nav-scroll {
   gap: 2px !important;
   padding: 3px !important;
+  background: var(--sdlg-surface-muted) !important;
   border: 1px solid var(--sdlg-border) !important;
   border-radius: 10px !important;
-  background: var(--sdlg-surface-muted) !important;
+  align-items: center !important;
 }
 
+/* Individual nav button */
 .nav-btn {
   border-radius: 7px !important;
   font-size: 12.5px !important;
-  font-weight: 600 !important;
-  padding: 7px 12px !important;
+  font-weight: var(--fw-semi) !important;
+  padding: 6px 12px !important;
   color: var(--sdlg-muted) !important;
   background: transparent !important;
-  border: 0 !important;
+  border: none !important;
   box-shadow: none !important;
+  min-height: 32px !important;
+  transition:
+    background var(--t-fast, .15s ease),
+    color     var(--t-fast, .15s ease) !important;
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255,255,255,.75) !important;
   color: var(--sdlg-text) !important;
   transform: none !important;
 }
 
-.nav-btn.active {
+.nav-btn.active,
+.nav-btn[aria-current="page"] {
   background: var(--sdlg-surface) !important;
-  color: var(--sdlg-primary-strong) !important;
+  color: var(--sdlg-primary) !important;
   box-shadow: var(--sdlg-shadow-xs) !important;
-  font-weight: 650 !important;
+  font-weight: var(--fw-bold) !important;  /* FIX: 650 → 700 */
 }
 
-/* =========================================
-   3. PAGE LAYOUT
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   4. PAGE LAYOUT
+   ───────────────────────────────────────────────────────── */
 .app-shell:not(:has(.login-screen)) .page {
-  max-width: 1400px !important;
-  padding: 28px 24px 56px !important;
+  max-width: var(--sdlg-max-width) !important;
+  padding: 28px 24px 64px !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page-title { margin-bottom: 4px !important; }
+.app-shell:not(:has(.login-screen)) .page-title {
+  margin-bottom: 4px !important;
+}
+
 .app-shell:not(:has(.login-screen)) .page-sub {
+  font-size: 13px !important;
   margin-top: 4px !important;
   margin-bottom: 20px !important;
-  font-size: 13px !important;
+  color: var(--sdlg-muted) !important;
 }
 
-/* =========================================
-   4. SURFACES (Cards, Panels - Kecuali Tracking)
-   ========================================= */
+/* Section header */
+.app-shell:not(:has(.login-screen)) .section-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  margin-bottom: 12px !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   5. SURFACES — Cards & Panels (kecuali Tracking Panel)
+   ───────────────────────────────────────────────────────── */
 .app-shell:not(:has(.login-screen)) .card:not(#sdlg-tracking-panel),
 .app-shell:not(:has(.login-screen)) .metric-card,
 .app-shell:not(:has(.login-screen)) .loading-card,
 .app-shell:not(:has(.login-screen)) .empty-card,
 .app-shell:not(:has(.login-screen)) [class*="card"]:not(#sdlg-tracking-panel),
 .app-shell:not(:has(.login-screen)) [class*="panel"]:not(#sdlg-tracking-panel) {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important; /* Sangat tipis khas SaaS */
   background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-card) !important;
+  /* SaaS shadow: sangat tipis, hampir tidak ada */
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
+  transition:
+    border-color var(--t-fast, .15s ease),
+    box-shadow   var(--t-fast, .15s ease) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .card:hover:not(#sdlg-tracking-panel),
 .app-shell:not(:has(.login-screen)) [class*="card"]:hover:not(#sdlg-tracking-panel) {
-  transform: none !important;
   border-color: var(--sdlg-border-strong) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
+  transform: none !important;  /* SaaS tidak pakai lift effect */
 }
 
-.app-shell:not(:has(.login-screen)) .card-pad { padding: 16px 18px !important; }
-.app-shell:not(:has(.login-screen)) .section-head {
-  margin-bottom: 12px !important;
-  gap: 4px !important;
-  align-items: flex-start !important;
+.app-shell:not(:has(.login-screen)) .card-pad {
+  padding: 16px 18px !important;
 }
 
-/* Empty/Loading States */
+/* Empty & Loading */
 .app-shell:not(:has(.login-screen)) .empty-card,
 .app-shell:not(:has(.login-screen)) .loading-card {
-  padding: 28px 20px !important;
+  padding: 32px 20px !important;
   text-align: center !important;
   color: var(--sdlg-muted) !important;
 }
 
+/* Skeleton override (corak lebih soft) */
 .app-shell:not(:has(.login-screen)) .skeleton {
-  background: linear-gradient(90deg, var(--sdlg-surface-muted), #eef1f6, var(--sdlg-surface-muted)) !important;
+  background: linear-gradient(
+    90deg,
+    var(--sdlg-surface-muted) 25%,
+    #eef1f6                   50%,
+    var(--sdlg-surface-muted) 75%
+  ) !important;
   background-size: 200% 100% !important;
   border-radius: 6px !important;
 }
 
-/* =========================================
-   5. METRICS
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   6. METRIC GRID
+   ───────────────────────────────────────────────────────── */
 .app-shell:not(:has(.login-screen)) .metric-grid {
   display: grid !important;
   gap: 12px !important;
@@ -164,88 +308,172 @@ h3, .section-title { font-size: 13px !important; font-weight: 650 !important; le
 }
 
 .app-shell:not(:has(.login-screen)) .metric-card {
-  background: var(--sdlg-surface) !important;
   padding: 14px 16px !important;
-  min-height: 0 !important;
+  /* Override accent stripe V15 agar lebih subtle */
+  overflow: hidden !important;
+}
+
+.app-shell:not(:has(.login-screen)) .metric-card::before {
+  height: 2px !important;  /* Lebih tipis dari V15 */
+  opacity: 0.7 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-label {
   font-size: 11.5px !important;
-  font-weight: 600 !important;
+  font-weight: var(--fw-semi) !important;
   margin-bottom: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-value {
-  font-size: 24px !important;
-  font-weight: 700 !important;
+  font-size: 26px !important;
+  font-weight: var(--fw-bold) !important;
   letter-spacing: -0.03em !important;
   line-height: 1.15 !important;
   color: var(--sdlg-text) !important;
 }
 
-/* =========================================
-   6. BUTTONS & INPUTS
-   ========================================= */
-.app-shell:not(:has(.login-screen)) button,
-.app-shell:not(:has(.login-screen)) [role="button"],
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) .secondary-btn,
-.app-shell:not(:has(.login-screen)) .danger-btn {
-  border-radius: var(--sdlg-radius-btn, 8px) !important;
-  font-weight: 600 !important;
-  font-size: 12.5px !important;
-  min-height: 36px !important;
-  padding: 0 14px !important;
+.app-shell:not(:has(.login-screen)) .metric-sub {
+  font-size: 11.5px !important;
+  color: var(--sdlg-muted) !important;
+  margin-top: 4px !important;
+}
+
+/* Metric hover — hanya border, bukan lift */
+.app-shell:not(:has(.login-screen)) .metric-card:hover {
   transform: none !important;
 }
 
-.app-shell:not(:has(.login-screen)) button:hover,
-.app-shell:not(:has(.login-screen)) [role="button"]:hover { transform: none !important; }
 
+/* ─────────────────────────────────────────────────────────
+   7. BUTTONS
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) button:not(.nav-btn),
+.app-shell:not(:has(.login-screen)) [role="button"],
+.app-shell:not(:has(.login-screen)) .btn,
+.app-shell:not(:has(.login-screen)) .primary-btn,
+.app-shell:not(:has(.login-screen)) .secondary-btn,
+.app-shell:not(:has(.login-screen)) .danger-btn {
+  border-radius: var(--sdlg-radius-btn) !important;
+  font-size: 12.5px !important;
+  font-weight: var(--fw-semi) !important;
+  min-height: 34px !important;
+  padding: 0 14px !important;
+  transform: none !important;
+  transition:
+    background var(--t-fast, .15s ease),
+    box-shadow  var(--t-fast, .15s ease),
+    border-color var(--t-fast, .15s ease) !important;
+}
+
+/* Matikan lift di semua tombol */
+.app-shell:not(:has(.login-screen)) button:hover,
+.app-shell:not(:has(.login-screen)) [role="button"]:hover,
+.app-shell:not(:has(.login-screen)) .btn:hover {
+  transform: none !important;
+}
+
+/* Feedback aktif tetap ada */
+.app-shell:not(:has(.login-screen)) button:active,
+.app-shell:not(:has(.login-screen)) .btn:active {
+  transform: scale(0.98) !important;
+}
+
+/* Primary */
+.app-shell:not(:has(.login-screen)) .btn-primary,
 .app-shell:not(:has(.login-screen)) .primary-btn,
 .app-shell:not(:has(.login-screen)) button[class*="primary"] {
   background: var(--sdlg-primary) !important;
   color: #fff !important;
-  border: 0 !important;
-  box-shadow: 0 1px 2px rgba(47, 91, 255, 0.22) !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(47,91,255,.25) !important;
 }
 
-.app-shell:not(:has(.login-screen)) .primary-btn:hover,
-.app-shell:not(:has(.login-screen)) button[class*="primary"]:hover {
+.app-shell:not(:has(.login-screen)) .btn-primary:hover,
+.app-shell:not(:has(.login-screen)) .primary-btn:hover {
   background: var(--sdlg-primary-strong) !important;
+  box-shadow: 0 2px 6px rgba(47,91,255,.30) !important;
 }
 
+/* Secondary */
+.app-shell:not(:has(.login-screen)) .btn-secondary,
 .app-shell:not(:has(.login-screen)) .secondary-btn {
   background: var(--sdlg-surface) !important;
   border: 1px solid var(--sdlg-border-strong) !important;
   color: var(--sdlg-text) !important;
-  box-shadow: none !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
 }
 
+.app-shell:not(:has(.login-screen)) .btn-secondary:hover,
 .app-shell:not(:has(.login-screen)) .secondary-btn:hover {
   background: var(--sdlg-surface-muted) !important;
+  border-color: var(--sdlg-border-strong) !important;
 }
 
+/* Ghost */
+.app-shell:not(:has(.login-screen)) .btn-ghost {
+  background: transparent !important;
+  color: var(--sdlg-primary) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .btn-ghost:hover {
+  background: var(--sdlg-primary-soft) !important;
+}
+
+/* Danger */
+.app-shell:not(:has(.login-screen)) .btn-danger,
+.app-shell:not(:has(.login-screen)) .danger-btn {
+  background: #ef4444 !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(239,68,68,.25) !important;
+}
+
+/* Icon button */
 .app-shell:not(:has(.login-screen)) .icon-btn {
-  border-radius: 8px !important;
+  border-radius: var(--sdlg-radius-btn) !important;
   border: 1px solid var(--sdlg-border) !important;
   background: var(--sdlg-surface) !important;
-  box-shadow: none !important;
-  transform: none !important;
-  min-height: 36px !important;
-  min-width: 36px !important;
+  color: var(--sdlg-muted) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  min-height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.app-shell:not(:has(.login-screen)) input,
+.app-shell:not(:has(.login-screen)) .icon-btn:hover {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-text) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   8. FORM INPUTS
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .app-shell:not(:has(.login-screen)) select,
 .app-shell:not(:has(.login-screen)) textarea {
-  border: 1px solid var(--sdlg-border-strong) !important;
-  border-radius: var(--sdlg-radius-input, 6px) !important;
-  min-height: 36px !important;
-  font-size: 13px !important;
-  box-shadow: none !important;
   background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border-strong) !important;
+  border-radius: var(--sdlg-radius-input) !important;
   color: var(--sdlg-text) !important;
+  font-size: 13px !important;
+  min-height: 34px !important;
+  box-shadow: none !important;
+  transition:
+    border-color var(--t-fast, .15s ease),
+    box-shadow   var(--t-fast, .15s ease) !important;
+}
+
+.app-shell:not(:has(.login-screen)) input::placeholder,
+.app-shell:not(:has(.login-screen)) textarea::placeholder {
+  color: var(--sdlg-faint) !important;
 }
 
 .app-shell:not(:has(.login-screen)) input:focus,
@@ -256,141 +484,438 @@ h3, .section-title { font-size: 13px !important; font-weight: 650 !important; le
   outline: none !important;
 }
 
-/* =========================================
-   7. TABLES & CLAIMS
-   ========================================= */
-.app-shell:not(:has(.login-screen)) .table-wrap,
-.app-shell:not(:has(.login-screen)) .claims-table-shell {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
-  overflow: hidden !important;
-  background: var(--sdlg-surface) !important;
+.app-shell:not(:has(.login-screen)) input:disabled,
+.app-shell:not(:has(.login-screen)) select:disabled,
+.app-shell:not(:has(.login-screen)) textarea:disabled {
+  background: var(--sdlg-surface-muted) !important;
+  color: var(--sdlg-faint) !important;
+  cursor: not-allowed !important;
+  opacity: .7 !important;
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   9. TABLES & CLAIMS
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) .table-wrap,
+.app-shell:not(:has(.login-screen)) .claims-table-wrap,
+.app-shell:not(:has(.login-screen)) .claims-table-shell {
+  background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-card) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
+  overflow: hidden !important;
+}
+
+/* Table header */
 .app-shell:not(:has(.login-screen)) thead th,
-.app-shell:not(:has(.login-screen)) th,
-.app-shell:not(:has(.login-screen)) .claims-table-head {
+.app-shell:not(:has(.login-screen)) .claims-table-head th {
   background: var(--sdlg-surface-muted) !important;
   color: var(--sdlg-muted) !important;
   font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.04em !important;
+  font-weight: var(--fw-semi) !important;  /* FIX: 650 → 600 */
+  letter-spacing: .05em !important;
   text-transform: uppercase !important;
   border-bottom: 1px solid var(--sdlg-border) !important;
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
+  padding: 10px 16px !important;
 }
 
-.app-shell:not(:has(.login-screen)) tbody tr:hover td { background: var(--sdlg-primary-soft) !important; }
+/* Row hover — SaaS style dengan left accent stripe */
+.app-shell:not(:has(.login-screen)) tbody tr:hover td {
+  background: var(--sdlg-primary-soft) !important;
+}
 
 .app-shell:not(:has(.login-screen)) .claims-list .claim-row {
   border-bottom: 1px solid var(--sdlg-border) !important;
-  transition: background-color .15s var(--sdlg-ease) !important;
+  transition: background var(--t-fast, .15s ease) !important;
+  transform: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
   background: var(--sdlg-primary-soft) !important;
+  /* Accent stripe kiri — ciri khas SaaS tabel */
   box-shadow: inset 3px 0 0 var(--sdlg-primary) !important;
   transform: none !important;
 }
 
-.app-shell:not(:has(.login-screen)) .claims-filter-bar,
-.app-shell:not(:has(.login-screen)) .claims-searchbar {
-  border: 1px solid var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
+/* Filter bar */
+.app-shell:not(:has(.login-screen)) .claims-filter-bar {
   background: var(--sdlg-surface) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-card) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
   padding: 12px 14px !important;
   margin-bottom: 14px !important;
   gap: 10px !important;
 }
 
-/* Badges */
-.app-shell:not(:has(.login-screen)) .status-badge,
+
+/* ─────────────────────────────────────────────────────────
+   10. STATUS BADGES
+   ───────────────────────────────────────────────────────── */
 .app-shell:not(:has(.login-screen)) .badge,
+.app-shell:not(:has(.login-screen)) .status-badge,
 .app-shell:not(:has(.login-screen)) [class*="badge"],
 .app-shell:not(:has(.login-screen)) [class*="pill"] {
   border-radius: 999px !important;
   font-size: 11px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.01em !important;
+  font-weight: var(--fw-semi) !important;  /* FIX: 650 → 600 */
+  letter-spacing: .01em !important;
   padding: 3px 9px !important;
-  line-height: 1.3 !important;
+  line-height: 1.4 !important;
 }
 
-/* =========================================
-   8. CLAIM DETAIL (Proteksi Panel Tracking)
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   11. ALERTS
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) .alert {
+  border-radius: var(--sdlg-radius-btn) !important;
+  font-size: 13px !important;
+  padding: 12px 14px !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   12. CLAIM DETAIL PAGE
+   ───────────────────────────────────────────────────────── */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
   max-width: 1500px !important;
   padding-top: 20px !important;
 }
 
-/* HANYA berikan gaya kaku ke card biasa, JANGAN ke tracking panel */
+/* Card di detail page — hanya border, tidak ada shadow berlebihan */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card:not(#sdlg-tracking-panel),
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="card"]:not(#sdlg-tracking-panel) {
   box-shadow: none !important;
   border-color: var(--sdlg-border) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
+  border-radius: var(--sdlg-radius-card) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-title {
   font-size: 12.5px !important;
-  font-weight: 650 !important;
+  font-weight: var(--fw-semi) !important;
 }
 
-/* =========================================
-   9. MODALS & THEME SWITCHER
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   13. MODALS & DIALOGS
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) .modal-backdrop,
+.app-shell:not(:has(.login-screen)) .dialog-backdrop {
+  background: rgba(0,0,0,.35) !important;
+  backdrop-filter: blur(3px) !important;
+  -webkit-backdrop-filter: blur(3px) !important;
+}
+
 .app-shell:not(:has(.login-screen)) .modal,
 .app-shell:not(:has(.login-screen)) .dialog,
 .app-shell:not(:has(.login-screen)) [role="dialog"] {
-  border-radius: var(--sdlg-radius-modal, 16px) !important;
+  border-radius: var(--sdlg-radius-modal) !important;
   border: 1px solid var(--sdlg-border) !important;
   box-shadow: var(--sdlg-shadow-lg) !important;
+  background: var(--sdlg-surface) !important;
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   14. THEME SWITCHER
+   ───────────────────────────────────────────────────────── */
 .sdlg-theme-switcher {
+  background: rgba(255,255,255,.95) !important;
   border: 1px solid var(--sdlg-border) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  background: rgba(255, 255, 255, 0.94) !important;
   border-radius: 999px !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+}
+
+.sdlg-theme-switcher button {
+  color: var(--sdlg-muted) !important;
+  background: transparent !important;
+  transition: all var(--t-fast, .15s ease) !important;
+}
+
+.sdlg-theme-switcher button:hover {
+  color: var(--sdlg-text) !important;
+  background: var(--sdlg-primary-soft) !important;
 }
 
 .sdlg-theme-switcher button[aria-pressed="true"] {
   background: var(--sdlg-primary) !important;
   color: #fff !important;
+  font-weight: var(--fw-semi) !important;
 }
 
-/* =========================================
-   10. RESPONSIVE (Mobile)
-   ========================================= */
+
+/* ─────────────────────────────────────────────────────────
+   15. EMPTY STATE
+   ───────────────────────────────────────────────────────── */
+.app-shell:not(:has(.login-screen)) .empty-state {
+  padding: 40px 20px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .empty-state__icon {
+  font-size: 40px !important;
+  opacity: .35 !important;
+  margin-bottom: 12px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .empty-state__title {
+  font-size: 15px !important;
+  font-weight: var(--fw-semi) !important;
+  letter-spacing: -0.01em !important;
+  color: var(--sdlg-text) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .empty-state__desc {
+  font-size: 13px !important;
+  color: var(--sdlg-muted) !important;
+  max-width: 300px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   16. LOGIN SCREEN  (sebelumnya tidak ada di V3)
+   ───────────────────────────────────────────────────────── */
+.login-screen {
+  min-height: 100dvh !important;
+  background: var(--sdlg-bg) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.login-card {
+  background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius-modal) !important;
+  box-shadow: var(--sdlg-shadow-md) !important;
+  padding: 32px 28px !important;
+  width: 100% !important;
+  max-width: 400px !important;
+}
+
+.login-intro h1,
+.login-brand-name,
+.login-card h2 {
+  color: var(--sdlg-text) !important;
+  font-weight: var(--fw-bold) !important;
+  letter-spacing: -0.03em !important;
+}
+
+.login-intro > p,
+.login-card-head p,
+.login-help,
+.login-brand-company,
+.login-meta {
+  color: var(--sdlg-muted) !important;
+  font-size: 13px !important;
+}
+
+.login-field label {
+  font-size: 12.5px !important;
+  font-weight: var(--fw-semi) !important;
+  color: var(--sdlg-text) !important;
+}
+
+.login-field input {
+  font-size: 13px !important;
+  border-radius: var(--sdlg-radius-input) !important;
+}
+
+/* Submit button di login */
+.login-card .primary-btn,
+.login-card button[type="submit"] {
+  width: 100% !important;
+  min-height: 38px !important;
+  font-size: 13.5px !important;
+  font-weight: var(--fw-bold) !important;
+  margin-top: 4px !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   17. FLOATING ACTION BUTTON
+   ───────────────────────────────────────────────────────── */
+.sdlg-fab {
+  background: var(--sdlg-primary) !important;
+  box-shadow: 0 4px 16px rgba(47,91,255,.35) !important;
+  color: #fff !important;
+}
+
+.sdlg-fab:active {
+  box-shadow: 0 2px 8px rgba(47,91,255,.25) !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   18. SCROLLBAR (Light Theme)
+   ───────────────────────────────────────────────────────── */
+:root {
+  scrollbar-color: var(--sdlg-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sdlg-border-strong);
+  border-radius: 4px;
+  border: 2px solid var(--sdlg-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b0b8c8;
+}
+
+/* Nav scroll — tetap tersembunyi */
+.nav-scroll::-webkit-scrollbar { display: none; }
+
+
+/* ─────────────────────────────────────────────────────────
+   19. FOCUS RING (Universal)
+   ───────────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--sdlg-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Tombol dengan focus ring built-in tidak perlu outline ganda */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  /* ring dari section 8 yang handle */
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   20. MOBILE (max-width: 760px)
+   ───────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
+
+  /* Page padding — aligned dengan V15 mobile */
   .app-shell:not(:has(.login-screen)) .page {
-    padding: 16px 14px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 16px 14px !important;
+    padding-bottom: max(130px, calc(80px + env(safe-area-inset-bottom, 0px))) !important;
   }
-  .app-shell:not(:has(.login-screen)) .page-title { font-size: 22px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-grid { gap: 8px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-value { font-size: 20px !important; }
-  
+
+  .app-shell:not(:has(.login-screen)) .page-title {
+    font-size: 20px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page-sub {
+    font-size: 12.5px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Metric grid */
+  .app-shell:not(:has(.login-screen)) .metric-grid {
+    gap: 8px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .metric-value {
+    font-size: 20px !important;
+  }
+
+  /* Nav — mobile: tanpa pill container, jadi swipeable row biasa */
   .app-shell:not(:has(.login-screen)) .nav-scroll {
     background: transparent !important;
-    border: 0 !important;
+    border: none !important;
     padding: 0 !important;
+    border-radius: 0 !important;
+    gap: var(--sp-1, 4px) !important;
   }
-  
+
   .app-shell:not(:has(.login-screen)) .nav-btn {
-    padding: 8px 12px !important;
+    padding: 7px 12px !important;
     font-size: 12px !important;
     background: var(--sdlg-surface-muted) !important;
+    border-radius: 999px !important;
   }
-  
+
   .app-shell:not(:has(.login-screen)) .nav-btn.active {
     background: var(--sdlg-primary-soft) !important;
+    color: var(--sdlg-primary) !important;
     box-shadow: none !important;
   }
-  
-  .app-shell:not(:has(.login-screen)) .claims-filter-bar { padding: 10px !important; }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page { padding-top: 12px !important; }
+
+  /* Filter bar */
+  .app-shell:not(:has(.login-screen)) .claims-filter-bar {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  /* Claim detail */
+  .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
+    padding-top: 12px !important;
+  }
+
+  /* Cards lebih compact di mobile */
+  .app-shell:not(:has(.login-screen)) .card-pad {
+    padding: 14px !important;
+  }
+
+  /* Login card full width di mobile */
+  .login-card {
+    max-width: 100% !important;
+    border-radius: var(--sdlg-radius-card) !important;
+    padding: 24px 20px !important;
+    margin: 16px !important;
+  }
+
+  /* Table claim row hover — matikan left stripe di mobile (jari tidak hover) */
+  .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
+    box-shadow: none !important;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   21. TABLET (761px – 1024px)
+   ───────────────────────────────────────────────────────── */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .app-shell:not(:has(.login-screen)) .page {
+    padding: 24px 20px 56px !important;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   22. PRINT
+   ───────────────────────────────────────────────────────── */
+@media print {
+  .app-shell:not(:has(.login-screen)) .topbar,
+  .app-shell:not(:has(.login-screen)) .nav-scroll,
+  .app-shell:not(:has(.login-screen)) .claims-filter-bar,
+  .sdlg-theme-switcher,
+  .sdlg-fab { display: none !important; }
+
+  .app-shell:not(:has(.login-screen)) .page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .card, [class*="card"], .metric-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  body { background: #fff !important; color: #000 !important; }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   23. REDUCED MOTION
+   ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none !important; }
+  * { transition-duration: 0.01ms !important; }
 }
