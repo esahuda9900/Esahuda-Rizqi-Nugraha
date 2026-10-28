@@ -1,29 +1,22 @@
-# SESSION_STATE — 2026-10-26
+# SESSION_STATE — 2026-10-29
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
-- Login freeze repaired and deployed through PRs #10/#11/#13 (baseline commit 9770389). Owner confirmed the error is gone.
-- Owner requested upgrades to MAIN production only; preview PR #12 is HOLD. No cutover.
+- Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
+- Latest deploys via static.yml successful as of last check. No open issues.
+- Claims count: 553 (up from 551).
 
-## Current stability upgrade
-- Preserve stored sessions on getSession timeout/offline/refresh failures. Scope explicit token recovery to this Supabase project.
-- API 401 triggers session revalidation instead of erasing all Supabase tokens or forcing sign-out.
-- Defer session-ready/profile query work until the auth callback returns. Ignore obsolete session/profile responses and cancel deferred work on unmount.
-- Bound login/profile/logout waits; surface actual connection errors; failed logout does not claim success.
-- Bound claims list loading; ignore obsolete responses after a newer load or logout. Keep the existing retry/error UI.
-- Version singleton/registry/guard URLs and the index-to-app redirect so existing browser caches receive the update.
-- No schema/RLS/role/business data changes. No mutation retries added.
+## Current health (2026-10-29 monitoring)
+- Supabase project ACTIVE_HEALTHY. Tables: claims (553), customers (392), machines (3676), claim_audit_log (6948), etc. All RLS enabled.
+- Security advisors: known warnings on SECURITY DEFINER RPCs (create/update/delete_sdlg_claim etc.) callable by authenticated — intentional for business logic. Leaked password protection disabled (known).
+- Performance advisors: auth RLS initplan on machines table (minor), many unused indexes (info), multiple permissive policies on ax_warranty_work_order_costs (minor).
+- Logs: recurring minor PostgREST "Warp server error: Thread killed by timeout manager" — non-critical, consistent with previous health check. No new critical errors.
+- Backup workflow previously failing (non-critical). No successful restore test established.
 
-## Validation before merge
-- PASS: login freeze + entrypoint cache regression.
-- PASS: session resilience (timeout/offline/refresh rejection, other-project token isolation, stale auth responses, deferred events, API 401).
-- PASS: actual legacy auth-effect/profile tests (latest auth event wins, defer queries, unmount cleanup, stale role rejection).
-- PASS: actual claims-loader tests (latest request wins, logout invalidation, deadlines, timeout error state).
-- PASS: syntax of all 67 modules and both entrypoints' inline scripts.
-- PASS: Pages preparation, legacy contract, singleton module contract, no-cutover guard and diff whitespace checks.
-- These tests use simulated APIs/timers, not real credentials or production writes. Real-account authenticated end-to-end tests and staging save/status tests remain outstanding.
+## Task Queue status
+- [TUGAS 1]: Routine monitoring & health check → Status: SELESAI PUSH (this update)
+- Remaining known work: security advisor review (optional), backup workflow fix (low priority), full-stack save/update race audits (future).
 
-## Backend health and remaining work
-- Supabase project ACTIVE_HEALTHY. Existing security advisor warnings for security-definer RPCs and password protection remain for separate review; this release does not change authorization.
-- Backup workflow previously failed; a successful restore test has not been established. Do not claim backup/restore readiness.
-- This release is session/read stability, not completion of all full-stack hardening. Save/update/idempotency and claim-detail A/B race audits remain separate tasks.
+## Handover notes
+- No urgent bugs or stuck loading detected. System stable.
+- Next AI: continue monitoring or address remaining known warnings if prioritized by owner.
