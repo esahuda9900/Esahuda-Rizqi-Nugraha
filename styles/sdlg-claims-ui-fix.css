@@ -1,0 +1,106 @@
+/* SDLG Claims UI stabilization — scoped, visual-only overrides.
+   Keep this layer narrow: do not change claim data, status transitions, or save flows. */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
+  min-width: 0;
+  width: 100%;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list {
+  gap: 10px !important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 12px;
+  padding: 12px 14px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: 12px !important;
+  background: var(--sdlg-surface, #fff) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .035) !important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row:hover {
+  border-color: #c5d3e8 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .055) !important;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div {
+  min-width: 0;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3),
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div {
+  border-color: transparent !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background-color: transparent;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div {
+  padding-left: 0;
+  padding-right: 0;
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card {
+  min-height: 84px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--sdlg-border, #e2e8f0);
+  border-radius: 12px;
+  background: var(--sdlg-surface, #fff);
+  color: var(--sdlg-text-muted, #64748b);
+}
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
+  min-height: 10px;
+  border: 0 !important;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #edf1f7 25%, #f7f9fc 50%, #edf1f7 75%);
+  background-size: 200% 100%;
+  animation: sdlg-claims-skeleton 1.4s ease-in-out infinite;
+}
+@keyframes sdlg-claims-skeleton {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (max-width: 760px) {
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
+    grid-column: 1 / -1;
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px !important;
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:last-child {
+    max-width: 100px;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 420px) {
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar > button {
+    width: 100%;
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:last-child {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
+    animation: none;
+  }
+}
