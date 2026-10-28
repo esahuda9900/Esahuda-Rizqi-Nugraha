@@ -1,27 +1,79 @@
 /* =========================================================
-   SDLG PORTAL HELPER V3.0 (EXPERT REVISED)
-   Modern, Accessible, and Token-Driven styles for the Input Helper page.
+   SDLG PORTAL HELPER V3.1
+   Styling khusus untuk halaman Input Helper: toast, sticky
+   bottom bar, top actions, collapsible section, grid IOV,
+   field dengan tombol copy, banner peringatan.
+   CSS saja: markup dan nama class tidak diubah.
+
+   URUTAN LOAD (file ini PALING TERAKHIR, karena spesifik
+   halaman):
+     1. sdlg-layout-grid-v16.css
+     2. sdlg-modern-refresh-v2.1.css   (token --ui-*, theme switcher)
+     3. sdlg-ops-clean-v2.1.css        (styling tombol/.card final)
+     4. file ini
+
+   Beberapa aturan di sini perlu !important + spesifisitas yang
+   cukup untuk benar-benar menang melawan aturan tombol di
+   ops-clean-v2.1 (lihat bagian 2 & 3) — di V3.0 beberapa
+   override itu diam-diam kalah dan nggak pernah tampil.
    ========================================================= */
+
+/* =========================================
+   0. TOKEN TAMBAHAN (warna warning)
+   Belum ada di file sebelumnya. Didefinisikan di sini supaya
+   satu sumber kebenaran, dan otomatis ikut dark mode lewat
+   [data-theme="dark"] — bukan lewat selector dark terpisah
+   yang mengulang warna (itu penyebab bug "setengah gelap" di
+   file-file sebelumnya).
+   ========================================= */
+:root, [data-theme] {
+  --ui-warning: #b45309;
+  --ui-warning-bg: #fff6e4;
+  --ui-warning-border: #fcd34d;
+
+  /* Toast sengaja SELALU gelap, nggak ikut tema (seperti
+     snackbar Material/iOS), supaya tetap kontras di atas
+     halaman apa pun. Bukan bug, ini pilihan desain. */
+  --ui-toast-bg: #0f172a;
+  --ui-toast-text: #ffffff;
+
+  /* Skala z-index lokal untuk fitur-fitur halaman ini, biar
+     nggak nebak angka 100000 yang gampang tabrakan dengan
+     elemen fixed lain di masa depan (modal, dsb). */
+  --ui-z-sticky-bar: 70;
+  --ui-z-toast: 80;
+  --ui-z-switcher-over-bar: 90;
+}
+
+[data-theme="dark"] {
+  --ui-warning: #fbbf24;
+  --ui-warning-bg: rgba(196, 122, 10, 0.15);
+  --ui-warning-border: rgba(196, 122, 10, 0.3);
+}
 
 /* =========================================
    1. TOAST NOTIFICATIONS
    ========================================= */
 .sdlg-toast {
   position: fixed;
-  bottom: 90px; /* Jarak aman di atas sticky bar */
+  /* Dulu fixed di 90px dari bawah, dihitung manual dari tinggi
+     sticky bar. Kalau sticky bar melebar jadi 2 baris di layar
+     sempit, toast ikut ketiban tombol. Sekarang berpatokan ke
+     custom property yang di-set tiap breakpoint di bagian 2. */
+  bottom: calc(var(--sdlg-sticky-bar-h, 78px) + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%) translateY(10px);
-  z-index: 100001;
+  z-index: var(--ui-z-toast);
   max-width: min(520px, 92vw);
   padding: 12px 20px;
-  border-radius: var(--sdlg-radius-btn, 8px);
-  background: var(--sdlg-text-main, #0f172a);
-  color: #ffffff;
-  font-family: var(--sdlg-font-family, sans-serif);
+  border-radius: var(--ui-radius-btn, 8px);
+  background: var(--ui-toast-bg);
+  color: var(--ui-toast-text);
+  font-family: var(--ui-font, sans-serif);
   font-size: 13px;
   font-weight: 500;
   line-height: 1.4;
-  box-shadow: var(--sdlg-shadow-lg, 0 10px 30px rgba(0,0,0,0.2));
+  box-shadow: var(--ui-shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.2));
   opacity: 0;
   transition: opacity 0.3s ease, transform 0.3s ease;
   pointer-events: none;
@@ -34,54 +86,89 @@
 }
 
 .sdlg-toast-warn {
-  background: var(--sdlg-warning, #b45309);
+  background: var(--ui-warning);
+  color: #1a1203; /* teks gelap di atas oranye terang: kontras lebih baik daripada putih */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sdlg-toast { transition: opacity 0.01ms linear; }
 }
 
 /* =========================================
-   2. STICKY BOTTOM BAR (Glassmorphism)
+   2. STICKY BOTTOM BAR
    ========================================= */
 .sdlg-portal-sticky-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100000;
+  z-index: var(--ui-z-sticky-bar);
   display: flex;
   flex-wrap: wrap;
   gap: var(--sdlg-spacing-2, 8px);
   align-items: center;
   justify-content: center;
   padding: 12px 16px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); /* Aman untuk iPhone */
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px) saturate(180%);
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  /* Background lewat token --ui-surface (bukan putih/abu hardcode
+     terpisah untuk dark mode). Otomatis benar di kedua tema,
+     nggak bisa "lupa update" salah satu. */
+  background: color-mix(in srgb, var(--ui-surface, #fff) 85%, transparent);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border-top: 1px solid var(--sdlg-border, #e2e8f0);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-top: 1px solid var(--ui-border, #e2e8f0);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  --sdlg-sticky-bar-h: 78px; /* perkiraan tinggi 1 baris, dipakai toast & theme switcher */
 }
 
-html[data-theme="dark"] .sdlg-portal-sticky-bar {
-  background: rgba(17, 24, 39, 0.85);
-  border-top-color: var(--sdlg-border, #243044);
+/* Browser tanpa backdrop-filter: pakai warna solid supaya teks
+   halaman di belakangnya tidak tembus dan susah dibaca */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sdlg-portal-sticky-bar { background: var(--ui-surface, #fff); }
 }
 
 .sdlg-portal-sticky-bar .primary-btn,
 .sdlg-portal-sticky-bar .secondary-btn {
-  font-weight: 600;
-  font-size: 12.5px;
-  padding: 8px 16px;
-  border-radius: var(--sdlg-radius-btn, 8px);
-  text-decoration: none;
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  /* !important: ops-clean-v2.1 sudah menetapkan ukuran tombol
+     generik (34px, padding 0 14px) dengan !important dan
+     spesifisitas lebih tinggi. Tanpa !important di sini, ukuran
+     khusus sticky bar (38px, padding 8 16) diam-diam kalah dan
+     tombol tetap memakai ukuran generik. */
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+  padding: 8px 16px !important;
+  border-radius: var(--ui-radius-btn, 8px) !important;
+  text-decoration: none !important;
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* Padding bawah di halaman agar tidak tertutup sticky bar */
+/* Padding bawah halaman supaya konten terakhir tidak ketutup
+   sticky bar. Tinggi bar bisa 2 baris di layar sempit (lihat
+   breakpoint 560px), jadi di situ nilainya dinaikkan juga. */
 html.sdlg-has-portal-sticky .page.sdlg-input-helper-page,
 html.sdlg-has-portal-sticky .sdlg-input-helper-page {
-  padding-bottom: 120px;
+  padding-bottom: 128px;
+}
+
+/* =========================================
+   2b. THEME SWITCHER vs STICKY BAR
+   BUG V3.0 (tidak tertulis di file ini, tapi muncul begitu file
+   ini dipasang): .sdlg-theme-switcher dari refresh-v2.1 punya
+   z-index 40 dan posisi bottom:18px (atau bottom-center di HP).
+   Sticky bar di atas memakai z-index jauh lebih tinggi dan
+   secara vertikal menutupi area yang sama di sudut bawah layar,
+   jadi switcher tertimbun di BAWAH bar dan jadi tidak bisa
+   diklik sama sekali di halaman ini.
+   Perbaikan: saat sticky bar tampil (ditandai class
+   html.sdlg-has-portal-sticky yang sudah ada di markup lu),
+   geser switcher ke atas bar dan pastikan z-index-nya menang.
+   ========================================= */
+html.sdlg-has-portal-sticky .sdlg-theme-switcher {
+  z-index: var(--ui-z-switcher-over-bar) !important;
+  bottom: calc(var(--sdlg-sticky-bar-h, 78px) + 10px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* =========================================
@@ -96,12 +183,15 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
 }
 
 .sdlg-portal-top-actions .primary-btn {
-  font-weight: 600;
-  font-size: 12.5px;
-  padding: 8px 16px;
-  border-radius: var(--sdlg-radius-btn, 8px);
-  text-decoration: none;
-  box-shadow: var(--sdlg-shadow-sm);
+  /* Sama alasannya dengan bagian 2: perlu !important supaya
+     tidak kalah dari ukuran tombol generik di ops-clean-v2.1.
+     box-shadow bawaan .primary-btn dari ops-clean sudah cukup,
+     jadi tidak diulang di sini. */
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+  padding: 8px 16px !important;
+  border-radius: var(--ui-radius-btn, 8px) !important;
+  text-decoration: none !important;
 }
 
 /* =========================================
@@ -134,12 +224,16 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
 .sdlg-collapse-toggle {
   font-weight: 600;
   font-size: 12px;
-  color: var(--sdlg-primary);
+  color: var(--ui-primary, #2f5bff);
   cursor: pointer;
-  background: var(--sdlg-primary-soft);
+  background: var(--ui-primary-soft, #eaf0ff);
   padding: 4px 10px;
-  border-radius: var(--sdlg-radius-sm);
+  border-radius: var(--sdlg-radius-control, 6px);
   border: none;
+}
+
+.sdlg-collapse-toggle:hover {
+  background: color-mix(in srgb, var(--ui-primary-soft, #eaf0ff) 70%, var(--ui-primary, #2f5bff));
 }
 
 /* =========================================
@@ -157,7 +251,16 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
 
 @media (max-width: 560px) {
   .sdlg-portal-iov-grid { grid-template-columns: 1fr; }
-  .sdlg-portal-sticky-bar { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; }
+
+  .sdlg-portal-sticky-bar {
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    /* Dulu bisa digeser tapi tidak ada tanda kalau masih ada
+       tombol di sisi kanan yang belum kelihatan */
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 20px), transparent 100%);
+  }
 }
 
 /* =========================================
@@ -165,7 +268,6 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
    ========================================= */
 .sdlg-field-wrap { position: relative; }
 
-/* Logika Hover: Sembunyikan tombol copy di Desktop */
 .sdlg-field-wrap .sdlg-copy-hover,
 .sdlg-portal-field .sdlg-copy-hover {
   opacity: 0;
@@ -174,7 +276,6 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   transform: translateX(4px);
 }
 
-/* Munculkan saat hover/focus */
 .sdlg-field-wrap:hover .sdlg-copy-hover,
 .sdlg-portal-field:hover .sdlg-copy-hover,
 .sdlg-field-wrap:focus-within .sdlg-copy-hover,
@@ -184,7 +285,7 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   transform: translateX(0);
 }
 
-/* PENTING: Di HP (Touch Screen), selalu tampilkan tombol copy */
+/* Layar sentuh: tombol copy selalu tampil, nggak ada "hover" */
 @media (hover: none) and (pointer: coarse) {
   .sdlg-field-wrap .sdlg-copy-hover,
   .sdlg-portal-field .sdlg-copy-hover {
@@ -194,7 +295,14 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   }
 }
 
-/* Tombol copy "Copy All" selalu terlihat */
+@media (prefers-reduced-motion: reduce) {
+  .sdlg-field-wrap .sdlg-copy-hover,
+  .sdlg-portal-field .sdlg-copy-hover {
+    transition: opacity 0.01ms linear;
+  }
+}
+
+/* "Copy All" selalu terlihat, di mana pun posisinya */
 [data-sdlg-copy-all],
 .sdlg-section-head-actions .sdlg-copy-hover,
 .sdlg-portal-sticky-bar .sdlg-copy-hover {
@@ -203,8 +311,8 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   transform: none !important;
 }
 
-/* Layout Field */
 .sdlg-portal-field { margin-bottom: 0; min-width: 0; }
+
 .sdlg-portal-field-head {
   display: flex;
   align-items: center;
@@ -212,45 +320,59 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   gap: var(--sdlg-spacing-2, 8px);
   margin-bottom: 6px;
 }
+
 .sdlg-portal-field-label {
   font-size: 11px;
   font-weight: 700;
-  color: var(--sdlg-muted, #5a6578);
+  color: var(--ui-muted, #5a6578);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
 .sdlg-portal-field-control {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6);
-  border-radius: var(--sdlg-radius-input, 6px);
+  border: 1px solid var(--ui-border-strong, #cfd8e6);
+  border-radius: var(--ui-radius-input, 6px);
   padding: 10px 12px;
   font-size: 13px;
-  background: var(--sdlg-surface, #fff);
-  color: var(--sdlg-text, #0f172a);
+  background: var(--ui-surface, #fff);
+  color: var(--ui-text, #0f172a);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+
 .sdlg-portal-field-control:focus {
-  border-color: var(--sdlg-primary);
-  box-shadow: var(--sdlg-ring);
+  border-color: var(--ui-primary, #2f5bff);
+  box-shadow: var(--ui-ring, 0 0 0 4px rgba(47, 91, 255, 0.16));
   outline: none;
 }
 
-/* Read-Only Field (Tampilan lebih kalem) */
+.sdlg-portal-field-control::placeholder {
+  color: var(--ui-muted, #5a6578);
+  opacity: 0.8;
+}
+
+/* iOS Safari auto-zoom saat field disentuh di HP */
+@media (max-width: 768px) {
+  .sdlg-portal-field-control { font-size: 16px; }
+}
+
+/* Field read-only: tampilan lebih kalem, bukan input aktif */
 .sdlg-portal-field-ro .sdlg-portal-ro-value {
   font-size: 13px;
   font-weight: 500;
-  color: var(--sdlg-text, #0f172a);
+  color: var(--ui-text, #0f172a);
   line-height: 1.5;
   min-height: 24px;
   word-break: break-word;
   padding: 8px 12px;
-  background: var(--sdlg-surface-muted, #f5f7fb);
-  border-radius: var(--sdlg-radius-input, 6px);
-  border: 1px dashed var(--sdlg-border);
+  background: var(--ui-surface-muted, #f5f7fb);
+  border-radius: var(--ui-radius-input, 6px);
+  border: 1px dashed var(--ui-border, #e2e8f2);
 }
+
 .sdlg-portal-field-ro .sdlg-portal-ro-value.is-empty {
-  color: var(--sdlg-muted, #94a3b8);
+  color: var(--ui-muted, #94a3b8);
   font-style: italic;
 }
 
@@ -268,33 +390,38 @@ html.sdlg-has-portal-sticky .sdlg-input-helper-page {
   overflow: visible;
 }
 
-/* Warning Note Banner */
 .sdlg-portal-note-banner {
   display: flex;
   align-items: flex-start;
   gap: var(--sdlg-spacing-3, 12px);
-  background: var(--sdlg-warning-bg, #fff6e4);
-  border: 1px solid var(--sdlg-warning-border, #fcd34d);
-  border-radius: var(--sdlg-radius-card, 12px);
+  background: var(--ui-warning-bg);
+  border: 1px solid var(--ui-warning-border);
+  border-radius: var(--ui-radius-card, 12px);
   padding: 12px 16px;
   margin-bottom: var(--sdlg-spacing-4, 16px);
   font-size: 13px;
   font-weight: 500;
-  color: var(--sdlg-warning, #b45309);
+  color: var(--ui-warning);
   line-height: 1.5;
 }
 
 .sdlg-portal-note-icon {
   flex-shrink: 0;
-  color: var(--sdlg-warning, #b45309);
+  color: var(--ui-warning);
   display: inline-flex;
   margin-top: 2px;
 }
 
 .sdlg-portal-note-text { min-width: 0; }
 
-html[data-theme="dark"] .sdlg-portal-note-banner {
-  background: rgba(196, 122, 10, 0.15);
-  border-color: rgba(196, 122, 10, 0.3);
-  color: #fbbf24;
+/* =========================================
+   8. FOKUS KEYBOARD
+   Elemen custom yang jadi target klik (bukan <button> asli)
+   perlu ring fokus eksplisit; tanpa ini, navigasi keyboard di
+   tombol copy jadi tidak kelihatan posisinya.
+   ========================================= */
+.sdlg-collapse-toggle:focus-visible,
+[data-sdlg-copy-all]:focus-visible {
+  outline: 2px solid var(--ui-primary, #2f5bff);
+  outline-offset: 2px;
 }

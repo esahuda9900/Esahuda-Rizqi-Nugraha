@@ -1,182 +1,1043 @@
 /* =========================================================
-   SDLG ULTIMATE MOBILE LAYOUT (V14.0 - EXPERT REVISED)
-   Consolidated V11 + V12. Hardened for Touch UX & Safe Areas.
-   Applies ONLY to max-width: 760px.
+   SDLG WARRANTY TRACKER — DESIGN SYSTEM (V15.0)
+   Expert Full Upgrade · Mobile-First · Accessible · Dark Mode
    ========================================================= */
 
+
+/* ─────────────────────────────────────────────────────────
+   1. DESIGN TOKENS
+   ───────────────────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --sdlg-brand:        #0057a8;
+  --sdlg-brand-dark:   #003f7d;
+  --sdlg-brand-light:  #e8f1ff;
+  --sdlg-accent:       #f5a623;
+  --sdlg-success:      #22c55e;
+  --sdlg-warning:      #f59e0b;
+  --sdlg-danger:       #ef4444;
+  --sdlg-info:         #3b82f6;
+
+  /* Surface */
+  --sdlg-bg:           #f6f8fb;
+  --sdlg-surface:      #ffffff;
+  --sdlg-surface-2:    #f0f4f9;
+  --sdlg-border:       #e2e8f0;
+  --sdlg-border-focus: #0057a8;
+
+  /* Text */
+  --sdlg-text:         #1a202c;
+  --sdlg-text-muted:   #64748b;
+  --sdlg-text-xs:      #94a3b8;
+
+  /* Spacing */
+  --sp-1: 4px;  --sp-2: 8px;   --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 20px;  --sp-6: 24px;
+  --sp-8: 32px; --sp-10: 40px;
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:  0 10px 28px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06);
+
+  /* Typography */
+  --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-base: 14px;
+  --fs-md:   16px;
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+  --fs-2xl:  28px;
+
+  /* Layout */
+  --topbar-height: 60px;
+
+  /* Transitions */
+  --t-fast:   0.15s ease;
+  --t-normal: 0.25s ease;
+  --t-slow:   0.40s ease;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   2. BASE RESET
+   ───────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  color: var(--sdlg-text);
+  background: var(--sdlg-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, video { max-width: 100%; display: block; }
+
+a {
+  color: var(--sdlg-brand);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+a:hover { text-decoration: underline; }
+
+
+/* ─────────────────────────────────────────────────────────
+   3. LAYOUT
+   ───────────────────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh; /* dvh: akurat di mobile karena memperhitungkan keyboard */
+}
+
+.page {
+  padding: var(--sp-6);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   4. TOPBAR
+   ───────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--sdlg-brand);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-6);
+  height: var(--topbar-height);
+}
+
+.brand {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #fff;
+  white-space: nowrap;
+}
+.brand span { color: var(--sdlg-accent); }
+
+
+/* ─────────────────────────────────────────────────────────
+   5. NAV BUTTONS
+   ───────────────────────────────────────────────────────── */
+.nav-scroll {
+  display: flex;
+  gap: var(--sp-1);
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-scroll::-webkit-scrollbar { display: none; }
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  background: transparent;
+  color: rgba(255,255,255,.8);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  min-height: 36px;
+}
+.nav-btn:hover {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.nav-btn.active,
+.nav-btn[aria-current="page"] {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border-color: rgba(255,255,255,.35);
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   6. METRIC GRID (Dashboard Cards)
+   ───────────────────────────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-6);
+}
+
+.metric-card {
+  background: var(--sdlg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  border: 1px solid var(--sdlg-border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Accent stripe atas kartu */
+.metric-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--metric-accent, var(--sdlg-brand));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.metric-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.metric-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--sdlg-text-muted);
+  margin-bottom: var(--sp-2);
+}
+
+.metric-value {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--sdlg-text);
+  line-height: 1.1;
+  letter-spacing: -.5px;
+  overflow-wrap: anywhere;
+}
+
+.metric-sub {
+  font-size: var(--fs-xs);
+  color: var(--sdlg-text-muted);
+  margin-top: var(--sp-1);
+}
+
+/* Warna aksen per tipe */
+.metric-card[data-type="pending"]  { --metric-accent: var(--sdlg-warning); }
+.metric-card[data-type="approved"] { --metric-accent: var(--sdlg-success); }
+.metric-card[data-type="rejected"] { --metric-accent: var(--sdlg-danger);  }
+.metric-card[data-type="total"]    { --metric-accent: var(--sdlg-brand);   }
+
+
+/* ─────────────────────────────────────────────────────────
+   7. CLAIMS FILTER BAR
+   ───────────────────────────────────────────────────────── */
+.claims-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--sdlg-surface);
+  border: 1px solid var(--sdlg-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-4);
+}
+
+.claims-searchbar {
+  flex: 1 1 220px;
+  position: relative;
+}
+
+.claims-searchbar input { padding-left: 36px !important; }
+
+.claims-searchbar::before {
+  content: '🔍';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+  opacity: .5;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   8. CLAIMS TABLE
+   ───────────────────────────────────────────────────────── */
+.claims-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--sdlg-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--sdlg-surface);
+  font-size: var(--fs-sm);
+}
+
+.claims-table-head th {
+  background: var(--sdlg-surface-2);
+  color: var(--sdlg-text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--sdlg-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.claim-row td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--sdlg-border);
+  vertical-align: middle;
+  transition: background var(--t-fast);
+}
+.claim-row:last-child td { border-bottom: none; }
+.claim-row:hover td      { background: var(--sdlg-brand-light); }
+
+
+/* ─────────────────────────────────────────────────────────
+   9. STATUS BADGES
+   ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .75;
+  flex-shrink: 0;
+}
+
+.badge--pending  { background: #fef9c3; color: #92400e; }
+.badge--approved { background: #dcfce7; color: #166534; }
+.badge--rejected { background: #fee2e2; color: #991b1b; }
+.badge--process  { background: #dbeafe; color: #1e40af; }
+.badge--draft    { background: #f1f5f9; color: #475569; }
+
+
+/* ─────────────────────────────────────────────────────────
+   10. FORM INPUTS
+   ───────────────────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-4);
+}
+
+.form-label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--sdlg-text);
+}
+.form-label.required::after {
+  content: ' *';
+  color: var(--sdlg-danger);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="search"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  padding: 9px 13px;
+  border: 1.5px solid var(--sdlg-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  color: var(--sdlg-text);
+  background: var(--sdlg-surface);
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--sdlg-border-focus);
+  box-shadow: 0 0 0 3px rgba(0,87,168,.12);
+}
+
+input:disabled, select:disabled, textarea:disabled {
+  background: var(--sdlg-surface-2);
+  color: var(--sdlg-text-muted);
+  cursor: not-allowed;
+}
+
+textarea { resize: vertical; min-height: 100px; }
+
+/* Checkbox & Radio */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--sdlg-brand);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   11. BUTTONS
+   ───────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  min-height: 40px;
+  text-decoration: none;
+  user-select: none;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: var(--sdlg-brand);
+  color: #fff;
+  border-color: var(--sdlg-brand);
+}
+.btn-primary:hover {
+  background: var(--sdlg-brand-dark);
+  border-color: var(--sdlg-brand-dark);
+}
+
+.btn-secondary {
+  background: var(--sdlg-surface);
+  color: var(--sdlg-text);
+  border-color: var(--sdlg-border);
+}
+.btn-secondary:hover { background: var(--sdlg-surface-2); }
+
+.btn-danger  { background: var(--sdlg-danger); color: #fff; border-color: var(--sdlg-danger); }
+.btn-success { background: var(--sdlg-success); color: #fff; border-color: var(--sdlg-success); }
+.btn-ghost   { background: transparent; color: var(--sdlg-brand); }
+.btn-ghost:hover { background: var(--sdlg-brand-light); }
+
+.btn-sm  { padding: 6px 12px;  font-size: var(--fs-xs);  min-height: 32px; border-radius: var(--radius-sm); }
+.btn-lg  { padding: 12px 24px; font-size: var(--fs-md);  min-height: 48px; }
+.btn-xl  { padding: 14px 32px; font-size: var(--fs-lg);  min-height: 56px; }
+.btn-block { width: 100%; }
+
+.btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   12. CLAIM DETAIL — TRACKING PANEL
+   ───────────────────────────────────────────────────────── */
+#sdlg-tracking-panel {
+  background: var(--sdlg-surface);
+  border: 1px solid var(--sdlg-border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  box-shadow: var(--shadow-sm);
+}
+
+#sdlg-tracking-panel .sdlg-tracking-panel__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--sdlg-text);
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--sdlg-border);
+}
+
+#sdlg-tracking-panel .sdlg-tracking-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-5);
+}
+
+.sdlg-tracking-panel__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.sdlg-tracking-panel__item-label {
+  font-size: var(--fs-xs);
+  color: var(--sdlg-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.sdlg-tracking-panel__item-value {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--sdlg-text);
+}
+
+.sdlg-tracking-panel__item--next,
+.sdlg-tracking-panel__item--handoff {
+  grid-column: span 2;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   13. SDLG INPUT HELPER
+   ───────────────────────────────────────────────────────── */
+.page[data-sdlg-input-helper] {
+  --input-helper-cols: 2;
+}
+
+.page[data-sdlg-input-helper] .input-helper-grid,
+.page[data-sdlg-input-helper] [style*="grid-template-columns"],
+.page[data-sdlg-input-helper] [style*="gridTemplateColumns"] {
+  display: grid !important;
+  grid-template-columns: repeat(var(--input-helper-cols), 1fr) !important;
+  gap: var(--sp-4) !important;
+  width: 100% !important;
+}
+
+.page[data-sdlg-input-helper] [data-sdlg-copy] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: var(--sdlg-brand-light);
+  color: var(--sdlg-brand);
+  border: 1px solid var(--sdlg-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  min-width: 40px;
+  min-height: 36px;
+  flex: 0 0 auto;
+}
+
+.page[data-sdlg-input-helper] [data-sdlg-copy]:hover {
+  background: var(--sdlg-brand);
+  color: #fff;
+}
+
+.page[data-sdlg-input-helper] [data-sdlg-copy]:active {
+  transform: scale(0.95);
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   14. CARD (Generic)
+   ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--sdlg-surface);
+  border: 1px solid var(--sdlg-border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--sdlg-border);
+  color: var(--sdlg-text);
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   15. EMPTY STATE
+   ───────────────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-10);
+  gap: var(--sp-3);
+  color: var(--sdlg-text-muted);
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 48px;
+  opacity: .6;
+}
+
+.empty-state__title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--sdlg-text);
+}
+
+.empty-state__desc {
+  font-size: var(--fs-sm);
+  max-width: 320px;
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   16. TOAST / ALERT
+   ───────────────────────────────────────────────────────── */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: var(--fs-sm);
+  margin-bottom: var(--sp-4);
+}
+
+.alert-success { background: #f0fdf4; border-color: #86efac; color: #166534; }
+.alert-warning { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+.alert-danger  { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+.alert-info    { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+
+
+/* ─────────────────────────────────────────────────────────
+   17. SKELETON LOADER
+   ───────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sdlg-surface-2) 25%,
+    #e8ecf1             50%,
+    var(--sdlg-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.5s infinite;
+  border-radius: var(--radius-sm);
+  color: transparent;
+  user-select: none;
+}
+
+@keyframes skeleton-sweep {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   18. ANIMATIONS
+   ───────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade   { animation: fadeIn   var(--t-normal) both; }
+.animate-slide  { animation: slideDown var(--t-normal) both; }
+.animate-zoom   { animation: zoomIn   var(--t-normal) both; }
+
+
+/* ─────────────────────────────────────────────────────────
+   19. UTILITIES
+   ───────────────────────────────────────────────────────── */
+/* Visibility */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hidden  { display: none !important; }
+.visible { visibility: visible !important; }
+
+/* Text */
+.truncate         { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.text-muted       { color: var(--sdlg-text-muted) !important; }
+.text-xs          { font-size: var(--fs-xs) !important; }
+.text-sm          { font-size: var(--fs-sm) !important; }
+.text-right       { text-align: right; }
+.text-center      { text-align: center; }
+.font-bold        { font-weight: 700; }
+.font-medium      { font-weight: 500; }
+
+/* Flexbox */
+.flex             { display: flex; }
+.flex-col         { flex-direction: column; }
+.items-center     { align-items: center; }
+.items-start      { align-items: flex-start; }
+.justify-between  { justify-content: space-between; }
+.justify-center   { justify-content: center; }
+.flex-wrap        { flex-wrap: wrap; }
+.flex-1           { flex: 1 1 0%; }
+.shrink-0         { flex-shrink: 0; }
+
+/* Gap */
+.gap-1 { gap: var(--sp-1); }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.gap-6 { gap: var(--sp-6); }
+
+/* Margin/Padding */
+.mb-2 { margin-bottom: var(--sp-2); }
+.mb-4 { margin-bottom: var(--sp-4); }
+.mb-6 { margin-bottom: var(--sp-6); }
+.mt-4 { margin-top: var(--sp-4); }
+.p-4  { padding: var(--sp-4); }
+
+/* Misc */
+.w-full     { width: 100%; }
+.max-w-full { max-width: 100%; }
+.rounded    { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.border     { border: 1px solid var(--sdlg-border); }
+.shadow-sm  { box-shadow: var(--shadow-sm); }
+.shadow-md  { box-shadow: var(--shadow-md); }
+
+
+/* ─────────────────────────────────────────────────────────
+   20. DARK MODE
+   ───────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sdlg-bg:          #0f172a;
+    --sdlg-surface:     #1e293b;
+    --sdlg-surface-2:   #263248;
+    --sdlg-border:      #334155;
+    --sdlg-text:        #e2e8f0;
+    --sdlg-text-muted:  #94a3b8;
+    --sdlg-brand-light: rgba(0, 87, 168, 0.2);
+  }
+
+  .claims-table-head th { background: var(--sdlg-surface-2); }
+  .claim-row:hover td   { background: rgba(0,87,168,.12); }
+  .metric-card          { box-shadow: none; }
+
+  .badge--pending  { background: rgba(245,158,11,.15); color: #fcd34d; }
+  .badge--approved { background: rgba(34,197,94,.15);  color: #86efac; }
+  .badge--rejected { background: rgba(239,68,68,.15);  color: #fca5a5; }
+  .badge--process  { background: rgba(59,130,246,.15); color: #93c5fd; }
+  .badge--draft    { background: rgba(100,116,139,.15); color: #cbd5e1; }
+
+  .alert-success { background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.3);  color: #86efac; }
+  .alert-warning { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+  .alert-danger  { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.3);  color: #fca5a5; }
+  .alert-info    { background: rgba(59,130,246,.08); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+}
+
+/* Manual dark mode toggle via class */
+[data-theme="dark"] {
+  --sdlg-bg:          #0f172a;
+  --sdlg-surface:     #1e293b;
+  --sdlg-surface-2:   #263248;
+  --sdlg-border:      #334155;
+  --sdlg-text:        #e2e8f0;
+  --sdlg-text-muted:  #94a3b8;
+  --sdlg-brand-light: rgba(0, 87, 168, 0.2);
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   21. TABLET (761px – 1024px)
+   ───────────────────────────────────────────────────────── */
+@media (min-width: 761px) and (max-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  #sdlg-tracking-panel .sdlg-tracking-panel__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sdlg-tracking-panel__item--next,
+  .sdlg-tracking-panel__item--handoff {
+    grid-column: span 2;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   22. MOBILE (max-width: 760px)
+   ───────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  
-  /* =========================================
-     1. BASE RESET & OVERFLOW KILL
-     ========================================= */
+
+  /* 22.1 Base: Cegah horizontal scroll */
   html, body, #root, body > div {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    margin: 0 !important;
-    overflow-x: hidden !important; /* Cegah layar geser ke kanan */
-  }
-  
-  body {
-    font-size: 14px !important;
-    background: var(--sdlg-bg, #f6f8fb) !important;
+    overflow-x: hidden !important;
   }
 
-  /* =========================================
-     2. HEADER & NAVIGATION (Swipeable)
-     ========================================= */
+  /* 22.2 Topbar + Safe Area (iPhone notch / Dynamic Island) */
   .app-shell:not(:has(.login-screen)) .topbar {
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    padding-bottom: 0 !important;
+    position: sticky;
+    top: 0;
+    padding-top: env(safe-area-inset-top, 0px);
   }
-  
+
   .app-shell:not(:has(.login-screen)) .topbar-inner {
-    height: auto !important;
     flex-wrap: wrap !important;
-    padding: 10px 12px !important;
-    gap: 8px !important;
+    height: auto !important;
+    padding: var(--sp-3) var(--sp-3) !important;
+    gap: var(--sp-2) !important;
   }
 
   .app-shell:not(:has(.login-screen)) .brand {
     flex: 1 1 auto !important;
+    font-size: var(--fs-base) !important;
     min-width: 0 !important;
   }
 
+  /* 22.3 Nav scroll (swipeable pills) */
   .nav-scroll,
   .app-shell:not(:has(.login-screen)) .nav-scroll {
-    display: flex !important;
+    order: 3 !important;
+    flex: 0 0 100% !important;
+    width: 100% !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    width: 100% !important;
-    order: 3 !important;
-    flex: 0 0 100% !important;
-    padding-bottom: 4px !important;
+    gap: var(--sp-1) !important;
+    padding: 0 var(--sp-3) var(--sp-2) !important;
   }
-  
-  .nav-scroll::-webkit-scrollbar { display: none !important; }
-  
+
   .nav-btn {
     flex: 0 0 auto !important;
-    white-space: nowrap !important;
-    max-width: none !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    min-height: 36px !important;
   }
 
-  /* =========================================
-     3. FORM INPUTS & TOUCH TARGETS
-     ========================================= */
-  input, select, textarea {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-    min-height: 44px !important; /* Standar Apple untuk Touch */
-    font-size: 16px !important; /* Cegah iOS auto-zoom saat ngetik */
-  }
-  
-  button {
-    max-width: 100% !important;
+  /* 22.4 Form Inputs — WAJIB font-size 16px untuk cegah iOS auto-zoom */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
     min-height: 44px !important;
-    box-sizing: border-box !important;
+    padding: 10px 13px !important;
   }
 
-  /* Perbaikan Checkbox/Radio (Jangan dibikin tinggi 44px) */
-  input[type="checkbox"], input[type="radio"],
-  .claims-filter-bar input[type="checkbox"],
-  .page:has(.claims-searchbar) input[type="checkbox"] {
+  /* Checkbox & Radio: jangan dibikin tinggi 44px */
+  input[type="checkbox"],
+  input[type="radio"] {
     appearance: auto !important;
     -webkit-appearance: auto !important;
     display: inline-block !important;
     width: 22px !important;
     height: 22px !important;
     min-height: 22px !important;
+    flex: 0 0 22px !important;
     padding: 0 !important;
     margin: 0 !important;
-    flex: 0 0 22px !important;
   }
 
-  /* =========================================
-     4. METRIC GRID (Dashboard Cards)
-     ========================================= */
+  /* Semua button punya min touch target 44px */
+  button, .btn {
+    min-height: 44px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 22.5 Metric Grid — 2 kolom di mobile */
   .metric-grid,
   .app-shell:not(:has(.login-screen)) .metric-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-    margin-bottom: 20px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--sp-3) !important;
+    margin-bottom: var(--sp-4) !important;
   }
-  
-  .metric-card,
-  .app-shell:not(:has(.login-screen)) .metric-card {
-    min-width: 0 !important;
-    width: 100% !important;
-    overflow: hidden !important;
-    padding: 14px !important;
+
+  .metric-card {
+    padding: var(--sp-4) !important;
+    /* Matikan hover lift — di HP tidak ada hover state */
+    transform: none !important;
+    will-change: auto !important;
   }
-  
+
+  .metric-card:hover { transform: none !important; }
+
   .metric-value {
-    font-size: 22px !important;
-    overflow-wrap: anywhere !important;
-    word-break: break-word !important;
+    font-size: var(--fs-xl) !important;
+    word-break: break-all;
   }
 
-  /* =========================================
-     5. CLAIMS TABLE (Berubah jadi Cards)
-     ========================================= */
+  /* 22.6 Claims Filter Bar */
   .page:has(.claims-searchbar) .claims-filter-bar {
-    display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
-    padding: 12px !important;
+    gap: var(--sp-2) !important;
+    padding: var(--sp-3) !important;
   }
 
-  /* Sembunyikan Header Tabel Visual, tapi tetap ada untuk Screen Reader */
+  .page:has(.claims-searchbar) .claims-filter-bar > * {
+    width: 100% !important;
+  }
+
+  /* 22.7 Claims Table → Cards */
+  /* Sembunyikan thead dengan cara yang aksesibel (screen reader tetap bisa baca) */
   .page:has(.claims-searchbar) .claims-table-head,
   .page:has(.claims-searchbar) thead {
-    visibility: hidden !important;
-    display: block !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    position: absolute !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    width: 1px !important;
+    height: 1px !important;
     overflow: hidden !important;
+    white-space: nowrap !important;
   }
 
-  /* Ubah Baris Tabel menjadi Kartu */
-  .page:has(.claims-searchbar) .claims-list {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    width: 100% !important;
-  }
-  
-  .page:has(.claims-searchbar) .claims-list .claim-row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 8px !important;
-    width: 100% !important;
-    padding: 16px !important;
-    background: #ffffff !important;
-    border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02) !important;
-    transform: none !important; /* Matikan efek hover melayang di HP */
+  /* Hapus border & shadow dari wrapper — yang punya shadow sekarang tiap kartu */
+  .page:has(.claims-searchbar) .claims-table-wrap {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
   }
 
-  /* =========================================
-     6. SDLG INPUT HELPER (Anti-Berantakan)
-     ========================================= */
-  /* Paksa grid jadi 1 kolom */
+  /* Tbody / claims-list → flex column */
+  .page:has(.claims-searchbar) .claims-list,
+  .page:has(.claims-searchbar) tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--sp-3) !important;
+    width: 100% !important;
+  }
+
+  /* Baris → Kartu */
+  .page:has(.claims-searchbar) .claims-list .claim-row,
+  .page:has(.claims-searchbar) tbody .claim-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    width: 100% !important;
+    padding: var(--sp-4) !important;
+    background: var(--sdlg-surface) !important;
+    border: 1px solid var(--sdlg-border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    /* Matikan hover di touch */
+    transform: none !important;
+    transition: box-shadow var(--t-fast), background var(--t-fast) !important;
+  }
+
+  /* Efek ketuk */
+  .page:has(.claims-searchbar) .claims-list .claim-row:active,
+  .page:has(.claims-searchbar) tbody .claim-row:active {
+    box-shadow: var(--shadow-md) !important;
+    background: var(--sdlg-brand-light) !important;
+  }
+
+  /* Setiap cell dalam kartu → baris label:nilai */
+  .page:has(.claims-searchbar) .claim-row td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid var(--sdlg-border) !important;
+    font-size: var(--fs-sm) !important;
+  }
+
+  .page:has(.claims-searchbar) .claim-row td:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* Label dari data-label attribute */
+  .page:has(.claims-searchbar) .claim-row td[data-label]::before {
+    content: attr(data-label);
+    font-size: var(--fs-xs) !important;
+    font-weight: 600 !important;
+    color: var(--sdlg-text-muted) !important;
+    text-transform: uppercase !important;
+    letter-spacing: .4px !important;
+    flex-shrink: 0;
+    margin-right: var(--sp-2);
+  }
+
+  /* 22.8 SDLG Input Helper */
+  .page[data-sdlg-input-helper] { --input-helper-cols: 1; }
+
+  .page[data-sdlg-input-helper] .input-helper-grid,
   .page[data-sdlg-input-helper] [style*="grid-template-columns"],
   .page[data-sdlg-input-helper] [style*="gridTemplateColumns"] {
     grid-template-columns: minmax(0, 1fr) !important;
     width: 100% !important;
   }
-  
+
   .page[data-sdlg-input-helper] [style*="grid-template-columns"] > *,
   .page[data-sdlg-input-helper] [style*="gridTemplateColumns"] > * {
     width: 100% !important;
@@ -191,35 +1052,110 @@
   }
 
   .page[data-sdlg-input-helper] [data-sdlg-copy] {
+    min-width: 44px !important;
     flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 44px !important; /* Pastikan tombol copy gampang dipencet */
-    white-space: nowrap !important;
   }
 
-  /* =========================================
-     7. CLEARANCE & SAFE AREAS (iPhone Notch)
-     ========================================= */
+  /* 22.9 Page Padding + Safe Areas (iPhone notch kiri/kanan/bawah) */
   .page,
   .app-shell:not(:has(.login-screen)) .page {
-    padding: 16px !important;
-    /* Beri jarak bawah agar tidak tertutup Theme Switcher / Sticky Bar */
-    padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: var(--sp-4) !important;
+    padding-left:  max(var(--sp-4), env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(var(--sp-4), env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: max(130px, calc(80px + env(safe-area-inset-bottom, 0px))) !important;
   }
 
-  /* Pastikan Panel Claim Tracking kita tetap rapi di HP */
+  /* 22.10 Claim Tracking Panel */
   .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__grid {
-    grid-template-columns: 1fr !important; /* Ubah 4 kolom jadi 1 kolom */
-    gap: 16px !important;
+    /* 2 kolom di mobile — lebih nyaman dari 1 kolom (terlalu panjang) */
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--sp-4) !important;
   }
-  
+
   .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--next,
   .page.claim-detail-page #sdlg-tracking-panel .sdlg-tracking-panel__item--handoff {
-    grid-column: span 1 !important;
+    grid-column: span 2 !important;
+  }
+
+  /* 22.11 Floating Action Button */
+  .sdlg-fab {
+    position: fixed;
+    bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+    right: var(--sp-5);
+    z-index: 200;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--sdlg-brand);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0,87,168,.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform var(--t-fast), box-shadow var(--t-fast);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sdlg-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 8px rgba(0,87,168,.3);
   }
 }
 
-/* Sembunyikan elemen khusus mobile di Desktop */
+
+/* ─────────────────────────────────────────────────────────
+   23. DESKTOP ONLY
+   ───────────────────────────────────────────────────────── */
 @media (min-width: 761px) {
   .sdlg-mobile-only { display: none !important; }
+  .sdlg-fab         { display: none !important; }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   24. REDUCED MOTION (Aksesibilitas)
+   ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html { scroll-behavior: auto; }
+}
+
+
+/* ─────────────────────────────────────────────────────────
+   25. PRINT
+   ───────────────────────────────────────────────────────── */
+@media print {
+  .topbar,
+  .nav-scroll,
+  .claims-filter-bar,
+  .btn,
+  .sdlg-fab     { display: none !important; }
+
+  body          { background: #fff !important; color: #000 !important; font-size: 12px; }
+  .page         { padding: 0 !important; max-width: 100% !important; }
+  .metric-grid  { grid-template-columns: repeat(4, 1fr) !important; gap: 12px !important; }
+  .claims-table { font-size: 11px !important; }
+
+  .metric-card,
+  .card,
+  #sdlg-tracking-panel { box-shadow: none !important; border: 1px solid #ddd !important; }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 10px;
+    color: #666;
+  }
 }
