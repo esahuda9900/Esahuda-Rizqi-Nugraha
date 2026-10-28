@@ -1,113 +1,233 @@
 /* =========================================================
-   SDLG MODERN LAYOUT GRID V15.0 (EXPERT REVISED)
-   Source of truth for fluid grids & structural layout.
-   Visual only — no business logic.
+   SDLG LAYOUT GRID V16.0
+   Struktur & grid saja (visual only, tanpa business logic).
+   Nama class sama dengan V15, jadi HTML/JS nggak perlu diubah.
+   Perubahan utama:
+   - Token spacing/radius dipusatkan di :root (nggak ada fallback beda-beda)
+   - Grid metric fluid tanpa lompatan kolom kasar
+   - Sidebar detail sticky di desktop
+   - Tabel scroll di dalam wrapper, bukan ngebuat halaman geser
+   - Container query: card menyesuaikan lebar dirinya, bukan layar
+   - Fokus keyboard, reduced motion, safe-area HP
    ========================================================= */
 
 /* =========================================
-   1. PAGE SHELL (Bungkus Utama Halaman)
+   0. TOKENS (fallback kalau theme file belum load)
    ========================================= */
-.app-shell:not(:has(.login-screen)) .page {
-  max-width: 1440px; /* Disamakan dengan Command Center agar lega */
-  margin-inline: auto;
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-bottom: 64px;
-  box-sizing: border-box;
+:root {
+  --sdlg-spacing-1: 4px;
+  --sdlg-spacing-2: 8px;
+  --sdlg-spacing-3: 12px;
+  --sdlg-spacing-4: 16px;
+  --sdlg-spacing-5: 24px;
+  --sdlg-spacing-6: 32px;
+  --sdlg-radius-card: 16px;
+  --sdlg-radius-control: 10px;
+
+  --sdlg-page-max: 1440px;
+  --sdlg-page-gutter: clamp(12px, 2.2vw, 24px);
+  --sdlg-sticky-top: 16px;
+
+  --sdlg-focus-ring: 0 0 0 3px color-mix(in srgb, currentColor 30%, transparent);
 }
 
 /* =========================================
-   2. METRIC GRID (Dashboard Cards)
+   1. PAGE SHELL
+   ========================================= */
+.app-shell:not(:has(.login-screen)) .page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--sdlg-page-max);
+  margin-inline: auto;
+  padding-inline: var(--sdlg-page-gutter);
+  padding-bottom: calc(var(--sdlg-spacing-6) * 2);
+}
+
+/* Elemen anak flex/grid nggak boleh "mendorong" lebar halaman */
+.page > * {
+  min-width: 0;
+}
+
+/* =========================================
+   2. METRIC GRID (kartu ringkasan dashboard)
    ========================================= */
 .metric-grid {
   display: grid;
-  /* Min 180px agar angka tidak terpotong, auto-fit agar responsif */
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--sdlg-spacing-4, 16px);
-  margin-bottom: var(--sdlg-spacing-5, 20px);
+  /* Kolom otomatis: sebanyak yang muat, minimal 190px per kartu */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: var(--sdlg-spacing-4);
+  margin-bottom: var(--sdlg-spacing-5);
   width: 100%;
 }
 
 .metric-card {
+  container-type: inline-size; /* font angka ikut lebar kartu */
   min-width: 0;
   min-height: 110px;
-  border-radius: var(--sdlg-radius-card, 16px);
-  overflow: hidden;
+  border-radius: var(--sdlg-radius-card);
+  /* clip supaya radius rapi, tapi focus ring anak tetap kelihatan */
+  overflow: clip;
+  overflow-clip-margin: 4px;
 }
 
 .metric-value {
+  /* Angka besar menyusut halus kalau kartu sempit, tanpa terpotong */
+  font-size: clamp(20px, 11cqi, 32px);
+  line-height: 1.15;
   overflow-wrap: anywhere;
-  word-break: break-word;
-  font-variant-numeric: tabular-nums; /* Angka sejajar rata */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* =========================================
-   3. DETAIL GRID (Split View / Two-Column)
+   3. DETAIL GRID (data kiri, panel kanan)
    ========================================= */
 .detail-grid {
   display: grid;
-  /* Kiri lebih lebar (1.6fr) untuk data, Kanan (0.8fr) untuk sidebar */
   grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.8fr);
-  gap: var(--sdlg-spacing-5, 24px);
+  gap: var(--sdlg-spacing-5);
   align-items: start;
 }
 
+/* Panel kanan ikut terlihat saat scroll data panjang di kiri.
+   Pakai class .is-sticky di elemen sidebar (opsional). */
+.detail-grid > .is-sticky {
+  position: sticky;
+  top: var(--sdlg-sticky-top);
+  max-height: calc(100dvh - (var(--sdlg-sticky-top) * 2));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 /* =========================================
-   4. CARDS & SECTIONS
+   4. CARDS, SECTIONS, FILTER, TABLE
    ========================================= */
 .card,
 .card-pad {
-  border-radius: var(--sdlg-radius-card, 16px);
+  box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
-  box-sizing: border-box;
+  border-radius: var(--sdlg-radius-card);
+}
+
+.card-pad {
+  padding: clamp(14px, 2vw, 24px);
 }
 
 .section-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sdlg-spacing-2, 8px);
-  margin-bottom: var(--sdlg-spacing-4, 16px);
+  justify-content: space-between; /* judul kiri, aksi kanan */
+  gap: var(--sdlg-spacing-2) var(--sdlg-spacing-4);
+  margin-bottom: var(--sdlg-spacing-4);
 }
 
 .claims-filter-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--sdlg-spacing-3, 12px);
-  border-radius: var(--sdlg-radius-card, 16px);
+  gap: var(--sdlg-spacing-3);
+  border-radius: var(--sdlg-radius-card);
+}
+
+/* Field filter melebar mengisi baris, tapi nggak lebih kecil dari 160px */
+.claims-filter-bar > :where(input, select, .field, label) {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+/* Bungkus <table> dengan .table-scroll supaya tabel lebar
+   geser di dalam kartunya sendiri, bukan seluruh halaman */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: inherit;
+}
+
+.table-scroll > table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header tabel tetap terlihat saat tabel panjang discroll */
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 /* =========================================
-   5. RESPONSIVE: TABLET (Max 1024px)
+   5. LOADING & EMPTY STATE
+   ========================================= */
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--sdlg-spacing-2);
+  padding: var(--sdlg-spacing-6) var(--sdlg-spacing-4);
+  text-align: center;
+}
+
+.skeleton {
+  min-height: 1em;
+  border-radius: var(--sdlg-radius-control);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, currentColor 8%, transparent) 25%,
+    color-mix(in srgb, currentColor 16%, transparent) 50%,
+    color-mix(in srgb, currentColor 8%, transparent) 75%
+  );
+  background-size: 200% 100%;
+  animation: sdlg-shimmer 1.4s linear infinite;
+}
+
+@keyframes sdlg-shimmer {
+  to { background-position: -200% 0; }
+}
+
+/* =========================================
+   6. FOKUS KEYBOARD
+   ========================================= */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--sdlg-focus-ring);
+}
+
+/* =========================================
+   7. TABLET (max 1024px)
    ========================================= */
 @media (max-width: 1024px) {
-  .app-shell:not(:has(.login-screen)) .page {
-    padding-left: 20px;
-    padding-right: 20px;
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr); /* panel kanan turun ke bawah */
+    gap: var(--sdlg-spacing-4);
   }
 
-  .detail-grid {
-    grid-template-columns: minmax(0, 1fr); /* Sidebar turun ke bawah */
-    gap: var(--sdlg-spacing-4, 16px);
+  .detail-grid > .is-sticky {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 }
 
 /* =========================================
-   6. RESPONSIVE: PHONE (Max 768px)
+   8. PHONE (max 768px)
    ========================================= */
 @media (max-width: 768px) {
   .app-shell:not(:has(.login-screen)) .page {
-    padding-left: 16px;
-    padding-right: 16px;
-    /* Clearance untuk bottom navigation di HP (jika ada) */
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    /* ruang untuk bottom nav / theme switcher + area aman iPhone */
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    padding-inline: max(var(--sdlg-page-gutter), env(safe-area-inset-left, 0px))
+                    max(var(--sdlg-page-gutter), env(safe-area-inset-right, 0px));
   }
 
   .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 Kolom di HP */
-    gap: var(--sdlg-spacing-3, 12px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sdlg-spacing-3);
   }
 
   .claims-filter-bar {
@@ -115,17 +235,24 @@
     align-items: stretch;
   }
 
-  /* Navigasi Horizontal (Swipeable) di HP */
+  .claims-filter-bar > :where(input, select, .field, label) {
+    flex: 0 0 auto;
+  }
+
+  /* Navigasi horizontal, bisa digeser */
   .nav-scroll {
     display: flex;
     flex-wrap: nowrap;
+    gap: var(--sdlg-spacing-2);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Sembunyikan scrollbar Firefox */
-    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    padding-bottom: var(--sdlg-spacing-1);
+    /* efek pudar di tepi menandakan masih bisa digeser */
+    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
   }
 
-  /* Sembunyikan scrollbar Chrome/Safari */
   .nav-scroll::-webkit-scrollbar {
     display: none;
   }
@@ -133,10 +260,12 @@
   .nav-btn {
     flex: 0 0 auto;
     white-space: nowrap;
+    scroll-snap-align: start;
+    min-height: 44px; /* target sentuh minimum */
   }
 
-  /* Theme Switcher (Terang/Gelap) posisi tengah bawah */
   .sdlg-theme-switcher {
+    position: fixed;
     left: 50%;
     right: auto;
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
@@ -147,28 +276,51 @@
 }
 
 /* =========================================
-   7. RESPONSIVE: NARROW PHONE (Max 480px)
+   9. NARROW PHONE (max 480px)
+   Tetap 2 kolom sampai 360px supaya nggak scroll panjang.
+   Cuma di bawah 360px baru jadi 1 kolom.
    ========================================= */
 @media (max-width: 480px) {
-  .app-shell:not(:has(.login-screen)) .page {
-    padding-left: 12px;
-    padding-right: 12px;
+  .metric-card {
+    min-height: 96px;
   }
+}
 
+@media (max-width: 359px) {
   .metric-grid {
-    grid-template-columns: 1fr; /* 1 Kolom penuh di HP kecil */
-  }
-
-  .metric-value {
-    font-size: 24px;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 /* =========================================
-   8. RESPONSIVE: WIDE DESKTOP (Min 1440px)
+   10. WIDE DESKTOP (min 1440px)
    ========================================= */
 @media (min-width: 1440px) {
   .metric-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)); /* Maksimal 4 kolom */
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* maksimal 4 kolom */
+  }
+}
+
+/* =========================================
+   11. PREFERENSI PENGGUNA
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  .nav-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+@media print {
+  .sdlg-theme-switcher,
+  .nav-scroll {
+    display: none !important;
+  }
+
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

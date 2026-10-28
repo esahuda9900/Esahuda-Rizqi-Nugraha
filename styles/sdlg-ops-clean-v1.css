@@ -1,58 +1,74 @@
 /* =========================================================
-   SDLG_OPS_CLEAN V2.0 (EXPERT REVISED)
-   Final visual layer — modern, smooth, clean.
-   Aligns with DESIGN.md: industrial ops tool, not AI SaaS.
-   Visual only. Wins cascade when injected last.
+   SDLG OPS CLEAN V2.1
+   Lapisan visual untuk area APP (bukan login): padat, tenang,
+   fungsional, sesuai arah DESIGN.md. CSS saja: tanpa logic,
+   markup, atau nama class yang diubah.
+
+   URUTAN LOAD:
+     1. sdlg-layout-grid-v16.css   (struktur & page shell)
+     2. sdlg-modern-refresh-v2.1.css (token --ui-*, dark mode,
+        login, reduced-motion)
+     3. file ini, paling akhir
+
+   File ini MEMBACA token --ui-* dari refresh v2.1, jadi
+   refresh harus ikut dimuat. Dark mode otomatis ikut karena
+   semua warna lewat token (tidak ada warna putih hardcode).
+
+   !important yang tersisa SENGAJA: ini lapisan override terakhir.
    ========================================================= */
 
 /* =========================================
-   1. FOUNDATION (No decorative gradients)
+   1. FOUNDATION (tanpa gradient dekoratif)
    ========================================= */
 html, body {
-  background: var(--sdlg-bg, #eef1f7) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  background: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
 }
 
 body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: var(--ui-font) !important;
   line-height: 1.5 !important;
-  letter-spacing: -0.011em !important;
-  font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif) !important;
 }
+
+/* Glow dari refresh tertutup background solid di atas, jadi
+   matikan sekalian supaya nggak ada layer fixed yang dicat sia-sia */
+body::before { content: none !important; }
 
 h1, .page-title { font-weight: 700 !important; letter-spacing: -0.03em !important; line-height: 1.2 !important; }
-h2 { font-weight: 650 !important; letter-spacing: -0.02em !important; }
-h3, .section-title { font-weight: 650 !important; letter-spacing: -0.01em !important; }
-.page-sub, .section-sub, .brand-sub, .metric-label { color: var(--sdlg-muted, #5a6578) !important; }
+h2 { font-weight: 600 !important; letter-spacing: -0.02em !important; }
+h3, .section-title { font-weight: 600 !important; letter-spacing: -0.01em !important; }
+.page-sub, .section-sub, .brand-sub, .metric-label { color: var(--ui-muted) !important; }
 
-/* Transisi dasar untuk elemen interaktif (TETAP ADA HOVER EFFECT) */
-button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, textarea {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+/* Transisi untuk elemen interaktif + kartu metric yang melayang */
+button, [role="button"], a, .nav-btn, .icon-btn, .metric-card,
+input, select, textarea, .claim-row {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease !important;
 }
 
 /* =========================================
-   2. HEADER & NAVBAR (Solid & Calm)
+   2. HEADER & NAVBAR (solid & tenang)
+   Selector header dipersempit: hanya header level atas, bukan
+   <header> di dalam section/article/kartu.
    ========================================= */
-.app-shell:not(:has(.login-screen)) header,
-.app-shell:not(:has(.login-screen)) .topbar {
-  background: rgba(255, 255, 255, 0.98) !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important; /* Shadow sangat tipis */
-  backdrop-filter: none !important;
+.app-shell:not(:has(.login-screen)) :is(.topbar, header:not(:is(section, article, aside, main, .card, .card-pad) header)) {
+  background: var(--ui-surface) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) .nav-scroll {
   gap: 2px !important;
   padding: 3px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-sm, 6px) !important;
-  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 8px !important;
+  background: var(--ui-surface-muted) !important;
 }
 
 .nav-btn {
@@ -60,26 +76,33 @@ button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, te
   font-size: 12.5px !important;
   font-weight: 600 !important;
   padding: 7px 12px !important;
-  color: var(--sdlg-muted, #5a6578) !important;
+  color: var(--ui-muted) !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-.nav-btn:hover { background: rgba(255, 255, 255, 0.85) !important; color: var(--sdlg-text, #0c1526) !important; }
-.nav-btn.active {
-  background: var(--sdlg-surface, #ffffff) !important;
-  color: var(--sdlg-primary-strong, #1e45d6) !important;
+.nav-btn:hover {
+  background: color-mix(in srgb, var(--ui-surface) 85%, transparent) !important;
+  color: var(--ui-text) !important;
+}
+
+.nav-btn.active,
+.nav-btn[aria-current="page"] {
+  background: var(--ui-surface) !important;
+  color: var(--ui-primary-strong) !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-  font-weight: 650 !important;
+  font-weight: 600 !important;
 }
 
 /* =========================================
-   3. LAYOUT & CARDS (Utilitarian)
+   3. PAGE & CARDS
+   Lebar dan padding kiri-kanan page shell dipegang V16
+   (sebelumnya max-width 1400 + padding !important di sini
+   bentrok dengan V16 dan menimpa jarak atas HP dari refresh).
    ========================================= */
-.app-shell:not(:has(.login-screen)) .page {
-  max-width: 1400px !important;
-  padding: 24px 20px 48px !important;
+@media (min-width: 721px) {
+  .app-shell:not(:has(.login-screen)) .page { padding-top: 24px !important; }
 }
 
 .app-shell:not(:has(.login-screen)) .page-title {
@@ -93,33 +116,34 @@ button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, te
   font-size: 13px !important;
 }
 
-/* PENTING: Kecualikan Tracking Panel dari gaya "kaku" ini */
-.app-shell:not(:has(.login-screen)) .card:not(#sdlg-tracking-panel),
-.app-shell:not(:has(.login-screen)) .metric-card,
-.app-shell:not(:has(.login-screen)) .loading-card,
-.app-shell:not(:has(.login-screen)) .empty-card,
-.app-shell:not(:has(.login-screen)) [class*="card"]:not(#sdlg-tracking-panel) {
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
-  background: var(--sdlg-surface, #ffffff) !important;
+/* Kartu: hanya class yang berakhiran "-card" (atau .card,
+   .card-pad, .metric-card). Sub-elemen seperti .card-head atau
+   .xxx-card-title nggak ikut dikotaki lagi. */
+.app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(#sdlg-tracking-panel)) {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-card) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  background: var(--ui-surface) !important;
 }
 
-/* Hover effect elegan (TETAP MELAYANG SEDIKIT) */
-.app-shell:not(:has(.login-screen)) .card:hover:not(#sdlg-tracking-panel),
-.app-shell:not(:has(.login-screen)) [class*="card"]:hover:not(#sdlg-tracking-panel),
-.app-shell:not(:has(.login-screen)) .metric-card:hover {
-  border-color: var(--sdlg-border-strong, #cfd8e6) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+/* Hover semua kartu: border + shadow saja (nggak bergeser) */
+.app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(#sdlg-tracking-panel)):hover {
+  border-color: var(--ui-border-strong) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Melayang 1px: kartu metric dan kartu yang bisa diklik.
+   Kartu besar berisi tabel/form sengaja nggak ikut, karena
+   transform di wadah membuat isinya (dropdown, modal fixed,
+   sticky header) ikut loncat saat di-hover. Mau kartu lain ikut
+   melayang? Tambahkan class "is-liftable" di elemennya. */
+.app-shell:not(:has(.login-screen)) :is(.metric-card, .is-liftable, :is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, [class$="-card"], [class*="-card "])):where(:not(#sdlg-tracking-panel)):hover {
   transform: translateY(-1px) !important;
 }
 
-.app-shell:not(:has(.login-screen)) .card-pad {
-  padding: 14px 16px !important;
-}
+.app-shell:not(:has(.login-screen)) .card-pad { padding: 14px 16px !important; }
 
 .app-shell:not(:has(.login-screen)) .metric-grid {
-  display: grid !important;
   gap: 12px !important;
   margin-bottom: 18px !important;
 }
@@ -130,138 +154,153 @@ button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, te
 }
 
 .app-shell:not(:has(.login-screen)) .metric-label {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   margin-bottom: 4px !important;
 }
 
+/* Ukuran ~24px, tapi menyusut kalau angka panjang (container
+   query dari V16). Dulu dikunci 24px/20px sehingga angka besar
+   bisa terpotong. */
 .app-shell:not(:has(.login-screen)) .metric-value {
-  font-size: 24px !important;
+  font-size: clamp(20px, 10cqi, 26px) !important;
   font-weight: 700 !important;
   letter-spacing: -0.03em !important;
   line-height: 1.15 !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--ui-text) !important;
 }
 
 /* =========================================
-   4. BUTTONS & INPUTS (Tegas & Fungsional)
+   4. BUTTONS & INPUTS
+   Ukuran/padding hanya untuk komponen tombol bernama "*-btn"
+   (kecuali .nav-btn dan .icon-btn). Dulu "button" polos dipaksa
+   34px + padding 14px, sehingga .nav-btn kehilangan padding dan
+   target sentuh 44px dari V16, tombol ikon melebar, dan tombol
+   theme switcher berubah dari pil jadi kotak.
    ========================================= */
-.app-shell:not(:has(.login-screen)) button,
-.app-shell:not(:has(.login-screen)) [role="button"],
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) .secondary-btn,
-.app-shell:not(:has(.login-screen)) .danger-btn {
-  border-radius: var(--sdlg-radius-btn, 8px) !important;
+.app-shell:not(:has(.login-screen)) :is([class$="-btn"], [class*="-btn "], button[class*="primary"]):not(.nav-btn, .icon-btn) {
+  border-radius: var(--ui-radius-btn) !important;
   font-weight: 600 !important;
   font-size: 12.5px !important;
   min-height: 34px !important;
   padding: 0 14px !important;
 }
 
-.app-shell:not(:has(.login-screen)) .primary-btn,
-.app-shell:not(:has(.login-screen)) button[class*="primary"] {
-  background: var(--sdlg-primary, #2f5bff) !important;
-  color: #fff !important;
+.app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]) {
+  background: var(--ui-primary) !important;
+  color: var(--ui-on-primary) !important;
   border: 0 !important;
-  box-shadow: 0 1px 2px rgba(47, 91, 255, 0.2) !important;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-primary) 24%, transparent) !important;
 }
-
-.app-shell:not(:has(.login-screen)) .primary-btn:hover,
-.app-shell:not(:has(.login-screen)) button[class*="primary"]:hover {
-  background: var(--sdlg-primary-hover, #1e45d6) !important;
+.app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]):hover {
+  background: var(--ui-primary-hover) !important;
   transform: translateY(-1px) !important;
+}
+.app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]):active {
+  transform: translateY(0) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .secondary-btn {
-  background: var(--sdlg-surface, #ffffff) !important;
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  color: var(--ui-text) !important;
   box-shadow: none !important;
 }
-
 .app-shell:not(:has(.login-screen)) .secondary-btn:hover {
-  background: var(--sdlg-surface-muted, #f5f7fb) !important;
-  border-color: #c9d2e0 !important;
+  background: var(--ui-surface-muted) !important;
+  border-color: color-mix(in srgb, var(--ui-border-strong) 75%, var(--ui-text)) !important;
 }
 
-.app-shell:not(:has(.login-screen)) input,
-.app-shell:not(:has(.login-screen)) select,
-.app-shell:not(:has(.login-screen)) textarea {
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
-  border-radius: var(--sdlg-radius-input, 6px) !important;
+/* Tombol bahaya: tenang (outline lembut), bukan merah penuh,
+   supaya aksi destruktif nggak berteriak di tool operasional */
+.app-shell:not(:has(.login-screen)) .danger-btn {
+  background: var(--ui-danger-bg) !important;
+  border: 1px solid var(--ui-danger-border) !important;
+  color: var(--ui-danger-text) !important;
+  box-shadow: none !important;
+}
+.app-shell:not(:has(.login-screen)) .danger-btn:hover {
+  border-color: var(--ui-danger-text) !important;
+}
+
+/* Field teks saja (checkbox, radio, range, file tidak ikut) */
+.app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]), select, textarea) {
+  border: 1px solid var(--ui-border-strong) !important;
+  border-radius: var(--ui-radius-input) !important;
   min-height: 36px !important;
   font-size: 13px !important;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02) !important;
-  background: var(--sdlg-surface, #ffffff) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  background: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
 }
 
-.app-shell:not(:has(.login-screen)) input:focus,
-.app-shell:not(:has(.login-screen)) select:focus,
-.app-shell:not(:has(.login-screen)) textarea:focus {
-  border-color: var(--sdlg-primary, #2f5bff) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(47, 91, 255, 0.15)) !important;
+.app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]), select, textarea):focus {
+  border-color: var(--ui-primary) !important;
+  box-shadow: var(--ui-ring) !important;
   outline: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) label {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--ui-text) !important;
 }
 
 /* =========================================
-   5. TABLES (Dense & Scannable)
+   5. TABLES (padat & mudah dipindai)
    ========================================= */
-.app-shell:not(:has(.login-screen)) .table-wrap,
-.app-shell:not(:has(.login-screen)) .claims-table-shell {
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
-  overflow: hidden !important;
-  background: var(--sdlg-surface, #ffffff) !important;
+/* Geser horizontal di dalam wadah (dulu overflow: hidden
+   memotong kolom tanpa bisa digeser di HP) */
+.app-shell:not(:has(.login-screen)) :is(.table-wrap, .claims-table-shell) {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-card) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--ui-surface) !important;
 }
 
-.app-shell:not(:has(.login-screen)) thead th,
-.app-shell:not(:has(.login-screen)) th,
-.app-shell:not(:has(.login-screen)) .claims-table-head {
-  background: var(--sdlg-surface-muted, #f5f7fb) !important;
-  color: var(--sdlg-muted, #5a6578) !important;
+.app-shell:not(:has(.login-screen)) :is(thead th, th, .claims-table-head) {
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-muted) !important;
   font-size: 11px !important;
-  font-weight: 650 !important;
+  font-weight: 600 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
   padding-top: 10px !important;
   padding-bottom: 10px !important;
 }
 
+.app-shell:not(:has(.login-screen)) td { font-variant-numeric: tabular-nums; }
+
 .app-shell:not(:has(.login-screen)) tbody tr:hover td {
-  background: #f8fafc !important;
+  background: var(--ui-surface-hover) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claims-list .claim-row {
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
-  background: #f8fafc !important;
-  box-shadow: inset 3px 0 0 var(--sdlg-primary, #2f5bff) !important;
+  background: var(--ui-surface-hover) !important;
+  box-shadow: inset 3px 0 0 var(--ui-primary) !important;
 }
 
-.app-shell:not(:has(.login-screen)) .claims-filter-bar,
-.app-shell:not(:has(.login-screen)) .claims-searchbar {
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+.app-shell:not(:has(.login-screen)) :is(.claims-filter-bar, .claims-searchbar) {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-card) !important;
+  background: var(--ui-surface) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
   padding: 10px 12px !important;
   margin-bottom: 12px !important;
   gap: 8px !important;
 }
 
 /* =========================================
-   6. ROUTE SUMMARY (Modern Alert Banner)
+   6. ROUTE SUMMARY (banner status)
    ========================================= */
 .sdlg-route-summary {
   display: grid !important;
@@ -270,16 +309,16 @@ button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, te
   align-items: center !important;
   margin: 14px 0 !important;
   padding: 16px 20px !important;
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
-  border-left: 4px solid var(--sdlg-primary, #2f5bff) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
-  background: var(--sdlg-surface-muted, #f5f7fb) !important;
+  border: 1px solid var(--ui-border-strong) !important;
+  border-left: 4px solid var(--ui-primary) !important;
+  border-radius: var(--ui-radius-card) !important;
+  background: var(--ui-surface-muted) !important;
   box-shadow: none !important;
 }
 
 .sdlg-route-summary__title {
   margin-top: 4px !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--ui-text) !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   letter-spacing: -0.02em !important;
@@ -288,46 +327,30 @@ button, [role="button"], a, .nav-btn, .icon-btn, .metric-card, input, select, te
 .sdlg-route-summary__reason {
   max-width: 760px !important;
   margin-top: 6px !important;
-  color: var(--sdlg-muted, #5a6578) !important;
+  color: var(--ui-muted) !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
 }
 
 .sdlg-route-summary__next {
   padding-left: 20px !important;
-  border-left: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  border-left: 1px solid var(--ui-border-strong) !important;
+  color: var(--ui-text) !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
 }
 
 /* =========================================
-   7. DARK MODE & RESPONSIVE
+   7. RESPONSIVE (768px, sama dengan V16 dan refresh)
    ========================================= */
-[data-theme="dark"] {
-  --sdlg-bg: #0b1120;
-  --sdlg-surface: #111827;
-  --sdlg-surface-muted: #1a2332;
-  --sdlg-border: #243044;
-  --sdlg-border-strong: #334155;
-  --sdlg-text: #e2e8f0;
-  --sdlg-muted: #94a3b8;
-  --sdlg-primary: #818cf8;
-  --sdlg-primary-strong: #a5b4fc;
-}
-
-html[data-theme="dark"], html[data-theme="dark"] body {
-  background: var(--sdlg-bg) !important;
-  color: var(--sdlg-text) !important;
-}
-
-@media (max-width: 760px) {
-  .app-shell:not(:has(.login-screen)) .page {
-    padding: 16px 12px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-  }
+@media (max-width: 768px) {
   .app-shell:not(:has(.login-screen)) .page-title { font-size: 22px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-value { font-size: 20px !important; }
-  
+
+  /* 16px mencegah iOS Safari auto-zoom saat field difokus */
+  .app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
+    font-size: 16px !important;
+  }
+
   .sdlg-route-summary {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
@@ -335,15 +358,18 @@ html[data-theme="dark"], html[data-theme="dark"] body {
   }
   .sdlg-route-summary__next {
     padding: 12px 0 0 !important;
-    border-top: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
+    border-top: 1px solid var(--ui-border-strong) !important;
     border-left: 0 !important;
   }
 }
 
-/* Accessibility Focus Ring */
-.app-shell:not(:has(.login-screen)) button:focus-visible,
-.app-shell:not(:has(.login-screen)) a:focus-visible,
-.app-shell:not(:has(.login-screen)) input:focus-visible {
-  outline: 3px solid rgba(47, 91, 255, 0.28) !important;
+/* =========================================
+   8. FOKUS KEYBOARD
+   Dulu outline rgba(.28) di atas putih kontrasnya sekitar 1.6:1
+   (standar minimal 3:1). Sekarang solid warna primary.
+   (Input memakai ring dari :focus di atas.)
+   ========================================= */
+.app-shell:not(:has(.login-screen)) :is(a, button, [role="button"], summary, select, textarea):focus-visible {
+  outline: 2px solid var(--ui-primary) !important;
   outline-offset: 2px !important;
 }
