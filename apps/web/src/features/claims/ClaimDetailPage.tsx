@@ -3,10 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import {
   archiveClaim,
+  ConcurrentEditError,
   fetchClaimById,
   fetchClaimStatusHistory,
   unarchiveClaim,
+  updateClaimById,
   updateClaimStatusRpc,
+  type ClaimDetail,
 } from '@/lib/claimsApi';
 import { dash, formatDateDisplay, formatMoney } from '@/lib/format';
 import { StatusBadge } from '@/shared/StatusBadge';
@@ -33,7 +36,6 @@ function suggestNextStatus(current: string | null | undefined): Status {
   const c = String(current || '').trim();
   const idx = STATUSES.findIndex((s) => s === c);
   if (idx >= 0 && idx < STATUSES.length - 1) {
-    // skip Rejected as auto-next
     const next = STATUSES[idx + 1];
     if (next === 'Rejected') return (STATUSES[idx + 2] as Status) || 'SDLG Audit';
     return next as Status;
@@ -84,10 +86,116 @@ function partsRows(parts: unknown): Array<Record<string, unknown>> {
   return [];
 }
 
+/** Editable subset — maps form key → DB column */
+const EDIT_MAP = [
+  { key: 'model', label: 'Model', col: 'model' },
+  { key: 'serial_no', label: 'Serial', col: 'serial_no' },
+  { key: 'indent_no', label: 'Indent', col: 'indent_no' },
+  { key: 'customer', label: 'Customer', col: 'customer' },
+  { key: 'branch', label: 'Branch', col: 'branch' },
+  { key: 'distributor', label: 'Distributor', col: 'distributor' },
+  { key: 'dealer_name', label: 'Dealer', col: 'dealer_name' },
+  { key: 'dealer_code', label: 'Dealer code', col: 'dealer_code' },
+  { key: 'dealer_wo_so', label: 'WO', col: 'dealer_wo_so' },
+  { key: 'dealer_claim_no', label: 'Dealer claim no', col: 'dealer_claim_no' },
+  { key: 'distributor_no', label: 'Distributor no', col: 'distributor_no' },
+  { key: 'causing_part_no', label: 'Part no', col: 'causing_part_no' },
+  { key: 'causing_part_desc', label: 'Part desc', col: 'causing_part_desc' },
+  { key: 'failure_part_location', label: 'Location', col: 'failure_part_location' },
+  { key: 'repair_method', label: 'Repair method', col: 'repair_method' },
+  { key: 'technical_personnel', label: 'Tech', col: 'technical_personnel' },
+  { key: 'engine_serial_no', label: 'Engine SN', col: 'engine_serial_no' },
+  { key: 'sales_date', label: 'Sales date', col: 'sales_date' },
+  { key: 'failure_date', label: 'Failure date', col: 'failure_date' },
+  { key: 'dealer_repair_date', label: 'Dealer repair', col: 'dealer_repair_date' },
+  { key: 'dealer_claim_date', label: 'Dealer claim date', col: 'dealer_claim_date' },
+  { key: 'completion_date', label: 'Completion', col: 'completion_date' },
+  { key: 'hm_failure', label: 'HM failure', col: 'hm_failure' },
+  { key: 'hm_completion', label: 'HM completion', col: 'hm_completion' },
+  { key: 'labour_hrs', label: 'Labour hrs', col: 'labour_hrs' },
+  { key: 'mileage_km', label: 'Mileage km', col: 'mileage_km' },
+  { key: 'mileage_to_site', label: 'Mileage to site', col: 'mileage_to_site' },
+  { key: 'parts_total', label: 'Parts total', col: 'parts_total' },
+  { key: 'labour_amount', label: 'Labour amount', col: 'labour_amount' },
+  { key: 'mileage_amount', label: 'Mileage amount', col: 'mileage_amount' },
+  { key: 'other_amount', label: 'Other amount', col: 'other_amount' },
+  { key: 'total_amount', label: 'Total amount', col: 'total_amount' },
+  { key: 'currency', label: 'Currency', col: 'currency' },
+  { key: 'sdlg_no', label: 'SDLG no', col: 'sdlg_no' },
+  { key: 'sdlg_submission_no', label: 'SDLG submission no', col: 'sdlg_submission_no' },
+  { key: 'invoice_no', label: 'Invoice no', col: 'invoice_no' },
+  { key: 'payment_amount', label: 'Payment amount', col: 'payment_amount' },
+] as const;
+
+const TEXT_AREAS = [
+  { key: 'fault_description', label: 'Fault', col: 'fault_description' },
+  { key: 'cause_analyze', label: 'Cause', col: 'cause_analyze' },
+  { key: 'comment', label: 'Comment', col: 'comment' },
+] as const;
+
+const NUM_COLS = new Set([
+  'hm_failure',
+  'hm_completion',
+  'labour_hrs',
+  'mileage_km',
+  'mileage_to_site',
+  'parts_total',
+  'labour_amount',
+  'mileage_amount',
+  'other_amount',
+  'total_amount',
+  'payment_amount',
+]);
+
+function claimToForm(c: ClaimDetail): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of EDIT_MAP) {
+    const v = (c as Record<string, unknown>)[f.col];
+    out[f.key] = v == null ? '' : String(v);
+  }
+  for (const f of TEXT_AREAS) {
+    const v = (c as Record<string, unknown>)[f.col];
+    out[f.key] = v == null ? '' : String(v);
+  }
+  return out;
+}
+
+/** Only send fields that actually changed; never send empty string over existing value unless user cleared intentionally */
+function buildPatch(
+  form: Record<string, string>,
+  original: ClaimDetail,
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  const all = [...EDIT_MAP, ...TEXT_AREAS];
+  for (const f of all) {
+    const raw = form[f.key] ?? '';
+    const orig = (original as Record<string, unknown>)[f.col];
+    const origStr = orig == null ? '' : String(orig);
+
+    if (raw === origStr) continue;
+
+    if (NUM_COLS.has(f.col)) {
+      if (raw.trim() === '') {
+        // only clear if original had a value
+        if (orig != null && orig !== '') patch[f.col] = null;
+      } else {
+        const n = Number(String(raw).replace(/,/g, ''));
+        if (Number.isFinite(n)) patch[f.col] = n;
+      }
+    } else {
+      // text / date
+      if (raw.trim() === '' && (orig == null || orig === '')) continue;
+      patch[f.col] = raw.trim() === '' ? null : raw.trim();
+    }
+  }
+  return patch;
+}
+
 export function ClaimDetailPage() {
   const { claimId = '' } = useParams();
   const id = decodeURIComponent(claimId);
   const qc = useQueryClient();
+
   const [showStatus, setShowStatus] = useState(false);
   const [nextStatus, setNextStatus] = useState<Status>('SDLG Audit');
   const [reason, setReason] = useState('');
@@ -96,6 +204,11 @@ export function ClaimDetailPage() {
   );
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [statusErr, setStatusErr] = useState<string | null>(null);
+
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ['claim', id],
@@ -112,12 +225,30 @@ export function ClaimDetailPage() {
     staleTime: 15_000,
   });
 
-  // Keep nextStatus sensible when claim loads / changes
   useEffect(() => {
     if (q.data?.claim_status) {
       setNextStatus(suggestNextStatus(q.data.claim_status));
     }
   }, [q.data?.claim_status]);
+
+  // Reset edit form when claim changes or user opens edit
+  useEffect(() => {
+    if (q.data && editing) {
+      setForm(claimToForm(q.data));
+    }
+  }, [q.data, editing]);
+
+  // Clean shared state when leaving claim
+  useEffect(() => {
+    return () => {
+      setEditing(false);
+      setForm({});
+      setSaveMsg(null);
+      setSaveErr(null);
+      setStatusMsg(null);
+      setStatusErr(null);
+    };
+  }, [id]);
 
   const statusMut = useMutation({
     mutationFn: async () => {
@@ -160,6 +291,47 @@ export function ClaimDetailPage() {
     },
   });
 
+  const saveMut = useMutation({
+    mutationFn: async () => {
+      if (!q.data) throw new Error('Data klaim belum siap');
+      const patch = buildPatch(form, q.data);
+      if (Object.keys(patch).length === 0) {
+        throw new Error('Tidak ada perubahan');
+      }
+      await updateClaimById(id, patch, {
+        expectedLastUpdated: q.data.last_updated,
+      });
+    },
+    onSuccess: async () => {
+      setSaveMsg('Perubahan tersimpan');
+      setSaveErr(null);
+      setEditing(false);
+      await qc.invalidateQueries({ queryKey: ['claim', id] });
+      await qc.invalidateQueries({ queryKey: ['claims'] });
+    },
+    onError: (err) => {
+      if (err instanceof ConcurrentEditError) {
+        setSaveErr(err.message);
+      } else {
+        setSaveErr(err instanceof Error ? err.message : 'Gagal menyimpan');
+      }
+    },
+  });
+
+  function startEdit() {
+    if (!q.data) return;
+    setSaveMsg(null);
+    setSaveErr(null);
+    setForm(claimToForm(q.data));
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setForm({});
+    setSaveErr(null);
+  }
+
   const rows = partsRows(q.data?.parts);
   const isArchived = Boolean(q.data?.archived_at);
 
@@ -179,38 +351,56 @@ export function ClaimDetailPage() {
           ) : null}
         </div>
         <div className="header-actions">
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => {
-              setStatusErr(null);
-              setStatusMsg(null);
-              setShowStatus(true);
-            }}
-          >
-            Ubah status
-          </button>
-          {q.data ? (
-            <button
-              type="button"
-              className="ghost"
-              disabled={archMut.isPending}
-              onClick={() => archMut.mutate(isArchived ? 'unarchive' : 'archive')}
-            >
-              {isArchived ? 'Unarchive' : 'Archive'}
-            </button>
-          ) : null}
-          <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
-            Submit ke SDLG
-          </Link>
-          <Link className="btn-link ghost-link" to="/parse">
-            Parse form
-          </Link>
+          {!editing ? (
+            <>
+              <button type="button" className="ghost" onClick={startEdit} disabled={!q.data}>
+                Edit data
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => {
+                  setStatusErr(null);
+                  setStatusMsg(null);
+                  setShowStatus(true);
+                }}
+              >
+                Ubah status
+              </button>
+              {q.data ? (
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={archMut.isPending}
+                  onClick={() => archMut.mutate(isArchived ? 'unarchive' : 'archive')}
+                >
+                  {isArchived ? 'Unarchive' : 'Archive'}
+                </button>
+              ) : null}
+              <Link className="btn-link" to={`/claims/${encodeURIComponent(id)}/sdlg`}>
+                Submit ke SDLG
+              </Link>
+              <Link className="btn-link ghost-link" to="/parse">
+                Parse form
+              </Link>
+            </>
+          ) : (
+            <>
+              <button type="button" className="ghost" onClick={cancelEdit} disabled={saveMut.isPending}>
+                Batal
+              </button>
+              <button type="button" disabled={saveMut.isPending} onClick={() => saveMut.mutate()}>
+                {saveMut.isPending ? 'Menyimpan…' : 'Simpan perubahan'}
+              </button>
+            </>
+          )}
         </div>
       </header>
 
       {statusMsg ? <div className="alert info">{statusMsg}</div> : null}
       {statusErr ? <div className="alert error">{statusErr}</div> : null}
+      {saveMsg ? <div className="alert info">{saveMsg}</div> : null}
+      {saveErr ? <div className="alert error">{saveErr}</div> : null}
 
       {q.isLoading ? <p className="center-state">Memuat klaim dari Supabase…</p> : null}
 
@@ -285,7 +475,39 @@ export function ClaimDetailPage() {
         </div>
       ) : null}
 
-      {q.data ? (
+      {q.data && editing ? (
+        <section className="panel">
+          <h2 className="section-title">Edit data klaim</h2>
+          <p className="muted small" style={{ marginBottom: 12 }}>
+            Hanya field yang berubah yang disimpan. Nilai kosong tidak akan menimpa data yang sudah ada kecuali kamu sengaja kosongkan.
+          </p>
+          <div className="edit-grid">
+            {EDIT_MAP.map((f) => (
+              <label key={f.key}>
+                {f.label}
+                <input
+                  value={form[f.key] ?? ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                />
+              </label>
+            ))}
+          </div>
+          <div className="parse-textareas">
+            {TEXT_AREAS.map((f) => (
+              <label key={f.key}>
+                {f.label}
+                <textarea
+                  rows={f.key === 'cause_analyze' ? 5 : 3}
+                  value={form[f.key] ?? ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {q.data && !editing ? (
         <>
           <section className="panel">
             <h2 className="section-title">Status</h2>
@@ -440,7 +662,10 @@ export function ClaimDetailPage() {
           {q.data.source_raw_text ? (
             <section className="panel">
               <h2 className="section-title">Source (raw text)</h2>
-              <pre className="source-raw mono small" style={{ whiteSpace: 'pre-wrap', maxHeight: 280, overflow: 'auto' }}>
+              <pre
+                className="source-raw mono small"
+                style={{ whiteSpace: 'pre-wrap', maxHeight: 280, overflow: 'auto' }}
+              >
                 {q.data.source_raw_text}
               </pre>
             </section>
