@@ -1,69 +1,145 @@
-/* SDLG ALIVE RECOLOR V1 (EXPERT REVISED) */
+/* 
+  ========================================================================
+  SDLG ALIVE RECOLOR V2 (PRO UPGRADE)
+  Optimized for Performance, Micro-Interactions, and Enterprise Aesthetics
+  ========================================================================
+*/
 
 :root {
-  --sdlg-bg: #eef1f7;
+  /* Core Palette (Refined for Higher Contrast & Sophistication) */
+  --sdlg-bg: #f3f6fa;
   --sdlg-surface: #ffffff;
-  --sdlg-surface-muted: #f5f7fb;
-  --sdlg-border: #e2e8f2;
-  --sdlg-border-strong: #cfd8e6;
-  --sdlg-text: #0c1526;
-  --sdlg-muted: #5a6578;
-  --sdlg-primary: #2f5bff;
-  --sdlg-primary-strong: #1e45d6;
-  --sdlg-primary-soft: #eaf0ff;
-  --sdlg-success: #0d9f6e;
-  --sdlg-success-soft: #e6f8f1;
-  --sdlg-danger: #e03e4a;
-  --sdlg-danger-soft: #fff0f1;
-  --sdlg-radius: 16px;
-  --sdlg-shadow-sm: 0 2px 6px rgba(12, 21, 38, 0.06), 0 1px 2px rgba(12, 21, 38, 0.04);
-  --sdlg-shadow-md: 0 8px 24px rgba(12, 21, 38, 0.08), 0 2px 8px rgba(12, 21, 38, 0.04);
-  --sdlg-ring: 0 0 0 4px rgba(47, 91, 255, 0.16);
+  --sdlg-surface-muted: #f8fafc;
+  --sdlg-border: #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
+  --sdlg-text: #0f172a;
+  --sdlg-muted: #64748b;
+  
+  /* Brand Colors (Vibrant Tech Accents) */
+  --sdlg-primary: #2563eb;
+  --sdlg-primary-strong: #1d4ed8;
+  --sdlg-primary-soft: #eff6ff;
+  --sdlg-success: #10b981;
+  --sdlg-success-soft: #ecfdf5;
+  --sdlg-danger: #ef4444;
+  --sdlg-danger-soft: #fef2f2;
+  
+  /* Layout & Depth */
+  --sdlg-radius: 12px; /* Standard enterprise radius for tighter, professional look */
+  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --sdlg-shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --sdlg-ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  
+  /* Motion */
+  --sdlg-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Global Canvas Styling */
 html, body {
   background: 
-    radial-gradient(1100px 560px at 88% -10%, rgba(47, 91, 255, 0.09), transparent 58%),
-    radial-gradient(900px 480px at 0% 0%, rgba(245, 158, 11, 0.06), transparent 52%),
+    radial-gradient(800px 400px at 90% -5%, rgba(37, 99, 235, 0.06), transparent 60%),
+    radial-gradient(600px 300px at 10% 0%, rgba(245, 158, 11, 0.04), transparent 50%),
     var(--sdlg-bg) !important;
   background-attachment: fixed !important;
   color: var(--sdlg-text) !important;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11"; /* Anti-aliasing text optimization */
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Premium Layout Headers */
 header, .topbar {
-  background: rgba(255, 255, 255, 0.92) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
   border-bottom: 1px solid var(--sdlg-border) !important;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 24px rgba(12, 21, 38, 0.04) !important;
-  backdrop-filter: blur(12px) saturate(1.2) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+  backdrop-filter: blur(16px) !important; /* Enhanced glassmorphism blur */
+  -webkit-backdrop-filter: blur(16px) !important; /* Safari compatibility */
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
+/* Brand Mark / Logo Aesthetics */
 .brand-mark, [class*="brand-mark"] {
-  background: linear-gradient(135deg, #0c1526 0%, #2f5bff 55%, #0d9f6e 120%) !important;
-  box-shadow: 0 8px 20px rgba(47, 91, 255, 0.25) !important;
+  background: linear-gradient(135deg, #0f172a 0%, #2563eb 60%, #10b981 100%) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  transition: var(--sdlg-transition) !important;
+}
+.brand-mark:hover, [class*="brand-mark"]:hover {
+  transform: translateY(-1px);
 }
 
-/* PERBAIKAN PENTING: Jangan kena ke panel tracking */
+/* Enterprise Data & Metric Cards */
 .card, [class*="card"]:not(.sdlg-tracking-panel), .metric-card, .claims-table-shell {
-  border-color: var(--sdlg-border) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
   background: var(--sdlg-surface) !important;
   box-shadow: var(--sdlg-shadow-sm) !important;
+  transition: var(--sdlg-transition) !important;
 }
 
-button.primary, .btn-primary, [class*="btn-primary"] {
-  background: linear-gradient(135deg, #2f5bff, #3d6aff) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 14px rgba(47, 91, 255, 0.28) !important;
-}
-
-tbody tr:nth-child(even) { background: rgba(247, 249, 252, 0.85) !important; }
-tbody tr:hover { background: var(--sdlg-primary-soft) !important; }
-
-input, select, textarea {
+/* Micro-interaction on card hovers */
+.card:hover, [class*="card"]:not(.sdlg-tracking-panel):hover, .metric-card:hover {
+  box-shadow: var(--sdlg-shadow-md) !important;
   border-color: var(--sdlg-border-strong) !important;
-  background: #fff !important;
 }
+
+/* High-Performance Interactive Buttons */
+button.primary, .btn-primary, [class*="btn-primary"] {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: calc(var(--sdlg-radius) - 4px) !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.12), 0 4px 12px rgba(37, 99, 235, 0.2) !important;
+  transition: var(--sdlg-transition) !important;
+  cursor: pointer;
+}
+
+button.primary:hover, .btn-primary:hover, [class*="btn-primary"]:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.16), 0 8px 20px rgba(37, 99, 235, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+button.primary:active, .btn-primary:active, [class*="btn-primary"]:active {
+  transform: translateY(0);
+}
+
+/* Clean & Readable Tables */
+tbody tr {
+  transition: background-color 0.15s ease !important;
+}
+tbody tr:nth-child(even) { 
+  background: rgba(248, 250, 252, 0.7) !important; 
+}
+tbody tr:hover { 
+  background: var(--sdlg-primary-soft) !important; 
+}
+
+/* Professional Form Controls */
+input, select, textarea {
+  border: 1px solid var(--sdlg-border-strong) !important;
+  border-radius: calc(var(--sdlg-radius) - 4px) !important;
+  background: #ffffff !important;
+  padding: 8px 12px !important;
+  color: var(--sdlg-text) !important;
+  transition: var(--sdlg-transition) !important;
+}
+
 input:focus, select:focus, textarea:focus {
   border-color: var(--sdlg-primary) !important;
   box-shadow: var(--sdlg-ring) !important;
   outline: none !important;
+}
+
+/* Utilities for Badges (Success / Danger States) */
+.badge-success {
+  background-color: var(--sdlg-success-soft) !important;
+  color: var(--sdlg-success) !important;
+  font-weight: 600;
+}
+.badge-danger {
+  background-color: var(--sdlg-danger-soft) !important;
+  color: var(--sdlg-danger) !important;
+  font-weight: 600;
 }
