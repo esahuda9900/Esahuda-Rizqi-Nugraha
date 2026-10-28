@@ -1,10 +1,22 @@
 /**
- * SDLG Perf Runtime v1.0 — soft-restore from stable
+ * SDLG Perf Runtime v1.1 — soft-restore + UI polish v4 inject
  * - Polyfill listClaimsPage if needed
  * - Ensure SheetJS loads on demand before export
+ * - Inject styles/sdlg-ux-polish-v4.css as final override layer
  */
 (function () {
   'use strict';
+
+  function injectPolishV4() {
+    try {
+      if (document.getElementById('sdlg-ux-polish-v4')) return;
+      var link = document.createElement('link');
+      link.id = 'sdlg-ux-polish-v4';
+      link.rel = 'stylesheet';
+      link.href = './styles/sdlg-ux-polish-v4.css?v=20261028-v40';
+      (document.head || document.documentElement).appendChild(link);
+    } catch (_) {}
+  }
 
   function tryPolyfillListPage() {
     try {
@@ -60,6 +72,7 @@
   }
 
   function boot() {
+    injectPolishV4();
     tryPolyfillListPage();
     ensureXlsxLoader();
     var tries = 0;
@@ -74,5 +87,9 @@
     boot();
   }
 
-  window.SDLGPerfRuntime = { version: '1.0.0-soft-restore', tryPolyfillListPage: tryPolyfillListPage };
+  window.SDLGPerfRuntime = {
+    version: '1.1.0-polish-v4',
+    tryPolyfillListPage: tryPolyfillListPage,
+    injectPolishV4: injectPolishV4,
+  };
 })();
