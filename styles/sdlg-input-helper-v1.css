@@ -1,52 +1,54 @@
-/* =========================================================
-   SDLG INPUT HELPER V2.0 (EXPERT REVISED)
+/* ========================================================================
+   SDLG INPUT HELPER V3.0 (PRODUCTION ENTERPRISE)
    Visual polish for SDLG Dealer Portal Input Helper.
    Strictly scoped to [data-sdlg-input-helper="1"] to prevent global bleed.
-   ========================================================= */
+   Harmonized with MASTER DESIGN TOKENS V4.0 & GPU Layer Paint.
+   ======================================================================== */
 
 /* =========================================
    1. SELECTED CLAIM IDENTITY BAR (Sticky)
    ========================================= */
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
   position: sticky;
-  top: 60px; /* Sesuaikan dengan tinggi navbar (sekitar 60-68px) */
+  top: 68px; /* Disesuaikan dengan tinggi navbar premium enterprise */
   z-index: 25;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 16px;
   padding: 12px 16px;
-  margin-bottom: 16px;
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6);
-  border-left: 4px solid var(--sdlg-primary, #2f5bff);
-  border-radius: var(--sdlg-radius-card, 12px);
+  margin-bottom: var(--sdlg-spacing-4, 16px);
+  border: 1px solid var(--sdlg-border-strong, #cbd5e1);
+  border-left: 4px solid var(--sdlg-primary, #2563eb);
+  border-radius: var(--sdlg-radius, 12px);
   background: var(--sdlg-surface, #ffffff);
-  box-shadow: var(--sdlg-shadow-md, 0 8px 24px rgba(12, 21, 38, 0.08));
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05));
+  will-change: transform;
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__id {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--sdlg-text, #0c1526);
-  letter-spacing: -0.01em;
+  font-weight: var(--sdlg-font-weight-bold, 700);
+  font-size: var(--sdlg-font-size-sm, 0.875rem);
+  color: var(--sdlg-text-main, #0f172a);
+  letter-spacing: -0.015em;
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__meta {
-  font-size: 12.5px;
-  color: var(--sdlg-muted, #5a6578);
+  font-size: var(--sdlg-font-size-sm, 0.875rem);
+  color: var(--sdlg-text-muted, #64748b);
 }
 
 [data-sdlg-input-helper="1"] .sdlg-input-selected-bar__status {
   margin-left: auto;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: var(--sdlg-font-weight-bold, 700);
   padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--sdlg-success-bg, #e6f8f1);
-  color: var(--sdlg-success, #0d9f6e);
-  border: 1px solid var(--sdlg-success-border, #a7e8cd);
+  border-radius: 99px;
+  background: var(--sdlg-success-soft, #ecfdf5);
+  color: var(--sdlg-success, #10b981);
+  border: 1px solid var(--sdlg-success-border, #a7f3d0);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 /* =========================================
@@ -58,40 +60,40 @@
   min-height: 240px !important;
   max-height: 320px !important;
   padding: 6px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-input, 8px) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
   font-size: 13px !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   display: block !important;
   appearance: listbox !important;
   -webkit-appearance: listbox !important;
-  transition: border-color 0.2s ease !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+  will-change: scroll-position;
 }
 
 [data-sdlg-input-helper="1"] select[size]:focus {
-  border-color: var(--sdlg-primary, #2f5bff) !important;
+  border-color: var(--sdlg-primary, #2563eb) !important;
   outline: none !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 4px rgba(47, 91, 255, 0.16)) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
 }
 
-/* Custom Scrollbar untuk Listbox */
+/* High-Performance Premium Scrollbar */
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
 }
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-track {
   background: transparent;
 }
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
-  border: 2px solid var(--sdlg-surface-muted, #f8fafc);
+  background: var(--sdlg-border-strong, #cbd5e1);
+  border-radius: 99px;
 }
 [data-sdlg-input-helper="1"] select[size]::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--sdlg-text-muted, #64748b);
 }
 
 /* Item di dalam Listbox */
@@ -99,22 +101,22 @@
   display: block !important;
   padding: 10px 12px !important;
   margin-bottom: 2px !important;
-  border-radius: 6px !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 6px) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   cursor: pointer !important;
   line-height: 1.4 !important;
   height: auto !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
   transition: background 0.15s ease !important;
 }
 
 [data-sdlg-input-helper="1"] select[size] option:checked,
 [data-sdlg-input-helper="1"] select[size] option:hover {
-  background: var(--sdlg-primary-soft, #eaf0ff) !important;
-  color: var(--sdlg-primary-strong, #1e45d6) !important;
-  font-weight: 600 !important;
+  background: var(--sdlg-primary-soft, #eff6ff) !important;
+  color: var(--sdlg-primary, #2563eb) !important;
+  font-weight: var(--sdlg-font-weight-semibold, 600) !important;
 }
 
 /* =========================================
@@ -122,10 +124,10 @@
    ========================================= */
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
   padding: 16px 20px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 2px 6px rgba(12,21,38,0.06)) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
 }
 
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
@@ -133,19 +135,19 @@
   box-sizing: border-box !important;
   min-height: 40px !important;
   padding: 10px 14px !important;
-  border: 1px solid var(--sdlg-border-strong, #cfd8e6) !important;
-  border-radius: var(--sdlg-radius-input, 8px) !important;
+  border: 1px solid var(--sdlg-border-strong, #cbd5e1) !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
   font-size: 13px !important;
   margin-bottom: 12px !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  color: var(--sdlg-text, #0c1526) !important;
-  transition: all 0.2s ease !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
+  transition: var(--sdlg-transition-base) !important;
 }
 
 [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input:focus {
   background: #ffffff !important;
-  border-color: var(--sdlg-primary, #2f5bff) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 4px rgba(47,91,255,0.16)) !important;
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37,99,235,0.15)) !important;
   outline: none !important;
 }
 
@@ -154,8 +156,8 @@
    ========================================= */
 [data-sdlg-input-helper="1"] #sdlg-input-portal-extras {
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius-card, 12px) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
   padding: 16px 20px !important;
   margin: 16px 0 !important;
   display: grid !important;
@@ -166,21 +168,21 @@
 [data-sdlg-input-helper="1"] #sdlg-input-portal-extras .sdlg-extra-title {
   grid-column: 1 / -1;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: var(--sdlg-font-weight-bold, 700);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sdlg-muted, #5a6578);
+  color: var(--sdlg-text-muted, #64748b);
   margin-bottom: 4px;
 }
 
 [data-sdlg-input-helper="1"] #sdlg-input-portal-extras .sdlg-extra-note {
   grid-column: 1 / -1;
   font-size: 12px;
-  color: var(--sdlg-muted, #5a6578);
+  color: var(--sdlg-text-muted, #64748b);
   line-height: 1.5;
   padding-top: 12px;
   margin-top: 4px;
-  border-top: 1px dashed var(--sdlg-border-strong, #cfd8e6);
+  border-top: 1px dashed var(--sdlg-border-strong, #cbd5e1);
 }
 
 /* =========================================
@@ -189,34 +191,35 @@
 [data-sdlg-input-helper="1"] button.secondary-btn {
   min-height: 34px !important;
   font-size: 12.5px !important;
-  border-radius: var(--sdlg-radius-btn, 8px) !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
+  transition: var(--sdlg-transition-base) !important;
 }
 
 [data-sdlg-input-helper="1"] table {
-  font-size: 13px !important;
+  font-size: var(--sdlg-font-size-sm, 0.875rem) !important;
   border-collapse: collapse !important;
   width: 100% !important;
 }
 
 [data-sdlg-input-helper="1"] table th {
   font-size: 11px !important;
-  font-weight: 700 !important;
+  font-weight: var(--sdlg-font-weight-bold, 700) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  color: var(--sdlg-muted, #5a6578) !important;
+  letter-spacing: 0.06em !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   padding: 10px 12px !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
 }
 
 [data-sdlg-input-helper="1"] table td {
   padding: 10px 12px !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
 }
 
 /* =========================================
-   6. RESPONSIVE (Mobile)
+   6. RESPONSIVE LAYER (Mobile Optimization)
    ========================================= */
 @media (max-width: 760px) {
   [data-sdlg-input-helper="1"] select[size] {
@@ -234,16 +237,36 @@
 }
 
 /* =========================================
-   7. DARK MODE SUPPORT
+   7. SEAMLESS DARK THEME ARCHITECTURE
    ========================================= */
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] {
-  background: var(--sdlg-surface) !important;
-  border-color: var(--sdlg-border) !important;
-  color: var(--sdlg-text) !important;
+  background: var(--sdlg-surface-muted, #1e293b) !important;
+  border-color: var(--sdlg-border, #334155) !important;
+  color: var(--sdlg-text-main, #f8fafc) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option {
+  color: var(--sdlg-text-main, #f8fafc) !important;
 }
 
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option:checked,
 html[data-theme="dark"] [data-sdlg-input-helper="1"] select[size] option:hover {
-  background: var(--sdlg-primary-soft) !important;
-  color: var(--sdlg-primary) !important;
+  background: rgba(37, 99, 235, 0.2) !important;
+  color: var(--sdlg-primary, #3b82f6) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] .sdlg-input-selected-bar {
+  background: var(--sdlg-surface, #0f172a) !important;
+  border-color: var(--sdlg-border-strong, #334155) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) {
+  background: var(--sdlg-surface, #0f172a) !important;
+  border-color: var(--sdlg-border, #1e293b) !important;
+}
+
+html[data-theme="dark"] [data-sdlg-input-helper="1"] .card.card-pad:has(select[size]) input {
+  background: var(--sdlg-surface-muted, #1e293b) !important;
+  border-color: var(--sdlg-border-strong, #334155) !important;
+  color: var(--sdlg-text-main, #f8fafc) !important;
 }

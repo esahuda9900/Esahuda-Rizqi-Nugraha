@@ -1,124 +1,126 @@
-/* =========================================================
-   SDLG MASTER DESIGN TOKENS V3.0 (EXPERT REVISED)
-   Strict Industrial ERP + Modern Alive Recolor
-   Single Source of Truth for Colors, Type, Spacing & Radius
-   ========================================================= */
+/* ========================================================================
+   SDLG MASTER DESIGN TOKENS V4.0 (PRODUCTION ENTERPRISE)
+   Strict Industrial ERP + Modern Alive Recolor V2 Integration
+   Single Source of Truth for Colors, Typography, Spacing, Radius, & Shadows
+   ======================================================================== */
 
 :root {
   /* =========================================
-     1. COLOR PALETTE (Harmonized)
+     1. COLOR PALETTE (Strict Sync V2)
      ========================================= */
-  /* Foundation */
-  --sdlg-bg: #eef1f7;               /* Warm soft slate */
+  /* Foundation Canvas */
+  --sdlg-bg: #f3f6fa;               /* Refined warm soft slate */
   --sdlg-surface: #ffffff;
-  --sdlg-surface-muted: #f5f7fb;
-  --sdlg-border: #e2e8f2;
-  --sdlg-border-strong: #cfd8e6;
+  --sdlg-surface-muted: #f8fafc;
+  --sdlg-border: #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
   
-  /* Text */
-  --sdlg-text: #0c1526;
-  --sdlg-text-main: #0c1526;        /* Alias untuk --sdlg-text */
-  --sdlg-text-muted: #5a6578;
-  --sdlg-muted: #5a6578;            /* Alias untuk --sdlg-text-muted */
+  /* High-Contrast Typography */
+  --sdlg-text: #0f172a;
+  --sdlg-text-main: #0f172a;        /* Alias untuk arsitektur core */
+  --sdlg-text-muted: #64748b;
+  --sdlg-muted: #64748b;            /* Alias untuk arsitektur core */
 
-  /* Brand Primary (Indigo) */
-  --sdlg-primary: #2f5bff;
-  --sdlg-primary-hover: #1e45d6;
-  --sdlg-primary-strong: #1e45d6;
-  --sdlg-primary-soft: #eaf0ff;
-  --sdlg-primary-bg: #eaf0ff;
+  /* Brand Primary (Vibrant Indigo Tech Accent) */
+  --sdlg-primary: #2563eb;
+  --sdlg-primary-hover: #1d4ed8;
+  --sdlg-primary-strong: #1d4ed8;
+  --sdlg-primary-soft: #eff6ff;
+  --sdlg-primary-bg: #eff6ff;
   --sdlg-primary-border: #bfdbfe;
 
-  /* Status: Success */
-  --sdlg-success: #0d9f6e;
-  --sdlg-success-bg: #e6f8f1;
-  --sdlg-success-border: #a7e8cd;
+  /* Status: Success (WCAG AA Compliant) */
+  --sdlg-success: #10b981;
+  --sdlg-success-soft: #ecfdf5;     /* Sync dengan Alive Recolor V2 */
+  --sdlg-success-bg: #ecfdf5;
+  --sdlg-success-border: #a7f3d0;
 
   /* Status: Warning */
-  --sdlg-warning: #c47a0a;
-  --sdlg-warning-bg: #fff6e4;
-  --sdlg-warning-border: #fcd34d;
+  --sdlg-warning: #d97706;
+  --sdlg-warning-bg: #fffbeb;
+  --sdlg-warning-border: #fde68a;
 
   /* Status: Danger */
-  --sdlg-danger: #e03e4a;
-  --sdlg-danger-bg: #fff0f1;
-  --sdlg-danger-border: #f8b4ba;
+  --sdlg-danger: #ef4444;
+  --sdlg-danger-soft: #fef2f2;      /* Sync dengan Alive Recolor V2 */
+  --sdlg-danger-bg: #fef2f2;
+  --sdlg-danger-border: #fca5a5;
 
   /* Status: Neutral */
   --sdlg-neutral: #64748b;
   --sdlg-neutral-bg: #f1f5f9;
   --sdlg-neutral-border: #e2e8f0;
 
-  /* Accent (Amber) */
+  /* Accent (Amber Highlight) */
   --sdlg-accent: #f59e0b;
   --sdlg-accent-soft: #fff8eb;
 
   /* =========================================
-     2. TYPOGRAPHY (Scale)
+     2. TYPOGRAPHY (Fluid rem Scale)
      ========================================= */
   --sdlg-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   
-  --sdlg-font-size-xs: 12px;     /* Labels, metadata */
-  --sdlg-font-size-sm: 13px;     /* Secondary content */
-  --sdlg-font-size-md: 14px;     /* Primary body & table rows */
-  --sdlg-font-size-lg: 16px;     /* Sub-headings, compact cards */
-  --sdlg-font-size-xl: 20px;     /* Main page titles */
-  --sdlg-font-size-2xl: 24px;    /* Dashboard metric values */
+  --sdlg-font-size-xs: 0.75rem;     /* 12px - Labels, metadata */
+  --sdlg-font-size-sm: 0.875rem;    /* 14px - Secondary content / Buttons */
+  --sdlg-font-size-md: 1rem;        /* 16px - Primary body & table rows */
+  --sdlg-font-size-lg: 1.25rem;     /* 20px - Sub-headings, compact cards */
+  --sdlg-font-size-xl: 1.625rem;    /* 26px - Main page titles */
+  --sdlg-font-size-2xl: 2rem;       /* 32px - Dashboard metric values */
 
   --sdlg-font-weight-regular: 400;
   --sdlg-font-weight-medium: 500;
   --sdlg-font-weight-semibold: 600;
   --sdlg-font-weight-bold: 700;
 
-  --sdlg-line-height-body: 1.5;
+  --sdlg-line-height-body: 1.6;
   --sdlg-line-height-heading: 1.3;
 
   /* =========================================
-     3. SPACING GRID (4px Base)
+     3. SPACING GRID (Rem-Based 8pt System)
      ========================================= */
-  --sdlg-spacing-1: 4px;
-  --sdlg-spacing-2: 8px;
-  --sdlg-spacing-3: 12px;
-  --sdlg-spacing-4: 16px;
-  --sdlg-spacing-5: 20px;
-  --sdlg-spacing-6: 24px;
-  --sdlg-spacing-8: 32px;
+  --sdlg-spacing-1: 0.25rem; /* 4px */
+  --sdlg-spacing-2: 0.5rem;  /* 8px */
+  --sdlg-spacing-3: 0.75rem; /* 12px */
+  --sdlg-spacing-4: 1rem;    /* 16px */
+  --sdlg-spacing-5: 1.25rem; /* 20px */
+  --sdlg-spacing-6: 1.5rem;  /* 24px */
+  --sdlg-spacing-8: 2rem;    /* 32px */
   
-  /* Aliases (Biar file lain yang pakai --space ga error) */
+  /* Safety Cross-File Aliases */
   --sdlg-space-1: var(--sdlg-spacing-1);
   --sdlg-space-2: var(--sdlg-spacing-2);
   --sdlg-space-3: var(--sdlg-spacing-3);
   --sdlg-space-4: var(--sdlg-spacing-4);
 
   /* =========================================
-     4. RADIUS (Lengkungan Sudut)
+     4. RADIUS (Harmonized Nested Radii)
      ========================================= */
-  --sdlg-radius: 16px;              /* Main container / Panels */
-  --sdlg-radius-input: 6px;         /* Form fields */
-  --sdlg-radius-btn: 8px;           /* Buttons */
-  --sdlg-radius-card: 12px;         /* Cards */
-  --sdlg-radius-modal: 16px;        /* Modals */
+  --sdlg-radius: 12px;              /* Main container / Panels / Cards (SaaS Modern) */
+  --sdlg-radius-card: 12px;         /* Alias keselarasan kartu */
+  --sdlg-radius-btn: 8px;           /* Buttons (calc: var(--sdlg-radius) - 4px) */
+  --sdlg-radius-input: 8px;         /* Form fields (calc: var(--sdlg-radius) - 4px) */
+  --sdlg-radius-modal: 12px;        /* Modals */
 
   /* =========================================
-     5. SHADOWS (Depth & Elevation)
+     5. SHADOWS & DEVIATION (Clean Slate Elevation)
      ========================================= */
-  /* Sesuai ERP: Tipis tapi tetap memberi kesan "melayang" */
-  --sdlg-shadow-xs: 0 1px 2px rgba(12, 21, 38, 0.04);
-  --sdlg-shadow-sm: 0 2px 6px rgba(12, 21, 38, 0.06), 0 1px 2px rgba(12, 21, 38, 0.04);
-  --sdlg-shadow-md: 0 8px 24px rgba(12, 21, 38, 0.08), 0 2px 8px rgba(12, 21, 38, 0.04);
-  --sdlg-shadow-lg: 0 20px 48px rgba(12, 21, 38, 0.12), 0 8px 16px rgba(12, 21, 38, 0.06);
-  --sdlg-shadow-modal: 0 20px 48px rgba(12, 21, 38, 0.12); /* Alias */
+  --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.02);
+  --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --sdlg-shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+  --sdlg-shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 10px 10px -5px rgba(15, 23, 42, 0.03);
+  --sdlg-shadow-modal: var(--sdlg-shadow-md); /* Alias */
 
-  /* Focus Ring */
-  --sdlg-ring: 0 0 0 4px rgba(47, 91, 255, 0.16);
+  /* Premium Focus Control Ring */
+  --sdlg-ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
 
   /* =========================================
-     6. EASING (Animasi)
+     6. MOTION & EASING (GPU Optimization Curve)
      ========================================= */
   --sdlg-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sdlg-transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* =========================================
-     7. POLISH LAYER ALIASES (Dari ALIVE RECOLOR)
+     7. UX INJECTOR POLISH LAYER ALIASES
      ========================================= */
   --ux-ink: var(--sdlg-text);
   --ux-muted: var(--sdlg-muted);
