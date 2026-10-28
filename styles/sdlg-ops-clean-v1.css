@@ -1,38 +1,20 @@
 /* =========================================================
-   SDLG OPS CLEAN V3.0 — ENTERPRISE PRO MAX
-   Lapisan visual untuk area APP (bukan login): padat, tenang,
-   fungsional, sesuai arah DESIGN.md. CSS saja: tanpa logic,
-   markup, atau nama class yang diubah.
-
-   URUTAN LOAD:
-     1. sdlg-layout-grid-v16.css
-     2. sdlg-modern-refresh-v2.1.css
-     3. sdlg-components-v4.css
-     4. sdlg-tokens-v5.css
-     5. File ini, PALING AKHIR
-
-   File ini MEMBACA token --ui-* dari refresh. Dark mode otomatis
-   karena semua warna lewat token (tidak ada putih hardcode).
-
-   !important SENGAJA: lapisan override terakhir.
+   SDLG OPS CLEAN V3.1 — CALM ENTERPRISE
+   App area only (not login). Dense, quiet, functional.
+   Transforms removed for stable hover feel.
    ========================================================= */
 
-/* =========================================
-   1. FOUNDATION
-   ========================================= */
 html, body {
-  background: var(--ui-bg) !important;
-  color: var(--ui-text) !important;
+  background: var(--ui-bg, var(--sdlg-bg, #f3f6fa)) !important;
+  color: var(--ui-text, var(--sdlg-text, #0f172a)) !important;
 }
 
 body {
-  font-family: var(--ui-font) !important;
+  font-family: var(--ui-font, var(--sdlg-font-family, system-ui, sans-serif)) !important;
   line-height: 1.5 !important;
   text-wrap: pretty;
 }
 
-/* Glow dari refresh tertutup background solid — matikan sekalian
-   supaya nggak ada layer fixed yang dicat sia-sia */
 body::before { content: none !important; }
 
 h1, .page-title {
@@ -51,28 +33,23 @@ h3, .section-title {
   letter-spacing: -0.01em !important;
 }
 .page-sub, .section-sub, .brand-sub, .metric-label {
-  color: var(--ui-muted) !important;
-  text-wrap: pretty;
+  color: var(--ui-muted, var(--sdlg-muted, #64748b)) !important;
 }
 
-/* Transisi untuk elemen interaktif + kartu metric */
 button, [role="button"], a, .nav-btn, .icon-btn, .metric-card,
 input, select, textarea, .claim-row {
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease !important;
+    box-shadow 0.15s ease !important;
 }
 
-/* =========================================
-   2. HEADER & NAVBAR
-   ========================================= */
+/* Header flat */
 .app-shell:not(:has(.login-screen)) :is(.topbar, header:not(:is(section, article, aside, main, .card, .card-pad) header)) {
-  background: var(--ui-surface) !important;
-  border-bottom: 1px solid var(--ui-border) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  background: var(--ui-surface, #fff) !important;
+  border-bottom: 1px solid var(--ui-border, #e2e8f0) !important;
+  box-shadow: none !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -80,43 +57,38 @@ input, select, textarea, .claim-row {
 .app-shell:not(:has(.login-screen)) .nav-scroll {
   gap: 2px !important;
   padding: 3px !important;
-  border: 1px solid var(--ui-border) !important;
+  border: 1px solid var(--ui-border, #e2e8f0) !important;
   border-radius: 8px !important;
-  background: var(--ui-surface-muted) !important;
+  background: var(--ui-surface-muted, #f8fafc) !important;
 }
 
 .nav-btn {
-  border-radius: 5px !important;
+  border-radius: 6px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
   padding: 7px 12px !important;
-  color: var(--ui-muted) !important;
+  color: var(--ui-muted, #64748b) !important;
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-/* Hover: fallback + color-mix upgrade (dual declaration) */
 .nav-btn:hover {
-  background: var(--ui-surface) !important;
-  background: color-mix(in srgb, var(--ui-surface) 85%, transparent) !important;
-  color: var(--ui-text) !important;
+  background: var(--ui-surface, #fff) !important;
+  color: var(--ui-text, #0f172a) !important;
 }
 
 .nav-btn.active,
 .nav-btn[aria-current="page"] {
-  background: var(--ui-surface) !important;
-  color: var(--ui-primary-strong) !important;
+  background: var(--ui-surface, #fff) !important;
+  color: var(--ui-primary-strong, #1d4ed8) !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   font-weight: 600 !important;
 }
 
-/* =========================================
-   3. PAGE & CARDS
-   ========================================= */
 @media (min-width: 721px) {
   .app-shell:not(:has(.login-screen)) .page {
-    padding-top: 24px !important;
+    padding-top: 20px !important;
   }
 }
 
@@ -127,32 +99,23 @@ input, select, textarea, .claim-row {
 
 .app-shell:not(:has(.login-screen)) .page-sub {
   margin-top: 4px !important;
-  margin-bottom: 18px !important;
+  margin-bottom: 16px !important;
   font-size: 13px !important;
 }
 
-/* Cards — hanya class berakhiran "-card" (bukan sub-elemen) */
+/* Cards — no lift */
 .app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(#sdlg-tracking-panel)) {
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--ui-radius-card) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
-  background: var(--ui-surface) !important;
+  border: 1px solid var(--ui-border, #e2e8f0) !important;
+  border-radius: var(--ui-radius-card, 12px) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  background: var(--ui-surface, #fff) !important;
   isolation: isolate;
 }
 
-/* Hover kartu — border + shadow saja (tidak bergeser) */
 .app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(#sdlg-tracking-panel)):hover {
-  border-color: var(--ui-border-strong) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
-}
-
-/* Melayang 1px: kartu metric & yang interaktif.
-   Kartu besar dengan table/form tidak ikut (transform di wadah
-   membuat child dropdown/modal fixed loncat saat hover). */
-@media (hover: hover) and (pointer: fine) {
-  .app-shell:not(:has(.login-screen)) :is(.metric-card, .is-liftable, :is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, [class$="-card"], [class*="-card "])):where(:not(#sdlg-tracking-panel)):hover {
-    transform: translateY(-1px) !important;
-  }
+  border-color: var(--ui-border-strong, #cbd5e1) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transform: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) .card-pad {
@@ -161,165 +124,132 @@ input, select, textarea, .claim-row {
 
 .app-shell:not(:has(.login-screen)) .metric-grid {
   gap: 12px !important;
-  margin-bottom: 18px !important;
+  margin-bottom: 16px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-card {
-  padding: 16px !important;
-  min-height: 100px !important;
+  padding: 14px 16px !important;
+  min-height: 0 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-label {
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
   margin-bottom: 4px !important;
 }
 
-/* Metric value — fallback 24px + clamp upgrade */
 .app-shell:not(:has(.login-screen)) .metric-value {
   font-size: 24px !important;
-  font-size: clamp(20px, 10cqi, 26px) !important;
   font-weight: 700 !important;
   letter-spacing: -0.03em !important;
   line-height: 1.15 !important;
-  color: var(--ui-text) !important;
+  color: var(--ui-text, #0f172a) !important;
   font-variant-numeric: tabular-nums;
-  text-wrap: pretty;
 }
 
-/* =========================================
-   4. BUTTONS & INPUTS
-   ========================================= */
+/* Buttons — no lift */
 .app-shell:not(:has(.login-screen)) :is([class$="-btn"], [class*="-btn "], button[class*="primary"]):not(.nav-btn, .icon-btn) {
-  border-radius: var(--ui-radius-btn) !important;
+  border-radius: var(--ui-radius-btn, 8px) !important;
   font-weight: 600 !important;
   font-size: 12.5px !important;
   min-height: 34px !important;
   padding: 0 14px !important;
 }
 
-/* Primary — fallback shadow + color-mix upgrade */
 .app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]) {
-  background: var(--ui-primary) !important;
-  color: var(--ui-on-primary) !important;
+  background: var(--ui-primary, #2563eb) !important;
+  color: var(--ui-on-primary, #fff) !important;
   border: 0 !important;
-  box-shadow: 0 1px 2px rgba(47, 91, 255, 0.24) !important;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-primary) 24%, transparent) !important;
+  box-shadow: none !important;
 }
 .app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]):hover {
-  background: var(--ui-primary-hover) !important;
-  transform: translateY(-1px) !important;
+  background: var(--ui-primary-hover, #1d4ed8) !important;
+  transform: none !important;
 }
 .app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]):active {
-  transform: translateY(0) !important;
+  transform: none !important;
 }
 
-/* Secondary — fallback + color-mix upgrade */
 .app-shell:not(:has(.login-screen)) .secondary-btn {
-  background: var(--ui-surface) !important;
-  border: 1px solid var(--ui-border-strong) !important;
-  color: var(--ui-text) !important;
+  background: var(--ui-surface, #fff) !important;
+  border: 1px solid var(--ui-border-strong, #cbd5e1) !important;
+  color: var(--ui-text, #0f172a) !important;
   box-shadow: none !important;
 }
 .app-shell:not(:has(.login-screen)) .secondary-btn:hover {
-  background: var(--ui-surface-muted) !important;
-  border-color: var(--ui-border-strong) !important;
-  border-color: color-mix(in srgb, var(--ui-border-strong) 75%, var(--ui-text)) !important;
+  background: var(--ui-surface-muted, #f8fafc) !important;
 }
 
-/* Danger — tenang (outline, bukan merah penuh) */
 .app-shell:not(:has(.login-screen)) .danger-btn {
-  background: var(--ui-danger-bg) !important;
-  border: 1px solid var(--ui-danger-border) !important;
-  color: var(--ui-danger-text) !important;
+  background: var(--ui-danger-bg, #fef2f2) !important;
+  border: 1px solid var(--ui-danger-border, #fecaca) !important;
+  color: var(--ui-danger-text, #b91c1c) !important;
   box-shadow: none !important;
 }
-.app-shell:not(:has(.login-screen)) .danger-btn:hover {
-  border-color: var(--ui-danger-text) !important;
-}
 
-/* Field teks — bukan checkbox/radio/file/dll */
 .app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]), select, textarea) {
-  border: 1px solid var(--ui-border-strong) !important;
-  border-radius: var(--ui-radius-input) !important;
+  border: 1px solid var(--ui-border-strong, #cbd5e1) !important;
+  border-radius: var(--ui-radius-input, 8px) !important;
   min-height: 36px !important;
   font-size: 13px !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
-  background: var(--ui-surface) !important;
-  color: var(--ui-text) !important;
-  caret-color: var(--ui-primary);
+  box-shadow: none !important;
+  background: var(--ui-surface, #fff) !important;
+  color: var(--ui-text, #0f172a) !important;
 }
 
 .app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="reset"], [type="image"], [type="hidden"]), select, textarea):focus {
-  border-color: var(--ui-primary) !important;
-  box-shadow: var(--ui-ring) !important;
+  border-color: var(--ui-primary, #2563eb) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
   outline: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) label {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: var(--ui-text) !important;
+  color: var(--ui-text, #0f172a) !important;
 }
 
-/* =========================================
-   5. TABLES
-   ========================================= */
+/* Tables */
 .app-shell:not(:has(.login-screen)) :is(.table-wrap, .claims-table-shell) {
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--ui-radius-card) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid var(--ui-border, #e2e8f0) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
   overflow-x: auto !important;
-  overflow-y: hidden !important;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  background: var(--ui-surface) !important;
-  scrollbar-width: thin;
-  scrollbar-color: var(--ui-border-strong) transparent;
+  background: var(--ui-surface, #fff) !important;
 }
 
 .app-shell:not(:has(.login-screen)) :is(thead th, th, .claims-table-head) {
-  background: var(--ui-surface-muted) !important;
-  color: var(--ui-muted) !important;
+  background: var(--ui-surface-muted, #f8fafc) !important;
+  color: var(--ui-muted, #64748b) !important;
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 650 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
-  border-bottom: 1px solid var(--ui-border) !important;
+  border-bottom: 1px solid var(--ui-border, #e2e8f0) !important;
   padding-top: 10px !important;
   padding-bottom: 10px !important;
 }
 
-.app-shell:not(:has(.login-screen)) td {
-  font-variant-numeric: tabular-nums;
-}
-
 .app-shell:not(:has(.login-screen)) tbody tr:hover td {
-  background: var(--ui-surface-hover) !important;
-}
-
-.app-shell:not(:has(.login-screen)) .claims-list .claim-row {
-  border-bottom: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-hover, #f8fafc) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claims-list .claim-row:hover {
-  background: var(--ui-surface-hover) !important;
-  box-shadow: inset 3px 0 0 var(--ui-primary) !important;
+  background: var(--ui-surface-hover, #f8fafc) !important;
+  box-shadow: inset 3px 0 0 var(--ui-primary, #2563eb) !important;
+  transform: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) :is(.claims-filter-bar, .claims-searchbar) {
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--ui-radius-card) !important;
-  background: var(--ui-surface) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid var(--ui-border, #e2e8f0) !important;
+  border-radius: 12px !important;
+  background: var(--ui-surface, #fff) !important;
+  box-shadow: none !important;
   padding: 10px 12px !important;
   margin-bottom: 12px !important;
   gap: 8px !important;
 }
 
-/* =========================================
-   6. ROUTE SUMMARY — RTL-safe logical properties
-   ========================================= */
 .sdlg-route-summary {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%) !important;
@@ -327,101 +257,45 @@ input, select, textarea, .claim-row {
   align-items: center !important;
   margin: 14px 0 !important;
   padding: 16px 20px !important;
-  border: 1px solid var(--ui-border-strong) !important;
-  border-inline-start: 4px solid var(--ui-primary) !important;
-  border-radius: var(--ui-radius-card) !important;
-  background: var(--ui-surface-muted) !important;
+  border: 1px solid var(--ui-border-strong, #cbd5e1) !important;
+  border-inline-start: 4px solid var(--ui-primary, #2563eb) !important;
+  border-radius: 12px !important;
+  background: var(--ui-surface-muted, #f8fafc) !important;
   box-shadow: none !important;
 }
 
-.sdlg-route-summary__title {
-  margin-top: 4px !important;
-  color: var(--ui-text) !important;
-  font-size: 18px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.02em !important;
-  text-wrap: balance;
-}
-
-.sdlg-route-summary__reason {
-  max-width: 760px !important;
-  margin-top: 6px !important;
-  color: var(--ui-muted) !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-  text-wrap: pretty;
-}
-
-.sdlg-route-summary__next {
-  padding-inline-start: 20px !important;
-  border-inline-start: 1px solid var(--ui-border-strong) !important;
-  color: var(--ui-text) !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-}
-
-/* =========================================
-   7. RESPONSIVE — breakpoint 767.98px (consistent)
-   ========================================= */
 @media (max-width: 767.98px) {
   .app-shell:not(:has(.login-screen)) .page-title {
     font-size: 22px !important;
   }
-
-  /* iOS zoom fix + touch target 44px (WCAG 2.5.5) */
   .app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
     font-size: 16px !important;
     min-height: 44px !important;
   }
-
-  /* Touch target untuk semua button */
   .app-shell:not(:has(.login-screen)) :is([class$="-btn"], [class*="-btn "], button[class*="primary"]):not(.nav-btn, .icon-btn) {
     min-height: 44px !important;
   }
-
   .sdlg-route-summary {
     grid-template-columns: 1fr !important;
-    gap: 12px !important;
-    padding: 14px !important;
-  }
-  .sdlg-route-summary__next {
-    padding-block-start: 12px !important;
-    padding-inline-start: 0 !important;
-    border-block-start: 1px solid var(--ui-border-strong) !important;
-    border-inline-start: 0 !important;
   }
 }
 
-/* =========================================
-   8. HOVER GUARD (touch device safety)
-   ========================================= */
 @media (hover: none) {
-  /* Kill transform lift — cegah "stuck hover" di tablet/mobile */
-  .app-shell:not(:has(.login-screen)) :is(.metric-card, .is-liftable, :is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, [class$="-card"], [class*="-card "])):where(:not(#sdlg-tracking-panel)):hover {
+  .app-shell:not(:has(.login-screen)) :is(.metric-card, .card, [class$="-card"]):hover {
     transform: none !important;
   }
 }
 
-/* =========================================
-   9. FOKUS KEYBOARD
-   Outline solid (kontras 3:1+), bukan rgba 28%.
-   ========================================= */
 .app-shell:not(:has(.login-screen)) :is(a, button, [role="button"], summary, select, textarea):focus-visible {
-  outline: 2px solid var(--ui-primary) !important;
+  outline: 2px solid var(--ui-primary, #2563eb) !important;
   outline-offset: 2px !important;
 }
 
-/* =========================================
-   10. REDUCED MOTION — specificity match untuk override
-   Transition rule di section 1 (0-1-0) menang melawan
-   refresh V2.1 `*` rule (0-0-0). Need match.
-   ========================================= */
 @media (prefers-reduced-motion: reduce) {
   .app-shell:not(:has(.login-screen)) button,
   .app-shell:not(:has(.login-screen)) [role="button"],
   .app-shell:not(:has(.login-screen)) a,
   .app-shell:not(:has(.login-screen)) .nav-btn,
-  .app-shell:not(:has(.login-screen)) .icon-btn,
   .app-shell:not(:has(.login-screen)) .metric-card,
   .app-shell:not(:has(.login-screen)) input,
   .app-shell:not(:has(.login-screen)) select,
@@ -429,85 +303,8 @@ input, select, textarea, .claim-row {
   .app-shell:not(:has(.login-screen)) .claim-row {
     transition-duration: 0.01ms !important;
   }
-
-  /* Kill transform pada hover */
   .app-shell:not(:has(.login-screen)) :is(.primary-btn, button[class*="primary"]):hover,
-  .app-shell:not(:has(.login-screen)) :is(.metric-card, .is-liftable):hover {
+  .app-shell:not(:has(.login-screen)) .metric-card:hover {
     transform: none !important;
-  }
-}
-
-/* =========================================
-   11. HIGH CONTRAST (A11Y)
-   ========================================= */
-@media (prefers-contrast: more) {
-  .app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(#sdlg-tracking-panel)),
-  .app-shell:not(:has(.login-screen)) :is(.table-wrap, .claims-table-shell) {
-    border-width: 2px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) :is(input:not([type="checkbox"]), select, textarea) {
-    border-width: 2px !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) .page-sub,
-  .app-shell:not(:has(.login-screen)) .section-sub,
-  .app-shell:not(:has(.login-screen)) .metric-label,
-  .sdlg-route-summary__reason {
-    color: var(--ui-text-soft) !important;
-  }
-
-  .nav-btn {
-    color: var(--ui-text) !important;
-  }
-}
-
-/* =========================================
-   12. PRINT (safe expansion)
-   ========================================= */
-@media print {
-  /* Header & topbar sudah di-hide oleh refresh, tapi reset background */
-  .app-shell:not(:has(.login-screen)) :is(.topbar, .app-shell > header) {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    border-bottom: 1px solid #cccccc !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) :is(.card, .card-pad, .metric-card, [class$="-card"]):where(:not(#sdlg-tracking-panel)) {
-    box-shadow: none !important;
-    border: 1px solid #999999 !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Table: expand untuk print */
-  .app-shell:not(:has(.login-screen)) :is(.table-wrap, .claims-table-shell) {
-    overflow: visible !important;
-    border: 1px solid #999999 !important;
-  }
-
-  .app-shell:not(:has(.login-screen)) :is(thead th, th) {
-    background: #f0f0f0 !important;
-    color: #000000 !important;
-  }
-
-  /* Route summary: 1 kolom untuk print */
-  .sdlg-route-summary {
-    grid-template-columns: 1fr !important;
-    border: 1px solid #999999 !important;
-    border-inline-start: 4px solid #333 !important;
-  }
-  .sdlg-route-summary__next {
-    padding-block-start: 12px !important;
-    padding-inline-start: 0 !important;
-    border-block-start: 1px solid #999999 !important;
-    border-inline-start: 0 !important;
-  }
-
-  /* Nav tidak relevan saat print */
-  .app-shell:not(:has(.login-screen)) .nav-scroll {
-    display: none !important;
   }
 }
