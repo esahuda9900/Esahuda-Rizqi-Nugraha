@@ -1,135 +1,113 @@
 /* ==========================================================================
-   SDLG DASHBOARD POLISH V6.0 — FINAL COGNITIVE ENTERPRISE
-   Dense Operations Dashboard Layer for Executive & Operational Views.
-   Zero HTML changes. All V5.2 selectors preserved.
-   Harmonized with Alive Recolor V3 + Foundation V3 + Components V4.
+   SDLG DASHBOARD POLISH V6.1 — CALM ENTERPRISE
+   Dense ops dashboard without motion noise.
+   Zero HTML changes. Selectors preserved from V6.0.
    ========================================================================== */
 
-/* ==========================================================================
-   1. BACKGROUND HALAMAN (kartu putih "POP OUT")
-   ========================================================================== */
 body {
   background-color: var(--sdlg-bg, #f3f6fa) !important;
 }
 
-/* ==========================================================================
-   2. KARTU METRIK ATAS (Total Claims, Total Claim Amount, dll)
-   ========================================================================== */
+/* ---------- Metric cards ---------- */
 .metric-grid {
-  gap: 20px !important;
-  margin-bottom: var(--sdlg-spacing-6, 32px) !important;
+  gap: 14px !important;
+  margin-bottom: 24px !important;
 }
 
 .metric-card {
   background: var(--sdlg-surface, #ffffff) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   border-radius: var(--sdlg-radius, 12px) !important;
-  padding: 24px 28px !important;
-  min-height: 120px !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.03)) !important;
+  padding: 18px 20px !important;
+  min-height: 0 !important;
+  box-shadow: var(--sdlg-shadow-xs, 0 1px 2px rgba(15, 23, 42, 0.04)) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   position: relative !important;
   overflow: hidden !important;
-  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
-  /* 🧹 REMOVED: will-change (perf leak — permanent composite layer)
-     + box-shadow/border-color cannot composite — hints were wasted.
-     Browser auto-promotes on :hover transform. */
-  /* Perf: skip paint of off-screen cards in large dashboards */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
   contain: layout paint;
-  /* Cegah z-index bocor dari child (badge, tooltip) */
   isolation: isolate;
 }
 
 .metric-card:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15, 23, 42, 0.05)) !important;
-  border-color: var(--sdlg-primary, #2563eb) !important;
+  transform: none !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.04)) !important;
+  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
 }
 
-/* A11Y: focus-visible shadow ring jika metric-card pernah jadi link/button */
 .metric-card:focus-within {
   border-color: var(--sdlg-primary, #2563eb) !important;
   box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
 }
 
-/* Garis Aksen Kiri Bergradasi — z-index 10 dikurung oleh isolation card */
 .metric-card::before {
   content: "" !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   bottom: 0 !important;
-  width: 4px !important;
-  background: linear-gradient(180deg, var(--sdlg-primary, #2563eb) 0%, #00d4ff 100%) !important;
-  z-index: 10 !important;
+  width: 3px !important;
+  background: var(--sdlg-primary, #2563eb) !important;
+  z-index: 1 !important;
   pointer-events: none !important;
 }
 
 .metric-label {
-  font-size: 12px !important;
-  font-weight: 600 !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
   color: var(--sdlg-text-muted, #64748b) !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  margin-bottom: var(--sdlg-spacing-2, 8px) !important;
-  text-wrap: balance;
+  letter-spacing: 0.05em !important;
+  margin-bottom: 6px !important;
 }
 
 .metric-value {
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif) !important;
-  font-size: 32px !important;
+  font-size: 26px !important;
   font-weight: 700 !important;
   color: var(--sdlg-text-main, #0f172a) !important;
   letter-spacing: -0.03em !important;
-  line-height: 1 !important;
+  line-height: 1.15 !important;
   font-variant-numeric: tabular-nums !important;
-  text-wrap: pretty;
 }
 
-/* ==========================================================================
-   3. KOTAK "MY ACTION TODAY" (Kritikal, Action, dll)
-   ========================================================================== */
+/* ---------- Action today boxes ---------- */
 .card:has(.metric-grid) {
-  padding: 28px !important;
+  padding: 20px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
   isolation: isolate;
 }
 
 .card:has(.metric-grid) > div:first-child {
   display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 16px !important;
-  margin-bottom: 28px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-bottom: 20px !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div {
-  border-radius: calc(var(--sdlg-radius, 12px) - 2px) !important;
-  padding: 20px !important;
+  border-radius: 10px !important;
+  padding: 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 6px !important;
   border: 1px solid transparent !important;
   position: relative !important;
   overflow: hidden !important;
-  transition: var(--sdlg-transition-base) !important;
-  /* Perf: skip paint off-screen */
+  transition: border-color 0.15s ease, background-color 0.15s ease !important;
   contain: layout paint;
 }
 
-.card:has(.metric-grid) > div:first-child > div:hover {
-  transform: translateY(-2px) !important;
-}
-
+.card:has(.metric-grid) > div:first-child > div:hover,
 .card:has(.metric-grid) > div:first-child > div:active {
-  transform: translateY(0) scale(0.99) !important;
+  transform: none !important;
 }
 
-/* --- Warna Kotak Adaptif Kontras Tinggi --- */
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
   background: var(--sdlg-danger-soft, #fef2f2) !important;
   border-color: #fecaca !important;
@@ -147,11 +125,10 @@ body {
   border-color: var(--sdlg-border, #e2e8f0) !important;
 }
 
-/* --- Angka Besar di dalam Kotak Action --- */
 .card:has(.metric-grid) > div:first-child > div > div:first-child {
-  font-size: 28px !important;
+  font-size: 24px !important;
   font-weight: 700 !important;
-  line-height: 1 !important;
+  line-height: 1.1 !important;
   font-variant-numeric: tabular-nums !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
@@ -167,22 +144,18 @@ body {
   color: var(--sdlg-text-main, #0f172a) !important;
 }
 
-/* ==========================================================================
-   4. LIST "CLAIM PRIORITIES" & "ACTION REQUIRED"
-   ========================================================================== */
+/* ---------- Claim / action rows ---------- */
 .claim-row,
 .action-row {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 14px 20px !important;
-  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
-  margin-bottom: 8px !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  margin-bottom: 6px !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  transition: var(--sdlg-transition-base) !important;
-  /* 🧹 REMOVED: will-change (perf leak) */
-  /* Perf: contain untuk list panjang */
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
   contain: layout style;
 }
 
@@ -190,15 +163,14 @@ body {
 .action-row:hover {
   background: var(--sdlg-surface, #ffffff) !important;
   border-color: var(--sdlg-border-strong, #cbd5e1) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  transform: translateX(4px) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .claim-row:focus-visible,
 .action-row:focus-visible {
   outline: 2px solid var(--sdlg-primary, #2563eb) !important;
   outline-offset: 2px !important;
-  background: var(--sdlg-surface, #ffffff) !important;
 }
 
 .claim-row:last-child,
@@ -206,35 +178,31 @@ body {
   margin-bottom: 0 !important;
 }
 
-/* ==========================================================================
-   5. TOTAL ESTIMASI (KOTAK GELAP PREMIUM)
-   ========================================================================== */
+/* ---------- Total estimasi ---------- */
 .total-estimasi-box {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
   color: #ffffff !important;
-  padding: 32px 40px !important;
+  padding: 24px 28px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--sdlg-shadow-md) !important;
+  box-shadow: none !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  margin: 32px 0 !important;
+  margin: 24px 0 !important;
   position: relative !important;
   overflow: hidden !important;
   border: 1px solid #1e293b !important;
-  /* Isolation untuk kurung z-index dari ::after glow */
   isolation: isolate;
 }
 
-/* Efek Kilau Gradien (Glow Aura) */
 .total-estimasi-box::after {
   content: "" !important;
   position: absolute !important;
-  top: -50% !important;
-  right: -10% !important;
-  width: 300px !important;
-  height: 300px !important;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%) !important;
+  top: -40% !important;
+  right: -5% !important;
+  width: 200px !important;
+  height: 200px !important;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%) !important;
   border-radius: 50% !important;
   pointer-events: none !important;
   z-index: 1 !important;
@@ -242,51 +210,44 @@ body {
 
 .total-estimasi-box .label {
   font-size: 11px !important;
-  font-weight: 600 !important;
+  font-weight: 650 !important;
   color: #94a3b8 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.06em !important;
   position: relative !important;
   z-index: 2 !important;
-  text-wrap: balance;
 }
 
 .total-estimasi-box .value {
   font-family: var(--sdlg-font-family, sans-serif) !important;
-  font-size: 36px !important;
+  font-size: 30px !important;
   font-weight: 700 !important;
   color: #ffffff !important;
   letter-spacing: -0.02em !important;
-  margin-top: 6px !important;
+  margin-top: 4px !important;
   position: relative !important;
   z-index: 2 !important;
   font-variant-numeric: tabular-nums !important;
-  text-wrap: pretty;
 }
 
-/* ==========================================================================
-   6. CHART SECTIONS (Trend, Model, Branch)
-   ========================================================================== */
+/* ---------- Chart cards ---------- */
 .card:has(canvas),
 .card:has(svg) {
-  padding: 28px !important;
+  padding: 20px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
-  transition: var(--sdlg-transition-base) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
+  transition: border-color 0.15s ease !important;
   isolation: isolate;
 }
 
 .card:has(canvas):hover,
 .card:has(svg):hover {
-  box-shadow: var(--sdlg-shadow-md) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
 }
 
-/* --- Dynamic bar chart styling ---
-   🐛 FIX: V5 hanya match Chrome's normalized format. Firefox/Safari normalize
-   inline styles differently. Added 8 variants + `i` flag for case-insensitive.
-   --- */
+/* Chart bars — keep gradient, no hover drama */
 div[style*="background-color: blue" i],
 div[style*="background-color: rgb(0, 0, 255)" i],
 div[style*="background-color: rgb(0,0,255)" i],
@@ -299,54 +260,45 @@ div[style*="background: rgb(59, 130, 246)" i],
 div[style*="background: blue" i] {
   border-radius: 99px !important;
   background: linear-gradient(90deg, var(--sdlg-primary, #2563eb) 0%, #6366f1 100%) !important;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
-  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+  box-shadow: none !important;
+  transition: none !important;
 }
 
-/* Micro-interaction: bar hover (subtle glow) */
 div[style*="background-color: blue" i]:hover,
-div[style*="background-color: rgb(0, 0, 255)" i]:hover,
-div[style*="background-color: rgb(0,0,255)" i]:hover,
-div[style*="background-color: #0000ff" i]:hover,
 div[style*="background-color: #3b82f6" i]:hover,
 div[style*="background-color: rgb(59, 130, 246)" i]:hover,
-div[style*="background-color: rgb(59,130,246)" i]:hover,
 div[style*="background: #3b82f6" i]:hover,
-div[style*="background: rgb(59, 130, 246)" i]:hover,
 div[style*="background: blue" i]:hover {
-  filter: brightness(1.1) !important;
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3) !important;
+  filter: none !important;
+  box-shadow: none !important;
 }
 
-/* ==========================================================================
-   7. EXECUTIVE SNAPSHOT GRID
-   ========================================================================== */
+/* ---------- Snapshot grid ---------- */
 .snapshot-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
-  gap: 20px !important;
-  margin-top: 24px !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
 }
 
 .snapshot-item {
   background: var(--sdlg-surface, #ffffff) !important;
-  padding: 24px !important;
+  padding: 16px 18px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  box-shadow: var(--sdlg-shadow-sm) !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
-  transition: var(--sdlg-transition-base) !important;
-  /* 🧹 REMOVED: will-change */
+  gap: 6px !important;
+  transition: border-color 0.15s ease !important;
   contain: layout paint;
   isolation: isolate;
 }
 
 .snapshot-item:hover {
   border-color: var(--sdlg-border-strong, #cbd5e1) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: var(--sdlg-shadow-md) !important;
+  transform: none !important;
+  box-shadow: var(--sdlg-shadow-xs) !important;
 }
 
 .snapshot-item:focus-within {
@@ -357,27 +309,22 @@ div[style*="background: blue" i]:hover {
 .snapshot-item .label {
   font-size: 11px !important;
   color: var(--sdlg-text-muted, #64748b) !important;
-  font-weight: 600 !important;
+  font-weight: 650 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  text-wrap: balance;
+  letter-spacing: 0.04em !important;
 }
 
 .snapshot-item .value {
   font-family: var(--sdlg-font-family, sans-serif) !important;
-  font-size: 26px !important;
+  font-size: 22px !important;
   font-weight: 700 !important;
   color: var(--sdlg-text-main, #0f172a) !important;
   letter-spacing: -0.02em !important;
   font-variant-numeric: tabular-nums !important;
-  text-wrap: pretty;
 }
 
-/* ==========================================================================
-   8. DARK MODE PATCHES (hard-coded light colors)
-   ========================================================================== */
+/* ---------- Dark mode ---------- */
 @media (prefers-color-scheme: dark) {
-  /* Action boxes: pakai opacity-based backgrounds, bukan light tints */
   .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
     background: rgba(239, 68, 68, 0.12) !important;
     border-color: rgba(239, 68, 68, 0.3) !important;
@@ -395,7 +342,6 @@ div[style*="background: blue" i]:hover {
     border-color: var(--sdlg-border, #1e293b) !important;
   }
 
-  /* Text color di action boxes: lebih terang untuk kontras di dark bg */
   .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
     color: #f87171 !important;
   }
@@ -406,99 +352,85 @@ div[style*="background: blue" i]:hover {
     color: #60a5fa !important;
   }
 
-  /* Total estimasi box: sedikit lebih gelap, glow lebih subtle */
   .total-estimasi-box {
     background: linear-gradient(135deg, #0f172a 0%, #020617 100%) !important;
     border-color: #0f172a !important;
   }
   .total-estimasi-box::after {
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%) !important;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, transparent 70%) !important;
   }
 
-  /* Metric card accent line: sedikit di-mute */
   .metric-card::before {
-    background: linear-gradient(180deg, #3b82f6 0%, #06b6d4 100%) !important;
+    background: #3b82f6 !important;
   }
 }
 
-/* ==========================================================================
-   9. RESPONSIVE — grid collapse untuk mobile
-   ========================================================================== */
-
-/* Tablet: My Action Today grid 4 → 2 kolom */
+/* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .card:has(.metric-grid) > div:first-child {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
   .metric-grid {
-    gap: 16px !important;
+    gap: 12px !important;
   }
 }
 
-/* Mobile: metric card padding reduce, action grid 1 kolom */
 @media (max-width: 767.98px) {
   .metric-card {
-    padding: 20px 22px !important;
-    min-height: 100px !important;
+    padding: 14px 16px !important;
   }
   .metric-value {
-    font-size: 28px !important;
+    font-size: 22px !important;
   }
 
   .card:has(.metric-grid) {
-    padding: 20px !important;
+    padding: 14px !important;
   }
   .card:has(.metric-grid) > div:first-child > div {
-    padding: 16px !important;
+    padding: 12px !important;
   }
   .card:has(.metric-grid) > div:first-child > div > div:first-child {
-    font-size: 24px !important;
+    font-size: 20px !important;
   }
 
   .total-estimasi-box {
-    padding: 24px 28px !important;
-    margin: 24px 0 !important;
+    padding: 18px 20px !important;
+    margin: 18px 0 !important;
   }
   .total-estimasi-box .value {
-    font-size: 28px !important;
+    font-size: 24px !important;
   }
 
   .snapshot-grid {
-    gap: 16px !important;
-    margin-top: 20px !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
   }
   .snapshot-item {
-    padding: 20px !important;
+    padding: 14px !important;
   }
   .snapshot-item .value {
-    font-size: 22px !important;
+    font-size: 18px !important;
   }
 
   .claim-row,
   .action-row {
-    padding: 12px 16px !important;
+    padding: 10px 12px !important;
   }
 }
 
-/* Small mobile: action grid 1 kolom */
 @media (max-width: 480px) {
   .card:has(.metric-grid) > div:first-child {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
-/* ==========================================================================
-   10. REDUCED MOTION (A11Y)
-   ========================================================================== */
+/* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .metric-card,
   .snapshot-item,
   .claim-row,
   .action-row,
-  .total-estimasi-box,
-  div[style*="background-color: blue" i],
-  div[style*="background-color: #3b82f6" i],
-  div[style*="background-color: rgb(59, 130, 246)" i] {
+  .total-estimasi-box {
     transition-duration: 0.01ms !important;
   }
 
@@ -508,90 +440,5 @@ div[style*="background: blue" i]:hover {
   .action-row:hover,
   .card:has(.metric-grid) > div:first-child > div:hover {
     transform: none !important;
-  }
-
-  div[style*="background-color: blue" i]:hover,
-  div[style*="background-color: #3b82f6" i]:hover,
-  div[style*="background-color: rgb(59, 130, 246)" i]:hover {
-    filter: none !important;
-  }
-}
-
-/* ==========================================================================
-   11. HIGH CONTRAST (A11Y)
-   ========================================================================== */
-@media (prefers-contrast: more) {
-  .metric-label,
-  .snapshot-item .label,
-  .total-estimasi-box .label {
-    color: var(--sdlg-text-main, #0f172a) !important;
-  }
-
-  .card:has(.metric-grid) > div:first-child > div {
-    border-width: 2px !important;
-  }
-
-  .claim-row,
-  .action-row {
-    border-color: var(--sdlg-text-muted, #64748b) !important;
-  }
-}
-
-/* ==========================================================================
-   12. PRINT STYLES
-   ========================================================================== */
-@media print {
-  body {
-    background: #ffffff !important;
-  }
-
-  .metric-card,
-  .card:has(.metric-grid),
-  .card:has(canvas),
-  .card:has(svg),
-  .snapshot-item,
-  .total-estimasi-box,
-  .claim-row,
-  .action-row {
-    box-shadow: none !important;
-    border: 1px solid #999999 !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    /* Disable containment untuk print (predictable layout) */
-    contain: none !important;
-  }
-
-  /* Expand grid untuk print */
-  .metric-grid,
-  .snapshot-grid {
-    gap: 12px !important;
-  }
-
-  .card:has(.metric-grid) > div:first-child {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-
-  /* Hide chart interactives jika ada (SVG tetap tampil) */
-  .card:has(canvas) canvas {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  /* Total estimasi — dark box tetap dark untuk kontras */
-  .total-estimasi-box {
-    background: #0f172a !important;
-    color: #ffffff !important;
-    /* Print engine tidak suka gradient — force solid */
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Hover effects → disable (tidak relevan) */
-  .metric-card:hover,
-  .snapshot-item:hover,
-  .claim-row:hover,
-  .action-row:hover {
-    transform: none !important;
-    box-shadow: none !important;
   }
 }
