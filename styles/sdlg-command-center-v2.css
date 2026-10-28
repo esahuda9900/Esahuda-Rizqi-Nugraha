@@ -1,46 +1,49 @@
-/* =========================================================
-   SDLG_COMMAND_CENTER_V3.0 (EXPERT REVISED)
+/* ========================================================================
+   SDLG_COMMAND_CENTER_V4.0 (PRODUCTION ENTERPRISE)
    Visual-only UI/UX refinement layer.
    Loaded by the existing final visual injector; no business logic changes.
-   Harmonized with ALIVE RECOLOR & SDLG Tracking Panel.
-   ========================================================= */
+   Harmonized with ALIVE RECOLOR V2 & SDLG Tracking Panel.
+   ======================================================================== */
 
 /* =========================================
    1. BASE & TYPOGRAPHY SCOPING
    ========================================= */
 .app-shell:not(:has(.login-screen)) {
-  color: var(--sdlg-text, #0c1526) !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif) !important;
-  background-color: var(--sdlg-bg, #eef1f7) !important;
+  background-color: var(--sdlg-bg, #f3f6fa) !important;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-shell:not(:has(.login-screen)) .page {
   max-width: 1440px !important;
-  padding: 28px 24px 64px !important;
+  padding: 32px 24px 64px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page-title {
-  font-size: clamp(26px, 2.5vw, 32px) !important;
-  line-height: 1.1 !important;
-  letter-spacing: -0.03em !important;
-  font-weight: 800 !important;
+  font-size: clamp(24px, 2.5vw, 30px) !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.025em !important;
+  font-weight: 700 !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page-sub {
-  margin-top: 8px !important;
-  color: var(--sdlg-muted, #5a6578) !important;
-  font-size: 14px !important;
+  margin-top: 6px !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
+  font-size: var(--sdlg-font-size-sm, 0.875rem) !important;
 }
 
 /* =========================================
-   2. TOPBAR & NAVIGATION
+   2. TOPBAR & NAVIGATION (Premium Glassmorphism)
    ========================================= */
 .app-shell:not(:has(.login-screen)) .topbar {
   height: 68px !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .topbar-inner {
@@ -49,35 +52,44 @@
   gap: 20px !important;
 }
 
-.app-shell:not(:has(.login-screen)) .brand-title { font-size: 14px !important; font-weight: 700 !important; }
-.app-shell:not(:has(.login-screen)) .brand-sub { font-size: 11px !important; color: var(--sdlg-muted) !important; }
+.app-shell:not(:has(.login-screen)) .brand-title { 
+  font-size: 14px !important; 
+  font-weight: 700 !important; 
+  color: var(--sdlg-text-main, #0f172a) !important;
+}
+.app-shell:not(:has(.login-screen)) .brand-sub { 
+  font-size: 11px !important; 
+  color: var(--sdlg-text-muted, #64748b) !important; 
+}
 
-/* Nav Pills */
+/* Segmented Control / Nav Pills */
 .app-shell:not(:has(.login-screen)) .nav-scroll {
   gap: 4px !important;
   padding: 4px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: 12px !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .nav-btn {
-  padding: 8px 16px !important;
-  border-radius: 8px !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
+  padding: 6px 14px !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.6) !important;
-  color: var(--sdlg-primary, #2f5bff) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--sdlg-primary, #2563eb) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .nav-btn.active {
   background: #ffffff !important;
-  color: var(--sdlg-primary, #2f5bff) !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06), inset 0 0 0 1px rgba(47, 91, 255, 0.15) !important;
+  color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  font-weight: 600 !important;
 }
 
 /* =========================================
@@ -87,48 +99,50 @@
 .app-shell:not(:has(.login-screen)) .metric-card,
 .app-shell:not(:has(.login-screen)) .claims-table-shell,
 .app-shell:not(:has(.login-screen)) .table-wrap {
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: var(--sdlg-radius, 16px) !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 2px 6px rgba(12,21,38,0.06)) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
 }
 
-/* PENTING: Hover effect JANGAN kena ke tracking panel kita */
+/* Perlindungan ketat agar Hover effect JANGAN kena ke tracking panel internal */
 .app-shell:not(:has(.login-screen)) .card:hover:not(#sdlg-tracking-panel),
 .app-shell:not(:has(.login-screen)) .metric-card:hover {
-  border-color: var(--sdlg-border-strong, #cfd8e6) !important;
-  box-shadow: var(--sdlg-shadow-md, 0 8px 24px rgba(12,21,38,0.08)) !important;
+  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
+  box-shadow: var(--sdlg-shadow-md, 0 10px 25px -5px rgba(15,23,42,0.05)) !important;
 }
 
-/* Form Elements */
+/* Form & Input Controls */
 .app-shell:not(:has(.login-screen)) input,
 .app-shell:not(:has(.login-screen)) select,
 .app-shell:not(:has(.login-screen)) textarea {
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  border-radius: 8px !important;
+  border: 1px solid var(--sdlg-border-strong, #cbd5e1) !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 4px) !important;
   background: #ffffff !important;
-  transition: all 0.2s ease !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
+  padding: 8px 12px !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
 }
 
 .app-shell:not(:has(.login-screen)) input:focus,
 .app-shell:not(:has(.login-screen)) select:focus,
 .app-shell:not(:has(.login-screen)) textarea:focus {
-  border-color: var(--sdlg-primary, #2f5bff) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 4px rgba(47,91,255,0.16)) !important;
+  border-color: var(--sdlg-primary, #2563eb) !important;
+  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37,99,235,0.15)) !important;
   outline: none !important;
 }
 
 /* =========================================
-   4. DASHBOARD (Metric Grid)
+   4. DASHBOARD (Metric Grid Layout)
    ========================================= */
 .app-shell:not(:has(.login-screen)) .metric-grid {
   gap: 16px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-card {
-  min-height: 130px !important;
-  padding: 24px !important;
+  min-height: 120px !important;
+  padding: 20px 24px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -136,31 +150,31 @@
   overflow: hidden !important;
 }
 
-/* Efek lingkaran dekoratif di belakang */
+/* Efek dekoratif modern lingkaran samar belakang */
 .app-shell:not(:has(.login-screen)) .metric-card::after {
   content: "" !important;
   position: absolute !important;
-  width: 100px !important; height: 100px !important;
-  right: -30px !important; bottom: -30px !important;
+  width: 90px !important; height: 90px !important;
+  right: -25px !important; bottom: -25px !important;
   border-radius: 50% !important;
-  background: rgba(47, 91, 255, 0.04) !important;
+  background: rgba(37, 69, 235, 0.03) !important;
   pointer-events: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-label {
-  color: var(--sdlg-muted, #5a6578) !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
   font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
   text-transform: uppercase !important;
 }
 
 .app-shell:not(:has(.login-screen)) .metric-value {
-  margin-top: 8px !important;
-  font-size: 32px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.04em !important;
-  color: var(--sdlg-text, #0c1526) !important;
+  margin-top: 6px !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--sdlg-text-main, #0f172a) !important;
   font-variant-numeric: tabular-nums !important;
 }
 
@@ -169,96 +183,84 @@
    ========================================= */
 .app-shell:not(:has(.login-screen)) .claims-searchbar {
   background: #ffffff !important;
-  border: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   padding: 12px !important;
   gap: 12px !important;
-  border-radius: 12px !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 2px 6px rgba(12,21,38,0.06)) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
+  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15,23,42,0.03)) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claims-searchbar input {
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  min-height: 42px !important;
+  min-height: 40px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claim-row {
-  min-height: 72px !important;
-  padding: 14px 20px !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
-  transition: all 0.2s ease !important;
+  min-height: 64px !important;
+  padding: 12px 20px !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .claim-row:hover {
-  background: var(--sdlg-primary-soft, #eaf0ff) !important;
-  box-shadow: inset 4px 0 var(--sdlg-primary, #2f5bff) !important;
+  background: var(--sdlg-primary-soft, #eff6ff) !important;
+  box-shadow: inset 4px 0 0 0 var(--sdlg-primary, #2563eb) !important;
 }
 
-/* Sticky Table Headers */
+/* Sticky Table Headers Data */
 .app-shell:not(:has(.login-screen)) table th {
   position: sticky !important;
   top: 0 !important;
   z-index: 10 !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  font-weight: 700 !important;
-  color: var(--sdlg-muted, #5a6578) !important;
-  border-bottom: 1px solid var(--sdlg-border, #e2e8f2) !important;
+  font-weight: 600 !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
+  border-bottom: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  padding: 10px 16px !important;
 }
 
 /* =========================================
-   6. FORM PAGES (New Claim, Input)
+   6. FORM PAGES (New Claim AI Input Layout)
    ========================================= */
 .app-shell:not(:has(.login-screen)) textarea[placeholder*="Paste isi form warranty claim"] {
   min-height: 300px !important;
   padding: 16px !important;
-  font-family: monospace !important;
+  font-family: var(--sdlg-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace) !important;
   font-size: 13px !important;
   background: var(--sdlg-surface-muted, #f8fafc) !important;
-  border-radius: 12px !important;
+  border-radius: calc(var(--sdlg-radius, 12px) - 2px) !important;
+  line-height: 1.6 !important;
 }
 
 .app-shell:not(:has(.login-screen)) input[type="file"] {
-  padding: 16px !important;
-  background: var(--sdlg-primary-soft, #eaf0ff) !important;
-  border: 2px dashed var(--sdlg-primary, #2f5bff) !important;
-  border-radius: 12px !important;
+  padding: 24px !important;
+  background: var(--sdlg-primary-soft, #eff6ff) !important;
+  border: 2px dashed var(--sdlg-primary, #2563eb) !important;
+  border-radius: var(--sdlg-radius, 12px) !important;
   cursor: pointer !important;
+  transition: var(--sdlg-transition-base, all 0.2s cubic-bezier(0.4, 0, 0.2, 1)) !important;
+}
+.app-shell:not(:has(.login-screen)) input[type="file"]:hover {
+  background: rgba(37, 99, 235, 0.08) !important;
 }
 
 /* =========================================
-   7. SCROLLBARS & ACCESSIBILITY
+   7. SCROLLBARS & ACCESSIBILITY FIX (Completed)
    ========================================= */
 .app-shell:not(:has(.login-screen)) ::-webkit-scrollbar {
-  width: 8px; height: 8px;
+  width: 6px !important; 
+  height: 6px !important;
 }
+
 .app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent !important;
 }
+
 .app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+  background: var(--sdlg-border-strong, #cbd5e1) !important;
+  border-radius: 99px !important;
 }
+
 .app-shell:not(:has(.login-screen)) ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* =========================================
-   8. RESPONSIVE (Mobile & Tablet)
-   ========================================= */
-@media (max-width: 900px) {
-  .app-shell:not(:has(.login-screen)) .topbar { height: auto !important; }
-  .app-shell:not(:has(.login-screen)) .topbar-inner { padding: 12px !important; flex-wrap: wrap !important; }
-  .app-shell:not(:has(.login-screen)) .nav-scroll { order: 3 !important; width: 100% !important; overflow-x: auto !important; }
-}
-
-@media (max-width: 768px) {
-  .app-shell:not(:has(.login-screen)) .page { padding: 20px 16px 40px !important; }
-  .app-shell:not(:has(.login-screen)) .metric-grid { grid-template-columns: 1fr !important; }
-  .app-shell:not(:has(.login-screen)) .claims-searchbar { grid-template-columns: 1fr !important; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-shell:not(:has(.login-screen)) * {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-  }
+  background: var(--sdlg-text-muted, #64748b) !important;
 }
