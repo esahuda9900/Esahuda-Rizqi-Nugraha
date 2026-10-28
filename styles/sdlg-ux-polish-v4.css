@@ -1,0 +1,173 @@
+/* =========================================================
+   SDLG UX Polish v4 — FINAL override layer
+   Loaded last (via runtime inject). Calms competing CSS:
+   - kill excessive hover lift/shadow
+   - tighter tables & forms
+   - consistent cards
+   - better mobile density
+   ========================================================= */
+
+/* Kill transform spam from older polish layers */
+.metric-card:hover,
+.claim-row:hover,
+.action-row:hover,
+.snapshot-item:hover,
+.card:has(.metric-grid) > div:first-child > div:hover,
+.primary-btn:hover,
+.nav-btn:hover {
+  transform: none !important;
+}
+
+.metric-card:hover,
+.claim-row:hover,
+.action-row:hover {
+  box-shadow: none !important;
+}
+
+.claim-row:hover,
+.action-row:hover {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Tables */
+table.data-table,
+.claims-table,
+.table-wrap table,
+.app-shell table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  font-size: 13px !important;
+}
+
+table th,
+.claims-table th,
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 10px 12px !important;
+  white-space: nowrap !important;
+}
+
+table td,
+.claims-table td,
+.data-table td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  vertical-align: middle !important;
+}
+
+.table-wrap,
+.table-scroll,
+.claims-table-wrap {
+  overflow: auto !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+/* Forms denser */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+select,
+textarea {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  padding: 9px 12px !important;
+  font-size: 13.5px !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  outline: none !important;
+}
+
+/* Cards quieter */
+.metric-card {
+  min-height: auto !important;
+  padding: 18px 20px !important;
+}
+
+.metric-value {
+  font-size: 26px !important;
+}
+
+.metric-card::before {
+  width: 3px !important;
+  background: #64748b !important;
+  background-image: none !important;
+}
+
+/* Buttons */
+.primary-btn,
+button.primary,
+.btn-primary {
+  background: #1d4ed8 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  font-weight: 650 !important;
+}
+
+.primary-btn:hover,
+button.primary:hover {
+  background: #1e40af !important;
+  transform: none !important;
+}
+
+/* Topbar flat */
+.topbar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: #fff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+}
+
+/* Page padding */
+.page,
+.main-content,
+.content-area {
+  padding: 18px 20px !important;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .page,
+  .main-content {
+    padding: 12px 10px !important;
+  }
+  .metric-grid {
+    gap: 10px !important;
+  }
+  table th,
+  table td {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
