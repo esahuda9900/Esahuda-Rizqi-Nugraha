@@ -1,28 +1,33 @@
 /**
- * SDLG UI Polish v3.3 — force login fixes + hide pipeline banner + autofocus.
+ * SDLG UI Polish v3.4 — login fixes + inject global v4 cleanup CSS.
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_UI_POLISH_V33__) return;
-  root.__SDLG_UI_POLISH_V33__ = true;
+  if (root.__SDLG_UI_POLISH_V34__) return;
+  root.__SDLG_UI_POLISH_V34__ = true;
   root.__SDLG_UI_POLISH_V3__ = true;
 
-  var HREF = './modules/sdlg-ui-polish-v3.css?v=20261010-v33';
+  var HREF_V3 = './modules/sdlg-ui-polish-v3.css?v=20261028-v34';
+  var HREF_V4 = './modules/sdlg-ui-polish-v4.css?v=20261028-v40';
 
-  function injectCss() {
-    var existing = document.getElementById('sdlg-ui-polish-v3');
+  function injectLink(id, href) {
+    var existing = document.getElementById(id);
     if (existing) {
-      existing.href = HREF;
+      existing.href = href;
       return;
     }
     var link = document.createElement('link');
-    link.id = 'sdlg-ui-polish-v3';
+    link.id = id;
     link.rel = 'stylesheet';
-    link.href = HREF;
+    link.href = href;
     (document.head || document.documentElement).appendChild(link);
-    // also refresh static link if present
+  }
+
+  function injectCss() {
+    injectLink('sdlg-ui-polish-v3', HREF_V3);
+    injectLink('sdlg-ui-polish-v4', HREF_V4);
     var st = document.getElementById('sdlg-ui-polish-v3-static');
-    if (st) st.href = HREF;
+    if (st) st.href = HREF_V3;
   }
 
   function onLoginPage() {
@@ -111,5 +116,5 @@
     }
   } catch (_) {}
 
-  root.SDLGUiPolish = { version: '3.3.0', refresh: tick };
+  root.SDLGUiPolish = { version: '3.4.0+v4', refresh: tick };
 })(window);
