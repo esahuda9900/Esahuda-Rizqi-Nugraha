@@ -1,0 +1,330 @@
+/* =========================================================
+   SDLG UI Polish v4.0 — Global cleanup for legacy web
+   Goal: less visual noise, tighter spacing, better contrast,
+   readable tables, consistent cards/forms, saner mobile.
+   Loaded after existing styles; uses high-specificity + !important
+   only where needed to beat inline / old cascade.
+   ========================================================= */
+
+/* ---------- 1. Base tokens (light app shell) ---------- */
+.app-shell,
+body:has(.app-shell) {
+  --sdlg-bg: #f1f5f9;
+  --sdlg-surface: #ffffff;
+  --sdlg-surface-2: #f8fafc;
+  --sdlg-border: #e2e8f0;
+  --sdlg-border-strong: #cbd5e1;
+  --sdlg-text: #0f172a;
+  --sdlg-muted: #64748b;
+  --sdlg-accent: #1d4ed8;
+  --sdlg-accent-hover: #1e40af;
+  --sdlg-radius: 12px;
+  --sdlg-radius-sm: 8px;
+  --sdlg-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* ---------- 2. Kill excessive motion / glow ---------- */
+.app-shell .claim-row:hover,
+.app-shell .metric-card:hover,
+.app-shell .primary-btn:hover,
+.app-shell .nav-btn:hover,
+.app-shell [data-sdlg-priority]:hover {
+  transform: none !important;
+}
+
+.app-shell .topbar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--sdlg-surface) !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  box-shadow: none !important;
+}
+
+/* ---------- 3. Typography rhythm ---------- */
+.app-shell,
+.app-shell button,
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  letter-spacing: -0.02em;
+  color: var(--sdlg-text);
+}
+
+.app-shell .muted,
+.app-shell .text-muted,
+.app-shell .hint {
+  color: var(--sdlg-muted) !important;
+}
+
+/* ---------- 4. Cards / panels ---------- */
+.app-shell .metric-card,
+.app-shell .card,
+.app-shell .panel,
+.app-shell .claim-card,
+.app-shell .detail-card,
+.app-shell .form-section {
+  background: var(--sdlg-surface) !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  box-shadow: var(--sdlg-shadow) !important;
+}
+
+.app-shell .metric-card::before {
+  width: 3px !important;
+  background-image: none !important;
+}
+
+/* ---------- 5. Tables — the usual mess ---------- */
+.app-shell table,
+.app-shell .data-table,
+.app-shell .claims-table,
+.app-shell .table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 13px !important;
+}
+
+.app-shell table th,
+.app-shell .data-table th,
+.app-shell .claims-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc !important;
+  color: var(--sdlg-muted) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  padding: 10px 12px !important;
+  white-space: nowrap !important;
+}
+
+.app-shell table td,
+.app-shell .data-table td,
+.app-shell .claims-table td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid var(--sdlg-border) !important;
+  vertical-align: middle !important;
+  color: var(--sdlg-text) !important;
+}
+
+.app-shell table tbody tr:hover,
+.app-shell .claim-row:hover {
+  background: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+.app-shell .table-wrap,
+.app-shell .table-scroll,
+.app-shell .claims-table-wrap {
+  overflow: auto !important;
+  border: 1px solid var(--sdlg-border) !important;
+  border-radius: var(--sdlg-radius) !important;
+  background: var(--sdlg-surface) !important;
+}
+
+/* ---------- 6. Forms — denser, clearer ---------- */
+.app-shell input[type="text"],
+.app-shell input[type="email"],
+.app-shell input[type="password"],
+.app-shell input[type="number"],
+.app-shell input[type="date"],
+.app-shell input[type="search"],
+.app-shell select,
+.app-shell textarea {
+  border: 1px solid var(--sdlg-border-strong) !important;
+  border-radius: var(--sdlg-radius-sm) !important;
+  background: #fff !important;
+  color: var(--sdlg-text) !important;
+  padding: 9px 12px !important;
+  font-size: 13.5px !important;
+  box-shadow: none !important;
+}
+
+.app-shell input:focus,
+.app-shell select:focus,
+.app-shell textarea:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  outline: none !important;
+}
+
+.app-shell label {
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  color: var(--sdlg-muted) !important;
+  margin-bottom: 4px !important;
+}
+
+.app-shell textarea {
+  min-height: 72px !important;
+  line-height: 1.45 !important;
+}
+
+/* ---------- 7. Buttons ---------- */
+.app-shell .primary-btn,
+.app-shell button.primary,
+.app-shell .btn-primary {
+  background: var(--sdlg-accent) !important;
+  background-image: none !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: var(--sdlg-radius-sm) !important;
+  font-weight: 650 !important;
+  box-shadow: none !important;
+  padding: 9px 14px !important;
+}
+
+.app-shell .primary-btn:hover,
+.app-shell button.primary:hover {
+  background: var(--sdlg-accent-hover) !important;
+}
+
+.app-shell .ghost-btn,
+.app-shell button.ghost,
+.app-shell .btn-ghost,
+.app-shell .nav-btn {
+  background: transparent !important;
+  border: 1px solid var(--sdlg-border) !important;
+  color: var(--sdlg-text) !important;
+  border-radius: var(--sdlg-radius-sm) !important;
+  box-shadow: none !important;
+}
+
+.app-shell button:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+}
+
+/* ---------- 8. Status chips / badges ---------- */
+.app-shell .status-badge,
+.app-shell .badge,
+.app-shell .chip,
+.app-shell [class*="status-"] {
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 3px 9px !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* ---------- 9. Layout spacing ---------- */
+.app-shell .page,
+.app-shell main .content,
+.app-shell .main-content {
+  padding: 20px 24px !important;
+}
+
+.app-shell .page-header,
+.app-shell .section-header {
+  margin-bottom: 16px !important;
+}
+
+.app-shell .metric-grid,
+.app-shell .kpi-grid,
+.app-shell .card-grid {
+  gap: 12px !important;
+}
+
+/* ---------- 10. Modals ---------- */
+.app-shell .modal,
+.app-shell .modal-card,
+.app-shell [class*="modal-"] {
+  border-radius: 16px !important;
+  border: 1px solid var(--sdlg-border) !important;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18) !important;
+}
+
+.app-shell .modal-backdrop,
+.app-shell .overlay {
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* ---------- 11. Sidebar / nav ---------- */
+.app-shell .sidebar,
+.app-shell aside.nav,
+.app-shell .side-nav {
+  background: #0f172a !important;
+  border-right: 1px solid #1e293b !important;
+}
+
+.app-shell .sidebar a,
+.app-shell .side-nav a,
+.app-shell .nav-link {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+.app-shell .sidebar a.active,
+.app-shell .nav-link.active {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+
+/* ---------- 12. Mobile ---------- */
+@media (max-width: 900px) {
+  .app-shell .page,
+  .app-shell main .content {
+    padding: 14px 12px !important;
+  }
+
+  .app-shell table th,
+  .app-shell table td {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  .app-shell .metric-grid,
+  .app-shell .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell .metric-grid,
+  .app-shell .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .app-shell .topbar {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* ---------- 13. Reduce banner noise ---------- */
+#sdlg-data-pipeline-banner {
+  font-size: 12px !important;
+  border-radius: 0 !important;
+}
+
+/* ---------- 14. Scrollbars (webkit) ---------- */
+.app-shell .table-wrap::-webkit-scrollbar,
+.app-shell .table-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.app-shell .table-wrap::-webkit-scrollbar-thumb,
+.app-shell .table-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+/* ---------- 15. Prefer reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *,
+  .app-shell *::before,
+  .app-shell *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
