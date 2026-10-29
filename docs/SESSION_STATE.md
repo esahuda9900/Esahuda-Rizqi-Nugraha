@@ -1,13 +1,13 @@
-# SESSION_STATE — 2026-10-29
+# SESSION_STATE — 2026-10-30
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
 - Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
 - Latest deploys via static.yml successful as of last check. No open issues.
-- Claims count: 553 (up from 551).
+- Claims count: 556 (up from 553).
 
-## Current health (2026-10-29 monitoring)
-- Supabase project ACTIVE_HEALTHY. Tables: claims (553), customers (392), machines (3676), claim_audit_log (6948), etc. All RLS enabled.
+## Current health (2026-10-30 monitoring)
+- Supabase project ACTIVE_HEALTHY. Tables: claims (556), customers (393), machines (3676), claim_audit_log (6951), etc. All RLS enabled.
 - Security advisors: known warnings on SECURITY DEFINER RPCs (create/update/delete_sdlg_claim etc.) callable by authenticated — intentional for business logic. Leaked password protection disabled (known).
 - Performance advisors: auth RLS initplan on machines table (minor), many unused indexes (info), multiple permissive policies on ax_warranty_work_order_costs (minor).
 - Logs: recurring minor PostgREST "Warp server error: Thread killed by timeout manager" — non-critical, consistent with previous health check. No new critical errors.
