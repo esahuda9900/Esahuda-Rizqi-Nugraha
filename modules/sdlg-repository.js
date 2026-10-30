@@ -1,7 +1,7 @@
 /**
  * SDLG_REPOSITORY — data access layer
- * v3 soft-restore: countClaimsCached + listClaims capped (anti-hang)
- * Source: backup/stable-2026-10-10-overview-final with safety caps
+ * v3.1: exclude archived_at on all list paths; count cache consistency;
+ * soft-restore cap 300 retained (anti-hang).
  */
 (function (global) {
   'use strict';
@@ -89,6 +89,11 @@
     } catch (_) {}
   }
 
+  /** Active claims only — archived rows never enter the UI list. */
+  function activeClaimsQuery(client) {
+    return client.from('claims').select('*').is('archived_at', null).order('claim_id', { ascending: false });
+  }
+
   var repo = {
     async countClaims() {
       var client = getClient();
@@ -106,7 +111,7 @@
         if (cached != null) return cached;
       }
       var count = await repo.countClaims();
-      if (count > 0) writeCountCache(count);
+      if (count >= 0) writeCountCache(count);
       return count;
     },
 
@@ -117,11 +122,7 @@
       if (!client) throw new Error('Supabase client not ready');
       var from = (page || 0) * PAGE_SIZE;
       var result = await runRead(function () {
-        return client
-          .from('claims')
-          .select('*')
-          .order('claim_id', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+        return activeClaimsQuery(client).range(from, from + PAGE_SIZE - 1);
       });
       if (result && result.error) throw result.error;
       return normalizeRows(result && result.data);
@@ -133,11 +134,7 @@
 
       try {
         var result = await runRead(function () {
-          return client
-            .from('claims')
-            .select('*')
-            .order('claim_id', { ascending: false })
-            .range(0, 299);
+          return activeClaimsQuery(client).range(0, 299);
         });
         if (result && !result.error && Array.isArray(result.data)) {
           var rows = normalizeRows(result.data);
@@ -203,7 +200,6 @@
       if (!command || !command.claimId || !command.claim || !command.claim._expected_last_updated) {
         throw new Error('Versi klaim tidak tersedia. Salin perubahan Anda sebelum memuat ulang klaim.');
       }
-      // One complete RPC only. Never retry with a reduced payload.
       var result = await client.rpc('update_sdlg_claim', {
         p_claim_id: command.claimId,
         p_claim: command.claim,
@@ -260,6 +256,6 @@
   global.SDLGRepository = repo;
   global.sdlgRepository = repo;
   try {
-    console.info('[SDLG] sdlg-repository.js v3-soft-restore (cap 300, from overview-final)');
+    console.info('[SDLG] sdlg-repository.js v3.1 (active-only, cap 300)');
   } catch (_) {}
 })(typeof window !== 'undefined' ? window : globalThis);
