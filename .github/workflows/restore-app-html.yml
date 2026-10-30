@@ -1,0 +1,85 @@
+name: Restore full app.html (Claims modern)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restore-app-html.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore monolith from known-good + Claims KPI modern markup
+        shell: bash
+        run: |
+          set -euo pipefail
+          GOOD=2bfdddf994de6e46a0ac3b907b7745c657406c9b
+          git show "$GOOD:app.html" > app.html
+          test -s app.html
+          BYTES=$(wc -c < app.html)
+          echo "Restored app.html bytes=$BYTES"
+          test "$BYTES" -gt 500000
+
+          python3 << 'PY'
+          from pathlib import Path
+          import re
+          p = Path("app.html")
+          c = p.read_text(encoding="utf-8", errors="replace")
+
+          c = re.sub(
+              r'styles/sdlg-claims-ui-fix\.css\?v=[^"\']+',
+              'styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v6',
+              c,
+          )
+          if 'sdlg-claims-ui-fix.css' in c and 'claims-modern-v6' not in c:
+              c = c.replace(
+                  'styles/sdlg-claims-ui-fix.css',
+                  'styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v6',
+                  1,
+              )
+
+          c = re.sub(
+              r'(React\.createElement\("div",\s*\{\s*key:\s*label,\s*)className:\s*"sdlg-card"',
+              r'\1className: "claims-kpi"',
+              c,
+          )
+
+          if 'className: "claims-kpi-grid"' not in c:
+              c = re.sub(
+                  r'React\.createElement\("div",\s*\{\s*style:\s*\{\s*display:\s*"grid",\s*gridTemplateColumns:\s*"repeat\(auto-fit, minmax\(120px, 1fr\)\)"',
+                  'React.createElement("div", { className: "claims-kpi-grid", style: {\n                    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))"',
+                  c,
+                  count=1,
+              )
+
+          c = c.replace('className: "claim-row sdlg-card"', 'className: "claim-row"')
+          c = c.replace('className: "sdlg-card claim-row"', 'className: "claim-row"')
+
+          p.write_text(c, encoding="utf-8")
+          print("patched claims-kpi", c.count("claims-kpi"))
+          print("bytes", len(c))
+          PY
+
+          test "$(wc -c < app.html)" -gt 500000
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.html
+          if git diff --cached --quiet; then
+            echo "No change to commit"
+            exit 0
+          fi
+          git commit -m "fix(frontend): restore full app.html with Claims modern KPI (v6)"
+          git push origin HEAD:main
