@@ -1,34 +1,13 @@
 /**
- * SDLG UI Polish v3.4 — login fixes + inject global v4 cleanup CSS.
+ * SDLG UI Polish v3.5 — login helpers only (no archived CSS inject).
+ * 2026-10-30: sdlg-ui-polish-v3/v4.css moved to modules/_archive.
+ * Active styles already live under styles/ (ux-polish-v3, modern-refresh, etc.).
  */
 (function (root) {
   'use strict';
-  if (root.__SDLG_UI_POLISH_V34__) return;
-  root.__SDLG_UI_POLISH_V34__ = true;
+  if (root.__SDLG_UI_POLISH_V35__) return;
+  root.__SDLG_UI_POLISH_V35__ = true;
   root.__SDLG_UI_POLISH_V3__ = true;
-
-  var HREF_V3 = './modules/sdlg-ui-polish-v3.css?v=20261028-v34';
-  var HREF_V4 = './modules/sdlg-ui-polish-v4.css?v=20261028-v40';
-
-  function injectLink(id, href) {
-    var existing = document.getElementById(id);
-    if (existing) {
-      existing.href = href;
-      return;
-    }
-    var link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = href;
-    (document.head || document.documentElement).appendChild(link);
-  }
-
-  function injectCss() {
-    injectLink('sdlg-ui-polish-v3', HREF_V3);
-    injectLink('sdlg-ui-polish-v4', HREF_V4);
-    var st = document.getElementById('sdlg-ui-polish-v3-static');
-    if (st) st.href = HREF_V3;
-  }
 
   function onLoginPage() {
     return !!document.querySelector('main.login-screen, .login-screen');
@@ -86,7 +65,6 @@
   }
 
   function boot() {
-    injectCss();
     tick();
     if (typeof MutationObserver !== 'undefined') {
       var t = null;
@@ -116,5 +94,5 @@
     }
   } catch (_) {}
 
-  root.SDLGUiPolish = { version: '3.4.0+v4', refresh: tick };
+  root.SDLGUiPolish = { version: '3.5.0-clean', refresh: tick };
 })(window);
