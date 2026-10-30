@@ -1,57 +1,55 @@
 /* ==========================================================================
-   SDLG DASHBOARD POLISH V6.1 — CALM ENTERPRISE
+   SDLG DASHBOARD POLISH V6.2 — KPI declutter phase 1
    Dense ops dashboard without motion noise.
-   Zero HTML changes. Selectors preserved from V6.0.
+   Phase 1: metric KPI uses spacing + type, not nested boxes.
    ========================================================================== */
 
 body {
   background-color: var(--sdlg-bg, #f3f6fa) !important;
 }
 
-/* ---------- Metric cards ---------- */
+/* ---------- Metric cards (Declutter Phase 1 — no nested boxes) ---------- */
+/* Rule: spacing + type hierarchy > border. Soft surface only. */
 .metric-grid {
-  gap: 14px !important;
-  margin-bottom: 24px !important;
+  gap: 8px 20px !important;
+  margin-bottom: 20px !important;
 }
 
 .metric-card {
-  background: var(--sdlg-surface, #ffffff) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  border-radius: var(--sdlg-radius, 12px) !important;
-  padding: 18px 20px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 8px 4px !important;
   min-height: 0 !important;
-  box-shadow: var(--sdlg-shadow-xs, 0 1px 2px rgba(15, 23, 42, 0.04)) !important;
+  box-shadow: none !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   position: relative !important;
-  overflow: hidden !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
-  contain: layout paint;
-  isolation: isolate;
+  overflow: visible !important;
+  transition: none !important;
+  contain: none;
+  isolation: auto;
 }
 
 .metric-card:hover {
   transform: none !important;
-  box-shadow: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.04)) !important;
-  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  background: transparent !important;
 }
 
 .metric-card:focus-within {
-  border-color: var(--sdlg-primary, #2563eb) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 
+/* Remove accent bar (was a mini-box cue) */
 .metric-card::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  bottom: 0 !important;
-  width: 3px !important;
-  background: var(--sdlg-primary, #2563eb) !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  background: transparent !important;
 }
 
 .metric-label {
@@ -60,7 +58,7 @@ body {
   color: var(--sdlg-text-muted, #64748b) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 4px !important;
 }
 
 .metric-value {
@@ -79,15 +77,14 @@ body {
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  isolation: isolate;
+  box-shadow: none !important;
 }
 
 .card:has(.metric-grid) > div:first-child {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  margin-bottom: 20px !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div {
@@ -161,170 +158,43 @@ body {
 
 .claim-row:hover,
 .action-row:hover {
-  background: var(--sdlg-surface, #ffffff) !important;
-  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
-  box-shadow: none !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
   transform: none !important;
 }
 
-.claim-row:focus-visible,
-.action-row:focus-visible {
-  outline: 2px solid var(--sdlg-primary, #2563eb) !important;
-  outline-offset: 2px !important;
-}
-
-.claim-row:last-child,
-.action-row:last-child {
-  margin-bottom: 0 !important;
-}
-
-/* ---------- Total estimasi ---------- */
-.total-estimasi-box {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-  color: #ffffff !important;
-  padding: 24px 28px !important;
-  border-radius: var(--sdlg-radius, 12px) !important;
-  box-shadow: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  margin: 24px 0 !important;
-  position: relative !important;
-  overflow: hidden !important;
-  border: 1px solid #1e293b !important;
-  isolation: isolate;
-}
-
-.total-estimasi-box::after {
-  content: "" !important;
-  position: absolute !important;
-  top: -40% !important;
-  right: -5% !important;
-  width: 200px !important;
-  height: 200px !important;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%) !important;
-  border-radius: 50% !important;
-  pointer-events: none !important;
-  z-index: 1 !important;
-}
-
-.total-estimasi-box .label {
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  color: #94a3b8 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.06em !important;
-  position: relative !important;
-  z-index: 2 !important;
-}
-
-.total-estimasi-box .value {
-  font-family: var(--sdlg-font-family, sans-serif) !important;
-  font-size: 30px !important;
-  font-weight: 700 !important;
-  color: #ffffff !important;
-  letter-spacing: -0.02em !important;
-  margin-top: 4px !important;
-  position: relative !important;
-  z-index: 2 !important;
-  font-variant-numeric: tabular-nums !important;
-}
-
-/* ---------- Chart cards ---------- */
-.card:has(canvas),
-.card:has(svg) {
-  padding: 20px !important;
+/* ---------- Section cards ---------- */
+.card,
+.card-pad {
   border-radius: var(--sdlg-radius, 12px) !important;
   border: 1px solid var(--sdlg-border, #e2e8f0) !important;
   background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  transition: border-color 0.15s ease !important;
-  isolation: isolate;
-}
-
-.card:has(canvas):hover,
-.card:has(svg):hover {
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-
-/* Chart bars — keep gradient, no hover drama */
-div[style*="background-color: blue" i],
-div[style*="background-color: rgb(0, 0, 255)" i],
-div[style*="background-color: rgb(0,0,255)" i],
-div[style*="background-color: #0000ff" i],
-div[style*="background-color: #3b82f6" i],
-div[style*="background-color: rgb(59, 130, 246)" i],
-div[style*="background-color: rgb(59,130,246)" i],
-div[style*="background: #3b82f6" i],
-div[style*="background: rgb(59, 130, 246)" i],
-div[style*="background: blue" i] {
-  border-radius: 99px !important;
-  background: linear-gradient(90deg, var(--sdlg-primary, #2563eb) 0%, #6366f1 100%) !important;
-  box-shadow: none !important;
-  transition: none !important;
-}
-
-div[style*="background-color: blue" i]:hover,
-div[style*="background-color: #3b82f6" i]:hover,
-div[style*="background-color: rgb(59, 130, 246)" i]:hover,
-div[style*="background: #3b82f6" i]:hover,
-div[style*="background: blue" i]:hover {
-  filter: none !important;
   box-shadow: none !important;
 }
 
-/* ---------- Snapshot grid ---------- */
-.snapshot-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-  gap: 12px !important;
-  margin-top: 20px !important;
-}
-
-.snapshot-item {
-  background: var(--sdlg-surface, #ffffff) !important;
-  padding: 16px 18px !important;
-  border-radius: var(--sdlg-radius, 12px) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 6px !important;
-  transition: border-color 0.15s ease !important;
-  contain: layout paint;
-  isolation: isolate;
-}
-
-.snapshot-item:hover {
-  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
-  transform: none !important;
-  box-shadow: var(--sdlg-shadow-xs) !important;
-}
-
-.snapshot-item:focus-within {
-  border-color: var(--sdlg-primary, #2563eb) !important;
-  box-shadow: var(--sdlg-ring, 0 0 0 3px rgba(37, 99, 235, 0.15)) !important;
-}
-
-.snapshot-item .label {
-  font-size: 11px !important;
-  color: var(--sdlg-text-muted, #64748b) !important;
-  font-weight: 650 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-}
-
-.snapshot-item .value {
-  font-family: var(--sdlg-font-family, sans-serif) !important;
-  font-size: 22px !important;
+.section-title {
+  font-size: 13px !important;
   font-weight: 700 !important;
   color: var(--sdlg-text-main, #0f172a) !important;
-  letter-spacing: -0.02em !important;
-  font-variant-numeric: tabular-nums !important;
 }
 
-/* ---------- Dark mode ---------- */
+.section-sub {
+  font-size: 12px !important;
+  color: var(--sdlg-text-muted, #64748b) !important;
+}
 
+/* ---------- Rank lists ---------- */
+.rank-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
@@ -332,18 +202,17 @@ div[style*="background: blue" i]:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
   .metric-grid {
-    gap: 12px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 560px) {
   .metric-card {
-    padding: 14px 16px !important;
+    padding: 6px 2px !important;
   }
   .metric-value {
     font-size: 22px !important;
   }
-
   .card:has(.metric-grid) {
     padding: 14px !important;
   }
@@ -353,53 +222,16 @@ div[style*="background: blue" i]:hover {
   .card:has(.metric-grid) > div:first-child > div > div:first-child {
     font-size: 20px !important;
   }
-
-  .total-estimasi-box {
-    padding: 18px 20px !important;
-    margin: 18px 0 !important;
-  }
-  .total-estimasi-box .value {
-    font-size: 24px !important;
-  }
-
-  .snapshot-grid {
-    gap: 10px !important;
-    margin-top: 14px !important;
-  }
-  .snapshot-item {
-    padding: 14px !important;
-  }
-  .snapshot-item .value {
-    font-size: 18px !important;
-  }
-
-  .claim-row,
-  .action-row {
-    padding: 10px 12px !important;
-  }
 }
 
-@media (max-width: 480px) {
-  .card:has(.metric-grid) > div:first-child {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
-
-/* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .metric-card,
-  .snapshot-item,
   .claim-row,
   .action-row,
-  .total-estimasi-box {
-    transition-duration: 0.01ms !important;
-  }
-
   .metric-card:hover,
-  .snapshot-item:hover,
   .claim-row:hover,
   .action-row:hover,
   .card:has(.metric-grid) > div:first-child > div:hover {
-    transform: none !important;
+    transition: none !important;
   }
 }
