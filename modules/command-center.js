@@ -1,17 +1,28 @@
 /**
- * command-center — EMERGENCY STUB 2026-10-22
- * Full V4 disabled: auto-refresh + realtime + 1000-row queue caused main-thread freeze on login.
- * Dashboard core (list claims) remains in index.html React app.
+ * command-center — stub (heavy realtime deferred to avoid login freeze)
+ * Log only when ?debug=1 or localStorage sdlg-debug=1
  */
-(function () {
+(function (root) {
   'use strict';
-  if (window.__SDLG_CC_STUB__) return;
-  window.__SDLG_CC_STUB__ = true;
-  window.SDLGCommandCenter = {
-    version: 'stub-2026-10-22',
+  if (root.__SDLG_CC_STUB__) return;
+  root.__SDLG_CC_STUB__ = true;
+
+  function isDebug() {
+    try {
+      if (/[?&]debug=1(?:&|$)/.test(String(root.location && root.location.search))) return true;
+      if (root.localStorage && root.localStorage.getItem('sdlg-debug') === '1') return true;
+    } catch (_) {}
+    return false;
+  }
+
+  root.SDLGCommandCenter = {
+    version: 'stub-2026-10-30',
     mount: function () {},
     unmount: function () {},
     refresh: function () { return Promise.resolve(null); }
   };
-  try { console.info('[SDLG] command-center emergency stub active'); } catch (_) {}
-})();
+
+  if (isDebug()) {
+    try { console.info('[SDLG] command-center stub (debug)'); } catch (_) {}
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
