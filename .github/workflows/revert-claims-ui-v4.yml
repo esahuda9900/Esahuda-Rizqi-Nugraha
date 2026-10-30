@@ -1,0 +1,30 @@
+name: Revert claims UI to v4
+on:
+  workflow_dispatch:
+jobs:
+  revert:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore CSS v4 and perf-runtime 1.7
+        run: |
+          git show 52dabb4be94202b973488e0ab3b97bb2518c7072:styles/sdlg-claims-ui-fix.css > styles/sdlg-claims-ui-fix.css
+          git show 926e03ee1c8f50ca0854213804fb6e8f0dfce93f:modules/perf-runtime.js > modules/perf-runtime.js
+          # force cache bust after revert
+          sed -i 's/20261030-stable-v1/20261030-revert-v4/g' modules/perf-runtime.js
+          sed -i 's/20261030-stable-v2/20261030-revert-v4/g' modules/perf-runtime.js
+          echo "CSS head:" && head -3 styles/sdlg-claims-ui-fix.css
+          echo "JS head:" && head -4 modules/perf-runtime.js
+          grep -c "upgradeClaimDetail" modules/perf-runtime.js || echo "no claim-detail DOM upgrade (good)"
+      - name: Commit
+        run: |
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git add styles/sdlg-claims-ui-fix.css modules/perf-runtime.js
+          git diff --cached --quiet && echo "No change" && exit 0
+          git commit -m "revert(ui): claims-ui-fix v4 + perf-runtime 1.7 (undo claim-detail layout break)"
+          git push
