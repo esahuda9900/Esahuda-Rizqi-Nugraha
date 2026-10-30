@@ -10593,7 +10593,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         { label: "Needs action", value: actionRequired.length, hint: "P0 + P1 yang perlu ditindaklanjuti", priority: "ACTION" }
                     ];
                     return React.createElement("div", { style: { marginTop: 14 } },
-                        React.createElement("div", { className: "card card-pad", style: { border: "1px solid #dbeafe", background: "linear-gradient(135deg,#ffffff 0%,#f8fbff 100%)" } },
+                        React.createElement("div", { className: "card card-pad", style: { border: "none", background: "#ffffff", boxShadow: "0 1px 3px rgba(15,23,42,0.08)" } },
                             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 } },
                                 React.createElement("div", null,
                                     React.createElement("div", { className: "section-title" }, "⚡ My Action Today"),
@@ -10603,7 +10603,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 actionCards.map(x => React.createElement("button", { key: x.label, onClick: () => {
                                     if (x.priority === "P0" || x.priority === "P1") setTab("list");
                                     else if (x.priority === "P2") setTab("list");
-                                }, style: { textAlign: "left", padding: "12px 13px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 10, cursor: "pointer" } },
+                                }, style: { textAlign: "left", padding: "12px 13px", border: "none", background: x.priority === "P0" ? "#fee2e2" : x.priority === "P1" ? "#fef3c7" : x.priority === "P2" ? "#e0f2fe" : "#f1f5f9", borderRadius: 10, cursor: "pointer" } },
                                     React.createElement("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 } },
                                         React.createElement("b", { style: { fontSize: 22, color: x.value ? "#0f172a" : "#94a3b8" } }, x.value),
                                         React.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: x.value ? "#2563eb" : "#94a3b8" } }, x.value ? "ACTION" : "CLEAR")),
