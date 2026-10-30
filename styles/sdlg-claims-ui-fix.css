@@ -1,22 +1,22 @@
-/* SDLG Claims UI v5 — super modern, clean, smooth (scoped) */
+/* SDLG Claims UI v4 — super modern, clean, smooth (scoped) */
 /* Expert polish: soft depth, refined type, calm hover, no ghost boxes */
-/* v5: claim-detail readable hierarchy + evidence empty chips */
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) {
   --claims-radius: 14px;
-  --claims-border: #e2e8f0;
-  --claims-surface: #ffffff;
+  --claims-border: #e8eef5;
   --claims-muted: #64748b;
   --claims-text: #0f172a;
-  --claims-primary: #2563eb;
+  --claims-primary: #1d4ed8;
+  --claims-surface: #ffffff;
   --claims-soft: #f8fafc;
 }
 
+/* ===== KPI GRID ===== */
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)) !important;
   gap: 10px !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 16px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi,
@@ -24,118 +24,248 @@
   background: var(--claims-surface) !important;
   border: 1px solid var(--claims-border) !important;
   border-radius: var(--claims-radius) !important;
+  padding: 14px 16px !important;
+  margin: 0 !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-  padding: 12px 14px !important;
   transform: none !important;
-  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 72px !important;
+  isolation: isolate !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi:hover,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-card:not(.claim-row):not(:has(button)):not(:has(input)):hover {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+  border-color: #c7d2e0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
   transform: none !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi__label,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi > div:first-child,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-card:not(.claim-row) > div:first-child {
   font-size: 11px !important;
   font-weight: 650 !important;
   color: var(--claims-muted) !important;
+  line-height: 1.25 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
   letter-spacing: 0.02em !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi__value,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi > div:nth-child(2),
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-card:not(.claim-row) > div:nth-child(2) {
   font-size: 18px !important;
   font-weight: 750 !important;
-  color: var(--claims-text) !important;
+  letter-spacing: -0.03em !important;
   line-height: 1.2 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi input,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi div,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-card:not(.claim-row) > div {
+  margin: 0 !important;
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+  padding: 0 !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--claims-text) !important;
 }
 
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi input,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi > div,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-card:not(.claim-row) > div {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+/* ===== FILTER + SEARCH ===== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-wrap.claims-searchbar {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto auto !important;
-  gap: 10px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
-  margin-bottom: 14px !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  background: var(--claims-surface) !important;
+  border: 1px solid var(--claims-border) !important;
+  border-radius: var(--claims-radius) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 12px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
+  min-width: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-input,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input {
-  border-radius: 12px !important;
-  border: 1px solid var(--claims-border) !important;
-  min-height: 42px !important;
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar select {
+  min-height: 38px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d0d9e6 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  font-size: 13.5px !important;
+  padding: 8px 12px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:focus,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box input:focus {
-  outline: 2px solid rgba(37, 99, 235, 0.25) !important;
-  border-color: #93c5fd !important;
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14) !important;
+  outline: none !important;
 }
 
 /* ===== LOADING / EMPTY — no ghost bar ===== */
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card {
-  border: 1px dashed #cbd5e1 !important;
-  background: var(--claims-soft) !important;
+  min-height: 88px !important;
+  display: grid !important;
+  place-content: center !important;
+  gap: 10px !important;
+  padding: 24px !important;
+  border: 1px dashed #dbe3ee !important;
   border-radius: var(--claims-radius) !important;
+  background: var(--claims-soft) !important;
+  color: var(--claims-muted) !important;
   box-shadow: none !important;
-  padding: 18px !important;
+  text-align: center !important;
+  font-size: 13.5px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card:empty,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card:empty {
   display: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto !important;
-  gap: 12px !important;
-  align-items: center !important;
-  padding: 12px 14px !important;
-  border: 1px solid var(--claims-border) !important;
-  border-radius: 12px !important;
-  background: #fff !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
-  transform: none !important;
-  margin-bottom: 8px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
-  transform: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row.sdlg-card {
-  /* upgraded by runtime */
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
-  background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9) !important;
-  background-size: 200% 100% !important;
-  animation: sdlg-skel 1.2s ease-in-out infinite !important;
+  border: 0 !important;
   border-radius: 8px !important;
+  background: linear-gradient(90deg, #edf1f7 25%, #f7f9fc 50%, #edf1f7 75%) !important;
+  background-size: 200% 100% !important;
+  animation: sdlg-claims-skeleton 1.4s ease-in-out infinite !important;
+  min-height: 12px !important;
 }
 
-@keyframes sdlg-skel {
+@keyframes sdlg-claims-skeleton {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .section-title,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-section-label {
+/* ===== CLAIM ROWS — flat, clean, smooth ===== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 14px 16px !important;
+  border: 1px solid var(--claims-border) !important;
+  border-radius: var(--claims-radius) !important;
+  background: var(--claims-surface) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  transform: none !important;
+  cursor: pointer !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover {
+  border-color: #c5d3e8 !important;
+  background: #f8fafc !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
+  transform: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row.sdlg-card {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div {
+  min-width: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(3) > div,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(3) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn:hover {
+  transform: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--primary {
+  background: var(--claims-primary) !important;
+  color: #fff !important;
+  border: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--primary:hover {
+  background: #1e40af !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--secondary {
+  background: #fff !important;
+  border: 1px solid var(--claims-border) !important;
+  color: var(--claims-text) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .page-title {
+  font-size: clamp(22px, 2.2vw, 28px) !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--claims-text) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .page-sub {
+  font-size: 13px !important;
+  color: var(--claims-muted) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .eyebrow {
   font-size: 11px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
@@ -146,9 +276,9 @@
 /* ===== CLAIM DETAIL calm (no nested ghosts) ===== */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
-  border: 1px solid var(--claims-border, #e2e8f0) !important;
-  border-radius: 14px !important;
-  background: #fff !important;
+  border: 1px solid var(--claims-border) !important;
+  border-radius: var(--claims-radius) !important;
+  background: var(--claims-surface) !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   transform: none !important;
 }
@@ -170,83 +300,6 @@
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card > div:not(:has(*)):not([class]),
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad > div:not(:has(*)):not([class]) {
   display: none !important;
-}
-
-/* ===== CLAIM DETAIL v5 — readable hierarchy, no form-ghost evidence ===== */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page {
-  --cd-border: #e2e8f0;
-  --cd-muted: #64748b;
-  --cd-text: #0f172a;
-  --cd-soft: #f8fafc;
-  max-width: 1120px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="card"] {
-  transform: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-item {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  padding: 8px 12px !important;
-  border-radius: 10px !important;
-  border: 1px solid var(--cd-border) !important;
-  background: #fff !important;
-  min-height: 0 !important;
-  box-shadow: none !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-item.is-empty {
-  background: var(--cd-soft) !important;
-  border-style: dashed !important;
-  border-color: #cbd5e1 !important;
-  opacity: 0.88;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-item .cd-evidence-label {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  color: var(--cd-muted) !important;
-  line-height: 1.3 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-item .cd-evidence-value {
-  font-size: 12.5px !important;
-  color: var(--cd-text) !important;
-  line-height: 1.45 !important;
-  white-space: pre-wrap !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-item.is-empty .cd-evidence-value {
-  color: #94a3b8 !important;
-  font-style: italic !important;
-  font-size: 12px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page table {
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
-  overflow: hidden !important;
-  border-radius: 10px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page th {
-  font-size: 11px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
 }
 
 @media (max-width: 900px) {
@@ -272,12 +325,6 @@
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input {
     font-size: 16px !important;
     min-height: 44px !important;
-  }
-}
-
-@media (max-width: 720px) {
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page .cd-evidence-grid {
-    grid-template-columns: 1fr !important;
   }
 }
 

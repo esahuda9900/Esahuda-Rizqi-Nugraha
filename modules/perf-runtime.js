@@ -1,5 +1,6 @@
 /**
- * SDLG Perf Runtime v1.8 — claims list + claim-detail evidence polish
+ * SDLG Perf Runtime v1.7 — claims CSS bust + DOM upgrade + safe list polyfill
+ * 2026-10-30: polyfill matches repository v3.1 (active-only, claim_id order)
  */
 (function () {
   'use strict';
@@ -32,74 +33,9 @@
     } catch (_) {}
   }
 
-  /** Claim detail: evidence boxes look like form inputs when empty — restyle to chips. */
-  function upgradeClaimDetailDom() {
-    try {
-      var page = document.querySelector('.page.claim-detail-page');
-      if (!page) return;
-
-      var headings = page.querySelectorAll('div');
-      var evidenceRoot = null;
-      for (var i = 0; i < headings.length; i++) {
-        var t = String(headings[i].textContent || '').replace(/\s+/g, ' ').trim();
-        if (/^Evidence\s*\/?\s*Photo Context$/i.test(t) || /^EVIDENCE\s*\/?\s*PHOTO/i.test(t)) {
-          evidenceRoot = headings[i].parentElement;
-          break;
-        }
-      }
-      if (!evidenceRoot) return;
-
-      var grid = null;
-      var children = evidenceRoot.children;
-      for (var c = 0; c < children.length; c++) {
-        var el = children[c];
-        if (el.children && el.children.length >= 2) {
-          var st = String(el.getAttribute('style') || '');
-          if (/grid/i.test(st) || el.children.length >= 4) {
-            grid = el;
-            break;
-          }
-        }
-      }
-      if (!grid) {
-        // fallback: first multi-child div after heading
-        for (var c2 = 0; c2 < children.length; c2++) {
-          if (children[c2].children && children[c2].children.length > 1) {
-            grid = children[c2];
-            break;
-          }
-        }
-      }
-      if (!grid) return;
-
-      grid.classList.add('cd-evidence-grid');
-      Array.prototype.forEach.call(grid.children, function (item) {
-        if (!item || item.nodeType !== 1) return;
-        item.classList.add('cd-evidence-item');
-        var kids = item.children;
-        if (kids[0]) kids[0].classList.add('cd-evidence-label');
-        if (kids[1]) {
-          kids[1].classList.add('cd-evidence-value');
-          var val = String(kids[1].textContent || '').trim();
-          if (!val) {
-            item.classList.add('is-empty');
-            if (!kids[1].getAttribute('data-cd-empty')) {
-              kids[1].setAttribute('data-cd-empty', '1');
-              kids[1].textContent = 'No caption';
-            }
-          } else {
-            item.classList.remove('is-empty');
-          }
-        } else {
-          item.classList.add('is-empty');
-        }
-      });
-    } catch (_) {}
-  }
-
   function bustClaimsUiCss() {
     try {
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-stable-v2';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-revert-v4';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
@@ -175,23 +111,18 @@
     };
   }
 
-  function runUpgrades() {
-    upgradeClaimsDom();
-    upgradeClaimDetailDom();
-  }
-
   function boot() {
     bustClaimsUiCss();
-    runUpgrades();
+    upgradeClaimsDom();
     try {
       if (typeof MutationObserver !== 'undefined') {
         var tmr = null;
         new MutationObserver(function () {
           clearTimeout(tmr);
-          tmr = setTimeout(runUpgrades, 80);
+          tmr = setTimeout(upgradeClaimsDom, 80);
         }).observe(document.documentElement, { childList: true, subtree: true });
       }
-      setInterval(runUpgrades, 2000);
+      setInterval(upgradeClaimsDom, 2000);
     } catch (_) {}
     tryPolyfillListPage();
     ensureXlsxLoader();
@@ -208,10 +139,9 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.8.0-claim-detail',
+    version: '1.7.0-stable',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
-    upgradeClaimsDom: upgradeClaimsDom,
-    upgradeClaimDetailDom: upgradeClaimDetailDom
+    upgradeClaimsDom: upgradeClaimsDom
   };
 })();
