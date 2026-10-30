@@ -1,6 +1,10 @@
 name: Bust dashboard polish cache
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'styles/sdlg-dashboard-polish.css'
+      - 'styles/sdlg-overview-v1.css'
 jobs:
   bust:
     runs-on: ubuntu-latest
@@ -13,20 +17,39 @@ jobs:
           from pathlib import Path
           p = Path('app.html')
           t = p.read_text(encoding='utf-8')
-          t2 = t.replace(
-              'styles/sdlg-dashboard-polish.css?v=20261030-overview-v1',
-              'styles/sdlg-dashboard-polish.css?v=20261030-declutter-kpi-v1',
-          )
-          t2 = t2.replace(
-              'href="styles/sdlg-dashboard-polish.css"',
-              'href="styles/sdlg-dashboard-polish.css?v=20261030-declutter-kpi-v1"',
-          )
-          p.write_text(t2, encoding='utf-8')
-          print('count', t2.count('declutter-kpi-v1'))
+          VER = '20261030-structure-v64'
+          # Normalize any prior cache key to the new one
+          for old in [
+              '20261030-declutter-kpi-v1',
+              '20261030-overview-v1',
+              '20261030-structure-v64',
+          ]:
+              t = t.replace(
+                  f'styles/sdlg-dashboard-polish.css?v={old}',
+                  f'styles/sdlg-dashboard-polish.css?v={VER}',
+              )
+              t = t.replace(
+                  f'styles/sdlg-overview-v1.css?v={old}',
+                  f'styles/sdlg-overview-v1.css?v={VER}',
+              )
+          if 'sdlg-dashboard-polish.css?v=' not in t:
+              t = t.replace(
+                  'href="styles/sdlg-dashboard-polish.css"',
+                  f'href="styles/sdlg-dashboard-polish.css?v={VER}"',
+              )
+          if 'sdlg-overview-v1.css?v=' not in t and 'sdlg-overview-v1.css' in t:
+              t = t.replace(
+                  'href="styles/sdlg-overview-v1.css"',
+                  f'href="styles/sdlg-overview-v1.css?v={VER}"',
+              )
+          p.write_text(t, encoding='utf-8')
+          print('dashboard', t.count(f'sdlg-dashboard-polish.css?v={VER}'))
+          print('overview', t.count(f'sdlg-overview-v1.css?v={VER}'))
+          print('old declutter', t.count('declutter-kpi-v1'))
           PY
           git config user.name "sdlg-bot"
           git config user.email "sdlg-bot@users.noreply.github.com"
           git add app.html
           git diff --cached --quiet && echo No change && exit 0
-          git commit -m "chore(cache): dashboard-polish declutter-kpi-v1"
+          git commit -m "chore(cache): force structure-v64 CSS query on app.html"
           git push
