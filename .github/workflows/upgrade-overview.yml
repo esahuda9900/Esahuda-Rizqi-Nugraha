@@ -1,0 +1,119 @@
+name: Upgrade Overview tab
+on:
+  workflow_dispatch:
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app.html for Overview upgrade
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('app.html')
+          t = p.read_text(encoding='utf-8')
+
+          m = re.search(
+              r'(  <link rel="stylesheet" href="styles/sdlg-modern-refresh\.css"[^>]*>.*?<link rel="stylesheet" href="styles/sdlg-claims-ui-fix\.css[^"]*"[^>]*>)',
+              t,
+              re.S,
+          )
+          if m:
+              new = '''  <link rel="stylesheet" href="styles/sdlg-design-tokens.css" />
+            <link rel="stylesheet" href="styles/sdlg-base.css" />
+            <link rel="stylesheet" href="styles/sdlg-components.css" />
+            <link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
+            <link rel="stylesheet" href="styles/sdlg-modern-refresh.css" />
+            <link rel="stylesheet" href="styles/sdlg-responsive.css" />
+            <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
+            <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-overview-v1" />
+            <link rel="stylesheet" href="styles/sdlg-overview-v1.css?v=20261030-overview-v1" />'''
+              # normalize indent to 2 spaces
+              new = '\n'.join(line if line.startswith('  ') or not line.strip() else '  ' + line.lstrip() for line in new.splitlines())
+              t = t[:m.start(1)] + new + t[m.end(1):]
+              print('css order ok')
+          else:
+              print('css block not found')
+
+          t = t.replace(
+              '<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css">',
+              '<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css?v=20261030-overview-v1">',
+              1,
+          )
+
+          old_page = 'return (React.createElement("div", { className: "page" },\n                React.createElement("div", { style: { display: "flex", justifyContent: "space-betwe'
+          new_page = 'return (React.createElement("div", { className: "page overview-page", "data-sdlg-overview": "1" },\n                React.createElement("div", { style: { display: "flex", justifyContent: "space-betwe'
+          if old_page in t:
+              t = t.replace(old_page, new_page, 1)
+              print('overview-page class ok')
+          else:
+              print('page class pattern missing')
+
+          old_bar = '''/* __SDLG_ANALYTICS_PERIOD_BAR_V2__ */
+                          (window.SDLGBossAnalytics && window.SDLGBossAnalytics.periodFilterBar)
+                              ? window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth })
+                              : null,'''
+          # tolerate indent differences via regex
+          t2, n = re.subn(
+              r'/\* __SDLG_ANALYTICS_PERIOD_BAR_V2__ \*/\s*\(window\.SDLGBossAnalytics && window\.SDLGBossAnalytics\.periodFilterBar\)\s*\?\s*window\.SDLGBossAnalytics\.periodFilterBar\(\{ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth \}\)\s*:\s*null,',
+              '''/* __SDLG_ANALYTICS_PERIOD_BAR_V3__ */
+                          (() => {
+                              try {
+                                  if (window.SDLGBossAnalytics && typeof window.SDLGBossAnalytics.periodFilterBar === "function") {
+                                      return window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth });
+                                  }
+                              } catch (e) { try { console.warn("[SDLG] periodFilterBar failed", e); } catch (_) {} }
+                              return null;
+                          })(),''',
+              t,
+              count=1,
+          )
+          print('period bar', n)
+          t = t2
+
+          t2, n = re.subn(
+              r'/\* __SDLG_BOSS_EXTRA_PANELS_V2__ \*/\s*\(window\.SDLGBossAnalytics && window\.SDLGBossAnalytics\.renderExtraPanels\)\s*\?\s*window\.SDLGBossAnalytics\.renderExtraPanels\(\{[\s\S]*?year: analyticsYear,\s*month: analyticsMonth\s*\}\)\s*:\s*null\)\);',
+              '''/* __SDLG_BOSS_EXTRA_PANELS_V3__ */
+                          (() => {
+                              try {
+                                  if (window.SDLGBossAnalytics && typeof window.SDLGBossAnalytics.renderExtraPanels === "function") {
+                                      return window.SDLGBossAnalytics.renderExtraPanels({
+                                          React,
+                                          claims: scopeClaims,
+                                          bossRows: scopeBossRows,
+                                          actionCenterRows,
+                                          stageAgingRows,
+                                          statusDwellRows,
+                                          year: analyticsYear,
+                                          month: analyticsMonth
+                                      });
+                                  }
+                              } catch (e) { try { console.warn("[SDLG] renderExtraPanels failed", e); } catch (_) {} }
+                              return null;
+                          })()));''',
+              t,
+              count=1,
+          )
+          print('extra panels', n)
+          t = t2
+
+          t = t.replace('boss-analytics-dashboard.js?v=20261030-stable-v2', 'boss-analytics-dashboard.js?v=20261030-overview-v1')
+          t = t.replace('command-center.js?v=20261030-stable-v2', 'command-center.js?v=20261030-overview-v1')
+
+          p.write_text(t, encoding='utf-8')
+          print('overview-page', t.count('overview-page'))
+          print('overview css', t.count('sdlg-overview-v1.css'))
+          print('V3 bar', '__SDLG_ANALYTICS_PERIOD_BAR_V3__' in t)
+          print('V3 panels', '__SDLG_BOSS_EXTRA_PANELS_V3__' in t)
+          PY
+      - name: Commit
+        run: |
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git add app.html
+          git diff --cached --quiet && echo "No change" && exit 0
+          git commit -m "feat(overview): CSS layer order, overview-page, safe period filter, cache bust"
+          git push
