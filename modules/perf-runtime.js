@@ -1,10 +1,25 @@
 /**
- * SDLG Perf Runtime v1.0 — soft-restore from stable
- * - Polyfill listClaimsPage if needed
- * - Ensure SheetJS loads on demand before export
+ * SDLG Perf Runtime v1.2 — soft-restore + claims CSS cache bust
  */
 (function () {
   'use strict';
+
+  function bustClaimsUiCss() {
+    try {
+      var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claim-detail-v2';
+      if (links && links.length) {
+        for (var i = 0; i < links.length; i++) links[i].href = href;
+        return;
+      }
+      if (document.getElementById('sdlg-claims-ui-fix-bust')) return;
+      var link = document.createElement('link');
+      link.id = 'sdlg-claims-ui-fix-bust';
+      link.rel = 'stylesheet';
+      link.href = href;
+      (document.head || document.documentElement).appendChild(link);
+    } catch (_) {}
+  }
 
   function tryPolyfillListPage() {
     try {
@@ -60,6 +75,7 @@
   }
 
   function boot() {
+    bustClaimsUiCss();
     tryPolyfillListPage();
     ensureXlsxLoader();
     var tries = 0;
@@ -74,5 +90,9 @@
     boot();
   }
 
-  window.SDLGPerfRuntime = { version: '1.0.0-soft-restore', tryPolyfillListPage: tryPolyfillListPage };
+  window.SDLGPerfRuntime = {
+    version: '1.2.0-claim-detail-css',
+    tryPolyfillListPage: tryPolyfillListPage,
+    bustClaimsUiCss: bustClaimsUiCss,
+  };
 })();
