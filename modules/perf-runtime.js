@@ -1,5 +1,5 @@
 /**
- * SDLG Perf Runtime v1.5 — claims CSS bust + DOM upgrade for Claims KPI
+ * SDLG Perf Runtime v1.6 — claims CSS bust v6 + DOM upgrade for Claims KPI
  */
 (function () {
   'use strict';
@@ -34,8 +34,8 @@
 
   function bustClaimsUiCss() {
     try {
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v6';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v5';
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
         return;
@@ -130,7 +130,7 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.5.0-claims-dom-upgrade',
+    version: '1.6.0-claims-modern-v6',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
     upgradeClaimsDom: upgradeClaimsDom,
