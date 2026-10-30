@@ -19,7 +19,6 @@
     .err { color: #fca5a5; font-size: .85rem; min-height: 1.2em; margin: 0 0 10px; }
     .ok { color: #86efac; font-size: .85rem; }
   </style>
-  <!-- routes: #/overview #/claims #/sdlg-input #/master-data -->
 </head>
 <body>
   <div class="card">
@@ -35,13 +34,13 @@
     </form>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"></script>
-  <script src="./modules/supabase-client.js?v=20261030-stable-v1"></script>
-  <script src="./modules/data-pipeline-guard.js?v=20261030-stable-v1"></script>
-  <script src="./modules/claim-fields.js?v=20261030-stable-v1"></script>
-  <script src="./modules/sdlg-repository.js?v=20261030-stable-v1"></script>
-  <script src="./modules/paste-parse-ux.js?v=20261030-stable-v1"></script>
-  <script src="./modules/wo-claim-policy.js?v=20261030-stable-v1"></script>
-  <script src="./modules/wo-collision-modal.js?v=20261030-stable-v1"></script>
+  <script src="./modules/supabase-client.js?v=20261030-stable-v2"></script>
+  <script src="./modules/data-pipeline-guard.js?v=20261030-stable-v2"></script>
+  <script src="./modules/claim-fields.js?v=20261030-stable-v2"></script>
+  <script src="./modules/sdlg-repository.js?v=20261030-stable-v2"></script>
+  <script src="./modules/paste-parse-ux.js?v=20261030-stable-v2"></script>
+  <script src="./modules/wo-claim-policy.js?v=20261030-stable-v2"></script>
+  <script src="./modules/wo-collision-modal.js?v=20261030-stable-v2"></script>
   <script>
 (function () {
   var URL = 'https://frqvelcreczmnofldrga.supabase.co';
@@ -70,7 +69,7 @@
   }
 
   function goApp() {
-    window.location.replace('./app.html?v=20261030-stable-v1');
+    window.location.replace('./app.html?v=20261030-stable-v2');
   }
 
   setTimeout(function () {
@@ -129,9 +128,9 @@
   });
 })();
   </script>
-  <script src="./modules/sdlg-hash-router.js?v=20261030-stable-v1"></script>
-  <script src="./modules/sdlg-hash-tab-bridge.js?v=20261030-stable-v1"></script>
-  <script src="./modules/sdlg-input-claim-lock.js?v=20261030-stable-v1"></script>
-  <script src="./modules/sdlg-portal-finance-ux.js?v=20261030-stable-v1"></script>
+  <script src="./modules/sdlg-hash-router.js?v=20261030-stable-v2"></script>
+  <script src="./modules/sdlg-hash-tab-bridge.js?v=20261030-stable-v2"></script>
+  <script src="./modules/sdlg-input-claim-lock.js?v=20261030-stable-v2"></script>
+  <script src="./modules/sdlg-portal-finance-ux.js?v=20261030-stable-v2"></script>
 </body>
 </html>
