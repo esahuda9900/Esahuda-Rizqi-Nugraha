@@ -24,3 +24,7 @@ Unused layers live in `_archive/` (not deployed). Do not add new `*-vN.css` laye
 1. Visual only — no business/RPC changes.
 2. Claims list/detail: prefer `sdlg-claims-ui-fix.css`.
 3. Cache-bust with `?v=` when changing critical CSS.
+
+## Theme
+
+**Light only.** Dark theme removed 2026-10-30 (OS preference ignored). Theme switcher deleted.
