@@ -1,5 +1,5 @@
 /**
- * SDLG Perf Runtime v1.2 — soft-restore + claims CSS cache bust
+ * SDLG Perf Runtime v1.3 — soft-restore + claims CSS cache bust
  */
 (function () {
   'use strict';
@@ -7,7 +7,7 @@
   function bustClaimsUiCss() {
     try {
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claim-detail-v2';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-kpi-v3';
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
         return;
@@ -91,7 +91,7 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.2.0-claim-detail-css',
+    version: '1.3.0-claims-kpi-v3',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
   };
