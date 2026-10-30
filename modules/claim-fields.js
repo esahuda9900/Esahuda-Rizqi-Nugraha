@@ -1,13 +1,8 @@
 /**
- * SDLG Claim Field Registry + Smart Module Loader — V2.0
- * 
- * ═══════════════════════════════════════════════════════════
- * UPGRADE V2.0:
- * ✅ ANTI-RACE CONDITION: File di-load berurutan (async=false).
- * ✅ SMART NOTIFICATION: Muncul notif jika ada file gagal load.
- * ✅ IMMUTABLE CONFIG: Data field dilindungi Object.freeze().
- * ✅ AUTO-RETRY: Bisa coba load ulang jika gagal.
- * ═══════════════════════════════════════════════════════════
+ * SDLG Claim Field Registry + Smart Module Loader — V2.1
+ *
+ * Clean 2026-10-30: only load modules that still exist in /modules
+ * (archived files no longer requested → console 404 silence).
  */
 (function (global) {
   'use strict';
@@ -40,7 +35,6 @@
     return String(s || '').replace(/^\s*technician\s*[\u2014\u2013\-:]\s*/i, '').trim();
   }
 
-  // Freeze object biar gak bisa diubah-ubah sama script lain (Security)
   global.SDLG_CLAIM_FIELDS = Object.freeze({
     CLAIM_SELECT: CLAIM_SELECT.join(','),
     CLAIM_SELECT_LIST: Object.freeze(CLAIM_SELECT),
@@ -50,31 +44,30 @@
   });
 
   // ─────────────────────────────────────────────────────────
-  // 2. KONFIGURASI MODUL YANG MAU DI-LOAD
+  // 2. MODUL AKTIF SAJA (yang masih ada di /modules, bukan _archive)
   // ─────────────────────────────────────────────────────────
   var MODULES = [
-    { src: './modules/sdlg-hash-router.js?v=20261012-v221', attr: 'data-sdlg-hash-router' },
-    { src: './modules/sdlg-portal-finance-ux.js?v=20261012-v53', attr: 'data-sdlg-finance-ux' },
-    { src: './modules/sdlg-route-finish.js?v=20261010-v15', attr: 'data-sdlg-route-finish' },
-    { src: './modules/sdlg-ui-polish-v3.js?v=20261010-v33', attr: 'data-sdlg-ui-polish-v3' },
-    { src: './modules/sdlg-auth-route-guard.js?v=20261026-session-v24', attr: 'data-sdlg-auth-route-guard' },
-    { src: './modules/sdlg-overview-session-gate.js?v=20261010-v12', attr: 'data-sdlg-overview-gate' },
-    { src: './modules/sdlg-overview-ux.js?v=20261010-v11', attr: 'data-sdlg-overview-ux' }
+    { src: './modules/sdlg-hash-router.js?v=20261030-clean-v1', attr: 'data-sdlg-hash-router' },
+    { src: './modules/sdlg-portal-finance-ux.js?v=20261030-clean-v1', attr: 'data-sdlg-finance-ux' },
+    { src: './modules/sdlg-ui-polish-v3.js?v=20261030-clean-v1', attr: 'data-sdlg-ui-polish-v3' }
   ];
 
+  // Removed (archived → 404):
+  // sdlg-route-finish.js, sdlg-auth-route-guard.js,
+  // sdlg-overview-session-gate.js, sdlg-overview-ux.js
+
   // ─────────────────────────────────────────────────────────
-  // 3. SMART LOADER (Berurutan & Anti-Gagal)
+  // 3. SMART LOADER
   // ─────────────────────────────────────────────────────────
   function loadScript(mod) {
     return new Promise(function (resolve) {
-      // Kalau udah ada di halaman, skip (jangan dobel)
       if (document.querySelector('script[' + mod.attr + ']')) {
         return resolve({ ok: true, skipped: true });
       }
 
       var s = document.createElement('script');
       s.src = mod.src;
-      s.async = false; // WAJIB FALSE: Biar urutan gak kacau!
+      s.async = false;
       s.setAttribute(mod.attr, '1');
 
       s.onload = function () {
@@ -84,7 +77,6 @@
 
       s.onerror = function () {
         console.warn('[SDLG Loader] ❌ Gagal load: ' + mod.src);
-        // Munculin notif kalau SDLGNotify tersedia
         if (global.SDLGNotify && global.SDLGNotify.error) {
           global.SDLGNotify.error('Modul Gagal Dimuat', 'File berikut gagal di-download: ' + mod.attr);
         }
@@ -95,14 +87,11 @@
     });
   }
 
-  // ─────────────────────────────────────────────────────────
-  // 4. EKSEKUSI (Load Satu per Satu)
-  // ─────────────────────────────────────────────────────────
   function loadAllModules() {
     console.info('[SDLG Loader] Memulai proses load ' + MODULES.length + ' modul...');
-    
+
     var chain = Promise.resolve();
-    
+
     MODULES.forEach(function (mod) {
       chain = chain.then(function () {
         return loadScript(mod);
@@ -115,7 +104,6 @@
     });
   }
 
-  // Jalanin cuma kalau DOM udah siap
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', loadAllModules, { once: true });
