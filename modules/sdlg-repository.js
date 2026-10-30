@@ -1,13 +1,13 @@
 /**
  * SDLG_REPOSITORY — data access layer
- * v3.1: exclude archived_at on all list paths; count cache consistency;
- * soft-restore cap 300 retained (anti-hang).
+ * v3.2: full pagination (no hard 300 cap); active-only; safety max 100 pages (10k rows)
  */
 (function (global) {
   'use strict';
 
   var PAGE_SIZE = 100;
-  var MAX_PAGES = 3;
+  /** Safety ceiling only — not a product limit. Stops runaway loops. */
+  var MAX_PAGES_SAFETY = 100;
   var MAX_RETRIES = 3;
   var COUNT_CACHE_KEY = 'sdlg:claims-count:v1';
   var COUNT_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -18,6 +18,21 @@
       if (c) return c;
     }
     return global.sdlgSupabase || global.supabaseClient || null;
+  }
+
+  function isDebug() {
+    try {
+      if (/[?&]debug=1(?:&|$)/.test(String(global.location && global.location.search))) return true;
+      if (global.localStorage && global.localStorage.getItem('sdlg-debug') === '1') return true;
+    } catch (_) {}
+    return false;
+  }
+
+  function debugLog() {
+    if (!isDebug()) return;
+    try {
+      console.info.apply(console, ['[SDLG repository]'].concat([].slice.call(arguments)));
+    } catch (_) {}
   }
 
   function isTransient(error) {
@@ -89,12 +104,13 @@
     } catch (_) {}
   }
 
-  /** Active claims only — archived rows never enter the UI list. */
   function activeClaimsQuery(client) {
     return client.from('claims').select('*').is('archived_at', null).order('claim_id', { ascending: false });
   }
 
   var repo = {
+    PAGE_SIZE: PAGE_SIZE,
+
     async countClaims() {
       var client = getClient();
       if (!client) return 0;
@@ -128,25 +144,16 @@
       return normalizeRows(result && result.data);
     },
 
+    /**
+     * Full list of active claims — pages until a short page or safety ceiling.
+     * Yields between pages so the main thread stays responsive.
+     */
     async listClaims() {
       var client = getClient();
       if (!client) throw new Error('Supabase client not ready');
 
-      try {
-        var result = await runRead(function () {
-          return activeClaimsQuery(client).range(0, 299);
-        });
-        if (result && !result.error && Array.isArray(result.data)) {
-          var rows = normalizeRows(result.data);
-          if (rows.length < 300) {
-            writeCountCache(rows.length);
-            return rows;
-          }
-        }
-      } catch (_) {}
-
       var all = [];
-      for (var page = 0; page < MAX_PAGES; page++) {
+      for (var page = 0; page < MAX_PAGES_SAFETY; page++) {
         var pageRows = null;
         var attempts = 0;
         while (attempts < MAX_RETRIES) {
@@ -160,9 +167,14 @@
           }
         }
         all = all.concat(pageRows || []);
+        debugLog('page', page, 'rows', (pageRows && pageRows.length) || 0, 'total', all.length);
         if (!pageRows || pageRows.length < PAGE_SIZE) break;
+        // yield to UI between full pages
+        await sleep(0);
       }
+
       writeCountCache(all.length);
+      debugLog('listClaims done', all.length);
       return all;
     },
 
@@ -255,7 +267,5 @@
   global.SDLG_REPOSITORY = repo;
   global.SDLGRepository = repo;
   global.sdlgRepository = repo;
-  try {
-    console.info('[SDLG] sdlg-repository.js v3.1 (active-only, cap 300)');
-  } catch (_) {}
+  debugLog('v3.2 ready (full pagination, active-only)');
 })(typeof window !== 'undefined' ? window : globalThis);
