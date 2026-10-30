@@ -1,0 +1,63 @@
+name: Bust app.html module cache
+on:
+  workflow_dispatch:
+jobs:
+  bust:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rewrite cache-bust query on app.html script tags
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('app.html')
+          text = p.read_text(encoding='utf-8')
+          VER = '20261030-stable-v2'
+          reps = [
+              ('?v=20261026-session-v24', f'?v={VER}'),
+              ('?v=20261026-integrity-v1', f'?v={VER}'),
+              ('?v=20261030-claims-modern-v6', f'?v={VER}'),
+              ('?v=20261001-restore2', f'?v={VER}'),
+              ('modules/vin-auto-lookup.js?v=1.0', f'modules/vin-auto-lookup.js?v={VER}'),
+              ('src="./modules/data-pipeline-guard.js"', f'src="./modules/data-pipeline-guard.js?v={VER}"'),
+              ('src="./modules/paste-parse-ux.js"', f'src="./modules/paste-parse-ux.js?v={VER}"'),
+              ('src="./modules/command-center.js"', f'src="./modules/command-center.js?v={VER}"'),
+              ('src="./modules/boss-analytics-dashboard.js"', f'src="./modules/boss-analytics-dashboard.js?v={VER}"'),
+              ('src="./modules/perf-runtime.js"', f'src="./modules/perf-runtime.js?v={VER}"'),
+              ('src="./modules/sdlg-hash-router.js"', f'src="./modules/sdlg-hash-router.js?v={VER}"'),
+          ]
+          for a, b in reps:
+              text = text.replace(a, b)
+          def add_ver(m):
+              src = m.group(1)
+              if f'?v={VER}' in src:
+                  return m.group(0)
+              if '?' in src:
+                  return m.group(0)
+              return f'src="{src}?v={VER}"'
+          text = re.sub(
+              r'src="(\./modules/(?:supabase-client|claim-fields|sdlg-repository|data-pipeline-guard|paste-parse-ux|command-center|boss-analytics-dashboard|perf-runtime|sdlg-hash-router|wo-claim-policy|wo-collision-modal)\.js)"',
+              add_ver,
+              text,
+          )
+          if 'rel="icon"' not in text and '<head>' in text:
+              text = text.replace(
+                  '<head>',
+                  '<head>\n  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'%3E%3Crect width=\'32\' height=\'32\' rx=\'6\' fill=\'%232563eb\'/%3E%3Ctext x=\'16\' y=\'22\' text-anchor=\'middle\' fill=\'white\' font-size=\'14\' font-family=\'system-ui\' font-weight=\'700\'%3ES%3C/text%3E%3C/svg%3E" />',
+                  1,
+              )
+          p.write_text(text, encoding='utf-8')
+          print('stable-v2', text.count(VER))
+          print('old session', text.count('20261026-session-v24'))
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git add app.html
+          git diff --cached --quiet && echo "No change" && exit 0
+          git commit -m "fix(cache): app.html module cache-bust stable-v2 (force new router/repo/stubs)"
+          git push
