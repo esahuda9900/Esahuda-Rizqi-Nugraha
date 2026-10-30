@@ -1,0 +1,36 @@
+name: Merge inline declutter to main
+on:
+  workflow_dispatch:
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge fix/inline-styles-declutter into main
+        run: |
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git fetch origin fix/inline-styles-declutter
+          git checkout main
+          git merge origin/fix/inline-styles-declutter -m "merge: fix/inline-styles-declutter — My Action Today soft chips"
+          # cache-bust app.html query so browsers fetch new inline styles
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('app.html')
+          t = p.read_text(encoding='utf-8')
+          VER = '20261030-action-today-v1'
+          for old in ['20261030-structure-v64', '20261030-declutter-kpi-v1', '20261030-overview-v1', VER]:
+              t = t.replace(f'sdlg-dashboard-polish.css?v={old}', f'sdlg-dashboard-polish.css?v={VER}')
+              t = t.replace(f'sdlg-overview-v1.css?v={old}', f'sdlg-overview-v1.css?v={VER}')
+          p.write_text(t, encoding='utf-8')
+          print('fee2e2', '#fee2e2' in t)
+          print('new card', 'boxShadow: "0 1px 3px rgba(15,23,42,0.08)"' in t)
+          PY
+          git add app.html
+          git diff --cached --quiet || git commit -m "chore(cache): bust after My Action Today inline declutter"
+          git push origin main
