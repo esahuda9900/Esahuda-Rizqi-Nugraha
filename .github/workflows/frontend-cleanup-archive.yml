@@ -1,0 +1,161 @@
+name: Frontend cleanup — archive dead CSS/modules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Archive unused styles + modules, delete junk
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p styles/_archive modules/_archive
+
+          for f in \
+            sdlg-alive-recolor-v1.css \
+            sdlg-claim-detail-clean-v2.css \
+            sdlg-command-center-v2.css \
+            sdlg-compact-claim-detail-v1.css \
+            sdlg-container-queries.css \
+            sdlg-input-helper-v1.css \
+            sdlg-modern-layout-grid.css \
+            sdlg-portal-helper-v2.css \
+            sdlg-saas-dark-v1.css \
+            sdlg-saas-shell-v1.css \
+            sdlg-ui-redesign.css \
+            sdlg-ux-polish-v2.css \
+            sdlg-ux-polish-v4.css \
+            sdlg-warranty-tracking-v1.css
+          do
+            if [ -f "styles/$f" ]; then
+              git mv "styles/$f" "styles/_archive/$f"
+              echo "archived styles/$f"
+            fi
+          done
+
+          for f in \
+            machine-360.js \
+            claim-context-resolve.js \
+            sdlg-portal-ux-v2.js \
+            sdlg-route-finish.js \
+            unmatched-wo-queue.js \
+            sdlg-ui-consolidate.js \
+            sdlg-portal-copy-helper.js \
+            sdlg-overview-loading.js \
+            sdlg-policy-repair-hardfix.js \
+            sdlg-input-hydrate.js \
+            warranty-tracking-ux.js \
+            sdlg-portal-enrich.js \
+            sdlg-input-helper-ux.js \
+            sdlg-input-helper-ux.v18.js \
+            sdlg-input-claim-sync.js \
+            sdlg-policy-table-fill.js \
+            warranty-assessment-ux.js \
+            sdlg-auth-route-guard.js \
+            self-signup.js \
+            policy-runtime-fix.js \
+            sdlg-input-empty-guard.js \
+            sdlg-overview-ux.js \
+            nav-claim-restore.js \
+            sdlg-repair-date-inject.js \
+            claim-detail-canonical-helper.js \
+            sdlg-overview-session-gate.js \
+            claim-detail-layout-fix.js \
+            feedback-person-fix.js \
+            ops-clean-ui.js \
+            sdlg-inline-enforcer.js \
+            sdlg-overview-ux.css \
+            sdlg-ui-polish-v3.css \
+            sdlg-ui-polish-v4.css \
+            boot.js
+          do
+            if [ -f "modules/$f" ]; then
+              git mv "modules/$f" "modules/_archive/$f"
+              echo "archived modules/$f"
+            fi
+          done
+
+          rm -f __trigger_bake_parser_fix*.txt
+          echo "removed trigger junk"
+
+          cat > styles/_archive/README.md << 'EOF'
+          # Archived styles (not linked from production app.html)
+
+          Moved 2026-10-30 during frontend cleanup. Not deployed to Pages.
+          EOF
+
+          cat > modules/_archive/README.md << 'EOF'
+          # Archived modules (not loaded by production app.html / index.html)
+
+          Moved 2026-10-30. Not copied to GitHub Pages.
+          Restore by moving back to modules/ and adding a script tag if needed.
+          EOF
+
+          cat > styles/README.md << 'EOF'
+          # Styles — SDLG Warranty (production)
+
+          ## Active (linked from app.html)
+
+          | File | Role |
+          |------|------|
+          | `sdlg-design-tokens.css` | tokens |
+          | `sdlg-base.css` | base |
+          | `sdlg-components.css` | buttons, cards, inputs |
+          | `sdlg-modern-refresh.css` | layout shell |
+          | `sdlg-responsive.css` | breakpoints |
+          | `sdlg-ops-clean-v1.css` | flat/no-lift |
+          | `sdlg-ux-polish-v3.css` | polish |
+          | `sdlg-dashboard-polish.css` | dashboard metrics |
+          | `sdlg-claims-ui-fix.css` | **Claims tab** (KPI + rows) |
+          | `fonts/` | IBM Plex |
+
+          ## Archive
+
+          Unused layers live in `_archive/` (not deployed). Do not add new `*-vN.css` layers — edit an active file instead.
+
+          ## Rules
+
+          1. Visual only — no business/RPC changes.
+          2. Claims list/detail: prefer `sdlg-claims-ui-fix.css`.
+          3. Cache-bust with `?v=` when changing critical CSS.
+          EOF
+
+      - name: Exclude _archive from Pages deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/static.yml')
+          t = p.read_text()
+          if '_archive' in t and 'rsync' in t:
+              print('already patched')
+          else:
+              old = '          cp -R modules _site/modules\n          if [ -d styles ]; then cp -R styles _site/styles; fi'
+              new = '''          mkdir -p _site/modules _site/styles\n          # Skip _archive (dead CSS/modules)\n          rsync -a --exclude '_archive' modules/ _site/modules/\n          if [ -d styles ]; then rsync -a --exclude '_archive' styles/ _site/styles/; fi'''
+              if old not in t:
+                  raise SystemExit('static.yml pattern not found')
+              p.write_text(t.replace(old, new, 1))
+              print('static.yml updated')
+          PY
+
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(frontend): archive dead CSS/modules, delete trigger junk"
+          git push origin HEAD:main
