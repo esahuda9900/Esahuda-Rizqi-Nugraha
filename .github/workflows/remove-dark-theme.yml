@@ -20,8 +20,7 @@ jobs:
           from pathlib import Path
           import re
 
-          def strip_prefers_dark_blocks(text: str) -> str:
-              """Remove @media (prefers-color-scheme: dark) { ... } blocks (nested braces)."""
+          def strip_prefers_dark_blocks(text):
               out = []
               i = 0
               pattern = re.compile(r'@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{', re.I)
@@ -31,9 +30,8 @@ jobs:
                       out.append(text[i:])
                       break
                   out.append(text[i:m.start()])
-                  # find matching close brace
                   depth = 0
-                  j = m.end() - 1  # at {
+                  j = m.end() - 1
                   while j < len(text):
                       if text[j] == '{':
                           depth += 1
@@ -46,15 +44,9 @@ jobs:
                   i = j
               return ''.join(out)
 
-          def strip_data_theme_dark_rules(text: str) -> str:
-              """Remove [data-theme=dark] / html[data-theme=dark] rule blocks."""
-              # Multi-selector dark rules
+          def strip_data_theme_dark_rules(text):
               out = text
-              # Repeatedly remove blocks starting with dark selectors
-              sel_re = re.compile(
-                  r'(?:html)?\[data-theme=["\']dark["\']\][^{]*\{',
-                  re.I,
-              )
+              sel_re = re.compile(r'(?:html)?\[data-theme=["\']dark["\']\][^{]*\{', re.I)
               while True:
                   m = sel_re.search(out)
                   if not m:
@@ -73,87 +65,61 @@ jobs:
                   out = out[:m.start()] + out[j:]
               return out
 
-          def force_light_scheme(text: str) -> str:
-              text = re.sub(r'color-scheme\s*:\s*light\s+dark\s*;', 'color-scheme: light;', text)
-              text = re.sub(r'color-scheme\s*:\s*dark\s*;', 'color-scheme: light;', text)
-              return text
-
-          css_files = list(Path('styles').glob('*.css'))
-              # only root styles, not _archive
-          changed = []
-          for path in css_files:
-              if path.parent.name == '_archive':
-                  continue
-              raw = path.read_text(encoding='utf-8', errors='replace')
-              new = raw
-              new = strip_prefers_dark_blocks(new)
-              new = strip_data_theme_dark_rules(new)
-              new = force_light_scheme(new)
-              # Drop theme-switcher UI styles entirely
-              new = re.sub(
-                  r'/\*[^*]*theme switcher[^*]*\*/\s*\.sdlg-theme-switcher[^{]*\{[^}]*\}(?:\s*\.sdlg-theme-switcher[^{]*\{[^}]*\})*',
-                  '',
-                  new,
-                  flags=re.I,
-              )
-              # simpler: remove any .sdlg-theme-switcher rule blocks
+          def strip_theme_switcher_rules(text):
               while True:
-                  m = re.search(r'\.sdlg-theme-switcher[^{]*\{', new)
+                  m = re.search(r'\.sdlg-theme-switcher[^{]*\{', text)
                   if not m:
                       break
                   depth = 0
                   j = m.end() - 1
-                  while j < len(new):
-                      if new[j] == '{':
+                  while j < len(text):
+                      if text[j] == '{':
                           depth += 1
-                      elif new[j] == '}':
+                      elif text[j] == '}':
                           depth -= 1
                           if depth == 0:
                               j += 1
                               break
                       j += 1
-                  new = new[:m.start()] + new[j:]
+                  text = text[:m.start()] + text[j:]
+              return text
+
+          def force_light_scheme(text):
+              text = re.sub(r'color-scheme\s*:\s*light\s+dark\s*;', 'color-scheme: light;', text)
+              text = re.sub(r'color-scheme\s*:\s*dark\s*;', 'color-scheme: light;', text)
+              return text
+
+          changed = []
+          for path in sorted(Path('styles').glob('*.css')):
+              raw = path.read_text(encoding='utf-8', errors='replace')
+              new = raw
+              new = strip_prefers_dark_blocks(new)
+              new = strip_data_theme_dark_rules(new)
+              new = strip_theme_switcher_rules(new)
+              new = force_light_scheme(new)
               if new != raw:
                   path.write_text(new, encoding='utf-8')
                   changed.append(str(path))
                   print('patched', path)
 
-          # --- app.html ---
           app = Path('app.html')
           html = app.read_text(encoding='utf-8', errors='replace')
           orig = html
 
-          # Remove theme boot script
-          html = re.sub(
-              r'<script\s+data-sdlg-theme-boot>[\s\S]*?</script>\s*',
-              '',
-              html,
-              flags=re.I,
-          )
-          # Remove theme switcher DOM
-          html = re.sub(
-              r'<div\s+class="sdlg-theme-switcher"[^>]*>[\s\S]*?</div>\s*',
-              '',
-              html,
-              flags=re.I,
-          )
-          # Force light on <html>
-          html = re.sub(
-              r'<html([^>]*)>',
-              lambda m: '<html' + re.sub(r'\s*data-theme="[^"]*"', '', m.group(1)) + ' data-theme="light">',
-              html,
-              count=1,
-              flags=re.I,
-          )
-          # Inject hard light-only override early in head
+          html = re.sub(r'<script\s+data-sdlg-theme-boot>[\s\S]*?</script>\s*', '', html, flags=re.I)
+          html = re.sub(r'<div\s+class="sdlg-theme-switcher"[^>]*>[\s\S]*?</div>\s*', '', html, flags=re.I)
+
+          def fix_html_tag(m):
+              attrs = re.sub(r'\s*data-theme="[^"]*"', '', m.group(1))
+              return '<html' + attrs + ' data-theme="light">'
+          html = re.sub(r'<html([^>]*)>', fix_html_tag, html, count=1, flags=re.I)
+
           light_css = '''<style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
-  html { data-theme: light; }
-  html[data-theme], [data-theme] { color-scheme: light !important; }
   .sdlg-theme-switcher { display: none !important; }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root, html {
       --sdlg-bg: #f3f6fa !important;
       --sdlg-surface: #ffffff !important;
       --sdlg-surface-muted: #f8fafc !important;
@@ -172,26 +138,23 @@ jobs:
   }
 </style>
 '''
-          if 'sdlg-light-only' not in html:
-              if '</head>' in html:
-                  html = html.replace('</head>', light_css + '</head>', 1)
-              else:
-                  html = light_css + html
+          if 'sdlg-light-only' not in html and '</head>' in html:
+              html = html.replace('</head>', light_css + '</head>', 1)
 
-          # Neutralize remaining setTheme / localStorage theme keys in inline scripts (best-effort)
-          html = html.replace("localStorage.setItem(KEY, theme)", "/* theme disabled */")
-          html = html.replace("localStorage.getItem(KEY)", "'light'")
+          # Also strip dark blocks from INLINE styles inside app.html
+          html = strip_prefers_dark_blocks(html)
+          html = strip_data_theme_dark_rules(html)
+          html = strip_theme_switcher_rules(html)
 
           if html != orig:
               app.write_text(html, encoding='utf-8')
               changed.append('app.html')
               print('patched app.html')
 
-          # styles README note
           readme = Path('styles/README.md')
           if readme.exists():
               t = readme.read_text(encoding='utf-8')
-              if 'light-only' not in t:
+              if 'light-only' not in t.lower() and 'Light only' not in t:
                   t = t.rstrip() + '\n\n## Theme\n\n**Light only.** Dark theme removed 2026-10-30 (OS preference ignored).\n'
                   readme.write_text(t, encoding='utf-8')
                   changed.append('styles/README.md')
@@ -199,8 +162,6 @@ jobs:
           print('CHANGED', len(changed))
           for c in changed:
               print(' -', c)
-          if not changed:
-              print('Nothing to change')
           PY
 
       - name: Commit
@@ -214,11 +175,5 @@ jobs:
             echo "Nothing to commit"
             exit 0
           fi
-          git commit -m "fix(ui): remove all dark theme — force light-only
-
-          - Strip prefers-color-scheme:dark and [data-theme=dark] from CSS
-          - color-scheme: light only
-          - Remove theme switcher DOM + boot script from app.html
-          - Inject hard light-only override in head
-          - No business logic change"
+          git commit -m "fix(ui): remove all dark theme — force light-only"
           git push origin HEAD:main
