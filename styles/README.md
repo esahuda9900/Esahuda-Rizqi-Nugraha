@@ -1,27 +1,26 @@
-# Styles — SDLG Warranty
+# Styles — SDLG Warranty (production)
 
-## Target (north star)
+## Active (linked from app.html)
 
-Exactly **3** entry CSS files:
-
-| File | Owns |
+| File | Role |
 |------|------|
-| `core.css` | reset, design tokens, base type |
-| `components.css` | card, button, table, badge, tracking, claim chrome |
-| `responsive.css` | media queries only |
+| `sdlg-design-tokens.css` | tokens |
+| `sdlg-base.css` | base |
+| `sdlg-components.css` | buttons, cards, inputs |
+| `sdlg-modern-refresh.css` | layout shell |
+| `sdlg-responsive.css` | breakpoints |
+| `sdlg-ops-clean-v1.css` | flat/no-lift |
+| `sdlg-ux-polish-v3.css` | polish |
+| `sdlg-dashboard-polish.css` | dashboard metrics |
+| `sdlg-claims-ui-fix.css` | **Claims tab** (KPI + rows) |
+| `fonts/` | IBM Plex |
 
-## Current
+## Archive
 
-Multiple layered files (`sdlg-*-vN.css`). Prefer **editing one existing file** over adding a new design system.
+Unused layers live in `_archive/` (not deployed). Do not add new `*-vN.css` layers — edit an active file instead.
 
 ## Rules
 
-1. CSS is visual only — no workflow/RPC changes.
-2. Scope claim-detail overrides to `.page.claim-detail-page`.
-3. Cache-bust via `?v=` when behavior-critical modules inject stylesheets.
-4. Merge path: stop new layers → consolidate pairs → land on 3 files.
-
-## Active claim-detail polish
-
-- `sdlg-claim-detail-clean-v2.css` (v2.2+)
-- `sdlg-warranty-tracking-v1.css`
+1. Visual only — no business/RPC changes.
+2. Claims list/detail: prefer `sdlg-claims-ui-fix.css`.
+3. Cache-bust with `?v=` when changing critical CSS.
