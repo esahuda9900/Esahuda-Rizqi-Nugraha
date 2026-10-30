@@ -376,13 +376,7 @@
   border-left: 4px solid var(--sdlg-danger, #ef4444) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .sdlg-toast {
-    background-color: var(--sdlg-surface-elevated, #1a2540) !important;
-    color: var(--sdlg-text, #e2e8f0) !important;
-    border: 1px solid var(--sdlg-border, #1e293b);
-  }
-}
+
 
 /* ==========================================================================
    7. RESPONSIVE

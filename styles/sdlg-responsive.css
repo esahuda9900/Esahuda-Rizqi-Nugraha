@@ -770,43 +770,10 @@ input[type="radio"] {
 /* ─────────────────────────────────────────────────────────
    20. DARK MODE
    ───────────────────────────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sdlg-bg:          #0f172a;
-    --sdlg-surface:     #1e293b;
-    --sdlg-surface-2:   #263248;
-    --sdlg-border:      #334155;
-    --sdlg-text:        #e2e8f0;
-    --sdlg-text-muted:  #94a3b8;
-    --sdlg-brand-light: rgba(0, 87, 168, 0.2);
-  }
 
-  .claims-table-head th { background: var(--sdlg-surface-2); }
-  .claim-row:hover td   { background: rgba(0,87,168,.12); }
-  .metric-card          { box-shadow: none; }
-
-  .badge--pending  { background: rgba(245,158,11,.15); color: #fcd34d; }
-  .badge--approved { background: rgba(34,197,94,.15);  color: #86efac; }
-  .badge--rejected { background: rgba(239,68,68,.15);  color: #fca5a5; }
-  .badge--process  { background: rgba(59,130,246,.15); color: #93c5fd; }
-  .badge--draft    { background: rgba(100,116,139,.15); color: #cbd5e1; }
-
-  .alert-success { background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.3);  color: #86efac; }
-  .alert-warning { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.3); color: #fcd34d; }
-  .alert-danger  { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.3);  color: #fca5a5; }
-  .alert-info    { background: rgba(59,130,246,.08); border-color: rgba(59,130,246,.3); color: #93c5fd; }
-}
 
 /* Manual dark mode toggle via class */
-[data-theme="dark"] {
-  --sdlg-bg:          #0f172a;
-  --sdlg-surface:     #1e293b;
-  --sdlg-surface-2:   #263248;
-  --sdlg-border:      #334155;
-  --sdlg-text:        #e2e8f0;
-  --sdlg-text-muted:  #94a3b8;
-  --sdlg-brand-light: rgba(0, 87, 168, 0.2);
-}
+
 
 
 /* ─────────────────────────────────────────────────────────

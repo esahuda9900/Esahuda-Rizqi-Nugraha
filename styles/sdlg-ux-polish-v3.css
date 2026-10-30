@@ -164,14 +164,8 @@
     -webkit-backdrop-filter: saturate(160%) blur(12px);
   }
 
-  @media (prefers-color-scheme: dark) {
-    :where(.app-shell:not(:has(.login-screen))) .page:has(.status-track) .status-track {
-      background: hsl(220 20% 9% / .9);
-    }
-  }
-  [data-theme="dark"] :where(.app-shell:not(:has(.login-screen))) .page:has(.status-track) .status-track {
-    background: hsl(220 20% 9% / .9);
-  }
+  
+  
 
   /* Label transisi */
   .status-transition-label {
@@ -245,16 +239,8 @@
     box-shadow: 0 6px 22px hsl(220 80% 57% / .1);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .claim-decision-summary {
-      border-color: var(--color-primary-muted);
-      background: linear-gradient(135deg, var(--color-primary-subtle), var(--color-surface));
-    }
-  }
-  [data-theme="dark"] .claim-decision-summary {
-    border-color: var(--color-primary-muted);
-    background: linear-gradient(135deg, var(--color-primary-subtle), var(--color-surface));
-  }
+  
+  
 
   .decision-summary-kicker {
     color: var(--color-text-disabled);
