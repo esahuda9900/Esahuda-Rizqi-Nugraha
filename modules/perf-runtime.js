@@ -1,13 +1,41 @@
 /**
- * SDLG Perf Runtime v1.4 — soft-restore + claims CSS cache bust
+ * SDLG Perf Runtime v1.5 — claims CSS bust + DOM upgrade for Claims KPI
  */
 (function () {
   'use strict';
 
+  function upgradeClaimsDom() {
+    try {
+      var page = document.querySelector('.page:has(.claims-searchbar)');
+      if (!page) return;
+      page.querySelectorAll('.claim-row.sdlg-card').forEach(function (el) {
+        el.classList.remove('sdlg-card');
+      });
+      page.querySelectorAll('.sdlg-card').forEach(function (el) {
+        if (el.classList.contains('claim-row')) return;
+        if (el.querySelector('button, input, select, textarea, a')) return;
+        if (el.children.length > 4) return;
+        el.classList.remove('sdlg-card');
+        el.classList.add('claims-kpi');
+        var kids = el.children;
+        if (kids[0] && !kids[0].classList.contains('claims-kpi__label')) {
+          kids[0].classList.add('claims-kpi__label');
+        }
+        if (kids[1] && !kids[1].classList.contains('claims-kpi__value')) {
+          kids[1].classList.add('claims-kpi__value');
+        }
+      });
+      var firstKpi = page.querySelector('.claims-kpi');
+      if (firstKpi && firstKpi.parentElement && !firstKpi.parentElement.classList.contains('claims-kpi-grid')) {
+        firstKpi.parentElement.classList.add('claims-kpi-grid');
+      }
+    } catch (_) {}
+  }
+
   function bustClaimsUiCss() {
     try {
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v4';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v5';
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
         return;
@@ -76,6 +104,17 @@
 
   function boot() {
     bustClaimsUiCss();
+    upgradeClaimsDom();
+    try {
+      if (typeof MutationObserver !== 'undefined') {
+        var tmr = null;
+        new MutationObserver(function () {
+          clearTimeout(tmr);
+          tmr = setTimeout(upgradeClaimsDom, 80);
+        }).observe(document.documentElement, { childList: true, subtree: true });
+      }
+      setInterval(upgradeClaimsDom, 2000);
+    } catch (_) {}
     tryPolyfillListPage();
     ensureXlsxLoader();
     var tries = 0;
@@ -91,8 +130,9 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.4.0-claims-modern-v4',
+    version: '1.5.0-claims-dom-upgrade',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
+    upgradeClaimsDom: upgradeClaimsDom,
   };
 })();
