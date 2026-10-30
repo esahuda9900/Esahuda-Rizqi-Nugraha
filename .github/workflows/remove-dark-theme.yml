@@ -2,6 +2,11 @@ name: Remove dark theme (light-only)
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'styles/**'
+      - 'app.html'
+      - '.github/workflows/remove-dark-theme.yml'
 
 permissions:
   contents: write
@@ -23,7 +28,7 @@ jobs:
           def strip_prefers_dark_blocks(text):
               out = []
               i = 0
-              pattern = re.compile(r'@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{', re.I)
+              pattern = re.compile(r'@media\\s*\\(\\s*prefers-color-scheme\\s*:\\s*dark\\s*\\)\\s*\\{', re.I)
               while True:
                   m = pattern.search(text, i)
                   if not m:
@@ -46,7 +51,7 @@ jobs:
 
           def strip_data_theme_dark_rules(text):
               out = text
-              sel_re = re.compile(r'(?:html)?\[data-theme=["\']dark["\']\][^{]*\{', re.I)
+              sel_re = re.compile(r'(?:html)?\\[data-theme=["\']dark["\']\\][^{]*\\{', re.I)
               while True:
                   m = sel_re.search(out)
                   if not m:
@@ -67,7 +72,7 @@ jobs:
 
           def strip_theme_switcher_rules(text):
               while True:
-                  m = re.search(r'\.sdlg-theme-switcher[^{]*\{', text)
+                  m = re.search(r'\\.sdlg-theme-switcher[^{]*\\{', text)
                   if not m:
                       break
                   depth = 0
@@ -85,8 +90,8 @@ jobs:
               return text
 
           def force_light_scheme(text):
-              text = re.sub(r'color-scheme\s*:\s*light\s+dark\s*;', 'color-scheme: light;', text)
-              text = re.sub(r'color-scheme\s*:\s*dark\s*;', 'color-scheme: light;', text)
+              text = re.sub(r'color-scheme\\s*:\\s*light\\s+dark\\s*;', 'color-scheme: light;', text)
+              text = re.sub(r'color-scheme\\s*:\\s*dark\\s*;', 'color-scheme: light;', text)
               return text
 
           changed = []
@@ -106,11 +111,11 @@ jobs:
           html = app.read_text(encoding='utf-8', errors='replace')
           orig = html
 
-          html = re.sub(r'<script\s+data-sdlg-theme-boot>[\s\S]*?</script>\s*', '', html, flags=re.I)
-          html = re.sub(r'<div\s+class="sdlg-theme-switcher"[^>]*>[\s\S]*?</div>\s*', '', html, flags=re.I)
+          html = re.sub(r'<script\\s+data-sdlg-theme-boot>[\\s\\S]*?</script>\\s*', '', html, flags=re.I)
+          html = re.sub(r'<div\\s+class="sdlg-theme-switcher"[^>]*>[\\s\\S]*?</div>\\s*', '', html, flags=re.I)
 
           def fix_html_tag(m):
-              attrs = re.sub(r'\s*data-theme="[^"]*"', '', m.group(1))
+              attrs = re.sub(r'\\s*data-theme="[^"]*"', '', m.group(1))
               return '<html' + attrs + ' data-theme="light">'
           html = re.sub(r'<html([^>]*)>', fix_html_tag, html, count=1, flags=re.I)
 
@@ -141,7 +146,6 @@ jobs:
           if 'sdlg-light-only' not in html and '</head>' in html:
               html = html.replace('</head>', light_css + '</head>', 1)
 
-          # Also strip dark blocks from INLINE styles inside app.html
           html = strip_prefers_dark_blocks(html)
           html = strip_data_theme_dark_rules(html)
           html = strip_theme_switcher_rules(html)
@@ -155,7 +159,7 @@ jobs:
           if readme.exists():
               t = readme.read_text(encoding='utf-8')
               if 'light-only' not in t.lower() and 'Light only' not in t:
-                  t = t.rstrip() + '\n\n## Theme\n\n**Light only.** Dark theme removed 2026-10-30 (OS preference ignored).\n'
+                  t = t.rstrip() + '\\n\\n## Theme\\n\\n**Light only.** Dark theme removed 2026-10-30 (OS preference ignored).\\n'
                   readme.write_text(t, encoding='utf-8')
                   changed.append('styles/README.md')
 
