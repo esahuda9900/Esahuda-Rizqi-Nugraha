@@ -1,0 +1,224 @@
+name: Remove dark theme (light-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  strip-dark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Strip dark theme from CSS + app.html
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          from pathlib import Path
+          import re
+
+          def strip_prefers_dark_blocks(text: str) -> str:
+              """Remove @media (prefers-color-scheme: dark) { ... } blocks (nested braces)."""
+              out = []
+              i = 0
+              pattern = re.compile(r'@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{', re.I)
+              while True:
+                  m = pattern.search(text, i)
+                  if not m:
+                      out.append(text[i:])
+                      break
+                  out.append(text[i:m.start()])
+                  # find matching close brace
+                  depth = 0
+                  j = m.end() - 1  # at {
+                  while j < len(text):
+                      if text[j] == '{':
+                          depth += 1
+                      elif text[j] == '}':
+                          depth -= 1
+                          if depth == 0:
+                              j += 1
+                              break
+                      j += 1
+                  i = j
+              return ''.join(out)
+
+          def strip_data_theme_dark_rules(text: str) -> str:
+              """Remove [data-theme=dark] / html[data-theme=dark] rule blocks."""
+              # Multi-selector dark rules
+              out = text
+              # Repeatedly remove blocks starting with dark selectors
+              sel_re = re.compile(
+                  r'(?:html)?\[data-theme=["\']dark["\']\][^{]*\{',
+                  re.I,
+              )
+              while True:
+                  m = sel_re.search(out)
+                  if not m:
+                      break
+                  depth = 0
+                  j = m.end() - 1
+                  while j < len(out):
+                      if out[j] == '{':
+                          depth += 1
+                      elif out[j] == '}':
+                          depth -= 1
+                          if depth == 0:
+                              j += 1
+                              break
+                      j += 1
+                  out = out[:m.start()] + out[j:]
+              return out
+
+          def force_light_scheme(text: str) -> str:
+              text = re.sub(r'color-scheme\s*:\s*light\s+dark\s*;', 'color-scheme: light;', text)
+              text = re.sub(r'color-scheme\s*:\s*dark\s*;', 'color-scheme: light;', text)
+              return text
+
+          css_files = list(Path('styles').glob('*.css'))
+              # only root styles, not _archive
+          changed = []
+          for path in css_files:
+              if path.parent.name == '_archive':
+                  continue
+              raw = path.read_text(encoding='utf-8', errors='replace')
+              new = raw
+              new = strip_prefers_dark_blocks(new)
+              new = strip_data_theme_dark_rules(new)
+              new = force_light_scheme(new)
+              # Drop theme-switcher UI styles entirely
+              new = re.sub(
+                  r'/\*[^*]*theme switcher[^*]*\*/\s*\.sdlg-theme-switcher[^{]*\{[^}]*\}(?:\s*\.sdlg-theme-switcher[^{]*\{[^}]*\})*',
+                  '',
+                  new,
+                  flags=re.I,
+              )
+              # simpler: remove any .sdlg-theme-switcher rule blocks
+              while True:
+                  m = re.search(r'\.sdlg-theme-switcher[^{]*\{', new)
+                  if not m:
+                      break
+                  depth = 0
+                  j = m.end() - 1
+                  while j < len(new):
+                      if new[j] == '{':
+                          depth += 1
+                      elif new[j] == '}':
+                          depth -= 1
+                          if depth == 0:
+                              j += 1
+                              break
+                      j += 1
+                  new = new[:m.start()] + new[j:]
+              if new != raw:
+                  path.write_text(new, encoding='utf-8')
+                  changed.append(str(path))
+                  print('patched', path)
+
+          # --- app.html ---
+          app = Path('app.html')
+          html = app.read_text(encoding='utf-8', errors='replace')
+          orig = html
+
+          # Remove theme boot script
+          html = re.sub(
+              r'<script\s+data-sdlg-theme-boot>[\s\S]*?</script>\s*',
+              '',
+              html,
+              flags=re.I,
+          )
+          # Remove theme switcher DOM
+          html = re.sub(
+              r'<div\s+class="sdlg-theme-switcher"[^>]*>[\s\S]*?</div>\s*',
+              '',
+              html,
+              flags=re.I,
+          )
+          # Force light on <html>
+          html = re.sub(
+              r'<html([^>]*)>',
+              lambda m: '<html' + re.sub(r'\s*data-theme="[^"]*"', '', m.group(1)) + ' data-theme="light">',
+              html,
+              count=1,
+              flags=re.I,
+          )
+          # Inject hard light-only override early in head
+          light_css = '''<style id="sdlg-light-only">
+  /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
+  :root, html, body { color-scheme: light !important; }
+  html { data-theme: light; }
+  html[data-theme], [data-theme] { color-scheme: light !important; }
+  .sdlg-theme-switcher { display: none !important; }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sdlg-bg: #f3f6fa !important;
+      --sdlg-surface: #ffffff !important;
+      --sdlg-surface-muted: #f8fafc !important;
+      --sdlg-border: #e2e8f0 !important;
+      --sdlg-border-strong: #cbd5e1 !important;
+      --sdlg-text: #0f172a !important;
+      --sdlg-text-muted: #64748b !important;
+      --sdlg-muted: #64748b !important;
+      --ui-bg: #eef1f7 !important;
+      --ui-surface: #ffffff !important;
+      --ui-text: #0c1526 !important;
+      --ui-muted: #5a6578 !important;
+      --ui-glass: rgba(255,255,255,0.75) !important;
+      --ui-glass-strong: rgba(255,255,255,0.96) !important;
+    }
+  }
+</style>
+'''
+          if 'sdlg-light-only' not in html:
+              if '</head>' in html:
+                  html = html.replace('</head>', light_css + '</head>', 1)
+              else:
+                  html = light_css + html
+
+          # Neutralize remaining setTheme / localStorage theme keys in inline scripts (best-effort)
+          html = html.replace("localStorage.setItem(KEY, theme)", "/* theme disabled */")
+          html = html.replace("localStorage.getItem(KEY)", "'light'")
+
+          if html != orig:
+              app.write_text(html, encoding='utf-8')
+              changed.append('app.html')
+              print('patched app.html')
+
+          # styles README note
+          readme = Path('styles/README.md')
+          if readme.exists():
+              t = readme.read_text(encoding='utf-8')
+              if 'light-only' not in t:
+                  t = t.rstrip() + '\n\n## Theme\n\n**Light only.** Dark theme removed 2026-10-30 (OS preference ignored).\n'
+                  readme.write_text(t, encoding='utf-8')
+                  changed.append('styles/README.md')
+
+          print('CHANGED', len(changed))
+          for c in changed:
+              print(' -', c)
+          if not changed:
+              print('Nothing to change')
+          PY
+
+      - name: Commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git commit -m "fix(ui): remove all dark theme — force light-only
+
+          - Strip prefers-color-scheme:dark and [data-theme=dark] from CSS
+          - color-scheme: light only
+          - Remove theme switcher DOM + boot script from app.html
+          - Inject hard light-only override in head
+          - No business logic change"
+          git push origin HEAD:main
