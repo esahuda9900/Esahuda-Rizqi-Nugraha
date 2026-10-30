@@ -1,5 +1,6 @@
 /**
- * SDLG Perf Runtime v1.6 — claims CSS bust v6 + DOM upgrade for Claims KPI
+ * SDLG Perf Runtime v1.7 — claims CSS bust + DOM upgrade + safe list polyfill
+ * 2026-10-30: polyfill matches repository v3.1 (active-only, claim_id order)
  */
 (function () {
   'use strict';
@@ -34,7 +35,7 @@
 
   function bustClaimsUiCss() {
     try {
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v6';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-stable-v1';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
@@ -51,23 +52,31 @@
 
   function tryPolyfillListPage() {
     try {
-      if (!window.SDLG_REPOSITORY || !window.SDLG_FOUNDATION) return false;
+      if (!window.SDLG_REPOSITORY) return false;
       if (typeof window.SDLG_REPOSITORY.listClaimsPage === 'function') return true;
-      window.SDLG_REPOSITORY.listClaimsPage = async function (page, opts) {
-        var pageSize = (window.SDLG_FOUNDATION.LIMITS && window.SDLG_FOUNDATION.LIMITS.PAGE_SIZE) || 100;
+      window.SDLG_REPOSITORY.listClaimsPage = async function (page) {
+        var pageSize = 100;
+        try {
+          if (window.SDLG_FOUNDATION && window.SDLG_FOUNDATION.LIMITS && window.SDLG_FOUNDATION.LIMITS.PAGE_SIZE) {
+            pageSize = window.SDLG_FOUNDATION.LIMITS.PAGE_SIZE;
+          }
+        } catch (_) {}
         var from = (page || 0) * pageSize;
+        var client =
+          (typeof window.getSdlgSupabase === 'function' && window.getSdlgSupabase()) ||
+          window.sdlgSupabase ||
+          window.supabaseClient;
+        if (!client) throw new Error('Supabase client not ready');
         var run = window.runSupabaseRead || function (fn) { return fn(); };
-        var result = await window.SDLG_FOUNDATION.retry(async function () {
-          var r = await run(function () {
-            return window.sdlgSupabase
-              .from('claims')
-              .select('*')
-              .order('created_at', { ascending: false })
-              .range(from, from + pageSize - 1);
-          });
-          if (r && r.error) throw r.error;
-          return r;
+        var result = await run(function () {
+          return client
+            .from('claims')
+            .select('*')
+            .is('archived_at', null)
+            .order('claim_id', { ascending: false })
+            .range(from, from + pageSize - 1);
         });
+        if (result && result.error) throw result.error;
         var rows = (result && result.data) || [];
         if (window.SDLG_DATA_MODEL && typeof window.SDLG_DATA_MODEL.normalizeClaimCollection === 'function') {
           return window.SDLG_DATA_MODEL.normalizeClaimCollection(rows).rows;
@@ -130,9 +139,9 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.6.0-claims-modern-v6',
+    version: '1.7.0-stable',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
-    upgradeClaimsDom: upgradeClaimsDom,
+    upgradeClaimsDom: upgradeClaimsDom
   };
 })();
