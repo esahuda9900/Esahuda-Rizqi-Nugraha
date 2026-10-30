@@ -1,0 +1,53 @@
+name: Patch My Action Today inline styles
+on:
+  workflow_dispatch:
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Create branch and patch app.html style objects only
+        run: |
+          git checkout -B fix/inline-styles-declutter
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('app.html')
+          t = p.read_text(encoding='utf-8')
+          old_card = (
+              'className: "card card-pad", style: { border: "1px solid #dbeafe", '
+              'background: "linear-gradient(135deg,#ffffff 0%,#f8fbff 100%)" }'
+          )
+          new_card = (
+              'className: "card card-pad", style: { border: "none", '
+              'background: "#ffffff", boxShadow: "0 1px 3px rgba(15,23,42,0.08)" }'
+          )
+          old_btn = (
+              'style: { textAlign: "left", padding: "12px 13px", '
+              'border: "1px solid #e2e8f0", background: "#fff", '
+              'borderRadius: 10, cursor: "pointer" }'
+          )
+          # Soft bg by priority — style object only; onClick untouched
+          new_btn = (
+              'style: { textAlign: "left", padding: "12px 13px", border: "none", '
+              'background: x.priority === "P0" ? "#fee2e2" : x.priority === "P1" ? "#fef3c7" : '
+              'x.priority === "P2" ? "#e0f2fe" : "#f1f5f9", borderRadius: 10, cursor: "pointer" }'
+          )
+          assert t.count(old_card) == 1, t.count(old_card)
+          assert t.count(old_btn) == 1, t.count(old_btn)
+          t = t.replace(old_card, new_card, 1)
+          t = t.replace(old_btn, new_btn, 1)
+          # safety: onClick block still present
+          assert 'if (x.priority === "P0" || x.priority === "P1") setTab("list")' in t
+          assert 'label: "P0 Critical"' in t
+          p.write_text(t, encoding='utf-8')
+          print('OK: card + button style objects patched')
+          PY
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git add app.html
+          git commit -m "fix(ui): declutter My Action Today inline styles (card + P0-P2 chips)"
+          git push -u origin fix/inline-styles-declutter --force
