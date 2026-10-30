@@ -1,20 +1,22 @@
 /* ==========================================================================
-   SDLG DASHBOARD POLISH V6.2 — KPI declutter phase 1
-   Dense ops dashboard without motion noise.
-   Phase 1: metric KPI uses spacing + type, not nested boxes.
+   SDLG DASHBOARD POLISH V6.3 — UI Declutter "Hilangkan Kotak-kotak"
+   Rule: kalau spasi sudah memisahkan elemen, border garis tidak perlu.
+   Phase 1–2: KPI flat + Action Today soft-color only (no border lines).
    ========================================================================== */
 
 body {
   background-color: var(--sdlg-bg, #f3f6fa) !important;
 }
 
-/* ---------- Metric cards (Declutter Phase 1 — no nested boxes) ---------- */
-/* Rule: spacing + type hierarchy > border. Soft surface only. */
+/* ---------- Metric cards (KPI baris atas) — TANPA kotak ---------- */
+/* Spacing + type hierarchy > border. Angka yang menonjol. */
 .metric-grid {
-  gap: 8px 20px !important;
+  gap: 8px 24px !important;
   margin-bottom: 20px !important;
 }
 
+/* Override ops-clean & components: metric-card harus flat */
+.app-shell:not(:has(.login-screen)) .metric-card,
 .metric-card {
   background: transparent !important;
   border: none !important;
@@ -28,10 +30,11 @@ body {
   position: relative !important;
   overflow: visible !important;
   transition: none !important;
-  contain: none;
-  isolation: auto;
+  contain: none !important;
+  isolation: auto !important;
 }
 
+.app-shell:not(:has(.login-screen)) .metric-card:hover,
 .metric-card:hover {
   transform: none !important;
   box-shadow: none !important;
@@ -44,12 +47,25 @@ body {
   box-shadow: none !important;
 }
 
-/* Remove accent bar (was a mini-box cue) */
-.metric-card::before {
+/* Hapus accent bar / pseudo box */
+.metric-card::before,
+.metric-card::after {
   content: none !important;
   display: none !important;
   width: 0 !important;
+  height: 0 !important;
   background: transparent !important;
+  border: none !important;
+}
+
+/* Anak di dalam KPI: jangan ada kotak abu-abu nested */
+.metric-card > *,
+.metric-card div,
+.metric-card span {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
 }
 
 .metric-label {
@@ -59,6 +75,9 @@ body {
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   margin-bottom: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 .metric-value {
@@ -69,9 +88,13 @@ body {
   letter-spacing: -0.03em !important;
   line-height: 1.15 !important;
   font-variant-numeric: tabular-nums !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
-/* ---------- Action today boxes ---------- */
+/* ---------- My Action Today — soft color, tanpa garis border ---------- */
+/* Satu card putih luar saja. P0/P1/P2 = background pudar, tanpa border. */
 .card:has(.metric-grid) {
   padding: 20px !important;
   border-radius: var(--sdlg-radius, 12px) !important;
@@ -83,7 +106,7 @@ body {
 .card:has(.metric-grid) > div:first-child {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 10px !important;
+  gap: 12px !important;
   margin-bottom: 12px !important;
 }
 
@@ -93,33 +116,36 @@ body {
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  border: 1px solid transparent !important;
+  border: none !important; /* hilangkan garis — soft bg saja */
   position: relative !important;
   overflow: hidden !important;
-  transition: border-color 0.15s ease, background-color 0.15s ease !important;
+  transition: background-color 0.15s ease !important;
   contain: layout paint;
+  box-shadow: none !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div:hover,
 .card:has(.metric-grid) > div:first-child > div:active {
   transform: none !important;
+  box-shadow: none !important;
 }
 
+/* Soft backgrounds only (P0 merah, P1 kuning, P2 biru, ke-4 netral) */
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
-  background: var(--sdlg-danger-soft, #fef2f2) !important;
-  border-color: #fecaca !important;
+  background: #fef2f2 !important;
+  border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(2) {
-  background: var(--sdlg-warning-soft, #fffbeb) !important;
-  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(3) {
-  background: var(--sdlg-primary-soft, #eff6ff) !important;
-  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+  border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(4) {
-  background: var(--sdlg-surface-muted, #f8fafc) !important;
-  border-color: var(--sdlg-border, #e2e8f0) !important;
+  background: #f8fafc !important;
+  border: none !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div > div:first-child {
@@ -127,6 +153,8 @@ body {
   font-weight: 700 !important;
   line-height: 1.1 !important;
   font-variant-numeric: tabular-nums !important;
+  background: transparent !important;
+  border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
   color: #dc2626 !important;
@@ -135,13 +163,20 @@ body {
   color: #d97706 !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child {
-  color: var(--sdlg-primary, #2563eb) !important;
+  color: #2563eb !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(4) > div:first-child {
-  color: var(--sdlg-text-main, #0f172a) !important;
+  color: #0f172a !important;
 }
 
-/* ---------- Claim / action rows ---------- */
+/* Teks label di dalam soft chip juga tanpa box */
+.card:has(.metric-grid) > div:first-child > div > div:not(:first-child) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Claim / action rows (masih box per baris — Phase 3 nanti list) ---------- */
 .claim-row,
 .action-row {
   display: flex !important;
@@ -183,7 +218,7 @@ body {
   color: var(--sdlg-text-muted, #64748b) !important;
 }
 
-/* ---------- Rank lists ---------- */
+/* ---------- Rank lists (sudah list-style) ---------- */
 .rank-row {
   display: flex !important;
   justify-content: space-between !important;
