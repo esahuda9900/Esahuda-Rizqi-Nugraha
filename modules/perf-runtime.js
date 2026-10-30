@@ -1,6 +1,5 @@
 /**
- * SDLG Perf Runtime v1.7 — claims CSS bust + DOM upgrade + safe list polyfill
- * 2026-10-30: polyfill matches repository v3.1 (active-only, claim_id order)
+ * SDLG Perf Runtime v1.7.1 — claims CSS bust + claim-detail toolbar restore
  */
 (function () {
   'use strict';
@@ -33,9 +32,25 @@
     } catch (_) {}
   }
 
+  function bustClaimDetailToolbarCss() {
+    try {
+      var href = './styles/sdlg-claim-detail-toolbar-fix.css?v=20261030-toolbar-fix-v1';
+      var existing = document.getElementById('sdlg-claim-detail-toolbar-fix');
+      if (existing) {
+        existing.href = href;
+        return;
+      }
+      var link = document.createElement('link');
+      link.id = 'sdlg-claim-detail-toolbar-fix';
+      link.rel = 'stylesheet';
+      link.href = href;
+      (document.head || document.documentElement).appendChild(link);
+    } catch (_) {}
+  }
+
   function bustClaimsUiCss() {
     try {
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-revert-v4';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-toolbar-fix-v1';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
         for (var i = 0; i < links.length; i++) links[i].href = href;
@@ -113,6 +128,7 @@
 
   function boot() {
     bustClaimsUiCss();
+    bustClaimDetailToolbarCss();
     upgradeClaimsDom();
     try {
       if (typeof MutationObserver !== 'undefined') {
@@ -139,9 +155,10 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.7.0-stable',
+    version: '1.7.1-toolbar-fix',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
+    bustClaimDetailToolbarCss: bustClaimDetailToolbarCss,
     upgradeClaimsDom: upgradeClaimsDom
   };
 })();
