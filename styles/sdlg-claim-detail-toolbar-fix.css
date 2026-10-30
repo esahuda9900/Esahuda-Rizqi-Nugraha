@@ -1,0 +1,72 @@
+/* SDLG Claim Detail Toolbar Fix — force restore single-row header
+ * Overrides any broken grid/dashed styles on the top toolbar.
+ */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  margin-bottom: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Each toolbar chip/button stays inline — no dashed ghost boxes */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > * {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Kill dashed outlines that look like broken placeholders */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > button,
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > span,
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > div {
+  border-style: solid !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > button {
+  border: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > button.primary-btn {
+  border-color: transparent !important;
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > button.secondary-btn {
+  border: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+  color: #334155 !important;
+}
+
+/* Actions group (Edit / SDLG Input / Delete) pinned right */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > div:last-child {
+  margin-left: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Do not hide structural empty wrappers in detail toolbar */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child > div:empty {
+  display: flex !important;
+  min-height: 0 !important;
+}
