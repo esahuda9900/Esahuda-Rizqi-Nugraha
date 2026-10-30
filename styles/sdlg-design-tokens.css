@@ -3,15 +3,14 @@
    Strict Industrial ERP + Modern Alive Recolor V3 Integration.
    Single Source of Truth: Colors · Typography · Spacing · Radius · Motion.
    Zero HTML changes. All V4 tokens preserved + extended.
+   LIGHT ONLY — dark theme removed 2026-10-30
    ========================================================================== */
 
 :root {
   /* ==================================================================
-     0. NATIVE FORM CONTROL SYNC
-     Mengaktifkan native dark mode untuk <select>, <input type=date>,
-     scrollbar, dsb. Ikut preferensi OS user.
+     0. NATIVE FORM CONTROL SYNC — light only
      ================================================================== */
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* ==================================================================
      1. COLOR PALETTE — Foundation Canvas
@@ -19,39 +18,37 @@
   --sdlg-bg: #f3f6fa;
   --sdlg-surface: #ffffff;
   --sdlg-surface-muted: #f8fafc;
-  --sdlg-surface-elevated: #ffffff; /* dropdown, popover, elevated card */
+  --sdlg-surface-elevated: #ffffff;
   --sdlg-border: #e2e8f0;
   --sdlg-border-strong: #cbd5e1;
 
-  /* Utility — Absolute values */
   --sdlg-white: #ffffff;
   --sdlg-black: #000000;
-  --sdlg-overlay: rgba(15, 23, 42, 0.4);   /* generic overlay */
-  --sdlg-scrim: rgba(15, 23, 42, 0.4);     /* modal backdrop scrim */
+  --sdlg-overlay: rgba(15, 23, 42, 0.4);
+  --sdlg-scrim: rgba(15, 23, 42, 0.4);
 
   /* ==================================================================
      2. COLOR PALETTE — Typography
      ================================================================== */
   --sdlg-text: #0f172a;
-  --sdlg-text-main: var(--sdlg-text);          /* alias auto-sync dark mode */
-  --sdlg-text-secondary: #334155;              /* intermediate emphasis */
+  --sdlg-text-main: var(--sdlg-text);
+  --sdlg-text-secondary: #334155;
   --sdlg-text-muted: #64748b;
-  --sdlg-muted: var(--sdlg-text-muted);        /* alias auto-sync dark mode */
-  --sdlg-muted-strong: #475569;                /* higher-contrast muted */
+  --sdlg-muted: var(--sdlg-text-muted);
+  --sdlg-muted-strong: #475569;
 
   /* ==================================================================
      3. COLOR PALETTE — Brand Primary (Indigo Tech)
      ================================================================== */
   --sdlg-primary: #2563eb;
-  --sdlg-primary-hover: #1d4ed8;                /* @deprecated use --sdlg-primary-strong */
+  --sdlg-primary-hover: #1d4ed8;
   --sdlg-primary-strong: #1d4ed8;
   --sdlg-primary-soft: #eff6ff;
-  --sdlg-primary-bg: var(--sdlg-primary-soft);  /* alias (compat) */
+  --sdlg-primary-bg: var(--sdlg-primary-soft);
   --sdlg-primary-border: #bfdbfe;
   --sdlg-primary-glow: rgba(37, 99, 235, 0.28);
   --sdlg-primary-ring: rgba(37, 99, 235, 0.15);
 
-  /* Primary scale (extended — for charts/gradients) */
   --sdlg-primary-50: #eff6ff;
   --sdlg-primary-100: #dbeafe;
   --sdlg-primary-200: #bfdbfe;
@@ -64,41 +61,31 @@
   --sdlg-primary-900: #1e3a8a;
 
   /* ==================================================================
-     4. COLOR PALETTE — Status: Success
+     4–7. Status colors
      ================================================================== */
   --sdlg-success: #10b981;
   --sdlg-success-soft: #ecfdf5;
-  --sdlg-success-bg: var(--sdlg-success-soft); /* alias */
+  --sdlg-success-bg: var(--sdlg-success-soft);
   --sdlg-success-border: #a7f3d0;
   --sdlg-success-glow: rgba(16, 185, 129, 0.22);
 
-  /* ==================================================================
-     5. COLOR PALETTE — Status: Warning
-     ================================================================== */
   --sdlg-warning: #d97706;
   --sdlg-warning-soft: #fffbeb;
-  --sdlg-warning-bg: var(--sdlg-warning-soft); /* alias */
+  --sdlg-warning-bg: var(--sdlg-warning-soft);
   --sdlg-warning-border: #fde68a;
   --sdlg-warning-glow: rgba(245, 158, 11, 0.22);
 
-  /* ==================================================================
-     6. COLOR PALETTE — Status: Danger
-     ================================================================== */
   --sdlg-danger: #ef4444;
   --sdlg-danger-soft: #fef2f2;
-  --sdlg-danger-bg: var(--sdlg-danger-soft);   /* alias */
+  --sdlg-danger-bg: var(--sdlg-danger-soft);
   --sdlg-danger-border: #fca5a5;
   --sdlg-danger-glow: rgba(239, 68, 68, 0.22);
 
-  /* ==================================================================
-     7. COLOR PALETTE — Status: Neutral
-     ================================================================== */
   --sdlg-neutral: #64748b;
   --sdlg-neutral-soft: #f1f5f9;
-  --sdlg-neutral-bg: var(--sdlg-neutral-soft); /* alias */
+  --sdlg-neutral-bg: var(--sdlg-neutral-soft);
   --sdlg-neutral-border: #e2e8f0;
 
-  /* Neutral scale (for charts, subdued UI) */
   --sdlg-neutral-50: #f8fafc;
   --sdlg-neutral-100: #f1f5f9;
   --sdlg-neutral-200: #e2e8f0;
@@ -110,68 +97,47 @@
   --sdlg-neutral-800: #1e293b;
   --sdlg-neutral-900: #0f172a;
 
-  /* ==================================================================
-     8. COLOR PALETTE — Accent (charts, gradients, decorative)
-     ================================================================== */
-  --sdlg-accent: #f59e0b;             /* amber (legacy) */
+  --sdlg-accent: #f59e0b;
   --sdlg-accent-soft: #fff8eb;
-  --sdlg-accent-cyan: #06b6d4;        /* metric accent gradient end */
-  --sdlg-accent-indigo: #6366f1;      /* bar chart gradient end */
-  --sdlg-accent-purple: #8b5cf6;      /* secondary chart color */
-  --sdlg-accent-teal: #14b8a6;        /* tertiary chart color */
+  --sdlg-accent-cyan: #06b6d4;
+  --sdlg-accent-indigo: #6366f1;
+  --sdlg-accent-purple: #8b5cf6;
+  --sdlg-accent-teal: #14b8a6;
 
-  /* ==================================================================
-     9. TYPOGRAPHY
-     ================================================================== */
+  /* Typography */
   --sdlg-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --sdlg-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-
-  /* Font size scale (fixed rem — Foundation V3 provides fluid clamp overrides) */
-  --sdlg-font-size-xs: 0.75rem;    /* 12px */
-  --sdlg-font-size-sm: 0.875rem;   /* 14px */
-  --sdlg-font-size-md: 1rem;       /* 16px */
-  --sdlg-font-size-lg: 1.25rem;    /* 20px */
-  --sdlg-font-size-xl: 1.625rem;   /* 26px */
-  --sdlg-font-size-2xl: 2rem;      /* 32px */
-
-  /* Font weights */
+  --sdlg-font-size-xs: 0.75rem;
+  --sdlg-font-size-sm: 0.875rem;
+  --sdlg-font-size-md: 1rem;
+  --sdlg-font-size-lg: 1.25rem;
+  --sdlg-font-size-xl: 1.625rem;
+  --sdlg-font-size-2xl: 2rem;
   --sdlg-font-weight-regular: 400;
   --sdlg-font-weight-medium: 500;
   --sdlg-font-weight-semibold: 600;
   --sdlg-font-weight-bold: 700;
-
-  /* Line heights */
   --sdlg-line-height-tight: 1.2;
   --sdlg-line-height-heading: 1.3;
   --sdlg-line-height-body: 1.6;
   --sdlg-line-height-loose: 1.75;
-
-  /* Letter spacing (tracking) */
   --sdlg-tracking-tight: -0.025em;
   --sdlg-tracking-snug: -0.015em;
   --sdlg-tracking-normal: 0;
   --sdlg-tracking-wide: 0.025em;
   --sdlg-tracking-wider: 0.075em;
 
-  /* ==================================================================
-     10. SPACING (8pt Grid + 4px microgap)
-     ------------------------------------------------------------------
-     ⚠️ WARNING: --sdlg-spacing-5 (20px) dan --sdlg-spacing-6 (24px) di
-     sini BERBEDA dengan Foundation V3 (24px & 32px). Load order matters.
-     Preserved dari Master V4 untuk zero visual regression.
-     ================================================================== */
-  --sdlg-spacing-1: 0.25rem; /* 4px */
-  --sdlg-spacing-2: 0.5rem;  /* 8px */
-  --sdlg-spacing-3: 0.75rem; /* 12px */
-  --sdlg-spacing-4: 1rem;    /* 16px */
-  --sdlg-spacing-5: 1.25rem; /* 20px — ⚠️ Foundation V3 uses 1.5rem */
-  --sdlg-spacing-6: 1.5rem;  /* 24px — ⚠️ Foundation V3 uses 2rem */
-  --sdlg-spacing-7: 2rem;    /* 32px (new — was missing) */
-  --sdlg-spacing-8: 2rem;    /* 32px (V4 value) — kept for backward compat */
-
-  /* Aliases (cross-file safety) */
+  /* Spacing */
+  --sdlg-spacing-1: 0.25rem;
+  --sdlg-spacing-2: 0.5rem;
+  --sdlg-spacing-3: 0.75rem;
+  --sdlg-spacing-4: 1rem;
+  --sdlg-spacing-5: 1.25rem;
+  --sdlg-spacing-6: 1.5rem;
+  --sdlg-spacing-7: 2rem;
+  --sdlg-spacing-8: 2rem;
   --sdlg-space-1: var(--sdlg-spacing-1);
   --sdlg-space-2: var(--sdlg-spacing-2);
   --sdlg-space-3: var(--sdlg-spacing-3);
@@ -181,23 +147,19 @@
   --sdlg-space-7: var(--sdlg-spacing-7);
   --sdlg-space-8: var(--sdlg-spacing-8);
 
-  /* ==================================================================
-     11. RADIUS (Nested proportional scale)
-     ================================================================== */
-  --sdlg-radius-xs: 6px;    /* tiny — checkbox, small chip */
-  --sdlg-radius-sm: 8px;    /* button, input */
-  --sdlg-radius: 12px;      /* card, panel, modal */
+  /* Radius */
+  --sdlg-radius-xs: 6px;
+  --sdlg-radius-sm: 8px;
+  --sdlg-radius: 12px;
   --sdlg-radius-card: var(--sdlg-radius);
   --sdlg-radius-btn: var(--sdlg-radius-sm);
   --sdlg-radius-input: var(--sdlg-radius-sm);
-  --sdlg-radius-lg: 16px;   /* large panels */
-  --sdlg-radius-xl: 20px;   /* hero cards */
+  --sdlg-radius-lg: 16px;
+  --sdlg-radius-xl: 20px;
   --sdlg-radius-modal: var(--sdlg-radius);
-  --sdlg-radius-full: 9999px; /* pill, avatar */
+  --sdlg-radius-full: 9999px;
 
-  /* ==================================================================
-     12. SHADOWS (Layered elevation for realistic depth)
-     ================================================================== */
+  /* Shadows */
   --sdlg-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --sdlg-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04),
                     0 1px 2px rgba(15, 23, 42, 0.03);
@@ -209,36 +171,22 @@
                     0 10px 15px -5px rgba(15, 23, 42, 0.06);
   --sdlg-shadow-modal: var(--sdlg-shadow-lg);
 
-  /* ==================================================================
-     13. FOCUS RING
-     ================================================================== */
   --sdlg-ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
   --sdlg-ring-strong: 0 0 0 4px rgba(37, 99, 235, 0.25);
 
-  /* ==================================================================
-     14. MOTION (Easing + Duration)
-     ================================================================== */
-  /* Easing curves */
-  --sdlg-ease: cubic-bezier(0.16, 1, 0.3, 1);        /* legacy alias */
-  --sdlg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);    /* entrances */
-  --sdlg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* transitions */
+  --sdlg-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sdlg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --sdlg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --sdlg-ease-in: cubic-bezier(0.4, 0, 1, 1);
   --sdlg-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --sdlg-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Duration scale */
   --sdlg-duration-fast: 0.1s;
   --sdlg-duration-base: 0.2s;
   --sdlg-duration-slow: 0.35s;
   --sdlg-duration-slower: 0.5s;
-
-  /* Transition presets */
   --sdlg-transition-base: all 0.2s var(--sdlg-ease-standard);
   --sdlg-transition-slow: all 0.35s var(--sdlg-ease-out);
 
-  /* ==================================================================
-     15. Z-INDEX SCALE
-     ================================================================== */
   --sdlg-z-base: 0;
   --sdlg-z-dropdown: 100;
   --sdlg-z-sticky: 200;
@@ -249,31 +197,21 @@
   --sdlg-z-toast: 2000;
   --sdlg-z-tooltip: 3000;
 
-  /* ==================================================================
-     16. BLUR SCALE (backdrop-filter consistency)
-     ================================================================== */
   --sdlg-blur-xs: 4px;
   --sdlg-blur-sm: 8px;
   --sdlg-blur-md: 12px;
   --sdlg-blur-lg: 16px;
   --sdlg-blur-xl: 24px;
 
-  /* ==================================================================
-     17. LAYOUT TOKENS
-     ================================================================== */
   --sdlg-container-sm: 640px;
   --sdlg-container-md: 768px;
   --sdlg-container-lg: 1024px;
   --sdlg-container-xl: 1280px;
   --sdlg-container-2xl: 1440px;
   --sdlg-container-3xl: 1660px;
-
   --sdlg-header-height: 68px;
   --sdlg-topbar-height: 68px;
 
-  /* ==================================================================
-     18. UX INJECTOR POLISH LAYER ALIASES
-     ================================================================== */
   --ux-ink: var(--sdlg-text);
   --ux-muted: var(--sdlg-muted);
   --ux-line: var(--sdlg-border);
@@ -281,78 +219,11 @@
   --ux-brand-soft: var(--sdlg-primary-soft);
   --ux-surface: var(--sdlg-surface);
 
-  /* ==================================================================
-     19. SCROLLBAR (modern cross-browser)
-     ================================================================== */
   scrollbar-color: var(--sdlg-border-strong) transparent;
   scrollbar-width: thin;
 }
 
-/* ==========================================================================
-   DARK MODE PALETTE
-   Matches Foundation V3 exactly — order-agnostic (both files define same
-   values, so load order doesn't cause visual conflict).
-   ========================================================================== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --sdlg-bg: #0b1220;
-    --sdlg-surface: #131c31;
-    --sdlg-surface-muted: #0f172a;
-    --sdlg-surface-elevated: #1a2540;
-    --sdlg-border: #1e293b;
-    --sdlg-border-strong: #334155;
-
-    --sdlg-text: #e2e8f0;
-    --sdlg-text-secondary: #cbd5e1;
-    --sdlg-text-muted: #94a3b8;
-    --sdlg-muted-strong: #cbd5e1;
-
-    --sdlg-primary-soft: rgba(37, 99, 235, 0.12);
-    --sdlg-primary-bg: var(--sdlg-primary-soft);
-    --sdlg-primary-border: rgba(37, 99, 235, 0.3);
-    --sdlg-primary-glow: rgba(37, 99, 235, 0.4);
-
-    --sdlg-success-soft: rgba(16, 185, 129, 0.12);
-    --sdlg-success-bg: var(--sdlg-success-soft);
-    --sdlg-success-border: rgba(16, 185, 129, 0.3);
-
-    --sdlg-warning-soft: rgba(245, 158, 11, 0.12);
-    --sdlg-warning-bg: var(--sdlg-warning-soft);
-    --sdlg-warning-border: rgba(245, 158, 11, 0.3);
-
-    --sdlg-danger-soft: rgba(239, 68, 68, 0.12);
-    --sdlg-danger-bg: var(--sdlg-danger-soft);
-    --sdlg-danger-border: rgba(239, 68, 68, 0.3);
-
-    --sdlg-neutral-soft: rgba(100, 116, 139, 0.12);
-    --sdlg-neutral-bg: var(--sdlg-neutral-soft);
-    --sdlg-neutral-border: #334155;
-
-    --sdlg-accent-soft: rgba(245, 158, 11, 0.12);
-
-    /* Layered shadows for dark mode */
-    --sdlg-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --sdlg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35),
-                      0 1px 2px rgba(0, 0, 0, 0.25);
-    --sdlg-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
-                      0 2px 4px -2px rgba(0, 0, 0, 0.3);
-    --sdlg-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5),
-                      0 8px 10px -6px rgba(0, 0, 0, 0.35);
-    --sdlg-shadow-xl: 0 20px 40px -10px rgba(0, 0, 0, 0.6),
-                      0 10px 15px -5px rgba(0, 0, 0, 0.4);
-
-    --sdlg-overlay: rgba(0, 0, 0, 0.6);
-    --sdlg-scrim: rgba(0, 0, 0, 0.6);
-
-    --sdlg-ring: 0 0 0 3px rgba(96, 165, 250, 0.25);
-    --sdlg-ring-strong: 0 0 0 4px rgba(96, 165, 250, 0.35);
-  }
-}
-
-/* ==========================================================================
-   PRINT TOKEN OVERRIDE
-   Flatten shadows, solidify borders — print output predictable.
-   ========================================================================== */
+/* PRINT TOKEN OVERRIDE */
 @media print {
   :root {
     --sdlg-shadow-xs: none;
@@ -361,20 +232,16 @@
     --sdlg-shadow-lg: none;
     --sdlg-shadow-xl: none;
     --sdlg-shadow-modal: none;
-
     --sdlg-bg: #ffffff;
     --sdlg-surface: #ffffff;
     --sdlg-surface-muted: #f5f5f5;
     --sdlg-surface-elevated: #ffffff;
     --sdlg-border: #cccccc;
     --sdlg-border-strong: #999999;
-
     --sdlg-text: #000000;
     --sdlg-text-secondary: #333333;
     --sdlg-text-muted: #666666;
     --sdlg-muted-strong: #333333;
-
-    /* Flatten gradients untuk print (print engine tidak suka gradient) */
     --sdlg-primary-soft: #eff6ff;
     --sdlg-success-soft: #ecfdf5;
     --sdlg-warning-soft: #fffbeb;

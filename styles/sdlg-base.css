@@ -1,17 +1,9 @@
 /* ========================================================================
    SDLG CORE FOUNDATION & TYPOGRAPHY V3 — ENTERPRISE PRO MAX
    Fluid · Accessible · Token-Synced · Zero HTML Changes
-   Companion file for SDLG ALIVE RECOLOR V3 (load order agnostic)
+   LIGHT ONLY — dark theme removed 2026-10-30
    ======================================================================== */
 
-/* ========================================================================
-   1. FONT FACES — Optimized for Core Web Vitals (swap-first, CLS-safe)
-   ------------------------------------------------------------------------
-   ⚡ Pro tip (add to <head>, bukan ubah body HTML):
-   <link rel="preload" as="font" type="font/woff2" crossorigin
-         href="../fonts/ibm-plex-sans-400.woff2">
-   Repeat untuk 500 / 600 / 700.
-   ======================================================================== */
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
@@ -19,7 +11,6 @@
   font-display: swap;
   src: url('../fonts/ibm-plex-sans-400.woff2') format('woff2');
 }
-
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
@@ -27,7 +18,6 @@
   font-display: swap;
   src: url('../fonts/ibm-plex-sans-500.woff2') format('woff2');
 }
-
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
@@ -35,7 +25,6 @@
   font-display: swap;
   src: url('../fonts/ibm-plex-sans-600.woff2') format('woff2');
 }
-
 @font-face {
   font-family: 'IBM Plex Sans';
   font-style: normal;
@@ -44,54 +33,38 @@
   src: url('../fonts/ibm-plex-sans-700.woff2') format('woff2');
 }
 
-/* ========================================================================
-   2. DESIGN TOKENS — SYNCHRONIZED with ALIVE RECOLOR V3
-   ------------------------------------------------------------------------
-   Pola: fallback value selalu di-set, jadi file ini tetap berfungsi walau
-   Alive Recolor V3 belum ke-load (maupun sebaliknya).
-   ======================================================================== */
 :root {
-  /* --- Font Stack --- */
   --sdlg-font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --sdlg-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-
-  /* --- Fluid Type Scale (clamp = responsive tanpa media query) --- */
-  --sdlg-font-size-xs: 0.75rem;                                  /* 12px */
-  --sdlg-font-size-sm: 0.875rem;                                 /* 14px */
-  --sdlg-font-size-md: 1rem;                                     /* 16px */
+  --sdlg-font-size-xs: 0.75rem;
+  --sdlg-font-size-sm: 0.875rem;
+  --sdlg-font-size-md: 1rem;
   --sdlg-font-size-lg: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);
   --sdlg-font-size-xl: clamp(1.5rem, 1.3rem + 1vw, 1.875rem);
   --sdlg-font-size-2xl: clamp(1.875rem, 1.6rem + 1.375vw, 2.5rem);
-
   --sdlg-font-weight-regular: 400;
   --sdlg-font-weight-medium: 500;
   --sdlg-font-weight-semibold: 600;
   --sdlg-font-weight-bold: 700;
-
   --sdlg-line-height-tight: 1.2;
   --sdlg-line-height-heading: 1.3;
   --sdlg-line-height-body: 1.6;
   --sdlg-line-height-loose: 1.75;
-
   --sdlg-tracking-tight: -0.025em;
   --sdlg-tracking-snug: -0.015em;
   --sdlg-tracking-normal: 0;
   --sdlg-tracking-wide: 0.025em;
   --sdlg-tracking-wider: 0.075em;
-
-  /* --- Spacing Scale (8pt Grid + 4px microgap) --- */
-  --sdlg-spacing-1: 0.25rem; /* 4px */
-  --sdlg-spacing-2: 0.5rem;  /* 8px */
-  --sdlg-spacing-3: 0.75rem; /* 12px */
-  --sdlg-spacing-4: 1rem;    /* 16px */
-  --sdlg-spacing-5: 1.5rem;  /* 24px */
-  --sdlg-spacing-6: 2rem;    /* 32px */
-  --sdlg-spacing-7: 2.5rem;  /* 40px */
-  --sdlg-spacing-8: 3rem;    /* 48px */
-
-  /* --- Shared Color Aliases (sync ke ALIVE RECOLOR V3) --- */
+  --sdlg-spacing-1: 0.25rem;
+  --sdlg-spacing-2: 0.5rem;
+  --sdlg-spacing-3: 0.75rem;
+  --sdlg-spacing-4: 1rem;
+  --sdlg-spacing-5: 1.5rem;
+  --sdlg-spacing-6: 2rem;
+  --sdlg-spacing-7: 2.5rem;
+  --sdlg-spacing-8: 3rem;
   --sdlg-bg: var(--sdlg-bg, #f3f6fa);
   --sdlg-surface: var(--sdlg-surface, #ffffff);
   --sdlg-border: var(--sdlg-border, #e2e8f0);
@@ -100,87 +73,32 @@
   --sdlg-text-muted: var(--sdlg-muted, #64748b);
   --sdlg-primary: var(--sdlg-primary, #2563eb);
   --sdlg-radius-card: var(--sdlg-radius, 12px);
-
-  /* --- Shadow Alias (mengikuti V3 layered depth) --- */
-  --sdlg-shadow-card-sm: var(
-    --sdlg-shadow-sm,
-    0 1px 3px rgba(15, 23, 42, 0.04),
-    0 1px 2px rgba(15, 23, 42, 0.03)
-  );
-  --sdlg-shadow-card-md: var(
-    --sdlg-shadow-md,
-    0 4px 6px -1px rgba(15, 23, 42, 0.06),
-    0 2px 4px -2px rgba(15, 23, 42, 0.04)
-  );
-  --sdlg-shadow-card-lg: var(
-    --sdlg-shadow-lg,
-    0 10px 25px -5px rgba(15, 23, 42, 0.08),
-    0 8px 10px -6px rgba(15, 23, 42, 0.05)
-  );
-
-  /* --- Motion --- */
+  --sdlg-shadow-card-sm: var(--sdlg-shadow-sm, 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03));
+  --sdlg-shadow-card-md: var(--sdlg-shadow-md, 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04));
+  --sdlg-shadow-card-lg: var(--sdlg-shadow-lg, 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.05));
   --sdlg-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --sdlg-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --sdlg-transition-base: all 0.2s var(--sdlg-ease);
   --sdlg-transition-slow: all 0.35s var(--sdlg-ease-out);
-
-  /* --- Focus Ring (sync ke V3) --- */
   --sdlg-ring: 0 0 0 3px rgba(37, 99, 235, 0.15);
   --sdlg-ring-strong: 0 0 0 4px rgba(37, 99, 235, 0.25);
-
-  /* --- Color Scheme (native form controls adapt to OS dark mode) --- */
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-/* ========================================================================
-   3. MODERN RESET (Andy Bell + Josh Comeau hybrid, ERP-safe)
-   ======================================================================== */
 *,
 *::before,
-*::after {
-  box-sizing: border-box;
-}
+*::after { box-sizing: border-box; }
 
-/* Selective reset — hanya elemen yang memang perlu */
-html,
-body,
-h1, h2, h3, h4, h5, h6,
-p, label, input, select, textarea,
-figure, blockquote, dl, dd {
-  margin: 0;
-  padding: 0;
+html, body, h1, h2, h3, h4, h5, h6, p, label, input, select, textarea, figure, blockquote, dl, dd {
+  margin: 0; padding: 0;
 }
+ul[role="list"], ol[role="list"] { list-style: none; padding: 0; margin: 0; }
+img, video, canvas, svg { max-width: 100%; height: auto; }
+iframe { display: block; max-width: 100%; border: 0; }
 
-/* List default remove HANYA jika dideklarasikan sebagai list semantik */
-ul[role="list"],
-ol[role="list"] {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-/* Media — safe defaults, tidak memaksa display:block (agar icon inline tetap jalan) */
-img,
-video,
-canvas,
-svg {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Cegah layout shift pada iframe */
-iframe {
-  display: block;
-  max-width: 100%;
-  border: 0;
-}
-
-/* ========================================================================
-   4. GLOBAL BASELINE
-   ======================================================================== */
 html {
   font-family: var(--sdlg-font-family);
-  font-size: 100%; /* user preference respect (16px default) */
+  font-size: 100%;
   line-height: var(--sdlg-line-height-body);
   background-color: var(--sdlg-bg);
   color: var(--sdlg-text-main);
@@ -189,21 +107,13 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  font-synthesis: none; /* cegah fake bold/italic */
-  text-rendering: optimizeLegibility;
-  /* Modern: enable animasi height auto (Chrome 129+) */
+  font-synthesis: none;
   interpolate-size: allow-keywords;
-  /* Scrollbar stabil — mencegah layout shift saat muncul */
   scrollbar-gutter: stable;
 }
-
-/* Smooth scroll — hanya jika user tidak prefer reduced motion */
 @media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 }
-
 body {
   font-family: var(--sdlg-font-family);
   font-size: var(--sdlg-font-size-md);
@@ -213,15 +123,8 @@ body {
   background-color: var(--sdlg-bg);
   min-height: 100vh;
   min-height: 100dvh;
-  /* Better default rendering untuk teks panjang */
   text-wrap: pretty;
 }
-
-/* ========================================================================
-   5. TYPOGRAPHY — Fluid, Balanced, Accessible
-   ======================================================================== */
-
-/* Headings — balance wrapping, tighter tracking untuk ukuran besar */
 h1, .sdlg-h1 {
   font-size: var(--sdlg-font-size-xl);
   font-weight: var(--sdlg-font-weight-bold);
@@ -231,7 +134,6 @@ h1, .sdlg-h1 {
   text-wrap: balance;
   margin-bottom: var(--sdlg-spacing-4);
 }
-
 h2, .sdlg-h2 {
   font-size: var(--sdlg-font-size-lg);
   font-weight: var(--sdlg-font-weight-semibold);
@@ -241,7 +143,6 @@ h2, .sdlg-h2 {
   text-wrap: balance;
   margin-bottom: var(--sdlg-spacing-3);
 }
-
 h3, .sdlg-h3 {
   font-size: var(--sdlg-font-size-md);
   font-weight: var(--sdlg-font-weight-semibold);
@@ -250,8 +151,6 @@ h3, .sdlg-h3 {
   text-wrap: balance;
   margin-bottom: var(--sdlg-spacing-2);
 }
-
-/* Display heading — untuk hero section (optional class, HTML bebas pakai/tidak) */
 .sdlg-h-display {
   font-size: var(--sdlg-font-size-2xl);
   font-weight: var(--sdlg-font-weight-bold);
@@ -260,7 +159,6 @@ h3, .sdlg-h3 {
   text-wrap: balance;
   margin-bottom: var(--sdlg-spacing-4);
 }
-
 p, .sdlg-p {
   font-size: var(--sdlg-font-size-md);
   font-weight: var(--sdlg-font-weight-regular);
@@ -269,8 +167,6 @@ p, .sdlg-p {
   text-wrap: pretty;
   margin-bottom: var(--sdlg-spacing-3);
 }
-
-/* Label — uppercase, tracked, user-select: none */
 label, .sdlg-label {
   display: inline-block;
   font-size: var(--sdlg-font-size-xs);
@@ -282,42 +178,22 @@ label, .sdlg-label {
   user-select: none;
   margin-bottom: var(--sdlg-spacing-1);
 }
-
-/* Small / Meta text */
 small, .sdlg-small {
   font-size: var(--sdlg-font-size-xs);
   font-weight: var(--sdlg-font-weight-regular);
   line-height: 1.4;
   color: var(--sdlg-text-muted);
 }
-
-/* Strong emphasis — IBM Plex 600 (biar ga dobel-bold) */
-strong, b {
-  font-weight: var(--sdlg-font-weight-semibold);
-  color: var(--sdlg-text-main);
-}
-
-/* Code — monospace fallback */
-code, kbd, samp, pre {
-  font-family: var(--sdlg-font-mono);
-  font-size: 0.9em;
-}
-
-/* Link — underline offset biar deskriptif, subtle transition */
+strong, b { font-weight: var(--sdlg-font-weight-semibold); color: var(--sdlg-text-main); }
+code, kbd, samp, pre { font-family: var(--sdlg-font-mono); font-size: 0.9em; }
 a {
   color: var(--sdlg-primary);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
   transition: color 0.15s var(--sdlg-ease);
 }
+a:hover { text-decoration-thickness: 2px; }
 
-a:hover {
-  text-decoration-thickness: 2px;
-}
-
-/* ========================================================================
-   6. FLEXIBLE STRUCTURAL LAYOUT SYSTEM
-   ======================================================================== */
 .sdlg-app-container {
   width: 100%;
   max-width: 1280px;
@@ -327,12 +203,9 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: var(--sdlg-spacing-4);
-  /* Container queries untuk anak-anaknya */
   container-type: inline-size;
   container-name: app;
 }
-
-/* --- Flex Utilities --- */
 .sdlg-flex { display: flex; }
 .sdlg-flex-col { flex-direction: column; }
 .sdlg-flex-wrap { flex-wrap: wrap; }
@@ -345,38 +218,17 @@ a:hover {
 .sdlg-gap-3 { gap: var(--sdlg-spacing-3); }
 .sdlg-gap-4 { gap: var(--sdlg-spacing-4); }
 .sdlg-gap-5 { gap: var(--sdlg-spacing-5); }
-
-/* --- Grid Engine --- */
 .sdlg-grid { display: grid; }
-.sdlg-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sdlg-spacing-4);
-}
-.sdlg-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sdlg-spacing-4);
-}
-
-/* --- Container Queries: grid auto-collapse saat ruang sempit --- */
+.sdlg-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sdlg-spacing-4); }
+.sdlg-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sdlg-spacing-4); }
 @supports (container-type: inline-size) {
   @container app (max-width: 640px) {
-    .sdlg-grid-2,
-    .sdlg-grid-3 {
-      grid-template-columns: 1fr;
-    }
+    .sdlg-grid-2, .sdlg-grid-3 { grid-template-columns: 1fr; }
   }
   @container app (min-width: 641px) and (max-width: 900px) {
-    .sdlg-grid-3 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    .sdlg-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 }
-
-/* ========================================================================
-   7. ENTERPRISE CARD (Sync dengan V3 elevation)
-   ======================================================================== */
 .sdlg-card {
   background-color: var(--sdlg-surface);
   border: 1px solid var(--sdlg-border);
@@ -385,119 +237,51 @@ a:hover {
   margin-bottom: var(--sdlg-spacing-3);
   box-shadow: var(--sdlg-shadow-card-sm);
   transition: var(--sdlg-transition-slow);
-  /* Isolate stacking context — ringan, mikro-optimization */
   isolation: isolate;
-  /* Cegah overflow konten (misal table) */
   overflow: hidden;
 }
-
 .sdlg-card:hover {
   border-color: var(--sdlg-border-strong);
   box-shadow: var(--sdlg-shadow-card-md);
 }
-
-/* Card tanpa interaksi (misal konfirmasi dialogs) */
-.sdlg-card.sdlg-card-static {
-  transition: none;
-}
+.sdlg-card.sdlg-card-static { transition: none; }
 .sdlg-card.sdlg-card-static:hover {
   border-color: var(--sdlg-border);
   box-shadow: var(--sdlg-shadow-card-sm);
 }
-
-/* ========================================================================
-   8. ACCESSIBILITY (A11Y) — WCAG 2.1 AA Ready
-   ======================================================================== */
-
-/* Focus-visible: keyboard-only rings */
 *:focus-visible {
   outline: 2px solid var(--sdlg-primary) !important;
   outline-offset: 3px !important;
   border-radius: calc(var(--sdlg-radius-card) - 6px) !important;
 }
-
-/* Hilangkan focus ring pada mouse click (JS-free a11y pattern) */
-*:focus:not(:focus-visible) {
-  outline: none !important;
-}
-
-/* Screen-reader-only utility */
+*:focus:not(:focus-visible) { outline: none !important; }
 .sdlg-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
-
-/* Optional skip-link pattern — class tersedia, HTML opsional */
 .sdlg-skip-link {
-  position: absolute;
-  top: -100px;
-  left: var(--sdlg-spacing-4);
-  z-index: 9999;
+  position: absolute; top: -100px; left: var(--sdlg-spacing-4); z-index: 9999;
   padding: var(--sdlg-spacing-2) var(--sdlg-spacing-4);
-  background: var(--sdlg-primary);
-  color: #ffffff;
+  background: var(--sdlg-primary); color: #ffffff;
   font-weight: var(--sdlg-font-weight-semibold);
   border-radius: calc(var(--sdlg-radius-card) - 4px);
-  box-shadow: var(--sdlg-shadow-card-lg);
-  text-decoration: none;
+  box-shadow: var(--sdlg-shadow-card-lg); text-decoration: none;
   transition: top 0.2s var(--sdlg-ease-out);
 }
-.sdlg-skip-link:focus {
-  top: var(--sdlg-spacing-4);
-}
-
-/* ========================================================================
-   9. REDUCED MOTION
-   ======================================================================== */
+.sdlg-skip-link:focus { top: var(--sdlg-spacing-4); }
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .sdlg-card:hover {
-    transform: none;
-  }
+  .sdlg-card:hover { transform: none; }
 }
-
-/* ========================================================================
-   10. PRINT STYLES (Enterprise document output)
-   ======================================================================== */
 @media print {
-  html,
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    font-size: 11pt;
-  }
-  .sdlg-card {
-    box-shadow: none !important;
-    border: 1px solid #cccccc !important;
-    page-break-inside: avoid;
-    margin-bottom: 12pt;
-  }
-  a {
-    color: #000000 !important;
-    text-decoration: underline;
-  }
-  /* Tampilkan URL setelah link untuk referensi cetak */
-  a[href^="http"]:not([href*="localhost"])::after {
-    content: " (" attr(href) ")";
-    font-size: 9pt;
-    color: #666666;
-  }
-  .sdlg-skip-link,
-  .sdlg-sr-only {
-    display: none !important;
-  }
+  html, body { background: #ffffff !important; color: #000000 !important; font-size: 11pt; }
+  .sdlg-card { box-shadow: none !important; border: 1px solid #cccccc !important; page-break-inside: avoid; margin-bottom: 12pt; }
+  a { color: #000000 !important; text-decoration: underline; }
+  a[href^="http"]:not([href*="localhost"])::after { content: " (" attr(href) ")"; font-size: 9pt; color: #666666; }
+  .sdlg-skip-link, .sdlg-sr-only { display: none !important; }
 }
