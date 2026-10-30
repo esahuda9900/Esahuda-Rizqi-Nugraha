@@ -1,32 +1,38 @@
 /* ==========================================================================
-   SDLG DASHBOARD POLISH V6.3 — UI Declutter "Hilangkan Kotak-kotak"
-   Rule: kalau spasi sudah memisahkan elemen, border garis tidak perlu.
-   Phase 1–2: KPI flat + Action Today soft-color only (no border lines).
+   SDLG DASHBOARD POLISH V6.4 — Structure without heavy boxes
+   Prinsip: hapus border garis → WAJIB diganti spasi / soft bg / shadow tipis.
+   Jangan biarkan elemen ngambang.
    ========================================================================== */
 
 body {
   background-color: var(--sdlg-bg, #f3f6fa) !important;
 }
 
-/* ---------- Metric cards (KPI baris atas) — TANPA kotak ---------- */
-/* Spacing + type hierarchy > border. Angka yang menonjol. */
+/* ---------- 3) KPI baris pertama — flat, jarak konsisten, angka tebal ---------- */
 .metric-grid {
-  gap: 8px 24px !important;
-  margin-bottom: 20px !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  gap: 16px 28px !important;
+  margin-bottom: 24px !important;
+  padding: 16px 20px !important;
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important; /* struktur via shadow, bukan border */
 }
 
-/* Override ops-clean & components: metric-card harus flat */
 .app-shell:not(:has(.login-screen)) .metric-card,
 .metric-card {
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
-  padding: 8px 4px !important;
+  padding: 4px 0 !important;
   min-height: 0 !important;
   box-shadow: none !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
+  gap: 6px !important;
   position: relative !important;
   overflow: visible !important;
   transition: none !important;
@@ -38,27 +44,16 @@ body {
 .metric-card:hover {
   transform: none !important;
   box-shadow: none !important;
-  border-color: transparent !important;
+  border: none !important;
   background: transparent !important;
 }
 
-.metric-card:focus-within {
-  border-color: transparent !important;
-  box-shadow: none !important;
-}
-
-/* Hapus accent bar / pseudo box */
 .metric-card::before,
 .metric-card::after {
   content: none !important;
   display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  background: transparent !important;
-  border: none !important;
 }
 
-/* Anak di dalam KPI: jangan ada kotak abu-abu nested */
 .metric-card > *,
 .metric-card div,
 .metric-card span {
@@ -66,15 +61,17 @@ body {
   box-shadow: none !important;
   background: transparent !important;
   border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .metric-label {
   font-size: 11px !important;
-  font-weight: 650 !important;
-  color: var(--sdlg-text-muted, #64748b) !important;
+  font-weight: 600 !important;
+  color: #64748b !important; /* abu-abu */
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  margin-bottom: 4px !important;
+  letter-spacing: 0.04em !important;
+  margin: 0 !important;
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
@@ -82,46 +79,94 @@ body {
 
 .metric-value {
   font-family: var(--sdlg-font-family, "IBM Plex Sans", sans-serif) !important;
-  font-size: 26px !important;
-  font-weight: 700 !important;
-  color: var(--sdlg-text-main, #0f172a) !important;
+  font-size: 28px !important;
+  font-weight: 800 !important; /* lebih tebal */
+  color: #0f172a !important;
   letter-spacing: -0.03em !important;
-  line-height: 1.15 !important;
+  line-height: 1.1 !important;
   font-variant-numeric: tabular-nums !important;
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
 }
 
-/* ---------- My Action Today — soft color, tanpa garis border ---------- */
-/* Satu card putih luar saja. P0/P1/P2 = background pudar, tanpa border. */
-.card:has(.metric-grid) {
-  padding: 20px !important;
-  border-radius: var(--sdlg-radius, 12px) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  background: var(--sdlg-surface, #ffffff) !important;
+/* ---------- 1) Section My Action Today — judul bold + panel soft shadow ---------- */
+/* Header jangan mirip form input; panel luar: putih + shadow tipis, TANPA border garis */
+.card:has(.metric-grid),
+.card:has(.action-row),
+.card-pad:has(.metric-grid) {
+  padding: 20px 22px !important;
+  border-radius: 14px !important;
+  border: none !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 16px !important;
+}
+
+/* Judul section di dalam card (My Action Today dll) */
+.card:has(.metric-grid) .section-title,
+.card:has(.action-row) .section-title,
+.card-pad .section-title,
+.section-title {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 4px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
   box-shadow: none !important;
 }
 
+.section-sub {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  margin: 0 0 14px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Header bar yang kadang mirip form — ratakan */
+.card:has(.metric-grid) > header,
+.card:has(.metric-grid) > .card-header,
+.card:has(.metric-grid) > div:first-child:has(.section-title),
+.card-pad > header,
+.card-pad > .card-header {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 0 12px 0 !important;
+  margin: 0 0 4px 0 !important;
+  min-height: 0 !important;
+}
+
+/* ---------- 2) Kartu P0 / P1 / P2 / Needs Action — soft color SAJA ---------- */
 .card:has(.metric-grid) > div:first-child {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   gap: 12px !important;
-  margin-bottom: 12px !important;
+  margin-bottom: 14px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div {
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   padding: 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  border: none !important; /* hilangkan garis — soft bg saja */
+  border: none !important;
+  box-shadow: none !important;
   position: relative !important;
   overflow: hidden !important;
   transition: background-color 0.15s ease !important;
   contain: layout paint;
-  box-shadow: none !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div:hover,
@@ -130,53 +175,55 @@ body {
   box-shadow: none !important;
 }
 
-/* Soft backgrounds only (P0 merah, P1 kuning, P2 biru, ke-4 netral) */
+/* Soft colors sesuai request */
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) {
-  background: #fef2f2 !important;
+  background: #fee2e2 !important; /* P0 merah pudar */
   border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(2) {
-  background: #fffbeb !important;
+  background: #fef3c7 !important; /* P1 kuning pudar */
   border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(3) {
-  background: #eff6ff !important;
+  background: #e0f2fe !important; /* P2 biru pudar */
   border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(4) {
-  background: #f8fafc !important;
+  background: #f1f5f9 !important; /* Needs Action netral */
   border: none !important;
 }
 
 .card:has(.metric-grid) > div:first-child > div > div:first-child {
   font-size: 24px !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   line-height: 1.1 !important;
   font-variant-numeric: tabular-nums !important;
   background: transparent !important;
   border: none !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(1) > div:first-child {
-  color: #dc2626 !important;
+  color: #b91c1c !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(2) > div:first-child {
-  color: #d97706 !important;
+  color: #b45309 !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(3) > div:first-child {
-  color: #2563eb !important;
+  color: #0369a1 !important;
 }
 .card:has(.metric-grid) > div:first-child > div:nth-child(4) > div:first-child {
   color: #0f172a !important;
 }
 
-/* Teks label di dalam soft chip juga tanpa box */
 .card:has(.metric-grid) > div:first-child > div > div:not(:first-child) {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
 }
 
-/* ---------- Claim / action rows (masih box per baris — Phase 3 nanti list) ---------- */
+/* ---------- Claim / action rows — soft surface, thin edge ---------- */
 .claim-row,
 .action-row {
   display: flex !important;
@@ -184,41 +231,32 @@ body {
   justify-content: space-between !important;
   padding: 12px 16px !important;
   border-radius: 10px !important;
-  margin-bottom: 6px !important;
-  background: var(--sdlg-surface-muted, #f8fafc) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+  margin-bottom: 8px !important;
+  background: #f8fafc !important;
+  border: none !important;
+  box-shadow: inset 0 0 0 1px #e2e8f0 !important; /* edge tipis via inset shadow */
+  transition: background-color 0.15s ease !important;
   contain: layout style;
 }
 
 .claim-row:hover,
 .action-row:hover {
   background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
   transform: none !important;
 }
 
-/* ---------- Section cards ---------- */
+/* ---------- Section cards umum — shadow tipis, bukan border tebal ---------- */
+.app-shell:not(:has(.login-screen)) .card,
+.app-shell:not(:has(.login-screen)) .card-pad,
 .card,
 .card-pad {
-  border-radius: var(--sdlg-radius, 12px) !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
-  background: var(--sdlg-surface, #ffffff) !important;
-  box-shadow: none !important;
+  border-radius: 14px !important;
+  border: none !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
 }
 
-.section-title {
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: var(--sdlg-text-main, #0f172a) !important;
-}
-
-.section-sub {
-  font-size: 12px !important;
-  color: var(--sdlg-text-muted, #64748b) !important;
-}
-
-/* ---------- Rank lists (sudah list-style) ---------- */
+/* ---------- Rank lists ---------- */
 .rank-row {
   display: flex !important;
   justify-content: space-between !important;
@@ -238,18 +276,24 @@ body {
   }
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px 20px !important;
   }
 }
 
 @media (max-width: 560px) {
   .metric-card {
-    padding: 6px 2px !important;
+    padding: 2px 0 !important;
   }
   .metric-value {
     font-size: 22px !important;
   }
-  .card:has(.metric-grid) {
-    padding: 14px !important;
+  .metric-grid {
+    padding: 14px 16px !important;
+    gap: 12px 16px !important;
+  }
+  .card:has(.metric-grid),
+  .card-pad:has(.metric-grid) {
+    padding: 16px !important;
   }
   .card:has(.metric-grid) > div:first-child > div {
     padding: 12px !important;
@@ -257,16 +301,16 @@ body {
   .card:has(.metric-grid) > div:first-child > div > div:first-child {
     font-size: 20px !important;
   }
+  .section-title {
+    font-size: 15px !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .metric-card,
   .claim-row,
   .action-row,
-  .metric-card:hover,
-  .claim-row:hover,
-  .action-row:hover,
-  .card:has(.metric-grid) > div:first-child > div:hover {
+  .card:has(.metric-grid) > div:first-child > div {
     transition: none !important;
   }
 }
