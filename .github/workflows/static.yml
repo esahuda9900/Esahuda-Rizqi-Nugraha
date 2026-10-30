@@ -47,8 +47,10 @@ jobs:
             echo "Included app.html ($(wc -c < app.html) bytes)"
           fi
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
-          cp -R modules _site/modules
-          if [ -d styles ]; then cp -R styles _site/styles; fi
+          mkdir -p _site/modules _site/styles
+          # Skip _archive (dead CSS/modules from cleanup)
+          rsync -a --exclude '_archive' modules/ _site/modules/
+          if [ -d styles ]; then rsync -a --exclude '_archive' styles/ _site/styles/; fi
           touch _site/.nojekyll
 
           # Build clean Vite app → /preview ONLY (does NOT replace production root)
@@ -149,8 +151,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # GitHub already has GITHUB_SHA on main. Update refs via API instead
-          # of pushing shallow/partial local Git objects to backup branches.
           DATE=$(date -u +%Y-%m-%d)
           update_snapshot() {
             local branch="$1"
