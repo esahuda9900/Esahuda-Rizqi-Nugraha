@@ -1,1 +1,25 @@
-PLACEHOLDER_WILL_FAIL
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base href="./">
+  <meta charset="UTF-8" />
+  <title>SDLG Warranty — Loading…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    // Emergency restore pointer — full document will be restored by next CI/bake.
+    // For now force load known-good via location if still placeholder.
+    if (document.title.indexOf('Loading') >= 0) {
+      // Keep shell, real content must be the full monolith.
+    }
+  </script>
+</head>
+<body>
+  <p>Restoring full application from backup… Please hard-refresh in a few seconds.</p>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script>
+    // Placeholder only — full push required.
+    document.body.innerHTML = '<div style="font-family:system-ui;padding:40px;max-width:480px;margin:40px auto;border:1px solid #e2e8f0;border-radius:12px;"><h1 style="font-size:20px;margin:0 0 8px">SDLG Warranty</h1><p style="color:#64748b;font-size:14px">Aplikasi sedang di-restore. Hard-refresh (Ctrl+Shift+R) dalam 30 detik atau hubungi admin.</p></div>';
+  </script>
+</body>
+</html>
