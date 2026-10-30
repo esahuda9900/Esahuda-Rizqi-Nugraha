@@ -35,9 +35,9 @@
     </form>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"></script>
-  <script src="./modules/supabase-client.js?v=20261026-session-v24"></script>
+  <script src="./modules/supabase-client.js?v=20261030-claims-modern-v6"></script>
   <script src="./modules/data-pipeline-guard.js"></script>
-  <script src="./modules/claim-fields.js?v=20261026-session-v24"></script>
+  <script src="./modules/claim-fields.js?v=20261030-claims-modern-v6"></script>
   <script src="./modules/sdlg-repository.js"></script>
   <script src="./modules/paste-parse-ux.js"></script>
   <script src="./modules/wo-claim-policy.js"></script>
@@ -70,14 +70,13 @@
   }
 
   function goApp() {
-    window.location.replace('./app.html?v=20261026-session-v24');
+    window.location.replace('./app.html?v=20261030-claims-modern-v6');
   }
 
-  // If already logged in, skip form
   setTimeout(function () {
     try {
       var c = getClient();
-      var t = setTimeout(function () { /* ignore slow session */ }, 4000);
+      var t = setTimeout(function () {}, 4000);
       c.auth.getSession().then(function (res) {
         clearTimeout(t);
         if (res && res.data && res.data.session) goApp();
@@ -107,10 +106,10 @@
         done = true;
         clearTimeout(timer);
         if (res.error) {
-btn.disabled = false;
-btn.textContent = 'Masuk';
-show(res.error.message || 'Login gagal');
-return;
+          btn.disabled = false;
+          btn.textContent = 'Masuk';
+          show(res.error.message || 'Login gagal');
+          return;
         }
         show('Berhasil. Membuka aplikasi...', true);
         setTimeout(goApp, 300);
