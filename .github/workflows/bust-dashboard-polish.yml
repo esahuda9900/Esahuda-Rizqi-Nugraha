@@ -1,0 +1,32 @@
+name: Bust dashboard polish cache
+on:
+  workflow_dispatch:
+jobs:
+  bust:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app.html')
+          t = p.read_text(encoding='utf-8')
+          t2 = t.replace(
+              'styles/sdlg-dashboard-polish.css?v=20261030-overview-v1',
+              'styles/sdlg-dashboard-polish.css?v=20261030-declutter-kpi-v1',
+          )
+          t2 = t2.replace(
+              'href="styles/sdlg-dashboard-polish.css"',
+              'href="styles/sdlg-dashboard-polish.css?v=20261030-declutter-kpi-v1"',
+          )
+          p.write_text(t2, encoding='utf-8')
+          print('count', t2.count('declutter-kpi-v1'))
+          PY
+          git config user.name "sdlg-bot"
+          git config user.email "sdlg-bot@users.noreply.github.com"
+          git add app.html
+          git diff --cached --quiet && echo No change && exit 0
+          git commit -m "chore(cache): dashboard-polish declutter-kpi-v1"
+          git push
