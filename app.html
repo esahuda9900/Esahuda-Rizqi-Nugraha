@@ -13,15 +13,15 @@
   <meta name="description" content="Internal web application for monitoring and managing SDLG warranty claims." />
   <meta property="og:title" content="SDLG Warranty Claim — PT. Indo Traktor Utama" />
   <meta property="og:description" content="Internal web application for monitoring and managing SDLG warranty claims." />
-  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css" />
-  <link rel="stylesheet" href="styles/sdlg-responsive.css" />
-<link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
-
-  <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
   <link rel="stylesheet" href="styles/sdlg-design-tokens.css" />
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
-  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-stable-v2" />
+  <link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
+  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css" />
+  <link rel="stylesheet" href="styles/sdlg-responsive.css" />
+  <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
+  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-overview-v1" />
+  <link rel="stylesheet" href="styles/sdlg-overview-v1.css?v=20261030-overview-v1" />
   
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
   <script>
@@ -627,8 +627,8 @@ button,input,select{min-height:42px!important}
 
 
 
-  <script src="./modules/command-center.js?v=20261030-stable-v2"></script>
-<script src="./modules/boss-analytics-dashboard.js?v=20261030-stable-v2"></script>
+  <script src="./modules/command-center.js?v=20261030-overview-v1"></script>
+<script src="./modules/boss-analytics-dashboard.js?v=20261030-overview-v1"></script>
 <script src="./modules/payment-evidence.js"></script>
 <script src="./modules/rebalancing-evidence.js"></script>
 <script src="./modules/sdlg-notifications.js"></script>
@@ -3252,7 +3252,7 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css">
+<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css?v=20261030-overview-v1">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
@@ -10532,7 +10532,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("b", null, value)),
                 React.createElement("div", { style: { height: 8, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" } },
                     React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#2563eb", borderRadius: 99 } })));
-            return (React.createElement("div", { className: "page" },
+            return (React.createElement("div", { className: "page overview-page", "data-sdlg-overview": "1" },
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 18, flexWrap: "wrap" } },
                     React.createElement("div", null,
                         React.createElement("div", { className: "eyebrow" }, "Master dashboard \u00B7 Operations + overview"),
@@ -10540,10 +10540,15 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement("div", { className: "page-sub" }, "Pantau claim, aging, dan item yang butuh tindakan.")),
                     React.createElement("button", { className: "secondary-btn", onClick: loadClaims, style: { padding: "8px 12px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 600 } }, "\u21BB Refresh")),
                 /* __SDLG_ANALYTICS_YEAR_BAR_V1__ */
-                /* __SDLG_ANALYTICS_PERIOD_BAR_V2__ */
-                (window.SDLGBossAnalytics && window.SDLGBossAnalytics.periodFilterBar)
-                    ? window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth })
-                    : null,
+                /* __SDLG_ANALYTICS_PERIOD_BAR_V3__ */
+                (() => {
+                    try {
+                        if (window.SDLGBossAnalytics && typeof window.SDLGBossAnalytics.periodFilterBar === "function") {
+                            return window.SDLGBossAnalytics.periodFilterBar({ React, claims, year: analyticsYear, setYear: setAnalyticsYear, month: analyticsMonth, setMonth: setAnalyticsMonth });
+                        }
+                    } catch (e) { try { console.warn("[SDLG] periodFilterBar failed", e); } catch (_) {} }
+                    return null;
+                })(),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 } }, [["Total Claims", totalClaims], ["Total Claim Amount", totalAmountDisplay], ["Approval Rate", approvedRate + "%"], ["Rejection Rate", rejectedRate + "%"], ["On Hold", onHold]].map(([l, v]) => React.createElement("div", { key: l, className: "metric-card" },
                     React.createElement("div", { className: "metric-label" }, l),
                     React.createElement("div", { className: "metric-value" }, v)))),
@@ -10706,19 +10711,24 @@ SDLG_REPOSITORY.listClaims = async function () {
                     rejectionData.length ? rejectionData.map(([k, v], i) => React.createElement("div", { key: i, style: { display: "flex", justifyContent: "space-between", gap: 16, padding: "9px 0", borderBottom: "1px solid #f1f5f9" } },
                         React.createElement("span", { style: { fontSize: 12, color: "#334155", maxWidth: "85%" } }, k),
                         React.createElement("b", null, v))) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada claim rejected.")),
-                /* __SDLG_BOSS_EXTRA_PANELS_V2__ */
-                (window.SDLGBossAnalytics && window.SDLGBossAnalytics.renderExtraPanels)
-                    ? window.SDLGBossAnalytics.renderExtraPanels({
-                        React,
-                        claims: scopeClaims,
-                        bossRows: scopeBossRows,
-                        actionCenterRows,
-                        stageAgingRows,
-                        statusDwellRows,
-                        year: analyticsYear,
-                        month: analyticsMonth
-                      })
-                    : null));
+                /* __SDLG_BOSS_EXTRA_PANELS_V3__ */
+                (() => {
+                    try {
+                        if (window.SDLGBossAnalytics && typeof window.SDLGBossAnalytics.renderExtraPanels === "function") {
+                            return window.SDLGBossAnalytics.renderExtraPanels({
+                                React,
+                                claims: scopeClaims,
+                                bossRows: scopeBossRows,
+                                actionCenterRows,
+                                stageAgingRows,
+                                statusDwellRows,
+                                year: analyticsYear,
+                                month: analyticsMonth
+                            });
+                        }
+                    } catch (e) { try { console.warn("[SDLG] renderExtraPanels failed", e); } catch (_) {} }
+                    return null;
+                })()));
         })(),
         tab === "list" && detailId && detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" } },
