@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light">
 <head>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='14' font-family='system-ui' font-weight='700'%3ES%3C/text%3E%3C/svg%3E" />
   <base href="./">
   <meta charset="UTF-8" />
   <script>window.__SDLG_REACT_INPUT_SINGLE_OWNER__ = true;</script>
@@ -20,7 +21,7 @@
   <link rel="stylesheet" href="styles/sdlg-design-tokens.css" />
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
-  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-claims-modern-v6" />
+  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-stable-v2" />
   
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
   <script>
@@ -37,11 +38,11 @@
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"
           onerror="window.SDLGLoadDependencyFallback(this,'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js','ReactDOM runtime failed on both CDNs')"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js" onerror="window.dispatchEvent(new CustomEvent('sdlg-dependency-error',{detail:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.min.js"}))"></script>
-  <script src="./modules/supabase-client.js?v=20261026-session-v24"></script>
-  <script src="./modules/data-pipeline-guard.js"></script>
-  <script src="./modules/claim-fields.js?v=20261026-session-v24"></script>
-  <script src="./modules/sdlg-repository.js?v=20261026-integrity-v1"></script>
-  <script src="./modules/paste-parse-ux.js"></script>
+  <script src="./modules/supabase-client.js?v=20261030-stable-v2"></script>
+  <script src="./modules/data-pipeline-guard.js?v=20261030-stable-v2"></script>
+  <script src="./modules/claim-fields.js?v=20261030-stable-v2"></script>
+  <script src="./modules/sdlg-repository.js?v=20261030-stable-v2"></script>
+  <script src="./modules/paste-parse-ux.js?v=20261030-stable-v2"></script>
   <script>
 window.SDLG_LOAD_XLSX = function () {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -626,13 +627,13 @@ button,input,select{min-height:42px!important}
 
 
 
-  <script src="./modules/command-center.js"></script>
-<script src="./modules/boss-analytics-dashboard.js"></script>
+  <script src="./modules/command-center.js?v=20261030-stable-v2"></script>
+<script src="./modules/boss-analytics-dashboard.js?v=20261030-stable-v2"></script>
 <script src="./modules/payment-evidence.js"></script>
 <script src="./modules/rebalancing-evidence.js"></script>
 <script src="./modules/sdlg-notifications.js"></script>
 <script src="./modules/sdlg-core.js"></script>
-<script src="./modules/navigation-state.js?v=20261001-restore2"></script>
+<script src="./modules/navigation-state.js?v=20261030-stable-v2"></script>
 <script src="./modules/claim-list-sort.js"></script>
 <script>
 /* SDLG_FB_PERSON_HELPER */
@@ -691,8 +692,8 @@ window.SDLGPolicyRulesQuery = async function(client, selectColumns, ruleCodes) {
   }
 </script>
 <script src="./modules/claim-parser-helpers.js"></script>
-<script src="./modules/wo-collision-modal.js"></script>
-<script src="./modules/wo-claim-policy.js"></script>
+<script src="./modules/wo-collision-modal.js?v=20261030-stable-v2"></script>
+<script src="./modules/wo-claim-policy.js?v=20261030-stable-v2"></script>
 <script src="./modules/master-resolution-ux.js"></script>
 <script src="./modules/export-table-helper.js"></script>
 
@@ -3025,7 +3026,7 @@ button:hover,
 
 
 
-<script src="./modules/perf-runtime.js"></script>
+<script src="./modules/perf-runtime.js?v=20261030-stable-v2"></script>
 
 
 
@@ -11111,10 +11112,10 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
 
 
 
-  <script src="./modules/sdlg-hash-router.js"></script>
+  <script src="./modules/sdlg-hash-router.js?v=20261030-stable-v2"></script>
   <script src="./modules/sdlg-input-claim-lock.js"></script>
   <script src="./modules/sdlg-portal-finance-ux.js"></script>
-  <script src="modules/sdlg-repository.js?v=20261026-integrity-v1"></script>
-<script src="modules/vin-auto-lookup.js?v=1.0"></script>
+  <script src="modules/sdlg-repository.js?v=20261030-stable-v2"></script>
+<script src="modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
 </body>
 </html>
