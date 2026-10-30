@@ -127,25 +127,6 @@ jobs:
           3. Cache-bust with `?v=` when changing critical CSS.
           EOF
 
-      - name: Exclude _archive from Pages deploy
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 << 'PY'
-          from pathlib import Path
-          p = Path('.github/workflows/static.yml')
-          t = p.read_text()
-          if '_archive' in t and 'rsync' in t:
-              print('already patched')
-          else:
-              old = '          cp -R modules _site/modules\n          if [ -d styles ]; then cp -R styles _site/styles; fi'
-              new = '''          mkdir -p _site/modules _site/styles\n          # Skip _archive (dead CSS/modules)\n          rsync -a --exclude '_archive' modules/ _site/modules/\n          if [ -d styles ]; then rsync -a --exclude '_archive' styles/ _site/styles/; fi'''
-              if old not in t:
-                  raise SystemExit('static.yml pattern not found')
-              p.write_text(t.replace(old, new, 1))
-              print('static.yml updated')
-          PY
-
       - name: Commit
         shell: bash
         run: |
