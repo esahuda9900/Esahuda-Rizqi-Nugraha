@@ -1,44 +1,199 @@
-/* SDLG Claims UI + Claim Detail fix — visual only, no business logic. */
+/* SDLG Claims UI fix v2 — list KPI + search + detail visual only */
 
-/* ========== CLAIMS LIST (existing) ========== */
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  align-items: center;
-  gap: 8px;
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
-  min-width: 0;
-  width: 100%;
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box input {
-  display: block;
-  width: 100%;
-  min-width: 0;
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list {
+/* ========== CLAIMS LIST — KPI as real metrics (not form fields) ========== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
   gap: 10px !important;
+  margin-bottom: 14px !important;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 12px;
-  padding: 12px 14px !important;
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card {
+  background: #fff !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
-  background: var(--sdlg-surface, #fff) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, .035) !important;
+  padding: 12px 14px !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 4px !important;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row:hover {
-  border-color: #c5d3e8 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, .04) !important;
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: #cbd5e1 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card::before {
+  display: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-label {
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  color: #64748b !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  margin: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-value {
+  font-size: 20px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.2 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Kill input-like chrome inside metric cards */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card input,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card select,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card textarea,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card [class*="value"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card > div {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-card input {
+  font-size: 20px !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  pointer-events: none !important;
+  caret-color: transparent !important;
+}
+
+/* ========== SEARCH BAR ========== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  margin-bottom: 12px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  font-size: 13.5px !important;
+  box-shadow: none !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box input:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+  outline: none !important;
+}
+
+/* Ghost empty second row under search (spinner-only / empty bar) */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar + div:empty,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar ~ .loading-row:empty,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-table-shell:empty {
+  display: none !important;
+}
+
+/* Empty full-width bar that only shows spinner — collapse if no real content */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:placeholder-shown + *,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) [class*="search"] + div:has(> :only-child):not(:has(input)):not(:has(button)):not(:has(.claim-row)) {
+  min-height: 0 !important;
+}
+
+/* Secondary empty input under main search — hide if empty & not focused */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:nth-of-type(2):placeholder-shown:not(:focus) {
+  display: none !important;
+}
+
+/* Loading placeholder under search: tighter, not a huge empty field */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card {
+  min-height: 64px !important;
+  display: grid !important;
+  align-content: center !important;
+  justify-items: center !important;
+  gap: 8px !important;
+  padding: 16px !important;
+  border: 1px dashed #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 13px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
+  min-height: 10px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: linear-gradient(90deg, #edf1f7 25%, #f7f9fc 50%, #edf1f7 75%) !important;
+  background-size: 200% 100% !important;
+  animation: sdlg-claims-skeleton 1.4s ease-in-out infinite !important;
+}
+
+@keyframes sdlg-claims-skeleton {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ========== CLAIM ROWS ========== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list {
+  gap: 8px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  gap: 12px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
   transform: none !important;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div {
-  min-width: 0;
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row:hover {
+  border-color: #c5d3e8 !important;
+  background: #f8fafc !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div {
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div {
+  min-width: 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) > div,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) {
   border: 0 !important;
   outline: 0 !important;
   box-shadow: none !important;
@@ -47,43 +202,15 @@
   min-height: 0 !important;
   height: auto !important;
   padding: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row > div:nth-child(3) {
-  border: 0 !important;
-  outline: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .loading-card,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .empty-card {
-  min-height: 84px;
-  display: grid;
-  align-content: center;
-  gap: 10px;
-  padding: 18px;
-  border: 1px solid var(--sdlg-border, #e2e8f0);
-  border-radius: 12px;
-  background: var(--sdlg-surface, #fff);
-  color: var(--sdlg-text-muted, #64748b);
-}
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
-  min-height: 10px;
-  border: 0 !important;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #edf1f7 25%, #f7f9fc 50%, #edf1f7 75%);
-  background-size: 200% 100%;
-  animation: sdlg-claims-skeleton 1.4s ease-in-out infinite;
-}
-@keyframes sdlg-claims-skeleton {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
 }
 
-/* ========== CLAIM DETAIL — main fix ========== */
+/* Filter chips row denser */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) [class*="filter"] {
+  gap: 8px !important;
+}
 
-/* Page spacing */
+/* ========== CLAIM DETAIL (keep previous fixes) ========== */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
   max-width: 1440px !important;
   padding: 16px 20px 40px !important;
@@ -93,12 +220,11 @@
   margin-bottom: 12px !important;
 }
 
-/* Cards: one border only, no lift */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
-  border: 1px solid var(--sdlg-border, #e2e8f0) !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
-  background: var(--sdlg-surface, #fff) !important;
+  background: #fff !important;
   box-shadow: none !important;
   transform: none !important;
 }
@@ -107,20 +233,13 @@
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad:hover {
   transform: none !important;
   box-shadow: none !important;
-  border-color: var(--sdlg-border-strong, #cbd5e1) !important;
+  border-color: #cbd5e1 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad {
   padding: 14px 16px !important;
 }
 
-/* Kill ghost borders on nested plain divs (not real controls) */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card div:not(input):not(select):not(textarea):not(button):not([role="button"]):not(.status-badge):not(.badge):not(.chip):not(.status-step):not(.primary-btn):not(.secondary-btn),
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad div:not(input):not(select):not(textarea):not(button):not([role="button"]):not(.status-badge):not(.badge):not(.chip):not(.status-step) {
-  box-shadow: none !important;
-}
-
-/* Empty evidence / photo slots → collapse visual noise */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card div:empty,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad div:empty {
   min-height: 0 !important;
@@ -131,43 +250,21 @@
   background: transparent !important;
 }
 
-/* Rows that look like empty input fields inside evidence grids */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card [style*="min-height"] {
-  min-height: 0 !important;
-}
-
-/* Section titles clearer */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-title,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page h2,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page h3 {
   font-size: 13px !important;
   font-weight: 750 !important;
-  color: var(--sdlg-text, #0f172a) !important;
-  letter-spacing: -0.01em !important;
+  color: #0f172a !important;
   margin-bottom: 8px !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .section-sub {
   font-size: 12px !important;
-  color: var(--sdlg-text-muted, #64748b) !important;
+  color: #64748b !important;
   margin-bottom: 10px !important;
 }
 
-/* INFO-style label/value denser */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card label,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .card-pad label {
-  font-size: 11px !important;
-  font-weight: 650 !important;
-  color: var(--sdlg-text-muted, #64748b) !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-}
-
-/* Tables denser */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page table {
-  border-collapse: collapse !important;
-  width: 100% !important;
-}
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page table th {
   background: #f8fafc !important;
   color: #64748b !important;
@@ -178,14 +275,13 @@
   padding: 8px 10px !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
+
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page table td {
   padding: 8px 10px !important;
   font-size: 13px !important;
   border-bottom: 1px solid #e2e8f0 !important;
-  vertical-align: middle !important;
 }
 
-/* Lifecycle / status track more visible */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-track {
   gap: 6px !important;
   padding: 8px !important;
@@ -194,21 +290,12 @@
   border-radius: 10px !important;
   box-shadow: none !important;
 }
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step {
-  min-height: 52px !important;
-  border-radius: 8px !important;
-  transform: none !important;
-}
+
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step:hover {
   transform: none !important;
   background: #eff6ff !important;
 }
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step-label {
-  font-size: 11px !important;
-  font-weight: 650 !important;
-}
 
-/* Next action / decision CTA more visible */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .claim-decision-summary,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="decision-summary"] {
   border: 1px solid #bfdbfe !important;
@@ -218,27 +305,6 @@
   box-shadow: none !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .decision-summary-next,
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page [class*="next-action"],
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-route-summary__next {
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #1d4ed8 !important;
-}
-
-/* Primary actions in toolbar */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .primary-btn {
-  background: #1d4ed8 !important;
-  box-shadow: none !important;
-  transform: none !important;
-  font-weight: 650 !important;
-}
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:first-child .primary-btn:hover {
-  background: #1e40af !important;
-  transform: none !important;
-}
-
-/* Real inputs only keep field chrome */
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page input:not([type="checkbox"]):not([type="radio"]),
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page select,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page textarea {
@@ -258,17 +324,26 @@
   border-color: #e2e8f0 !important;
 }
 
-/* Mobile */
+/* ========== MOBILE ========== */
+@media (max-width: 900px) {
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto !important;
   }
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1 !important;
+  }
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
-    align-items: flex-start;
-    gap: 8px;
+    align-items: flex-start !important;
+    gap: 8px !important;
     padding: 10px !important;
   }
   .app-shell:not(:has(.login-screen)) .page.claim-detail-page {
@@ -284,18 +359,15 @@
 
 @media (max-width: 420px) {
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) !important;
   }
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row {
-    flex-wrap: wrap;
+    flex-wrap: wrap !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .skeleton {
-    animation: none;
-  }
-  .app-shell:not(:has(.login-screen)) .page.claim-detail-page * {
-    transition-duration: 0.01ms !important;
+    animation: none !important;
   }
 }
