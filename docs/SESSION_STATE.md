@@ -1,4 +1,4 @@
-# SESSION_STATE — 2026-11-03
+# SESSION_STATE — 2026-11-04
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
@@ -6,7 +6,7 @@
 - Latest deploys via static.yml successful as of last check. No open issues.
 - Claims count: 556 (stable since 2026-10-30).
 
-## Current health (2026-11-03 monitoring)
+## Current health (2026-11-04 monitoring)
 - Supabase project ACTIVE_HEALTHY. Claims total 556, no new claims in last 48h+ (latest created ~2026-10-29).
 - Status distribution: Paid ~313, SDLG Audit ~236, Draft ~4, Rejected ~3 (stable).
 - Security advisors: known warnings on SECURITY DEFINER RPCs (create/update/delete_sdlg_claim etc.) callable by authenticated — intentional for business logic. Leaked password protection disabled (known).
