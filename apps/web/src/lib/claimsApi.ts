@@ -101,7 +101,7 @@ export async function fetchClaimById(claimId: string): Promise<ClaimDetail> {
   const { data, error } = await sb.from('claims').select(DETAIL_SELECT).eq('claim_id', claimId).maybeSingle();
   if (error) throw error;
   if (!data) throw new Error(`Claim ${claimId} tidak ditemukan`);
-  return data as ClaimDetail;
+  return (data as unknown) as ClaimDetail;
 }
 
 export async function fetchClaimStatusHistory(claimId: string): Promise<ClaimStatusHistoryRow[]> {

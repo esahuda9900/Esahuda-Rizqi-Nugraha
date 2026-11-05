@@ -86,6 +86,32 @@
         0 1px 3px rgba(15, 23, 42, 0.04),
         0 20px 48px -12px rgba(15, 23, 42, 0.10);
       position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle top indicator hairline */
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #1d4ed8, #60a5fa, #38bdf8, #1d4ed8);
+      background-size: 200% 100%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .card.is-authenticating::after {
+      opacity: 1;
+      animation: auth-bar-slide 1.5s linear infinite;
+    }
+
+    @keyframes auth-bar-slide {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
 
     .brand-header {
@@ -236,37 +262,150 @@
     }
 
     button#btn:disabled {
-      opacity: 0.7;
+      opacity: 0.85;
       cursor: wait;
       transform: none;
     }
 
-    .err {
+    /* Input skeleton shimmer state */
+    .card.is-authenticating .input-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .card.is-authenticating .input-wrapper::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      border-radius: 10px;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(226, 232, 240, 0.7) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      animation: skeleton-field-shimmer 1.5s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    @keyframes skeleton-field-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .card.is-authenticating input {
+      background-color: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #94a3b8 !important;
+      cursor: wait !important;
+      user-select: none;
+      box-shadow: none !important;
+    }
+
+    /* Micro-progress indicator along button bottom */
+    .card.is-authenticating button#btn {
+      cursor: wait;
+      opacity: 0.96;
+    }
+
+    .card.is-authenticating button#btn::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2.5px;
+      width: 45%;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+      border-radius: 1px;
+      animation: btn-bar-sweep 1.25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes btn-bar-sweep {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(250%); }
+    }
+
+    /* Button spinner & check */
+    .btn-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: btn-spin 0.65s linear infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .btn-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    @keyframes btn-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Pulsing status dot during auth */
+    .card.is-authenticating .security-dot {
+      background: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      animation: sec-pulse 1.2s infinite ease-in-out;
+    }
+
+    .card.is-success .security-dot {
+      background: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+    }
+
+    @keyframes sec-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.6; }
+    }
+
+    /* Smooth zero-jump alert notification */
+    #msg {
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      transition: opacity 0.2s ease, max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.25s ease, padding 0.25s ease;
+      overflow: hidden;
+      margin-bottom: 0;
+      padding: 0 12px;
+      max-height: 0;
+      opacity: 0;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+    }
+
+    #msg.has-msg {
+      max-height: 80px;
+      opacity: 1;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+    }
+
+    #msg.err {
       color: #b91c1c;
       background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      padding: 10px 12px;
-      margin-bottom: 16px;
-      line-height: 1.4;
-      display: none;
+      border-color: #fecaca;
     }
 
-    .err:not(:empty) {
-      display: block;
-    }
-
-    .ok {
+    #msg.ok {
       color: #047857;
       background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      padding: 10px 12px;
-      margin-bottom: 16px;
-      line-height: 1.4;
-      display: block;
+      border-color: #a7f3d0;
     }
 
     .footer-meta {
@@ -372,11 +511,55 @@
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZycXZlbGNyZWN6bW5vZmxkcmdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMzQyMDksImV4cCI6MjEwMzkxMDIwOX0.EQoGxEu8cNDF84tObZH13rwHiYt9EGcqnJiT3yRMa-w';
   var msg = document.getElementById('msg');
   var btn = document.getElementById('btn');
+  var card = document.querySelector('.card');
+  var emailInput = document.getElementById('email');
+  var passwordInput = document.getElementById('password');
+  var secNote = document.querySelector('.security-note span:last-child');
   var client = null;
 
   function show(t, ok) {
-    msg.textContent = t || '';
-    msg.className = ok ? 'ok' : 'err';
+    if (!t) {
+      msg.textContent = '';
+      msg.className = '';
+      return;
+    }
+    msg.textContent = t;
+    msg.className = (ok ? 'ok' : 'err') + ' has-msg';
+  }
+
+  function setAuthLoading(loading, statusText, isSuccess) {
+    var form = document.getElementById('f');
+    if (loading) {
+      if (card) {
+        card.classList.add('is-authenticating');
+        if (isSuccess) card.classList.add('is-success');
+        else card.classList.remove('is-success');
+      }
+      if (form) form.setAttribute('aria-busy', 'true');
+      btn.disabled = true;
+      if (isSuccess) {
+        btn.innerHTML = '<span class="btn-check" aria-hidden="true">✓</span><span>' + (statusText || 'Berhasil. Membuka aplikasi...') + '</span>';
+        btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+        btn.style.boxShadow = '0 4px 14px rgba(5, 150, 105, 0.35)';
+      } else {
+        btn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span><span>' + (statusText || 'Memverifikasi Kredensial...') + '</span>';
+        btn.style.background = '';
+        btn.style.boxShadow = '';
+      }
+      if (emailInput) emailInput.readOnly = true;
+      if (passwordInput) passwordInput.readOnly = true;
+      if (secNote) secNote.textContent = isSuccess ? 'Sesi terverifikasi. Mengarahkan...' : 'Menghubungkan ke Supabase Auth SSL...';
+    } else {
+      if (card) card.classList.remove('is-authenticating', 'is-success');
+      if (form) form.removeAttribute('aria-busy');
+      btn.disabled = false;
+      btn.innerHTML = 'Masuk ke Portal';
+      btn.style.background = '';
+      btn.style.boxShadow = '';
+      if (emailInput) emailInput.readOnly = false;
+      if (passwordInput) passwordInput.readOnly = false;
+      if (secNote) secNote.textContent = 'Terkoneksi ke Supabase Cloud (SSL 256-bit)';
+    }
   }
 
   function getClient() {
@@ -409,16 +592,14 @@
   document.getElementById('f').addEventListener('submit', function (e) {
     e.preventDefault();
     show('');
-    btn.disabled = true;
-    btn.textContent = 'Memproses...';
+    setAuthLoading(true, 'Memverifikasi Kredensial...');
     var email = document.getElementById('email').value.trim();
     var password = document.getElementById('password').value;
     var done = false;
     var timer = setTimeout(function () {
       if (done) return;
       done = true;
-      btn.disabled = false;
-      btn.textContent = 'Masuk';
+      setAuthLoading(false);
       show('Koneksi terlalu lama. Coba lagi.');
     }, 12000);
     try {
@@ -428,26 +609,29 @@
         done = true;
         clearTimeout(timer);
         if (res.error) {
-          btn.disabled = false;
-          btn.textContent = 'Masuk';
+          setAuthLoading(false);
           show(res.error.message || 'Login gagal');
+          if (passwordInput) {
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
           return;
         }
         show('Berhasil. Membuka aplikasi...', true);
-        setTimeout(goApp, 300);
+        setAuthLoading(true, 'Berhasil. Membuka aplikasi...', true);
+        setTimeout(goApp, 350);
       }).catch(function (err) {
         if (done) return;
         done = true;
         clearTimeout(timer);
-        btn.disabled = false;
-        btn.textContent = 'Masuk';
+        setAuthLoading(false);
         show((err && err.message) || 'Login gagal');
+        if (passwordInput) passwordInput.focus();
       });
     } catch (err) {
       done = true;
       clearTimeout(timer);
-      btn.disabled = false;
-      btn.textContent = 'Masuk';
+      setAuthLoading(false);
       show((err && err.message) || 'Gagal memulai login');
     }
   });

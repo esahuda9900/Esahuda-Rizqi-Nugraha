@@ -46,6 +46,9 @@ export function AppShell() {
         <div className="sidebar-foot">
           <p className="muted small">{user?.email || 'User'}</p>
           <p className="muted small">{role ? `role: ${role}` : 'Preview'}</p>
+          <a href="/" className="muted small" style={{ display: 'block', margin: '4px 0', textDecoration: 'underline' }}>
+            ← Web Lama (Production)
+          </a>
           <button type="button" className="ghost" onClick={() => void signOut()}>
             Logout
           </button>
