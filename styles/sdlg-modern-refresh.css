@@ -185,8 +185,7 @@ body > header,
 /* =========================================
    4. CARDS
    ========================================= */
-:is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "])
-  :where(:not(.login-card, #sdlg-tracking-panel)) {
+:is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(.login-card, #sdlg-tracking-panel)) {
   border: 1px solid var(--ui-border) !important;
   border-radius: var(--ui-radius-card) !important;
   box-shadow: var(--ui-shadow-sm) !important;
@@ -196,15 +195,11 @@ body > header,
 }
 
 /* Hover hanya untuk kartu yang memang interaktif */
-:is(a, button, [role="button"], [tabindex="0"], .is-clickable)
-  :is(.card, .metric-card, [class$="-card"])
-  :where(:not(.login-card, #sdlg-tracking-panel)) {
+:is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, .metric-card, [class$="-card"]):where(:not(.login-card, #sdlg-tracking-panel)) {
   cursor: pointer;
   transition: box-shadow 0.28s ease, border-color 0.28s ease !important;
 }
-:is(a, button, [role="button"], [tabindex="0"], .is-clickable)
-  :is(.card, .metric-card, [class$="-card"])
-  :where(:not(.login-card, #sdlg-tracking-panel)):hover {
+:is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, .metric-card, [class$="-card"]):where(:not(.login-card, #sdlg-tracking-panel)):hover {
   border-color: var(--ui-border-strong) !important;
   box-shadow: var(--ui-shadow-md) !important;
 }
@@ -625,8 +620,7 @@ tbody tr:hover td { background: var(--ui-surface-hover) !important; }
    12. HIGH CONTRAST (A11Y — NEW)
    ========================================= */
 @media (prefers-contrast: more) {
-  :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "])
-    :where(:not(.login-card, #sdlg-tracking-panel)) {
+  :is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(.login-card, #sdlg-tracking-panel)) {
     border-width: 2px !important;
   }
   .table-wrap,

@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
   <link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
-  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css" />
+  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css?v=20261105-nestfix" />
   <link rel="stylesheet" href="styles/sdlg-responsive.css" />
   <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
   <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261030-overview-v1" />
@@ -3250,7 +3250,7 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-overview-v1">
+<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-overview-v2">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
@@ -10596,7 +10596,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 React.createElement("div", null,
                                     React.createElement("div", { className: "section-title" }, "⚡ My Action Today"),
                                     React.createElement("div", { className: "section-sub" }, "Prioritas operasional dari Action Center database.")),
-                                React.createElement("div", { style: { fontSize: 10, color: actionCenterLoadError ? "#dc2626" : "#64748b" } }, actionCenterLoadError ? "Action Center fallback" : "Live dari claim_action_center_v")),
+                                React.createElement("div", { style: { fontSize: 10, color: actionCenterLoadError ? "#dc2626" : "#64748b" } }, actionCenterLoadError ? "Action Center fallback" : "Live")),
                             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10 } },
                                 actionCards.map(x => React.createElement("button", { key: x.label, onClick: () => {
                                     if (x.priority === "P0" || x.priority === "P1") setTab("list");
@@ -11127,7 +11127,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
 <script src="modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
 <script>
 (function () {
-  var HREF = "styles/sdlg-dashboard-polish.css?v=20261105-overview-v1";
+  var HREF = "styles/sdlg-dashboard-polish.css?v=20261105-overview-v2";
   function pin() {
     var link = document.getElementById("sdlg-shell-polish") || document.querySelector('link[href*="sdlg-dashboard-polish"]');
     if (!link) {
