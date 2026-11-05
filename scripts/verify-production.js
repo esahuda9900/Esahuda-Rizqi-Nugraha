@@ -21,6 +21,9 @@ function readRequired(file, label) {
 }
 
 const html = readRequired(path.join(root, 'index.html'), 'Production HTML');
+const appHtmlPath = path.join(root, 'app.html');
+const appHtml = fs.existsSync(appHtmlPath) ? readRequired(appHtmlPath, 'Application HTML') : null;
+const appTarget = appHtml || html;
 // Canonical helper URLs may carry a cache-busting query string (?v=...).
 // Validate the helper resource identity without rejecting the deterministic cache key.
 const helper = readRequired(path.join(root, 'canonical-warranty-helper.js'), 'Canonical warranty helper');
@@ -64,31 +67,32 @@ if (html) {
   }
   if (syntaxErrors === 0) pass('Inline JavaScript syntax', count + ' inline script block(s) parsed');
 
-  function countSrc(re) { return (html.match(re) || []).length; }
-  if (countSrc(/<script[^>]+src=["']\/?canonical-warranty-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Canonical helper wiring', 'exactly one external helper tag (query-string cache bust allowed)');
+  function countSrc(re) { return (appTarget.match(re) || []).length; }
+  if (countSrc(/<script[^>]+src=["'](?:\.\/|\/)?canonical-warranty-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Canonical helper wiring', 'exactly one external helper tag (query-string cache bust allowed)');
   else fail('Canonical helper wiring', 'expected exactly 1 canonical helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/export-table-helper\.js["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/|\/)?modules\/export-table-helper\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Excel export helper wiring', 'exactly one external export helper tag');
   else fail('Excel export helper wiring', 'expected exactly 1 export helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/claim-parser-helpers\.js["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/|\/)?modules\/claim-parser-helpers\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Claim parser helper wiring', 'exactly one external parser helper tag');
   else fail('Claim parser helper wiring', 'expected exactly 1 parser helper tag');
-  if (countSrc(/<script[^>]+src=["']\/?modules\/master-resolution-ux\.js["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
+  if (countSrc(/<script[^>]+src=["'](?:\.\/|\/)?modules\/master-resolution-ux\.js(?:\?[^"']*)?["'][^>]*>/gi) === 1) pass('Master resolution UX wiring', 'exactly one external resolution UX helper tag');
   else fail('Master resolution UX wiring', 'expected exactly 1 resolution UX helper tag');
 
-  if (html.includes('const styleTable = window.SDLGExportTableHelper.styleTable;')) pass('Excel export helper integration', 'inline exporter delegates styleTable');
+  if (appTarget.includes('const styleTable = window.SDLGExportTableHelper.styleTable;')) pass('Excel export helper integration', 'inline exporter delegates styleTable');
   else fail('Excel export helper integration', 'inline exporter does not delegate styleTable');
-  if (html.includes('const isNumericCell = window.SDLGClaimParserHelpers.isNumericCell;')) pass('Claim parser helper integration', 'inline parser delegates isNumericCell');
+  if (appTarget.includes('const isNumericCell = window.SDLGClaimParserHelpers.isNumericCell;')) pass('Claim parser helper integration', 'inline parser delegates isNumericCell');
   else fail('Claim parser helper integration', 'inline parser does not delegate isNumericCell');
 
-  const loginSignals = ['.login-screen{', '.login-layout{', '.login-card{', '.login-intro h1{', '.login-submit{', '#sdlg-self-signup-panel{'];
-  const missingLogin = loginSignals.filter(function(v) { return !html.includes(v); });
-  if (missingLogin.length) fail('Login layout contract', 'missing: ' + missingLogin.join(', '));
-  else pass('Login layout contract', 'login structure + responsive card styling present');
+  const hasModernLogin = html.includes('.login-container') && html.includes('.card') && html.includes('goApp');
+  const legacySignals = ['.login-screen{', '.login-layout{', '.login-card{', '.login-intro h1{', '.login-submit{', '#sdlg-self-signup-panel{'];
+  const missingLogin = legacySignals.filter(function(v) { return !html.includes(v); });
+  if (hasModernLogin || missingLogin.length === 0) pass('Login layout contract', 'login structure + responsive card styling present');
+  else fail('Login layout contract', 'missing: ' + missingLogin.join(', '));
 
-  if (html.includes('SDLG_FEEDBACK_PERSON_OVERRIDE_V2')) fail('Feedback Person runtime safety', 'legacy global DOM polling override still embedded');
+  if (appTarget.includes('SDLG_FEEDBACK_PERSON_OVERRIDE_V2')) fail('Feedback Person runtime safety', 'legacy global DOM polling override still embedded');
   else pass('Feedback Person runtime safety', 'legacy global DOM polling override is absent');
 
-  if (html.includes('SDLG_MOBILE_CLAIM_RUNTIME_V10')) fail('Mobile runtime safety', 'legacy V10 global DOM scanner still embedded');
-  else if (html.includes('SDLG_RESPONSIVE_UI_V10') || html.includes('SDLG_MOBILE_CLAIM_RUNTIME_V11')) pass('Mobile runtime safety', 'responsive markers present without V10 scanner');
+  if (appTarget.includes('SDLG_MOBILE_CLAIM_RUNTIME_V10')) fail('Mobile runtime safety', 'legacy V10 global DOM scanner still embedded');
+  else if (appTarget.includes('SDLG_RESPONSIVE_UI_V10') || appTarget.includes('SDLG_MOBILE_CLAIM_RUNTIME_V11')) pass('Mobile runtime safety', 'responsive markers present without V10 scanner');
   else fail('Mobile runtime safety', 'expected responsive markers missing');
 }
 

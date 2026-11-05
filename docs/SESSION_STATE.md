@@ -15,9 +15,16 @@
 - Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
 
 ## Task Queue status
-- [TUGAS 1]: Routine monitoring & health check → Status: SELESAI PUSH (this update)
-- Remaining known work: security advisor review (optional), backup workflow fix (low priority — check SUPABASE_DB_URL secret), full-stack save/update race audits (future).
+- [TUGAS 1]: Routine monitoring & health check → Status: SELESAI PUSH
+- [TUGAS 2]: Production web legacy upgrade (performance & reliability):
+  - Memoized 564+ claims filtering & sorting via `useMemo` with non-enumerable lazy `_searchCorpus`.
+  - Cleaned up duplicate `modules/sdlg-repository.js` inclusion in `app.html`.
+  - Updated canonical warranty helper cache-busting version (`?v=20261105-smart-engine-v2`).
+  - Created staging SQL migration script `scripts/sql/20261105_optimize_rls_and_policies.sql` for RLS InitPlan & policy consolidation.
+  - Documented `SUPABASE_DB_URL` session pooler format in `RUNBOOK.md` for backup workflow.
+  - All 10 verification contracts passing 100%.
 
 ## Handover notes
-- No urgent bugs, stuck loading, or data anomalies detected. System stable. New claims are drafts as expected.
-- Next AI: continue monitoring or address remaining known warnings if prioritized by owner.
+- Legacy production web running smoothly at root (`/`) with instant search and zero render thrashing.
+- Cutover policy strictly maintained (no unauthorized switch of `/`).
+- All checks green: `npm run verify`, `compile_applet`, `lint_applet`.

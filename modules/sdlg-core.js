@@ -21,18 +21,19 @@
   // BAGIAN 1: IDENTITY & CURRENCY HELPERS
   // ═════════════════════════════════════════════════════════
   
-  var MODEL_ALIASES_RAW = {
+  var MODEL_ALIASES = {
     L936H: ['L936H', 'L936'],
+    L953H: ['L953H', 'L953', '953H', 'SDLG953H'],
     L956H: ['L956H', 'L956'],
-    L968F: ['L968F', 'L968'],
+    L968F: ['L968F', 'L968', '968F', 'SDLG968F'],
     L975H: ['L975H', 'L975']
   };
 
   // Convert to Map untuk O(1) lookup (Anti-Loop)
   var MODEL_MAP = new Map();
-  Object.keys(MODEL_ALIASES_RAW).forEach(function(base) {
+  Object.keys(MODEL_ALIASES).forEach(function(base) {
     MODEL_MAP.set(base, base);
-    MODEL_ALIASES_RAW[base].forEach(function(alias) {
+    MODEL_ALIASES[base].forEach(function(alias) {
       MODEL_MAP.set(alias, base);
     });
   });
@@ -58,7 +59,16 @@
   }
 
   function baseCustomerName(value) {
-    return String(value == null ? '' : value).replace(/\s+/g, ' ').trim().toUpperCase();
+    var s = String(value == null ? '' : value).trim().replace(/\s+/g, ' ');
+    if (!s) return '';
+    var LEGAL_PREFIX = /^(PT\.?|CV\.?|UD\.?|MR\.?|MRS\.?|IBU|BAPAK)\s+/i;
+    var LEGAL_SUFFIX = /[\s,]+(PT\.?|CV\.?|UD\.?)$/i;
+    for (var i = 0; i < 3; i++) {
+      var next = s.replace(LEGAL_PREFIX, '').replace(LEGAL_SUFFIX, '').trim();
+      if (next === s) break;
+      s = next;
+    }
+    return s.toUpperCase().replace(/[^A-Z0-9]+/g, '').trim();
   }
 
   function normalizeDealerCode(value) {
@@ -75,15 +85,20 @@
   }
 
   function normalizeClaimCurrency(value, sourceText, dealerClaimNo) {
+    var claimNo = String(dealerClaimNo == null ? '' : dealerClaimNo).trim().toUpperCase();
+    if (/^YNFW[A-Z0-9-]*$/.test(claimNo)) return 'USD';
+    var src = String(sourceText == null ? '' : sourceText);
+    var srcWithoutPlaceholders = src.replace(/\bUSD\s*[-–—]+/gi, ' ').replace(/\$\s*[-–—]+/g, ' ');
+    var hasRealUsd = /\bUSD\b/i.test(srcWithoutPlaceholders) || /\$\s*\d/.test(srcWithoutPlaceholders);
     var s = String(value == null ? '' : value).trim().toUpperCase();
     if (!s) {
-      var blob = String(sourceText || '') + ' ' + String(dealerClaimNo || '');
-      if (RE_IDR.test(blob)) return 'IDR';
-      if (RE_USD.test(blob)) return 'USD';
-      if (RE_CNY.test(blob)) return 'CNY';
+      if (hasRealUsd) return 'USD';
+      if (/IDR|RP|RUPIAH/i.test(src)) return 'IDR';
+      if (/CNY|RMB|YUAN/i.test(src)) return 'CNY';
       return '';
     }
     if (/IDR|RP|RUPIAH/.test(s)) return 'IDR';
+    if (hasRealUsd && (s === 'USD' || s === '')) return 'USD';
     if (/USD|\$|DOLLAR/.test(s)) return 'USD';
     if (/CNY|RMB|YUAN/.test(s)) return 'CNY';
     return s;
@@ -91,6 +106,9 @@
 
   function effectiveClaimCurrency(claim) {
     if (!claim || typeof claim !== 'object') return '';
+    var claimNo = String(claim.dealer_claim_no || '').trim().toUpperCase();
+    if (/^YNFW[A-Z0-9-]*$/.test(claimNo)) return 'USD';
+    if (/^ORF(?:-|$)/.test(claimNo)) return 'CNY';
     return normalizeClaimCurrency(
       claim.currency || claim.claim_currency || claim.amount_currency,
       claim.source_text || claim.raw_text,
@@ -117,7 +135,7 @@
     root.SDLGInferCurrencyToken = inferCurrencyTokenFromSource;
     
     root.SDLGCore = Object.freeze({
-      version: '3.0.0',
+      version: '1.4.0',
       modelKey: modelKey,
       canonicalModel: canonicalModel,
       modelsEquivalent: modelsEquivalent,
@@ -127,7 +145,7 @@
       normalizeClaimCurrency: normalizeClaimCurrency,
       effectiveClaimCurrency: effectiveClaimCurrency,
       inferCurrencyTokenFromSource: inferCurrencyTokenFromSource,
-      MODEL_ALIASES: Object.freeze(Object.assign({}, MODEL_ALIASES_RAW))
+      MODEL_ALIASES: Object.freeze(Object.assign({}, MODEL_ALIASES))
     });
   }
 

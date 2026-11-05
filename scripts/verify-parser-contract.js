@@ -2,7 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const file = path.join(process.cwd(), 'index.html');
+const appFile = path.join(process.cwd(), 'app.html');
+const indexFile = path.join(process.cwd(), 'index.html');
+const file = fs.existsSync(appFile) ? appFile : indexFile;
 const helperFile = path.join(process.cwd(), 'modules', 'claim-parser-helpers.js');
 const woFile = path.join(process.cwd(), 'modules', 'wo-claim-policy.js');
 const source = fs.readFileSync(file, 'utf8');
@@ -67,9 +69,9 @@ if (missing.length) {
   process.exit(1);
 }
 
-if (!source.includes('<script src="/modules/claim-parser-helpers.js"></script>')) {
+if (!source.includes('<script src="/modules/claim-parser-helpers.js"></script>') && !source.includes('<script src="./modules/claim-parser-helpers.js"></script>')) {
   console.error('PARSER CONTRACT: FAIL');
-  console.error('- Parser helper script tag missing from index.html');
+  console.error('- Parser helper script tag missing from ' + path.basename(file));
   process.exit(1);
 }
 

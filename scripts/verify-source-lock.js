@@ -5,11 +5,21 @@ const vm = require('node:vm');
 const root = process.cwd();
 const buildPath = path.join(root, 'scripts', 'build-production.js');
 const corePath = path.join(root, 'modules', 'sdlg-core.js');
-const architecturePath = path.join(root, 'ARCHITECTURE.md');
-const freeTierPath = path.join(root, 'FREE_TIER.md');
-const securityPath = path.join(root, 'SECURITY.md');
-const deploymentPath = path.join(root, 'DEPLOYMENT.md');
-const injectorRoadmapPath = path.join(root, 'INJECTOR_ROADMAP.md');
+const architecturePath = fs.existsSync(path.join(root, 'docs', 'architecture', 'ARCHITECTURE.md'))
+  ? path.join(root, 'docs', 'architecture', 'ARCHITECTURE.md')
+  : path.join(root, 'ARCHITECTURE.md');
+const freeTierPath = fs.existsSync(path.join(root, 'docs', 'runbooks', 'FREE_TIER.md'))
+  ? path.join(root, 'docs', 'runbooks', 'FREE_TIER.md')
+  : path.join(root, 'FREE_TIER.md');
+const securityPath = fs.existsSync(path.join(root, 'docs', 'runbooks', 'SECURITY.md'))
+  ? path.join(root, 'docs', 'runbooks', 'SECURITY.md')
+  : path.join(root, 'SECURITY.md');
+const deploymentPath = fs.existsSync(path.join(root, 'docs', 'runbooks', 'DEPLOYMENT.md'))
+  ? path.join(root, 'docs', 'runbooks', 'DEPLOYMENT.md')
+  : path.join(root, 'DEPLOYMENT.md');
+const injectorRoadmapPath = fs.existsSync(path.join(root, 'docs', 'archive', 'INJECTOR_ROADMAP.md'))
+  ? path.join(root, 'docs', 'archive', 'INJECTOR_ROADMAP.md')
+  : path.join(root, 'INJECTOR_ROADMAP.md');
 
 const failures = [];
 

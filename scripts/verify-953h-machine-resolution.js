@@ -3,7 +3,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const corePath = path.join(process.cwd(), 'modules', 'sdlg-core.js');
-const indexPath = path.join(process.cwd(), 'index.html');
+const appPath = path.join(process.cwd(), 'app.html');
+const indexPath = fs.existsSync(appPath) ? appPath : path.join(process.cwd(), 'index.html');
 const migrationPath = path.join(
   process.cwd(),
   'supabase',

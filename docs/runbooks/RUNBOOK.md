@@ -93,3 +93,15 @@ If this claim resolves differently, stop and investigate the resolver — do not
 2. Insert/update `app_user_roles` with correct role and `is_active = true`.
 3. Password min length ≥ 12; unique strong password; no shared accounts.
 4. Verify they can login and only see what their role allows.
+
+## 13. Automated Database Backup & Performance Optimization
+### Backup Secret Setup (`SUPABASE_DB_URL` in GitHub Secrets)
+If `.github/workflows/sdlg-supabase-backup.yml` fails with `password authentication failed`:
+1. Check GitHub Repository Secrets -> `SUPABASE_DB_URL`.
+2. Ensure URL format is URI encoded (no naked special characters in password):
+   `postgresql://postgres.frqvelcreczmnofldrga:[YOUR_ENCODED_PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require`
+3. Port 5432 session pooler is required by the workflow validator.
+
+### Database Performance Optimization (Postgres 17 / RLS InitPlan)
+See `scripts/sql/20261105_optimize_rls_and_policies.sql` to optimize `public.machines` RLS by wrapping `auth.uid()` in `(SELECT auth.uid())` and consolidating permissive policies on `ax_warranty_work_order_costs`. Run first in staging before production.
+

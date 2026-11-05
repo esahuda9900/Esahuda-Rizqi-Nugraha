@@ -9,13 +9,15 @@ const fail = (message) => {
 };
 
 const index = read('index.html');
+const appHtmlPath = path.join(root, 'app.html');
+const app = fs.existsSync(appHtmlPath) ? read('app.html') : index;
 const core = read('modules/sdlg-core.js');
 const helper = read('canonical-warranty-helper.js');
 const build = read('scripts/build-production.js');
 
 // Browser-delivered source must never contain Supabase privileged credentials.
 for (const needle of ['service_role', 'SUPABASE_SERVICE_ROLE_KEY', 'sb_secret_']) {
-  if (index.includes(needle) || core.includes(needle) || helper.includes(needle)) {
+  if (index.includes(needle) || app.includes(needle) || core.includes(needle) || helper.includes(needle)) {
     fail(`privileged credential marker found in browser-delivered source: ${needle}`);
   }
 }
@@ -24,7 +26,7 @@ for (const needle of ['service_role', 'SUPABASE_SERVICE_ROLE_KEY', 'sb_secret_']
 // literal template string in a React value/defaultValue prop. Executable template
 // interpolation elsewhere remains valid and is intentionally not blocked.
 const literalFeedbackFieldPattern = /\b(?:value|defaultValue)\s*:\s*["']\$\{sdlgFeedbackPerson\(selectedClaim\)\}["']/;
-if (literalFeedbackFieldPattern.test(index)) {
+if (literalFeedbackFieldPattern.test(index) || literalFeedbackFieldPattern.test(app)) {
   fail('literal Feedback Person interpolation remains in a value/defaultValue field');
 }
 
@@ -34,7 +36,7 @@ for (const needle of [
   'canonical-warranty-helper.js',
   'SDLGCore',
 ]) {
-  if (!index.includes(needle) && !core.includes(needle)) {
+  if (!index.includes(needle) && !app.includes(needle) && !core.includes(needle)) {
     fail(`required canonical wiring marker missing: ${needle}`);
   }
 }

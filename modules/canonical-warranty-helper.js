@@ -99,16 +99,16 @@
       if (sel && sel.value) {
         var opt = sel.options[sel.selectedIndex];
         var txt = (opt && (opt.textContent || opt.value)) || sel.value;
-        var m = String(txt).match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
-        if (m) return m[1];
+        var m = String(txt).match(/\b\d{4}-\d{4}-SDLG-PFR\b/i);
+        if (m) return m[0];
       }
     } catch (_) {}
     var hash = String(location.hash || '');
     var hm = hash.match(/claim[_-]?id[=:]([^&]+)/i);
     if (hm) return clean(decodeURIComponent(hm[1]));
     var body = document.body ? String(document.body.innerText || '') : '';
-    var bm = body.match(/\b(\d{3,4}-\d{4}-SDLG-[A-Z0-9]+)\b/i);
-    return bm ? bm[1] : '';
+    var bm = body.match(/\b\d{4}-\d{4}-SDLG-PFR\b/);
+    return bm ? bm[0] : '';
   }
 
   // Fokus: Cari control berdasarkan label (Dibuat sekali per run)
@@ -188,6 +188,34 @@
     } catch (_) { return null; }
   }
 
+  function renderPolicyDecision(resolver) {
+    if (!resolver) return;
+    var panel = document.getElementById('sdlg-policy-decision-panel') || document.querySelector('[data-sdlg-policy-panel]');
+    if (!panel) {
+      var target = document.querySelector('.policy-decision-box') || document.querySelector('#policy-decision-section');
+      if (target) {
+        panel = document.createElement('div');
+        panel.id = 'sdlg-policy-decision-panel';
+        target.appendChild(panel);
+      }
+    }
+    if (panel) {
+      var fields = [
+        ['Coverage class', resolver.component_coverage_class],
+        ['Policy variant', resolver.component_policy_variant],
+        ['Category source', resolver.component_category_source],
+        ['Expiry basis', resolver.expiry_basis],
+        ['SDLG: Sales expiry', resolver.sdlg_sales_expiry_date],
+        ['SDLG: B/L maximum', resolver.sdlg_bl_cap_expiry_date],
+        ['SDLG: Effective expiry', resolver.effective_expiry_date],
+        ['Final routing reason', resolver.final_route_reason]
+      ];
+      panel.innerHTML = '<div class="sdlg-policy-details">' + fields.map(function(f) {
+        return '<div class="sdlg-policy-field"><span class="label">' + f[0] + ':</span> <span class="val">' + (f[1] || '—') + '</span></div>';
+      }).join('') + '</div>';
+    }
+  }
+
   function applyClaimData(claim, resolver) {
     if (!claim) return;
     
@@ -202,6 +230,10 @@
         if (fillControl(ctrl, val, true)) filledCount++;
       });
     });
+
+    if (resolver) {
+      renderPolicyDecision(resolver);
+    }
 
     if (filledCount > 0) {
       console.info('[SDLG Hydrate] Berhasil auto-isi ' + filledCount + ' kolom untuk ' + claim.claim_id);
