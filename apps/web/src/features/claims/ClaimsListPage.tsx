@@ -26,6 +26,7 @@ export function ClaimsListPage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [sortKey, setSortKey] = useState<SortKey>('last_updated');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
@@ -168,62 +169,128 @@ export function ClaimsListPage() {
           />
           Tampilkan archived
         </label>
+        <div className="view-toggle">
+          <button
+            type="button"
+            className={viewMode === 'cards' ? 'active' : ''}
+            onClick={() => setViewMode('cards')}
+            title="Card view"
+          >
+            Cards
+          </button>
+          <button
+            type="button"
+            className={viewMode === 'table' ? 'active' : ''}
+            onClick={() => setViewMode('table')}
+            title="Table view"
+          >
+            Table
+          </button>
+        </div>
       </div>
 
       {listQ.isError ? <div className="alert error">{(listQ.error as Error).message}</div> : null}
 
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <SortTh k="claim_id" label="Claim ID" />
-              <SortTh k="claim_status" label="Status" />
-              <SortTh k="model" label="Model" />
-              <SortTh k="serial_no" label="Serial" />
-              <SortTh k="customer" label="Customer" />
-              <SortTh k="dealer_wo_so" label="WO" />
-              <SortTh k="branch" label="Branch" />
-              <SortTh k="failure_date" label="Failure" />
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((c) => (
-              <tr key={c.claim_id} className={c.archived_at ? 'row-archived' : undefined}>
-                <td>
-                  <Link to={`/claims/${encodeURIComponent(c.claim_id)}`} className="mono">
+      {viewMode === 'cards' ? (
+        <div className="claims-cards-grid">
+          {pageRows.map((c) => (
+            <Link
+              key={c.claim_id}
+              to={`/claims/${encodeURIComponent(c.claim_id)}`}
+              className={`claim-card ${c.archived_at ? 'row-archived' : ''}`}
+            >
+              <div className="claim-card-main">
+                <div className="claim-card-top">
+                  <span className="mono" style={{ fontWeight: 750, fontSize: '12px' }}>
                     {c.claim_id}
-                  </Link>
-                  {c.archived_at ? <span className="muted small"> · arch</span> : null}
-                </td>
-                <td>
+                  </span>
                   <StatusBadge status={c.claim_status} />
-                </td>
-                <td>{c.model || '—'}</td>
-                <td className="mono">
+                  {c.branch ? <span className="pill small">{c.branch}</span> : null}
+                  {c.archived_at ? <span className="muted small">· archived</span> : null}
+                </div>
+                <div className="claim-card-title">
+                  {c.model || 'Unknown Model'}
                   {c.serial_no ? (
-                    <Link to={`/unit?serial=${encodeURIComponent(c.serial_no)}`}>
-                      {c.serial_no}
-                    </Link>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td>{c.customer || '—'}</td>
-                <td className="mono">{c.dealer_wo_so || '—'}</td>
-                <td>{c.branch || '—'}</td>
-                <td className="mono">{formatDateDisplay(c.failure_date) || '—'}</td>
-              </tr>
-            ))}
-            {!listQ.isLoading && filtered.length === 0 ? (
+                    <span className="muted" style={{ fontWeight: 500, fontSize: '13px', marginLeft: 6 }}>
+                      · SN {c.serial_no}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="claim-card-sub">
+                  <span style={{ fontWeight: 600, color: 'var(--text)' }}>{c.customer || '—'}</span>
+                  {c.dealer_wo_so ? ` — WO: ${c.dealer_wo_so}` : ''}
+                </div>
+              </div>
+              <div className="claim-card-meta">
+                <span className="claim-card-date">
+                  {formatDateDisplay(c.failure_date) || formatDateDisplay(c.last_updated) || '—'}
+                </span>
+                <span className="claim-row-arrow" style={{ fontSize: '18px', color: '#94a3b8' }}>
+                  ›
+                </span>
+              </div>
+            </Link>
+          ))}
+          {!listQ.isLoading && filtered.length === 0 ? (
+            <div className="panel empty-cell" style={{ textAlign: 'center', padding: '32px' }}>
+              Tidak ada klaim yang cocok.
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={8} className="empty-cell">
-                  Tidak ada klaim yang cocok.
-                </td>
+                <SortTh k="claim_id" label="Claim ID" />
+                <SortTh k="claim_status" label="Status" />
+                <SortTh k="model" label="Model" />
+                <SortTh k="serial_no" label="Serial" />
+                <SortTh k="customer" label="Customer" />
+                <SortTh k="dealer_wo_so" label="WO" />
+                <SortTh k="branch" label="Branch" />
+                <SortTh k="failure_date" label="Failure" />
               </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {pageRows.map((c) => (
+                <tr key={c.claim_id} className={c.archived_at ? 'row-archived' : undefined}>
+                  <td>
+                    <Link to={`/claims/${encodeURIComponent(c.claim_id)}`} className="mono">
+                      {c.claim_id}
+                    </Link>
+                    {c.archived_at ? <span className="muted small"> · arch</span> : null}
+                  </td>
+                  <td>
+                    <StatusBadge status={c.claim_status} />
+                  </td>
+                  <td>{c.model || '—'}</td>
+                  <td className="mono">
+                    {c.serial_no ? (
+                      <Link to={`/unit?serial=${encodeURIComponent(c.serial_no)}`}>
+                        {c.serial_no}
+                      </Link>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>{c.customer || '—'}</td>
+                  <td className="mono">{c.dealer_wo_so || '—'}</td>
+                  <td>{c.branch || '—'}</td>
+                  <td className="mono">{formatDateDisplay(c.failure_date) || '—'}</td>
+                </tr>
+              ))}
+              {!listQ.isLoading && filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="empty-cell">
+                    Tidak ada klaim yang cocok.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {filtered.length > PAGE_SIZE ? (
         <div className="pager">

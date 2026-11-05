@@ -16,6 +16,16 @@ const mimeTypes = {
 
 const previewDist = path.resolve(root, 'apps', 'web', 'dist');
 
+if (!fs.existsSync(previewDist) || !fs.existsSync(path.resolve(previewDist, 'index.html'))) {
+  try {
+    const { execSync } = require('node:child_process');
+    console.log('Building React preview app (apps/web)...');
+    execSync('npm --prefix apps/web run build', { stdio: 'inherit' });
+  } catch (err) {
+    console.error('Failed to build apps/web:', err);
+  }
+}
+
 function safePath(urlPath) {
   const pathname = decodeURIComponent(urlPath.split('?')[0]);
   const requested = pathname === '/' ? '/index.html' : pathname;

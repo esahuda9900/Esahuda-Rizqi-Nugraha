@@ -162,8 +162,13 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
 .quick-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-weight: 600; font-size: 14px; }
 
 .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-.toolbar input { flex: 1; min-width: 200px; }
+.toolbar input { flex: 1 1 240px; min-width: 200px; }
 .toolbar select { width: auto; min-width: 160px; }
+@media (max-width: 640px) {
+  .toolbar input { flex: 1 1 100%; width: 100%; min-width: 100%; }
+  .toolbar select { flex: 1 1 100%; width: 100%; }
+  .check-inline { width: 100%; }
+}
 .check-inline {
   display: inline-flex;
   align-items: center;
@@ -173,6 +178,136 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   white-space: nowrap;
 }
 .check-inline input { width: auto; }
+
+.view-toggle {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 3px;
+  margin-left: auto;
+}
+.view-toggle button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.view-toggle button.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Modern claim list cards in apps/web */
+.claims-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.claim-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 24px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.45);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-decoration: none !important;
+  color: inherit !important;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease,
+              background-color 0.22s ease;
+}
+
+.claim-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.claim-card:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(96, 165, 250, 0.7);
+  border-bottom: 2px solid #3b82f6;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.35), 0 4px 12px -2px rgba(59, 130, 246, 0.2);
+}
+
+.claim-card:hover::before {
+  background: #3b82f6;
+}
+
+.claim-card:active {
+  transform: translateY(0) scale(0.998);
+  box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+}
+
+.claim-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.claim-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.claim-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 4px 0 3px;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+.claim-card-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.claim-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.claim-card-date {
+  font-size: 12px;
+  color: var(--muted);
+}
 
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .chip-row button { padding: 8px 12px; font-size: 12.5px; }
@@ -233,7 +368,7 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
 }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th, .data-table td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   white-space: nowrap;
@@ -251,7 +386,10 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   letter-spacing: 0.04em;
   cursor: pointer;
 }
-.data-table tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
+.data-table tbody tr {
+  transition: background-color 0.18s ease;
+}
+.data-table tbody tr:hover { background: rgba(59, 130, 246, 0.08); }
 .row-archived { opacity: 0.65; }
 .empty-cell { text-align: center !important; color: var(--muted); padding: 24px !important; }
 

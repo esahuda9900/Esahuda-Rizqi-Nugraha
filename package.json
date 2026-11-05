@@ -2,6 +2,9 @@
   "name": "sdlg-warranty-backup",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
   "description": "Static SDLG warranty claim frontend with a Node-based production build pipeline.",
   "type": "commonjs",
   "engines": {

@@ -84,54 +84,264 @@
   min-height: 0 !important;
 }
 
-/* ===== FILTER + SEARCH ===== */
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar,
+/* ===== FILTER + SEARCHBAR (Flexible flex containers) ===== */
+/* Remove any duplicate pseudo-element icons from legacy stylesheets */
+.claims-searchbar::before,
+.claims-searchbar::after,
+.search-wrap::before,
+.search-wrap::after,
+.search-box::before,
+.search-box::after {
+  content: none !important;
+  display: none !important;
+}
+
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-wrap.claims-searchbar {
   display: flex !important;
+  flex-direction: row !important;
   flex-wrap: wrap !important;
   align-items: center !important;
-  gap: 8px !important;
-  padding: 12px 14px !important;
-  background: var(--claims-surface) !important;
-  border: 1px solid var(--claims-border) !important;
-  border-radius: var(--claims-radius) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-  margin-bottom: 12px !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto auto auto !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
-  min-width: 0 !important;
+  gap: 12px !important;
+  padding: 12px 16px !important;
+  background: var(--claims-surface, #ffffff) !important;
+  border: 1px solid var(--claims-border, #e2e8f0) !important;
+  border-radius: var(--claims-radius, 14px) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 16px !important;
+  box-sizing: border-box !important;
   width: 100% !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box,
+.search-box {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 320px !important;
+  min-width: 240px !important;
+  max-width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Search actions wrapper (buttons container) */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .claims-searchbar-actions {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
+  flex: 0 0 auto !important;
+  flex-wrap: wrap !important;
 }
 
+/* Fix overlapping search icon: pinned inside input left with pointer-events: none */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-icon,
+.search-box .search-icon {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #64748b !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Fix search input: 44px left padding ensures text never overlaps the icon */
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-input,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar select {
-  min-height: 38px !important;
+.search-box input,
+.search-box .sdlg-input {
+  width: 100% !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 16px 0 44px !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 10px !important;
-  border: 1px solid #d0d9e6 !important;
-  background: #fff !important;
-  box-shadow: none !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
   font-size: 13.5px !important;
-  padding: 8px 12px !important;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  font-family: inherit !important;
+  line-height: normal !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:hover,
+.search-box input:hover {
+  border-color: #94a3b8 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input:focus,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar select:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14) !important;
+.search-box input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12), 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  background: #ffffff !important;
+}
+
+.search-box input::placeholder,
+.search-box .sdlg-input::placeholder {
+  color: #94a3b8 !important;
+  font-size: 13.5px !important;
+  opacity: 1 !important;
+}
+
+/* Action buttons in searchbar */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn {
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar button[title*="Muat ulang"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions button[title*="Muat ulang"] {
+  width: 42px !important;
+  min-width: 42px !important;
+  padding: 0 !important;
+  font-size: 18px !important;
+  flex: 0 0 42px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn--primary,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn--primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #1d4ed8 !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn--primary:hover,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn--primary:hover {
+  background: #1d4ed8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn--secondary,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn--secondary {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .sdlg-btn--secondary:hover,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn--secondary:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ===== FILTER BAR (Flexible flex container) ===== */
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 16px !important;
+  background: var(--claims-surface, #ffffff) !important;
+  border: 1px solid var(--claims-border, #e2e8f0) !important;
+  border-radius: var(--claims-radius, 14px) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  margin-bottom: 14px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 12px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-sizing: border-box !important;
   outline: none !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  flex: 0 1 auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  white-space: nowrap !important;
+  flex: 0 1 auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(input[type="checkbox"]) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12.5px !important;
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 9px !important;
+  height: 38px !important;
+  padding: 0 12px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-btn {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 12px !important;
+  border-radius: 9px !important;
+  font-size: 12.5px !important;
+  flex: 0 0 auto !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar span:last-child {
+  margin-left: auto !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
 }
 
 /* ===== LOADING / EMPTY — no ghost bar ===== */
@@ -174,83 +384,321 @@
   100% { background-position: -100% 0; }
 }
 
-/* ===== CLAIM ROWS — flat, clean, smooth ===== */
+/* ===== MODERN, CLEAN & SMOOTH CLAIM CARDS (UNIVERSAL SCOPE) ===== */
+.claims-list,
+.app-shell:not(:has(.login-screen)) .claims-list,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 12px !important;
 }
 
+.claim-row,
+.claims-list > .claim-row,
+.app-shell:not(:has(.login-screen)) .claim-row,
+.app-shell:not(:has(.login-screen)) .claims-list > .claim-row,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-list > .claim-row,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row {
   display: flex !important;
   align-items: center !important;
-  gap: 14px !important;
-  padding: 14px 16px !important;
-  border: 1px solid var(--claims-border) !important;
-  border-radius: var(--claims-radius) !important;
-  background: var(--claims-surface) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
-  transform: none !important;
+  gap: 18px !important;
+  padding: 18px 24px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02) !important;
   cursor: pointer !important;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease,
+              background-color 0.22s ease !important;
 }
 
+/* Left accent stripe on hover/active */
+.claim-row::before,
+.app-shell:not(:has(.login-screen)) .claim-row::before,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 4px !important;
+  background: transparent !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.claim-row:hover,
+.app-shell:not(:has(.login-screen)) .claim-row:hover,
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover {
-  border-color: #c5d3e8 !important;
+  border-color: #bfdbfe !important;
+  border-bottom: 2px solid #2563eb !important;
+  background: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(37, 99, 235, 0.06) !important;
+}
+
+.claim-row:hover::before,
+.app-shell:not(:has(.login-screen)) .claim-row:hover::before,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover::before {
+  background: #2563eb !important;
+}
+
+.claim-row:active,
+.app-shell:not(:has(.login-screen)) .claim-row:active,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:active {
+  transform: translateY(0px) scale(0.998) !important;
+  box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.05) !important;
+}
+
+.claim-row:hover .claim-row-arrow,
+.claim-row:hover > span:last-child,
+.app-shell:not(:has(.login-screen)) .claim-row:hover .claim-row-arrow,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover .claim-row-arrow,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover > span:last-child {
+  transform: translateX(3px) !important;
+  color: #2563eb !important;
+}
+
+.claim-row-arrow,
+.claim-row > span:last-child,
+.app-shell:not(:has(.login-screen)) .claim-row > span:last-child,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > span:last-child {
+  transition: transform 0.2s ease, color 0.2s ease !important;
+}
+
+/* Checkbox styling */
+.claim-row input[type="checkbox"],
+.app-shell:not(:has(.login-screen)) .claim-row input[type="checkbox"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 5px !important;
+  accent-color: #2563eb !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Leading icon box */
+.claim-row .claim-row-icon,
+.claim-row > div:nth-child(2),
+.app-shell:not(:has(.login-screen)) .claim-row .claim-row-icon,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(2) {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #dbeafe !important;
+  font-size: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.claim-row:hover .claim-row-icon,
+.claim-row:hover > div:nth-child(2),
+.app-shell:not(:has(.login-screen)) .claim-row:hover .claim-row-icon,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover > div:nth-child(2) {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24) !important;
+}
+
+/* Badges row & Claim ID tag */
+.claim-row span[style*="monospace"],
+.claim-row span[style*="Monospace"],
+.app-shell:not(:has(.login-screen)) .claim-row span[style*="monospace"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row span[style*="monospace"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row span[style*="Monospace"] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 2.5px 7px !important;
+  border-radius: 6px !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Badge / Pill styling */
+.sdlg-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.01em !important;
+  padding: 2.5px 8px !important;
+  border-radius: 6px !important;
+  line-height: 1.35 !important;
+  white-space: nowrap !important;
+  border: 1px solid transparent !important;
+}
+
+.sdlg-badge--primary {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+}
+
+.sdlg-badge--success {
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  border-color: #bbf7d0 !important;
+}
+
+.sdlg-badge--warning {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+}
+
+.sdlg-badge--danger {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+
+.sdlg-badge--neutral {
   background: #f8fafc !important;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
-  transform: none !important;
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row.sdlg-card {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+/* Model & serial number line */
+.claim-row div[style*="fontSize: 14"],
+.claim-row div[style*="font-size: 14px"],
+.claim-row div[style*="fontSize: 13"],
+.claim-row div[style*="font-size: 13px"],
+.app-shell:not(:has(.login-screen)) .claim-row div[style*="fontSize: 14"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontSize: 14"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="font-size: 14px"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontSize: 13"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="font-size: 13px"] {
+  font-size: 15px !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.015em !important;
+  line-height: 1.35 !important;
+  margin: 5px 0 3px 0 !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div {
-  min-width: 0 !important;
-  border: 0 !important;
+/* Customer & fault description line */
+.claim-row div[style*="fontSize: 12.5"],
+.claim-row div[style*="font-size: 12.5px"],
+.claim-row div[style*="fontSize: 12"],
+.claim-row div[style*="font-size: 12px"],
+.app-shell:not(:has(.login-screen)) .claim-row div[style*="fontSize: 12.5"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontSize: 12.5"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="font-size: 12.5px"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontSize: 12"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="font-size: 12px"] {
+  font-size: 13px !important;
+  color: #475569 !important;
+  line-height: 1.45 !important;
+}
+
+/* Right-side financial amount and date */
+.claim-row > div:last-child,
+.app-shell:not(:has(.login-screen)) .claim-row > div:last-child,
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:last-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+  text-align: right !important;
+}
+
+.claim-row div[style*="var(--sdlg-primary)"],
+.claim-row div[style*="fontVariantNumeric"],
+.app-shell:not(:has(.login-screen)) .claim-row div[style*="fontVariantNumeric"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="var(--sdlg-primary)"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontVariantNumeric"] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 15.5px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.claim-row div[style*="fontSize: 11"],
+.claim-row div[style*="font-size: 11px"],
+.app-shell:not(:has(.login-screen)) .claim-row div[style*="fontSize: 11"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="fontSize: 11"],
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row div[style*="font-size: 11px"] {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+}
+
+/* List section header */
+.claims-list-intro {
+  padding: 14px 4px 10px !important;
+  font-size: 12px !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.claims-list-intro span:first-child {
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #475569 !important;
+  text-transform: uppercase !important;
+}
+
+/* ===== LOGIN CARD HEAD & EYEBROW OVERLAP FIX ===== */
+.login-card-head,
+.login-card-eyebrow,
+.login-card [class*="card"],
+.login-card [class*="Card"] {
+  border: none !important;
   box-shadow: none !important;
   background: transparent !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(3) > div,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(3) {
-  border: 0 !important;
-  outline: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  min-height: 0 !important;
   padding: 0 !important;
+  border-radius: 0 !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn {
-  border-radius: 10px !important;
-  font-weight: 600 !important;
-  box-shadow: none !important;
-  transform: none !important;
-  transition: background 0.15s ease, border-color 0.15s ease !important;
+.login-card-eyebrow {
+  display: inline-block !important;
+  margin: 0 0 8px 0 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.09em !important;
+  color: #2563eb !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn:hover {
-  transform: none !important;
+.login-card h2 {
+  margin: 0 0 8px 0 !important;
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1.2 !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--primary {
-  background: var(--claims-primary) !important;
-  color: #fff !important;
-  border: 0 !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--primary:hover {
-  background: #1e40af !important;
-}
-
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .sdlg-btn--secondary {
-  background: #fff !important;
-  border: 1px solid var(--claims-border) !important;
-  color: var(--claims-text) !important;
+.login-card-head p {
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  color: #64748b !important;
+  line-height: 1.55 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .page-title {
@@ -308,30 +756,105 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
+  /* Searchbar wraps cleanly: search box takes top full row, action buttons wrap below without collision */
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar,
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-wrap.claims-searchbar {
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 12px !important;
   }
-  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box {
-    grid-column: 1 / -1 !important;
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .search-box,
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-box {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
   }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar .claims-searchbar-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar > .sdlg-btn,
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn {
+    flex: 1 1 auto !important;
+    min-width: 90px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar button[title*="Muat ulang"],
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions button[title*="Muat ulang"] {
+    flex: 0 0 42px !important;
+    min-width: 42px !important;
+  }
+
+  /* Filter bar wraps cleanly: selects form a responsive 2-column or fluid grid */
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 130px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 140px !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) .sdlg-select {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(input[type="checkbox"]) {
+    flex: 1 1 auto !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar span:last-child {
+    flex: 1 1 100% !important;
+    margin-left: 0 !important;
+    text-align: right !important;
+    padding-top: 4px !important;
+  }
+
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row {
     align-items: flex-start !important;
+    padding: 14px 16px !important;
+    gap: 14px !important;
   }
+
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar input {
-    font-size: 16px !important;
+    font-size: 15px !important;
     min-height: 44px !important;
   }
 }
 
-@media (max-width: 420px) {
-  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar,
-  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .search-wrap.claims-searchbar {
-    grid-template-columns: 1fr !important;
+@media (max-width: 480px) {
+  /* On small mobile screens, selects and labels stack cleanly without horizontal scroll or overlap */
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select,
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar > .sdlg-btn,
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar-actions .sdlg-btn:not([title*="Muat ulang"]) {
+    flex: 1 1 calc(50% - 6px) !important;
   }
 }
 

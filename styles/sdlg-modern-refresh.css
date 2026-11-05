@@ -185,23 +185,31 @@ body > header,
 /* =========================================
    4. CARDS
    ========================================= */
-:is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(.login-card, #sdlg-tracking-panel)) {
+:is(.card, .card-pad, .metric-card, [class$="-card"], [class*="-card "]):where(:not(.login-card, #sdlg-tracking-panel, .login-card-head, .login-card-eyebrow)) {
   border: 1px solid var(--ui-border) !important;
+  border-bottom: 2px solid #cbd5e1 !important;
   border-radius: var(--ui-radius-card) !important;
-  box-shadow: var(--ui-shadow-sm) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02) !important;
   background: var(--ui-surface) !important;
   /* Cegah z-index bocor dari child */
   isolation: isolate;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease !important;
 }
 
 /* Hover hanya untuk kartu yang memang interaktif */
-:is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, .metric-card, [class$="-card"]):where(:not(.login-card, #sdlg-tracking-panel)) {
+:is(a, button, [role="button"], [tabindex="0"], .is-clickable, .claim-row):is(.card, .metric-card, [class$="-card"], .claim-row):where(:not(.login-card, #sdlg-tracking-panel, .login-card-head, .login-card-eyebrow)) {
   cursor: pointer;
-  transition: box-shadow 0.28s ease, border-color 0.28s ease !important;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.22s ease !important;
 }
-:is(a, button, [role="button"], [tabindex="0"], .is-clickable):is(.card, .metric-card, [class$="-card"]):where(:not(.login-card, #sdlg-tracking-panel)):hover {
-  border-color: var(--ui-border-strong) !important;
-  box-shadow: var(--ui-shadow-md) !important;
+:is(a, button, [role="button"], [tabindex="0"], .is-clickable, .claim-row):is(.card, .metric-card, [class$="-card"], .claim-row):where(:not(.login-card, #sdlg-tracking-panel, .login-card-head, .login-card-eyebrow)):hover {
+  border-color: #bfdbfe !important;
+  border-bottom: 2px solid #2563eb !important;
+  box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(37, 99, 235, 0.06) !important;
+  transform: translateY(-2px) !important;
 }
 
 /* Metric card — gradient subtle */
