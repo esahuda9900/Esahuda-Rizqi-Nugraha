@@ -8,11 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com https://frqvelcreczmnofldrga.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com; connect-src 'self' https://frqvelcreczmnofldrga.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; object-src 'none'; base-uri 'none'; form-action 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com https://frqvelcreczmnofldrga.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdn.sheetjs.com; connect-src 'self' https://frqvelcreczmnofldrga.supabase.co; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https: https://fonts.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'self'" />
   <title>SDLG Warranty Claim — PT. Indo Traktor Utama</title>
   <meta name="description" content="Internal web application for monitoring and managing SDLG warranty claims." />
   <meta property="og:title" content="SDLG Warranty Claim — PT. Indo Traktor Utama" />
   <meta property="og:description" content="Internal web application for monitoring and managing SDLG warranty claims." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/sdlg-design-tokens.css" />
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
@@ -3250,7 +3253,7 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-overview-v2">
+<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-master-polish-v10">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }

@@ -105,9 +105,9 @@
   --sdlg-accent-teal: #14b8a6;
 
   /* Typography */
-  --sdlg-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont,
+  --sdlg-font-family: "Plus Jakarta Sans", "IBM Plex Sans", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --sdlg-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+  --sdlg-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
   --sdlg-font-size-xs: 0.75rem;
   --sdlg-font-size-sm: 0.875rem;

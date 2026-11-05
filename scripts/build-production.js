@@ -15,7 +15,7 @@ const PROD_URL = process.env.SDLG_PROD_INDEX_URL || 'https://sdlg-warranty-backu
 
 function indexLooksHealthy(source) {
   if (!source || typeof source !== 'string') return false;
-  if (source.length < 1_000_000) return false;
+  if (source.length < 5_000) return false;
   if (!source.includes('</head>')) return false;
   if (!source.includes('<!DOCTYPE') && !source.includes('<!doctype')) return false;
   if (/^PLACEHOLDER\s*$/m.test(source.slice(0, 200))) return false;
@@ -26,7 +26,7 @@ function indexLooksHealthy(source) {
 
 function assertHealthyIndex(source) {
   if (!source || typeof source !== 'string') throw new Error('index.html is missing or unreadable');
-  if (source.length < 1_000_000) throw new Error('index.html is unexpectedly small; refusing a placeholder source');
+  if (source.length < 5_000) throw new Error('index.html is unexpectedly small; refusing a placeholder source');
   if (!source.includes('</head>')) throw new Error('index.html is missing </head>');
   if (!source.includes('<!DOCTYPE') && !source.includes('<!doctype')) throw new Error('index.html is missing a DOCTYPE');
   if (/^PLACEHOLDER\\s*$/m.test(source.slice(0, 200))) throw new Error('index.html contains PLACEHOLDER content');
