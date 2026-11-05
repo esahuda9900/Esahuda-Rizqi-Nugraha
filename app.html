@@ -3046,9 +3046,7 @@ button:hover,
 
 
 
-  <script src="./modules/claim-parser-helpers.js"></script>
-<script src="./modules/master-resolution-ux.js"></script>
-<script src="./modules/export-table-helper.js"></script>
+  <!-- shell: duplicate module tags removed; first load in head remains -->
 
 
 <!-- SDLG_RESPONSIVE_UI_V10 --><style data-sdlg-responsive-v10>/* SDLG_RESPONSIVE_UI_V11 + V12 — mobile layout hardening
@@ -3252,7 +3250,7 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" href="styles/sdlg-dashboard-polish.css?v=20261030-action-today-v1">
+<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-shell-v1">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
@@ -11127,5 +11125,23 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   <script src="./modules/sdlg-portal-finance-ux.js"></script>
   <script src="modules/sdlg-repository.js?v=20261030-stable-v2"></script>
 <script src="modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
+<script>
+(function () {
+  var HREF = "styles/sdlg-dashboard-polish.css?v=20261105-shell-v1";
+  function pin() {
+    var link = document.getElementById("sdlg-shell-polish") || document.querySelector('link[href*="sdlg-dashboard-polish"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.id = "sdlg-shell-polish";
+      link.rel = "stylesheet";
+    }
+    link.href = HREF;
+    (document.head || document.documentElement).appendChild(link);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pin);
+  else pin();
+  window.addEventListener("load", pin);
+})();
+</script>
 </body>
 </html>

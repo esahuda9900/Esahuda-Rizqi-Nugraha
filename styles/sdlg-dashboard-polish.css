@@ -314,3 +314,194 @@ body {
     transition: none !important;
   }
 }
+
+
+/* ==========================================================================
+   SHELL V7 — 2026-11-05
+   Visual only. Satu bahasa tampilan untuk topbar, halaman, tombol, input, tabel.
+   Tidak mengubah alur data. Hover tidak menggeser layout.
+   ========================================================================== */
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: #eef2f6 !important;
+  color: #0f172a !important;
+  font-family: var(--sdlg-font-family, "IBM Plex Sans", system-ui, sans-serif) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #dbeafe;
+  color: #0f172a;
+}
+
+.app-shell {
+  background:
+    radial-gradient(1200px 420px at 50% -80px, rgba(37, 99, 235, 0.06), transparent 60%),
+    #eef2f6 !important;
+}
+
+.app-shell .topbar {
+  height: 60px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: saturate(1.2) blur(16px);
+  -webkit-backdrop-filter: saturate(1.2) blur(16px);
+  border-bottom: 1px solid #e6ebf2 !important;
+  box-shadow: none !important;
+}
+
+.app-shell .topbar-inner {
+  max-width: 1240px !important;
+  padding: 0 20px !important;
+  gap: 16px !important;
+}
+
+.app-shell .brand,
+.app-shell .brand-name {
+  letter-spacing: -0.03em !important;
+  color: #0f172a !important;
+}
+
+.app-shell .page {
+  padding-top: 8px;
+}
+
+.app-shell .page-title {
+  font-size: 22px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.03em !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+}
+
+.app-shell .page-sub,
+.app-shell .eyebrow,
+.app-shell .section-sub {
+  color: #64748b !important;
+}
+
+.app-shell .eyebrow {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.app-shell .primary-btn,
+.app-shell .sdlg-btn--primary,
+.app-shell button.primary-btn {
+  background: #1d4ed8 !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.app-shell .primary-btn:hover,
+.app-shell .sdlg-btn--primary:hover,
+.app-shell button.primary-btn:hover {
+  background: #1e40af !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.app-shell .secondary-btn,
+.app-shell .sdlg-btn--secondary {
+  background: #fff !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 650 !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.app-shell .secondary-btn:hover,
+.app-shell .sdlg-btn--secondary:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  transform: none !important;
+}
+
+.app-shell .sdlg-btn,
+.app-shell .sdlg-btn--compact {
+  border-radius: 8px !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+.app-shell select,
+.app-shell textarea,
+.app-shell .sdlg-select {
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.app-shell input:not([type="checkbox"]):not([type="radio"]):focus,
+.app-shell select:focus,
+.app-shell textarea:focus,
+.app-shell .sdlg-select:focus {
+  outline: none !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+}
+
+.app-shell table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.app-shell table thead th {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e8eef5 !important;
+}
+
+.app-shell table tbody td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #0f172a;
+}
+
+.app-shell table tbody tr:hover td {
+  background: #f8fafc !important;
+}
+
+.app-shell .login-screen {
+  background:
+    radial-gradient(900px 380px at 50% -40px, rgba(37, 99, 235, 0.08), transparent 55%),
+    #eef2f6 !important;
+}
+
+.app-shell .login-card,
+.app-shell .login-loading-card {
+  border: 1px solid #e6ebf2 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.06) !important;
+  background: #fff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .primary-btn,
+  .app-shell .secondary-btn,
+  .app-shell .sdlg-btn,
+  .app-shell input,
+  .app-shell select,
+  .app-shell textarea {
+    transition: none !important;
+  }
+}
