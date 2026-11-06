@@ -57,11 +57,47 @@
     return null;
   }
 
-  function getClaimIdKey(value) {
+  function parseClaimSortKey(value) {
     const raw = String(value || '').trim();
-    const match = raw.match(/^(\d+)-(\d{4})-SDLG-(?:PFR)?$/i);
-    if (match) return `${match[2]}-${String(Number(match[1])).padStart(6, '0')}`;
-    return raw;
+    const match = raw.match(/^(\d+)\s*-\s*(\d{4})\b/);
+    if (match) {
+      return {
+        year: Number(match[2]) || 0,
+        seq: Number(match[1]) || 0,
+        sortKey: `${match[2]}-${String(Number(match[1])).padStart(6, '0')}`,
+        raw
+      };
+    }
+    const yearMatch = raw.match(/\b(20\d{2})\b/);
+    const seqMatch = raw.match(/^(\d+)/);
+    const year = yearMatch ? Number(yearMatch[1]) : 0;
+    const seq = seqMatch ? Number(seqMatch[1]) : 0;
+    return {
+      year,
+      seq,
+      sortKey: `${year > 0 ? year : '0000'}-${String(seq).padStart(6, '0')}`,
+      raw
+    };
+  }
+
+  function getClaimIdKey(value) {
+    return parseClaimSortKey(value).sortKey;
+  }
+
+  function compareClaimIdDesc(idA, idB) {
+    const ka = parseClaimSortKey(idA);
+    const kb = parseClaimSortKey(idB);
+    if (kb.year !== ka.year) return kb.year - ka.year;
+    if (kb.seq !== ka.seq) return kb.seq - ka.seq;
+    return kb.raw.localeCompare(ka.raw, 'en', { numeric: true });
+  }
+
+  function compareClaimIdAsc(idA, idB) {
+    const ka = parseClaimSortKey(idA);
+    const kb = parseClaimSortKey(idB);
+    if (ka.year !== kb.year) return ka.year - kb.year;
+    if (ka.seq !== kb.seq) return ka.seq - kb.seq;
+    return ka.raw.localeCompare(kb.raw, 'en', { numeric: true });
   }
 
   // ─────────────────────────────────────────────────────────
@@ -129,11 +165,14 @@
 
   // Export ke global
   root.SDLGClaimListSort = Object.freeze({
-    version: '2.0.0',
+    version: '2.1.0',
     compareNewest: compareNewest,
     sortNewest: sortNewest,
     sort: sortNewest, // Alias buat jaga-jaga kalau ada yang panggil 'sort'
-    parseDate: parseDate // Export buat di-testing
+    parseDate: parseDate, // Export buat di-testing
+    parseClaimSortKey: parseClaimSortKey,
+    compareClaimIdDesc: compareClaimIdDesc,
+    compareClaimIdAsc: compareClaimIdAsc
   });
 
 })(typeof window !== 'undefined' ? window : globalThis);

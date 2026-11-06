@@ -135,6 +135,9 @@ const server = http.createServer((request, response) => {
 
 server.on('error', (err) => {
   console.error('Server error:', err);
+  if (err.code === 'EADDRINUSE') {
+    process.exit(1);
+  }
 });
 
 server.listen(port, '0.0.0.0', () => {

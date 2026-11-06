@@ -64,7 +64,9 @@
   var TAB_ROUTES = { dashboard:'overview', list:'claims', paste:'new-claim', sdlginput:'sdlg-input', masters:'master-data', quality:'data-quality', unit360:'unit360' };
   function routeFromHash() {
     var h = '';
-    try { h = decodeURIComponent(String(window.location.hash || '').replace(/^#\/?/, '')); } catch (_) { return null; }
+    try {
+      h = decodeURIComponent(String(window.location.hash || '').replace(/^#\/?/, '')).split('?')[0].split('#')[0];
+    } catch (_) { return null; }
     var match = h.match(/^claims\/([A-Za-z0-9._:-]{4,80})\/?$/i) || h.match(/^claim\/([A-Za-z0-9._:-]{4,80})\/?$/i);
     if (match) return { tab:'list', detailId:normalizeDetailId(match[1]) };
     var portal = h.match(/^sdlg-input\/([A-Za-z0-9._:-]{4,80})\/?$/i);

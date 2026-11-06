@@ -498,7 +498,7 @@ h1 {
 .app-shell .search-box input {
   width: 100% !important;
   height: 40px !important;
-  padding: 0 14px 0 38px !important;
+  padding: 0 34px 0 38px !important;
   border: 1px solid var(--sdlg-slate-300) !important;
   border-radius: 9px !important;
   background: #ffffff !important;
@@ -522,6 +522,32 @@ h1 {
   transform: translateY(-50%) !important;
   color: var(--sdlg-slate-400) !important;
   pointer-events: none !important;
+}
+
+.search-clear-btn {
+  position: absolute !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--sdlg-slate-400) !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  padding: 0 !important;
+}
+
+.search-clear-btn:hover {
+  background: var(--sdlg-slate-200) !important;
+  color: var(--sdlg-slate-700) !important;
 }
 
 /* Tables */
@@ -601,10 +627,17 @@ tbody tr:hover,
 .claim-row:hover,
 .action-row:hover,
 .app-shell .claim-row:hover {
-  border-color: #cbd5e1 !important;
+  border-color: #93c5fd !important;
   background: #f8fafc !important;
-  box-shadow: var(--sdlg-shadow-md) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px -2px rgba(29, 78, 216, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04) !important;
+  transform: none !important;
+}
+
+.claim-row:active,
+.action-row:active,
+.app-shell .claim-row:active {
+  background: #f1f5f9 !important;
+  transform: none !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -854,45 +887,100 @@ textarea:focus {
 /* SDLG Input Helper Fastpath Copy Buttons */
 [data-sdlg-copy],
 [data-sdlg-copy-all],
+[data-sdlg-copy-report-name],
 .copy-btn {
-  min-height: 32px !important;
-  padding: 6px 12px !important;
-  font-size: 12px !important;
+  min-height: 30px !important;
+  padding: 5px 12px !important;
+  font-size: 11.5px !important;
   border-radius: 7px !important;
   background: #eff6ff !important;
   color: #1d4ed8 !important;
   border: 1px solid #bfdbfe !important;
   font-weight: 700 !important;
   cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
   transition: all 0.15s ease !important;
+  user-select: none !important;
 }
 
 [data-sdlg-copy]:hover,
 [data-sdlg-copy-all]:hover,
+[data-sdlg-copy-report-name]:hover,
 .copy-btn:hover {
   background: #dbeafe !important;
   border-color: #93c5fd !important;
-  transform: translateY(-0.5px) !important;
+  color: #1e40af !important;
+}
+
+[data-sdlg-copy]:active,
+[data-sdlg-copy-all]:active,
+[data-sdlg-copy-report-name]:active,
+.copy-btn:active {
+  background: #bfdbfe !important;
+  transform: scale(0.97) !important;
+}
+
+[data-sdlg-copy].is-copied,
+[data-sdlg-copy-all].is-copied,
+[data-sdlg-copy-report-name].is-copied,
+.copy-btn.is-copied {
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  border-color: #6ee7b7 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
 }
 
 /* --------------------------------------------------------------------------
    10. MODALS, TOASTS & UTILITIES
    -------------------------------------------------------------------------- */
+@keyframes sdlgFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sdlgModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modal-backdrop,
 .sdlg-modal-backdrop {
   background: rgba(15, 23, 42, 0.45) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
+  animation: sdlgFadeIn 0.15s ease-out forwards !important;
 }
 
 .modal,
 .dialog,
-.sdlg-modal {
+.sdlg-modal,
+.sdlg-modal-scroll {
   background: #ffffff !important;
   border: 1px solid rgba(226, 232, 240, 0.95) !important;
   border-radius: var(--sdlg-radius-lg) !important;
   box-shadow: var(--sdlg-shadow-lg) !important;
   padding: 24px !important;
+  animation: sdlgModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes sdlgToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .sdlg-toast {
@@ -902,7 +990,9 @@ textarea:focus {
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  padding: 12px 18px !important;
+  padding: 12px 20px !important;
+  animation: sdlgToastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 .ui-banner,

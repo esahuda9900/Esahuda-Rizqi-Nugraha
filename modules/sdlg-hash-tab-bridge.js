@@ -16,20 +16,25 @@
   }
 
   function isClaimDetailHash(h) {
-    h = String(h || '').replace(/^#/, '');
-    return /^\/?claim\//i.test(h) || /^\/?claims\/[^/]+/i.test(h) && !/^\/?claims\/\d{4}$/i.test(h);
+    var raw = String(h || '').replace(/^#\/?/, '');
+    var clean = raw.split('?')[0].split('#')[0];
+    if (/^claim\/[A-Za-z0-9._:-]{4,80}/i.test(clean)) return true;
+    if (/^claims\/[A-Za-z0-9._:-]{4,80}/i.test(clean) && !/^claims\/\d{4}$/i.test(clean)) return true;
+    if (/^sdlg-input\/[A-Za-z0-9._:-]{4,80}/i.test(clean)) return true;
+    return false;
   }
 
   function tabFromHash(h) {
-    h = String(h || '').replace(/^#\/?/, '').toLowerCase();
-    if (!h) return '';
-    if (h === 'overview' || h === 'dashboard') return 'dashboard';
-    if (h.indexOf('claims') === 0 || h.indexOf('list') === 0) return 'list';
-    if (h.indexOf('new-claim') === 0 || h.indexOf('paste') === 0) return 'paste';
-    if (h.indexOf('sdlg-input') === 0 || h.indexOf('sdlginput') === 0) return 'sdlginput';
-    if (h.indexOf('master') === 0) return 'masters';
-    if (h.indexOf('data-quality') === 0 || h.indexOf('quality') === 0) return 'quality';
-    if (h.indexOf('unit360') === 0 || h.indexOf('unit') === 0) return 'unit360';
+    var raw = String(h || '').replace(/^#\/?/, '').toLowerCase();
+    var clean = raw.split('?')[0].split('#')[0];
+    if (!clean) return '';
+    if (clean === 'overview' || clean === 'dashboard') return 'dashboard';
+    if (clean.indexOf('claims') === 0 || clean.indexOf('list') === 0) return 'list';
+    if (clean.indexOf('new-claim') === 0 || clean.indexOf('paste') === 0) return 'paste';
+    if (clean.indexOf('sdlg-input') === 0 || clean.indexOf('sdlginput') === 0) return 'sdlginput';
+    if (clean.indexOf('master') === 0) return 'masters';
+    if (clean.indexOf('data-quality') === 0 || clean.indexOf('quality') === 0) return 'quality';
+    if (clean.indexOf('unit360') === 0 || clean.indexOf('unit') === 0) return 'unit360';
     return '';
   }
 
@@ -46,6 +51,11 @@
     };
     var re = labels[tab];
     if (!re) return;
+    var activeBtn = document.querySelector('button.nav-btn.active');
+    if (activeBtn && re.test(String(activeBtn.textContent || '').trim())) {
+      // Tab is already active — never click again, which would reset detailId to null!
+      return;
+    }
     var btns = document.querySelectorAll('button.nav-btn');
     for (var i = 0; i < btns.length; i++) {
       var t = String(btns[i].textContent || '').trim();
@@ -60,6 +70,7 @@
     if (applying) return;
     var h = currentHash();
     if (h === lastAppliedHash) return;
+    if (!h || h === '#' || h === '#/') return;
     if (isClaimDetailHash(h)) return;
     var tab = tabFromHash(h);
     if (!tab) return;

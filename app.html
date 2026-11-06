@@ -5804,8 +5804,9 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
                     document.body.removeChild(ta);
                 }
                 const old = btn.textContent;
+                btn.classList.add("is-copied");
                 btn.textContent = "✓ Copied";
-                setTimeout(() => { if (btn.isConnected) btn.textContent = old; }, 1200);
+                setTimeout(() => { if (btn.isConnected) { btn.textContent = old; btn.classList.remove("is-copied"); } }, 1200);
             };
             btn.addEventListener("click", handler);
             handlers.push([btn, handler]);
@@ -5817,7 +5818,10 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
                 const value = reportBtn.getAttribute("data-value") || "";
                 try { await navigator.clipboard.writeText(value); }
                 catch { const ta = document.createElement("textarea"); ta.value = value; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); }
-                const old = reportBtn.textContent; reportBtn.textContent = "✓ Copied"; setTimeout(() => { if (reportBtn.isConnected) reportBtn.textContent = old; }, 1200);
+                const old = reportBtn.textContent;
+                reportBtn.classList.add("is-copied");
+                reportBtn.textContent = "✓ Copied";
+                setTimeout(() => { if (reportBtn.isConnected) { reportBtn.textContent = old; reportBtn.classList.remove("is-copied"); } }, 1200);
             };
             reportBtn.addEventListener("click", reportHandler);
         }
@@ -5842,7 +5846,10 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
                 catch {
                     const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
                 }
-                const old = all.textContent; all.textContent = "✓ Copied All"; setTimeout(() => { if (all.isConnected) all.textContent = old; }, 1200);
+                const old = all.textContent;
+                all.classList.add("is-copied");
+                all.textContent = "✓ Copied All";
+                setTimeout(() => { if (all.isConnected) { all.textContent = old; all.classList.remove("is-copied"); } }, 1200);
             };
             all.addEventListener("click", allHandler);
         }
@@ -5854,7 +5861,12 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     }, [selectedClaimId, warrantyMatrix, warrantyLoading, warrantyError]);
 
     if (!selectedClaim) {
-        const activeClaims = (claims || []).filter(c => !c.archived_at);
+        const activeClaims = (claims || []).filter(c => !c.archived_at).sort((a, b) => {
+            if (window.SDLGClaimListSort?.compareClaimIdDesc) {
+                return window.SDLGClaimListSort.compareClaimIdDesc(a.claim_id, b.claim_id);
+            }
+            return String(b.claim_id || "").localeCompare(String(a.claim_id || ""), "en", { numeric: true });
+        });
         const q = String(claimSearch || "").trim().toLowerCase();
         const filteredClaims = q
             ? activeClaims.filter(c => [c.claim_id, c.model, c.serial_no, c.customer].some(v => String(v || "").toLowerCase().includes(q)))
@@ -6042,6 +6054,8 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
         React.createElement("div", { dangerouslySetInnerHTML: { __html: html } }));
 }
 
+const searchCorpusCache = new WeakMap();
+
 function App() {
     /* __SDLG_NAV_STATE_WIRING_V1__ */
     const [tab, setTab] = useState(() => window.SDLGNavState?.restore("list") || "list"); // dashboard | list | paste | sdlginput | masters | quality
@@ -6117,9 +6131,10 @@ function App() {
     const [loginEmail, setLoginEmail] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
     const [loginError, setLoginError] = useState("");
-    const [loginLoading, setLoginLoading] = useState(false);
-    const [userRole, setUserRole] = useState("viewer");
-    const userRoleRef = useRef("viewer");
+    const [userRole, setUserRole] = useState(() => {
+        try { return sessionStorage.getItem("sdlg:cached_role") || "viewer"; } catch (_) { return "viewer"; }
+    });
+    const userRoleRef = useRef(userRole);
     userRoleRef.current = userRole;
     const [userBranchId, setUserBranchId] = useState(null);
     const profileGeneration = useRef(0);
@@ -6823,6 +6838,13 @@ SDLG_REPOSITORY.listClaims = async function () {
         try { window.SDLGNavState?.persist(tab, null, tab === "list" ? detailId : null); } catch (_) {}
     }, [tab, detailId]);
     const [search, setSearch] = useState(() => { try { return sessionStorage.getItem("sdlg:list:search") || ""; } catch (_) { return ""; } });
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 120);
+        return () => clearTimeout(timer);
+    }, [search]);
     const [yearFilter, setYearFilter] = useState(() => { try { return sessionStorage.getItem("sdlg:list:year") || "all"; } catch (_) { return "all"; } }); // default semua tahun agar data historis langsung terlihat
     const [editing, setEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
@@ -6926,6 +6948,23 @@ SDLG_REPOSITORY.listClaims = async function () {
             clearTimeout(toastTimerRef.current);
         toastTimerRef.current = setTimeout(() => setToast(""), 3200);
     };
+    const copyToClipboard = async (text, label = "Teks") => {
+        if (!text) return;
+        const val = String(text).trim();
+        try {
+            await navigator.clipboard.writeText(val);
+        } catch {
+            const ta = document.createElement("textarea");
+            ta.value = val;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        showToast(`📋 ${label} disalin`);
+    };
     useEffect(() => () => { if (toastTimerRef.current)
         clearTimeout(toastTimerRef.current); }, []);
     useEffect(() => {
@@ -6935,6 +6974,30 @@ SDLG_REPOSITORY.listClaims = async function () {
         window.addEventListener("offline", onOffline);
         return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", onOffline); };
     }, []);
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") {
+                if (parseReviewOpen) { setParseReviewOpen(false); return; }
+                if (statusReasonModal) { setStatusReasonModal(null); return; }
+                if (showFxEditor) { setShowFxEditor(false); return; }
+                if (showMasterModal) { setShowMasterModal(false); return; }
+                if (dqResolve) { setDqResolve(null); return; }
+                if (tab === "list" && detailId) { setDetailId(null); return; }
+            }
+            const isTyping = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+            if (!isTyping) {
+                if (e.key === "/" || ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K"))) {
+                    if (tab === "list" && !detailId) {
+                        e.preventDefault();
+                        const searchEl = document.querySelector(".claims-searchbar input, .search-box input");
+                        if (searchEl) { searchEl.focus(); searchEl.select(); }
+                    }
+                }
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [parseReviewOpen, statusReasonModal, showFxEditor, showMasterModal, dqResolve, tab, detailId]);
     // Prevent accidental loss of an unparsed pasted claim on browser refresh/close.
     useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -7100,6 +7163,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         if (!currentUser?.id) {
             setUserRole("viewer");
             setUserBranchId(null);
+            try { sessionStorage.removeItem("sdlg:cached_role"); } catch (_) {}
             return;
         }
         const { data, error } = await sdlgSupabase
@@ -7110,19 +7174,26 @@ SDLG_REPOSITORY.listClaims = async function () {
         if (generation !== profileGeneration.current) return;
         if (error) {
             console.error("Failed loading user role:", error);
-            setUserRole("viewer");
-            setUserBranchId(null);
+            // On transient network hiccups, preserve established role from session cache
+            try {
+                const cached = sessionStorage.getItem("sdlg:cached_role");
+                if (cached) setUserRole(cached);
+                else { setUserRole("viewer"); setUserBranchId(null); }
+            } catch (_) { setUserRole("viewer"); setUserBranchId(null); }
             return;
         }
         if (data?.is_active === false) {
             setUserRole("viewer");
             setUserBranchId(null);
+            try { sessionStorage.removeItem("sdlg:cached_role"); } catch (_) {}
             await sdlgSupabase.auth.signOut();
             setLoginError("Akun ini tidak aktif.");
             return;
         }
-        setUserRole(data?.role || "viewer");
+        const effectiveRole = data?.role || "viewer";
+        setUserRole(effectiveRole);
         setUserBranchId(data?.branch_id || null);
+        try { sessionStorage.setItem("sdlg:cached_role", effectiveRole); } catch (_) {}
     }, []);
     useEffect(() => {
         let mounted = true;
@@ -7149,6 +7220,12 @@ SDLG_REPOSITORY.listClaims = async function () {
                 console.error("Auth session check failed:", error);
             const nextUser = session?.user || null;
             setUser(nextUser);
+            if (nextUser) {
+                try {
+                    const cachedRole = sessionStorage.getItem("sdlg:cached_role");
+                    if (cachedRole) setUserRole(cachedRole);
+                } catch (_) {}
+            }
             await withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.");
             if (!mounted || version !== authEventVersion) return;
             setAuthLoading(false);
@@ -7175,27 +7252,38 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (nextUser && userRef.current && nextUser.id === userRef.current.id) {
                 return;
             }
+            if (!nextUser && !userRef.current) return;
             const version = ++authEventVersion;
             ++profileGeneration.current;
-            ++claimsLoadGeneration.current;
             clearTimeout(profileTimer);
             // Profile requests must start after the Supabase auth callback returns.
             profileTimer = setTimeout(() => {
                 if (!mounted || version !== authEventVersion) return;
-                if (!userRoleRef.current || userRoleRef.current === "viewer") {
+                if (!nextUser) {
                     setUserRole("viewer");
                     setUserBranchId(null);
+                    setUser(null);
+                    try { sessionStorage.removeItem("sdlg:cached_role"); } catch (_) {}
+                    setAuthLoading(false);
+                    return;
                 }
                 setUser(nextUser);
                 withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.")
-                    .catch(error => { if (mounted && version === authEventVersion) { setUserRole("viewer"); setUserBranchId(null); setLoginError(error.message); } })
+                    .catch(error => {
+                        if (mounted && version === authEventVersion) {
+                            if (!userRoleRef.current || userRoleRef.current === "viewer") {
+                                setUserRole("viewer");
+                                setUserBranchId(null);
+                            }
+                            setLoginError(error.message);
+                        }
+                    })
                     .finally(() => { if (mounted && version === authEventVersion) setAuthLoading(false); });
             }, 0);
         });
         return () => {
             mounted = false;
             ++profileGeneration.current;
-            ++claimsLoadGeneration.current;
             clearTimeout(profileTimer);
             subscription?.unsubscribe();
         };
@@ -7326,7 +7414,12 @@ SDLG_REPOSITORY.listClaims = async function () {
             // first-page subset. This made counts flicker (98 -> 549), and
             // can momentarily hide the active claim during refresh.
             if (firstPage && firstPage.length && current()) {
-                setLoading(false);
+                const activeRoute = window.SDLGNavState?.routeFromHash?.();
+                const activeId = activeRoute?.tab === "list" ? activeRoute.detailId : null;
+                const foundInFirst = activeId ? firstPage.some(c => c.claim_id === activeId) : true;
+                if (!activeId || foundInFirst) {
+                    setLoading(false);
+                }
             }
             const [all, actionRows] = await withTimeout(Promise.all([
                 SDLG_REPOSITORY.listClaims(),
@@ -7674,6 +7767,30 @@ SDLG_REPOSITORY.listClaims = async function () {
         const hd = extractHandlingResultDetails(sample);
         cases.push({name:"handling-result-details", ok: hd.repairMethod === "Replace With New AC Compressor" && hd.labourHrs === 5 && hd.labourRate == null && hd.labourAmount === 0, diagnostics: hd});
         return {ok: cases.every(x => x.ok), cases};
+    };
+
+    // Paste from clipboard helper
+    const handlePasteFromClipboard = async () => {
+        try {
+            if (!navigator.clipboard?.readText) {
+                showToast("Silakan gunakan Ctrl+V / Cmd+V untuk menempel teks.");
+                return;
+            }
+            const text = await navigator.clipboard.readText();
+            if (text && text.trim()) {
+                setRaw(text);
+                setParsed(null);
+                createIdempotencyRef.current = null;
+                setSourceLockIssues([]);
+                setErr("");
+                try { sessionStorage.setItem("sdlg_claim_draft_raw", text); } catch (_) {}
+                showToast("📋 Berhasil menempel isi dari clipboard.");
+            } else {
+                showToast("Clipboard tidak berisi teks.");
+            }
+        } catch (_) {
+            showToast("Izin clipboard ditolak. Silakan tempel manual dengan tombol Ctrl+V.");
+        }
     };
 
     // Parse
@@ -9209,7 +9326,6 @@ SDLG_REPOSITORY.listClaims = async function () {
             const m = String(c.claim_id || "").match(/-(\d{4})-SDLG-PFR$/);
             return m ? m[1] : null;
         }).filter(Boolean))].sort().reverse(), [claims]);
-    const searchCorpusCache = new WeakMap();
     const getSearchCorpus = (c) => {
         if (!c) return "";
         if (searchCorpusCache.has(c)) return searchCorpusCache.get(c);
@@ -9326,7 +9442,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         } catch (_) { return ""; }
     };
     const filtered = useMemo(() => {
-        const query = (search || "").trim().toLowerCase();
+        const query = (debouncedSearch || "").trim().toLowerCase();
         const queryTokens = query.split(/\s+/).filter(Boolean);
 
         const filterWithScope = (ignoreFilters = false) => {
@@ -9353,27 +9469,75 @@ SDLG_REPOSITORY.listClaims = async function () {
             return filterWithScope(true);
         }
         return scoped;
-    }, [claims, yearFilter, branchFilter, statusFilter, search, showArchived, isAdmin]);
+    }, [claims, yearFilter, branchFilter, statusFilter, debouncedSearch, showArchived, isAdmin]);
     /* __SDLG_CLAIM_NEWEST_FIRST_V1__ */
     const sortDate = (value) => {
         const d = String(value || "").trim();
         return /^\d{4}-\d{2}-\d{2}/.test(d) ? Date.parse(d.slice(0, 10) + "T00:00:00") || 0 : 0;
     };
+    const parseClaimSortKey = (id) => {
+        const raw = String(id || "").trim();
+        const m = raw.match(/^(\d+)\s*-\s*(\d{4})\b/);
+        if (m) {
+            return {
+                year: Number(m[2]) || 0,
+                seq: Number(m[1]) || 0,
+                raw: raw
+            };
+        }
+        const yMatch = raw.match(/\b(20\d{2})\b/);
+        const sMatch = raw.match(/^(\d+)/);
+        return {
+            year: yMatch ? Number(yMatch[1]) : 0,
+            seq: sMatch ? Number(sMatch[1]) : 0,
+            raw: raw
+        };
+    };
+    const compareClaimIdDesc = (idA, idB) => {
+        const ka = parseClaimSortKey(idA);
+        const kb = parseClaimSortKey(idB);
+        if (kb.year !== ka.year) return kb.year - ka.year;
+        if (kb.seq !== ka.seq) return kb.seq - ka.seq;
+        return kb.raw.localeCompare(ka.raw, "en", { numeric: true });
+    };
+    const compareClaimIdAsc = (idA, idB) => {
+        const ka = parseClaimSortKey(idA);
+        const kb = parseClaimSortKey(idB);
+        if (ka.year !== kb.year) return ka.year - kb.year;
+        if (ka.seq !== kb.seq) return ka.seq - kb.seq;
+        return ka.raw.localeCompare(kb.raw, "en", { numeric: true });
+    };
     const orderedFiltered = useMemo(() => {
         return [...filtered].sort((a, b) => {
-            const idCompare = String(a.claim_id || "").localeCompare(String(b.claim_id || ""), "en", { numeric: true });
+            const newestFirst = compareClaimIdDesc(a.claim_id, b.claim_id);
+            const oldestFirst = compareClaimIdAsc(a.claim_id, b.claim_id);
             const compare = (x, y) => String(x || "").localeCompare(String(y || ""), "id", { numeric: true, sensitivity: "base" });
             let value = 0;
             switch (claimSort) {
-                case "claim_asc": value = idCompare; break;
-                case "date_desc": value = sortDate(b.dealer_claim_date || b.input_date) - sortDate(a.dealer_claim_date || a.input_date); break;
-                case "date_asc": value = sortDate(a.dealer_claim_date || a.input_date) - sortDate(b.dealer_claim_date || b.input_date); break;
-                case "status": value = compare(a.claim_status, b.claim_status); break;
-                case "customer": value = compare(a.customer, b.customer); break;
-                case "amount_desc": value = (Number(b.total_amount) || 0) - (Number(a.total_amount) || 0); break;
-                default: value = -idCompare;
+                case "claim_asc":
+                    value = oldestFirst;
+                    break;
+                case "date_desc":
+                    value = (sortDate(b.dealer_claim_date || b.input_date) - sortDate(a.dealer_claim_date || a.input_date)) || newestFirst;
+                    break;
+                case "date_asc":
+                    value = (sortDate(a.dealer_claim_date || a.input_date) - sortDate(b.dealer_claim_date || b.input_date)) || oldestFirst;
+                    break;
+                case "status":
+                    value = compare(a.claim_status, b.claim_status) || newestFirst;
+                    break;
+                case "customer":
+                    value = compare(a.customer, b.customer) || newestFirst;
+                    break;
+                case "amount_desc":
+                    value = ((Number(b.total_amount) || 0) - (Number(a.total_amount) || 0)) || newestFirst;
+                    break;
+                case "claim_desc":
+                default:
+                    value = newestFirst;
+                    break;
             }
-            return value || -idCompare;
+            return value || newestFirst;
         });
     }, [filtered, claimSort]);
     // Pagination helpers
@@ -10003,7 +10167,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     ...(isAdmin ? [["sdlginput", "SDLG Input"]] : []),
                     ["masters", "Master Data"],
                     ["quality", "Data Quality"],
-                ].map(([t, label]) => (React.createElement("button", { key: t, className: `nav-btn ${tab === t && !detailId ? "active" : ""}`, onClick: () => { setTab(t); setDetailId(null); } }, label)))),
+                ].map(([t, label]) => (React.createElement("button", { key: t, className: `nav-btn ${(tab === t && !detailId) || (tab === "list" && t === "list" && detailId) ? "active" : ""}`, onClick: () => { setTab(t); setDetailId(null); } }, label)))),
                 React.createElement("div", { className: "nav-tools" },
                     React.createElement("div", { className: `connection-pill ${isOnline ? "" : "offline"}`, title: user?.email || "" },
                         React.createElement("span", { className: `connection-dot ${isOnline ? "online" : "offline"}` }),
@@ -10019,8 +10183,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 ". Detail: ",
                 policyRuntimeError || "Policy database unavailable"))),
         React.createElement(DQQuickModal),
-        statusReasonModal && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setStatusReasonModal(null) },
-            React.createElement("div", { onClick: e => e.stopPropagation(), style: { background: "#fff", borderRadius: 14, padding: 20, maxWidth: 500, width: "100%" } },
+        statusReasonModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setStatusReasonModal(null) },
+            React.createElement("div", { className: "sdlg-modal", onClick: e => e.stopPropagation(), style: { maxWidth: 500, width: "100%" } },
                 React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 6 } },
                     "\uD83D\uDD04 Update Status: ",
                     statusReasonModal.status),
@@ -10036,8 +10200,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 } },
                     React.createElement("button", { onClick: () => setStatusReasonModal(null), disabled: statusInFlightRef.current, style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, cursor: statusInFlightRef.current ? "not-allowed" : "pointer" } }, "Batal"),
                     React.createElement("button", { onClick: submitStatusReason, disabled: !isOnline || statusInFlightRef.current, style: { padding: "8px 14px", border: 0, background: statusColor(statusReasonModal.status), color: "#fff", borderRadius: 8, cursor: (statusInFlightRef.current || !isOnline) ? "not-allowed" : "pointer", fontWeight: 700, opacity: (statusInFlightRef.current || !isOnline) ? 0.65 : 1 } }, statusInFlightRef.current ? "Menyimpan…" : "Simpan Status"))))),
-        dqResolve?.type === "part" && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setDqResolve(null) },
-            React.createElement("div", { style: { background: "#fff", borderRadius: 14, padding: 20, maxWidth: 560, width: "100%" }, onClick: e => e.stopPropagation() },
+        dqResolve?.type === "part" && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setDqResolve(null) },
+            React.createElement("div", { className: "sdlg-modal", style: { maxWidth: 560, width: "100%" }, onClick: e => e.stopPropagation() },
                 React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 6 } }, "\uD83D\uDD27 Standardize Part Description"),
                 React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginBottom: 12 } }, "Satu Part Number sebaiknya punya satu nama canonical. Pilih salah satu description yang sudah ada atau tulis nama canonical baru."),
                 React.createElement("div", { style: { fontFamily: "monospace", fontWeight: 800, fontSize: 12, marginBottom: 8 } }, dqResolve.group.partNo),
@@ -10267,8 +10431,13 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("b", null, excelName))),
             React.createElement("div", { style: {
                     background: "#fff", borderRadius: 14, border: "2px dashed #cbd5e1",
-                    padding: 4, marginBottom: 12,
+                    padding: 8, marginBottom: 12,
                 } },
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px 8px", borderBottom: "1px solid #f1f5f9" } },
+                    React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#64748b" } }, "FORM RAW CLAIM (TEXT / EXCEL)"),
+                    React.createElement("div", { style: { display: "flex", gap: 6 } },
+                        React.createElement("button", { type: "button", onClick: handlePasteFromClipboard, disabled: parsing, className: "sdlg-btn sdlg-btn--secondary sdlg-btn--compact", style: { fontSize: 11, padding: "3px 9px", display: "inline-flex", alignItems: "center", gap: 4 } }, "📋 Tempel Clipboard"),
+                        raw.trim() && React.createElement("button", { type: "button", onClick: () => { setRaw(""); setParsed(null); try { sessionStorage.removeItem("sdlg_claim_draft_raw"); } catch (_) {} }, disabled: parsing, className: "sdlg-btn sdlg-btn--secondary sdlg-btn--compact", style: { fontSize: 11, padding: "3px 9px", color: "var(--sdlg-danger)" } }, "Kosongkan"))),
                 React.createElement("textarea", { disabled: parsing, value: raw, onChange: (e) => { const v = e.target.value; setRaw(v); setParsed(null); createIdempotencyRef.current = null; try {
                         sessionStorage.removeItem("sdlg_create_idempotency_key");
                     }
@@ -10278,8 +10447,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                         else
                             sessionStorage.removeItem("sdlg_claim_draft_raw");
                     }
-                    catch { } }, placeholder: "Paste isi form warranty claim dari Excel di sini...", style: {
-                        width: "100%", minHeight: 200, padding: "12px 14px", border: "none",
+                    catch { } }, placeholder: "Paste isi form warranty claim dari Excel di sini atau klik 'Tempel Clipboard'...", style: {
+                        width: "100%", minHeight: 180, padding: "10px 12px", border: "none",
                         borderRadius: 10, fontSize: 12, fontFamily: "monospace", color: "#334155",
                         resize: "vertical", outline: "none", background: "transparent", lineHeight: 1.5,
                     } })),
@@ -11008,7 +11177,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.2", strokeLinecap: "round", strokeLinejoin: "round" },
                             React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
                             React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" }))),
-                    React.createElement("input", { className: "sdlg-input", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Cari claim, serial, customer, WO/SO..." })),
+                    React.createElement("input", { className: "sdlg-input", value: search, onChange: (e) => setSearch(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") setDebouncedSearch(search); }, placeholder: "Cari claim, serial, customer, WO/SO..." }),
+                    search ? React.createElement("button", { type: "button", className: "search-clear-btn", onClick: () => { setSearch(""); setDebouncedSearch(""); }, title: "Hapus pencarian", "aria-label": "Hapus pencarian" }, "\u00D7") : null),
                 React.createElement("div", { className: "claims-searchbar-actions" },
                     isAdmin && (React.createElement("button", { onClick: () => setTab("paste"), className: "sdlg-btn sdlg-btn--secondary" }, "+ Input Baru")),
                     React.createElement("button", { onClick: () => exportToExcel(yearFilter === "all" ? claims : filtered), className: "sdlg-btn sdlg-btn--primary" }, "Export"),
@@ -11029,9 +11199,16 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "grid", gap: 10 } }, [1, 2, 3, 4, 5].map(i => React.createElement("div", { key: i, style: { padding: "10px 6px", borderBottom: "1px solid var(--sdlg-border)" } },
                     React.createElement("div", { className: "skeleton", style: { width: i === 1 ? "34%" : "27%" } }),
                     React.createElement("div", { className: "skeleton", style: { width: "62%", marginTop: 8 } })))),
-                loadingSlow && React.createElement("div", { className: "slow-load" }, "[Koneksi Lambat] Data masih dimuat. Koneksi lambat atau Supabase merespons lebih lama dari biasanya."))) : filtered.length === 0 ? (React.createElement("div", { className: "empty-card" },
-                React.createElement("div", { style: { fontWeight: 500, color: "var(--sdlg-text-main)" } }, "Belum ada data yang cocok"),
-                React.createElement("div", { style: { fontSize: 12, color: "var(--sdlg-text-muted)", marginTop: 5 } }, "Coba ubah pencarian atau filter."))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 10 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, onClick: () => setDetailId(c.claim_id), style: {
+                loadingSlow && React.createElement("div", { className: "slow-load" }, "[Koneksi Lambat] Data masih dimuat. Koneksi lambat atau Supabase merespons lebih lama dari biasanya."))) : filtered.length === 0 ? (React.createElement("div", { className: "empty-card", style: { textAlign: "center", padding: "48px 20px", background: "var(--sdlg-surface)", border: "1px dashed var(--sdlg-border)", borderRadius: "var(--sdlg-radius-card)" } },
+                React.createElement("div", { style: { fontSize: 36, marginBottom: 10 } }, "\uD83D\uDD0D"),
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "var(--sdlg-text-main)" } }, "Belum ada data yang cocok"),
+                React.createElement("div", { style: { fontSize: 12.5, color: "var(--sdlg-text-muted)", marginTop: 4, marginBottom: 14 } }, "Tidak ada klaim yang sesuai dengan kriteria filter atau pencarian Anda."),
+                (search || branchFilter !== "all" || statusFilter !== "all" || yearFilter !== "all") && React.createElement("button", {
+                    type: "button",
+                    onClick: () => { setSearch(""); setDebouncedSearch(""); setBranchFilter("all"); setStatusFilter("all"); setYearFilter("all"); setPage(1); },
+                    className: "sdlg-btn sdlg-btn--secondary",
+                    style: { margin: "0 auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }
+                }, "\u21BA Reset Semua Filter & Pencarian"))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 10 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, onClick: () => setDetailId(c.claim_id), style: {
                     border: selectedIds.includes(c.claim_id) ? "1px solid var(--sdlg-primary)" : "1px solid var(--sdlg-border)",
                     cursor: "pointer", display: "flex",
                     alignItems: "center", gap: 14,
@@ -11072,7 +11249,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("div", { style: { fontSize: 11, color: "var(--sdlg-text-muted, #94a3b8)" } }, c.dealer_claim_date || c.input_date)),
                 React.createElement("span", { className: "claim-row-arrow", "aria-hidden": "true", style: { color: "#cbd5e1", fontSize: 18, marginLeft: 2, flexShrink: 0 } }, "\u203A")))))),
             !loading && filtered.length > PAGE_SIZE && (React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 16 } },
-                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === 1, onClick: () => setPage(Math.max(1, safePage - 1)) }, "\u2190 Prev"),
+                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === 1, onClick: () => { setPage(Math.max(1, safePage - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, "\u2190 Prev"),
                 React.createElement("span", { style: { fontSize: 12, color: "var(--sdlg-text-muted)" } },
                     "Page ",
                     safePage,
@@ -11081,7 +11258,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     " \u00B7 ",
                     filtered.length,
                     " records"),
-                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === totalPages, onClick: () => setPage(Math.min(totalPages, safePage + 1)) }, "Next \u2192"))))),
+                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === totalPages, onClick: () => { setPage(Math.min(totalPages, safePage + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, "Next \u2192"))))),
         tab === "dashboard" && (() => {
             /* __SDLG_ANALYTICS_FILTER_V1__ */
             const scopeClaims = (window.SDLGBossAnalytics && window.SDLGBossAnalytics.filterByPeriod)
@@ -11146,7 +11323,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, label),
                     React.createElement("b", null, value)),
                 React.createElement("div", { style: { height: 8, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" } },
-                    React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#2563eb", borderRadius: 99 } })));
+                    React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#2563eb", borderRadius: 99, transition: "width 0.35s cubic-bezier(0.16, 1, 0.3, 1)" } })));
             return (React.createElement("div", { className: "page overview-page", "data-sdlg-overview": "1" },
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 18, flexWrap: "wrap" } },
                     React.createElement("div", null,
@@ -11345,29 +11522,53 @@ SDLG_REPOSITORY.listClaims = async function () {
                     return null;
                 })()));
         })(),
-        tab === "list" && detailId && !detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
-            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 } },
-                React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {
-                        padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
-                        background: "#fff", cursor: "pointer", fontSize: 13, color: "#475569",
-                    } }, "\u2190 Kembali"),
-                React.createElement("span", { style: { fontWeight: 800, fontSize: 14, fontFamily: "monospace" } }, detailId),
-                React.createElement("span", { style: { fontSize: 12, color: "#64748b", padding: "4px 8px", background: "#f1f5f9", borderRadius: 6 } }, loading ? "Memuat klaim..." : "Klaim tidak ditemukan")),
-            loading ? React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
-                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Memuat Detail Klaim"),
-                React.createElement("div", { style: { fontSize: 12 } }, "Menghubungkan ke database dan memulihkan data klaim..."))
-            : React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
-                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Klaim Tidak Ditemukan"),
-                React.createElement("div", { style: { fontSize: 12, marginBottom: 14 } }, `Nomor klaim "${detailId}" tidak ditemukan atau sudah dihapus.`),
-                React.createElement("button", { onClick: () => setDetailId(null), className: "secondary-btn" }, "Kembali ke Daftar Klaim"))
-        )),
+        tab === "list" && detailId && !detail && (() => {
+            const isHydrating = loading || (claims.length < 200 && !claimsLoadError);
+            return (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 } },
+                    React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {
+                            padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
+                            background: "#fff", cursor: "pointer", fontSize: 13, color: "#475569",
+                        } }, "\u2190 Kembali"),
+                    React.createElement("span", { style: { fontWeight: 800, fontSize: 14, fontFamily: "monospace" } }, detailId),
+                    React.createElement("span", { style: { fontSize: 12, color: "#64748b", padding: "4px 8px", background: "#f1f5f9", borderRadius: 6 } }, isHydrating ? "Memuat klaim..." : "Klaim tidak ditemukan")),
+                isHydrating ? React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
+                    React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Memuat Detail Klaim"),
+                    React.createElement("div", { style: { fontSize: 12 } }, "Menghubungkan ke database dan memulihkan data klaim..."))
+                : React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
+                    React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Klaim Tidak Ditemukan"),
+                    React.createElement("div", { style: { fontSize: 12, marginBottom: 14 } }, `Nomor klaim "${detailId}" tidak ditemukan atau sudah dihapus.`),
+                    React.createElement("button", { onClick: () => setDetailId(null), className: "secondary-btn" }, "Kembali ke Daftar Klaim"))
+            ));
+        })(),
         tab === "list" && detailId && detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" } },
-                React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {
+                React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, title: "Kembali ke daftar klaim (Esc)", style: {
                         padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
                         background: "#fff", cursor: "pointer", fontSize: 13, color: "#475569",
-                    } }, "\u2190 Kembali"),
+                        display: "inline-flex", alignItems: "center", gap: 4
+                    } },
+                    "\u2190 Kembali",
+                    React.createElement("span", { style: { fontSize: 10, color: "#94a3b8", fontWeight: 500 } }, "(Esc)")),
                 React.createElement("span", { style: { fontWeight: 800, fontSize: 14, fontFamily: "monospace" } }, detail.claim_id),
+                React.createElement("button", {
+                    type: "button",
+                    onClick: () => copyToClipboard(detail.claim_id, "Nomor klaim"),
+                    title: "Salin nomor klaim ke clipboard",
+                    style: {
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        borderRadius: 6,
+                        padding: "2px 8px",
+                        fontSize: 11,
+                        color: "#475569",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 3,
+                        fontWeight: 600
+                    }
+                }, "📋 Salin"),
                 React.createElement(Pill, { color: statusColor(detail.claim_status), size: "lg" }, detail.claim_status),
                 React.createElement(Pill, { color: claimTypeMeta(detail).color, size: "lg" }, claimTypeMeta(detail).label),
                 React.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 6 } },
@@ -11465,11 +11666,16 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" } },
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 20, fontWeight: 800 } }, detail.model),
-                        React.createElement("div", { style: { color: "#94a3b8", fontSize: 12, marginTop: 2 } },
+                        React.createElement("div", { style: { color: "#94a3b8", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
                             "SN: ",
-                            detail.serial_no,
-                            " \u00B7 ",
-                            detail.indent_no),
+                            React.createElement("b", { style: { color: "#f8fafc", fontFamily: "monospace" } }, detail.serial_no || "—"),
+                            detail.serial_no && React.createElement("button", {
+                                type: "button",
+                                onClick: () => copyToClipboard(detail.serial_no, "Serial number"),
+                                title: "Salin Serial Number",
+                                style: { border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "#e2e8f0", borderRadius: 4, padding: "1px 6px", fontSize: 10, cursor: "pointer" }
+                            }, "Salin SN"),
+                            detail.indent_no && React.createElement("span", null, " \u00B7 ", detail.indent_no)),
                         React.createElement("div", { style: { color: "#60a5fa", fontSize: 12, marginTop: 6, fontStyle: "italic" } },
                             "\"",
                             detail.fault_description,
@@ -11733,7 +11939,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
 <div id="sdlg-v24" style="display:none">V2.30.4 PUBLIC RELEASE CANDIDATE — CLIENT/UI HARDENED / SERVER GATES PENDING</div>
 <!-- SDLG_RESPONSIVE_RUNTIME_V3 -->
 <script data-sdlg-responsive-runtime>
-(()=>{const key=/^(claim|claim id|unit|unit no|serial|serial no|customer|status|owner|next action|aging|amount|total|dealer claim no|distributor no)$/i;const mark=()=>{document.querySelectorAll('.claims-list table').forEach(t=>{const hs=[...t.querySelectorAll('thead th')];if(hs.length<6)return;t.classList.add('sdlg-mobile-data-table');const labels=hs.map(h=>(h.textContent||'').replace(/\s+/g,' ').trim());t.querySelectorAll('tbody tr').forEach(r=>{[...r.children].forEach((c,i)=>{if(c.tagName!=='TD'||c.hasAttribute('colspan'))return;const label=labels[i]||'Field';c.setAttribute('data-label',label);c.classList.remove('sdlg-mobile-primary','sdlg-mobile-secondary','sdlg-mobile-status');if(/status/i.test(label))c.classList.add('sdlg-mobile-status');if(key.test(label))c.classList.add('sdlg-mobile-primary');else c.classList.add('sdlg-mobile-secondary')})})})};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark,{once:true});else mark();const root=document.getElementById('root');if(root)new MutationObserver(()=>mark()).observe(root,{childList:true,subtree:true})})();
+(()=>{const key=/^(claim|claim id|unit|unit no|serial|serial no|customer|status|owner|next action|aging|amount|total|dealer claim no|distributor no)$/i;const mark=()=>{document.querySelectorAll('.claims-list table').forEach(t=>{const hs=[...t.querySelectorAll('thead th')];if(hs.length<6)return;t.classList.add('sdlg-mobile-data-table');const labels=hs.map(h=>(h.textContent||'').replace(/\s+/g,' ').trim());t.querySelectorAll('tbody tr').forEach(r=>{[...r.children].forEach((c,i)=>{if(c.tagName!=='TD'||c.hasAttribute('colspan'))return;const label=labels[i]||'Field';c.setAttribute('data-label',label);c.classList.remove('sdlg-mobile-primary','sdlg-mobile-secondary','sdlg-mobile-status');if(/status/i.test(label))c.classList.add('sdlg-mobile-status');if(key.test(label))c.classList.add('sdlg-mobile-primary');else c.classList.add('sdlg-mobile-secondary')})})})};let markPending=false;const debouncedMark=()=>{if(markPending)return;markPending=true;requestAnimationFrame(()=>{markPending=false;mark();});};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mark,{once:true});else mark();const root=document.getElementById('root');if(root)new MutationObserver(debouncedMark).observe(root,{childList:true,subtree:true})})();
 </script>
 
 

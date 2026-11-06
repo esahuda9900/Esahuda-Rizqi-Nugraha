@@ -133,44 +133,61 @@
 
     clearCountCache: clearCountCache,
 
-    async listClaimsPage(page) {
+    async listClaimsPage(page, withCount) {
       var client = getClient();
       if (!client) throw new Error('Supabase client not ready');
       var from = (page || 0) * PAGE_SIZE;
       var result = await runRead(function () {
+        if (withCount) {
+          return client.from('claims').select('*', { count: 'exact' }).is('archived_at', null).order('claim_id', { ascending: false }).range(from, from + PAGE_SIZE - 1);
+        }
         return activeClaimsQuery(client).range(from, from + PAGE_SIZE - 1);
       });
       if (result && result.error) throw result.error;
-      return normalizeRows(result && result.data);
+      var normalized = normalizeRows(result && result.data);
+      if (withCount) {
+        return { data: normalized, count: typeof (result && result.count) === 'number' ? result.count : null };
+      }
+      return normalized;
     },
 
     /**
-     * Full list of active claims — pages until a short page or safety ceiling.
-     * Yields between pages so the main thread stays responsive.
+     * Full list of active claims — parallelizes remaining pages when count is known
+     * for instant load time, with safe sequential fallback.
      */
     async listClaims() {
       var client = getClient();
       if (!client) throw new Error('Supabase client not ready');
 
-      var all = [];
-      for (var page = 0; page < MAX_PAGES_SAFETY; page++) {
-        var pageRows = null;
-        var attempts = 0;
-        while (attempts < MAX_RETRIES) {
-          try {
-            pageRows = await repo.listClaimsPage(page);
-            break;
-          } catch (e) {
-            attempts++;
-            if (attempts >= MAX_RETRIES) throw e;
-            await sleep(300 * attempts);
-          }
+      // 1. Fetch page 0 along with exact count in a single query
+      var firstResult = await repo.listClaimsPage(0, true);
+      var all = (firstResult && firstResult.data) || [];
+      var totalCount = firstResult && firstResult.count;
+
+      // 2. If count is known, parallelize remaining pages concurrently
+      if (typeof totalCount === 'number' && totalCount > PAGE_SIZE) {
+        var totalPages = Math.min(MAX_PAGES_SAFETY, Math.ceil(totalCount / PAGE_SIZE));
+        var remainingPagePromises = [];
+        for (var p = 1; p < totalPages; p++) {
+          remainingPagePromises.push(repo.listClaimsPage(p));
         }
-        all = all.concat(pageRows || []);
-        debugLog('page', page, 'rows', (pageRows && pageRows.length) || 0, 'total', all.length);
-        if (!pageRows || pageRows.length < PAGE_SIZE) break;
-        // yield to UI between full pages
-        await sleep(0);
+        var remainingPages = await Promise.all(remainingPagePromises);
+        for (var i = 0; i < remainingPages.length; i++) {
+          all = all.concat(remainingPages[i] || []);
+        }
+        writeCountCache(all.length);
+        debugLog('listClaims parallel done', all.length);
+        return all;
+      }
+
+      // 3. Fallback: sequential pagination if count is unavailable
+      if (all.length >= PAGE_SIZE) {
+        for (var page = 1; page < MAX_PAGES_SAFETY; page++) {
+          var pageRows = await repo.listClaimsPage(page);
+          all = all.concat(pageRows || []);
+          if (!pageRows || pageRows.length < PAGE_SIZE) break;
+          await sleep(0);
+        }
       }
 
       writeCountCache(all.length);
