@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const port = Number(process.env.PORT || 3000);
+const port = 3000;
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -131,6 +131,10 @@ const server = http.createServer((request, response) => {
     });
     fs.createReadStream(filePath).pipe(response);
   });
+});
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
 });
 
 server.listen(port, '0.0.0.0', () => {

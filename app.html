@@ -5020,27 +5020,216 @@ async function exportToExcel(claims) {
         const ExcelJS = await loadExcelJS();
         const wb = new ExcelJS.Workbook();
         wb.creator = 'SDLG Warranty Operations Center'; wb.lastModifiedBy = 'SDLG Warranty App'; wb.created = new Date(); wb.modified = new Date();
-        wb.properties = { title:'SDLG Warranty Claim Monitoring', subject:'Operational warranty claim monitoring export', company:'PT. Indo Traktor Utama' };
+        wb.properties = { title:'SDLG Warranty Claim Backup & Database Export', subject:'Complete SDLG warranty claims database export', company:'PT. Indo Traktor Utama' };
         const claimHeaders = [
-            "Claim ID","Model","Serial No.","Indent No.","Dealer WO/SO","App. Code","Claim Type","SDLG No.","Distributor No.","Dealer Claim No.","Claim Status","Distributor","Dealer Code","Customer","Sales Date","Failure Date","HM Failure","Dealer Repair Date","Dealer Claim Date","Completion Date","HM Completion","Fault Description","Cause Analyze","Causing Part No.","Causing Part Description","Repair Method","Comment","Technical Personnel","Labour Hrs","Mileage","Mileage To Site","Parts Total","Labour Amount","Mileage Amount","Other Amount","Total Amount Claimed","Currency","Photo Count","Data Quality","Validation Warning","Input Date","Last Updated"
+            "Claim ID", "Claim Status", "Repair Status", "Dealer WO/SO", "Model",
+            "Serial No.", "Engine Serial No.", "Customer", "Branch", "Machine Location",
+            "Distributor", "Distributor No.", "Dealer Code", "Dealer Name", "Dealer Claim No.",
+            "SDLG No.", "SDLG Submission No.", "App. Code", "Claim Type", "Indent No.",
+            "Sales Date", "Failure Date", "Dealer Repair Date", "Completion Date", "Dealer Claim Date",
+            "SDLG Audit Date", "SDLG Approval Date", "Invoice Date", "Payment Date", "Status Date",
+            "Input Date", "Last Updated",
+            "HM Failure", "HM Completion", "Labour Hrs", "Mileage (Km)", "Mileage To Site",
+            "Fault Description", "Cause Analyze", "Causing Part No.", "Causing Part Description",
+            "Failure Part Location", "Repair Method", "Technical Personnel", "Feedback Contact",
+            "Comment", "Status Update Reason", "Currency",
+            "Parts Total", "Labour Amount", "Mileage Amount", "Other Amount", "Total Amount Claimed",
+            "Invoice No.", "Payment Amount", "Photo Count", "Data Quality", "Validation Warning",
+            "Replaced Parts Summary"
         ];
-        const partHeaders = ["Claim ID","Dealer WO/SO","Failure Part No.","Replacement Part No.","Description","Qty","Unit Price","Amount","Currency"];
-        const excelDate = (v) => { const s=v?String(v).slice(0,10):""; if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null; const [y,m,d]=s.split('-').map(Number); const dt=new Date(Date.UTC(y,m-1,d)); return Number.isNaN(dt.getTime())?null:dt; };
-        const cleanText = (v) => { if(v===null||v===undefined) return ""; const s=String(v).trim(); return /^(null|undefined|nan)$/i.test(s)?"":s; };
-        const cleanNumber = (v, fallback="") => { if(v===null||v===undefined||v==="") return fallback; const n=Number(v); return Number.isFinite(n)?n:fallback; };
-        const iso = (v) => { const s=cleanText(v); return /^\d{4}-\d{2}-\d{2}/.test(s)?s.slice(0,10):""; };
-        const buildValidation = (c) => { const issues=[]; const sales=iso(c.sales_date), failure=iso(c.failure_date), completion=iso(c.completion_date), claimDate=iso(c.dealer_claim_date); const ex=String(c.date_exception||"").startsWith("PRE_SALE_FAILURE:"); if(sales&&failure&&failure<sales&&!ex) issues.push("Failure Date before Sales Date"); if(failure&&completion&&completion<failure) issues.push("Completion Date before Failure Date"); if(completion&&claimDate&&claimDate<completion) issues.push("Dealer Claim Date before Completion Date"); return issues.join('; '); };
-        const claimSortKey = (id) => { const m=String(id||"").trim().match(/^(\d+)\s*-\s*(\d{4})\b/); return m?{year:Number(m[2]),number:Number(m[1]),raw:String(id||"")}:{year:-1,number:-1,raw:String(id||"")}; };
-        const list = claims.slice().sort((a,b) => { const ka=claimSortKey(a.claim_id), kb=claimSortKey(b.claim_id); return (kb.year-ka.year)||(kb.number-ka.number)||ka.raw.localeCompare(kb.raw,undefined,{numeric:true}); });
-        const claimRows = list.map(c => { const warning=buildValidation(c); return [cleanText(c.claim_id),cleanText(c.model),cleanText(c.serial_no),cleanText(c.indent_no),cleanText(c.dealer_wo_so),cleanText(c.app_code),cleanText(c.claim_type),cleanText(c.sdlg_no),cleanText(c.distributor_no),cleanText(c.dealer_claim_no),cleanText(c.claim_status),cleanText(c.distributor),cleanText(c.dealer_code),cleanText(c.customer),excelDate(c.sales_date),excelDate(c.failure_date),cleanNumber(c.hm_failure),excelDate(c.dealer_repair_date),excelDate(c.dealer_claim_date),excelDate(c.completion_date),cleanNumber(c.hm_completion),cleanText(c.fault_description),cleanText(c.cause_analyze),cleanText(c.causing_part_no),cleanText(c.causing_part_desc),cleanText(c.repair_method),cleanText(c.comment),cleanText(c.technical_personnel),cleanNumber(c.labour_hrs),cleanNumber(c.mileage_km),cleanNumber(c.mileage_to_site),cleanNumber(c.parts_total,0),cleanNumber(c.labour_amount,0),cleanNumber(c.mileage_amount,0),cleanNumber(c.other_amount,0),cleanNumber(c.total_amount,0),effectiveClaimCurrency(c),cleanNumber(c.photo_count,0),warning?'CHECK':'OK',warning,excelDate(c.input_date),iso(c.last_updated)]; });
-        const partRows=[]; list.forEach(c => (Array.isArray(c.parts)?c.parts:[]).forEach(p => partRows.push([cleanText(c.claim_id),cleanText(c.dealer_wo_so),cleanText(p.failurePartNo||p.failure_part_no),cleanText(p.replacementPartNo||p.replacement_part_no),cleanText(p.description),cleanNumber(p.qty),cleanNumber(p.unitPrice??p.unit_price),cleanNumber(p.amount),effectiveClaimCurrency(c)])));
+        const partHeaders = [
+            "Claim ID", "Dealer WO/SO", "Model", "Serial No.", "Customer", "Branch",
+            "Item No", "Failure Part No.", "Replacement Part No.", "Description",
+            "Qty", "Unit Price", "Amount", "Currency"
+        ];
+        const excelDate = (v) => {
+            const s = v ? String(v).slice(0, 10) : "";
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+            const [y, m, d] = s.split('-').map(Number);
+            const dt = new Date(Date.UTC(y, m - 1, d));
+            return Number.isNaN(dt.getTime()) ? null : dt;
+        };
+        const cleanText = (v) => {
+            if (v === null || v === undefined) return "";
+            const s = String(v).trim();
+            return /^(null|undefined|nan)$/i.test(s) ? "" : s;
+        };
+        const cleanNumber = (v, fallback = null) => {
+            if (v === null || v === undefined || v === "") return fallback;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : fallback;
+        };
+        const iso = (v) => {
+            const s = cleanText(v);
+            return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : "";
+        };
+        const buildValidation = (c) => {
+            const issues = [];
+            const sales = iso(c.sales_date), failure = iso(c.failure_date), completion = iso(c.completion_date), claimDate = iso(c.dealer_claim_date);
+            const ex = String(c.date_exception || "").startsWith("PRE_SALE_FAILURE:");
+            if (sales && failure && failure < sales && !ex) issues.push("Failure Date before Sales Date");
+            if (failure && completion && completion < failure) issues.push("Completion Date before Failure Date");
+            if (completion && claimDate && claimDate < completion) issues.push("Dealer Claim Date before Completion Date");
+            return issues.join('; ');
+        };
+        const claimSortKey = (id) => {
+            const m = String(id || "").trim().match(/^(\d+)\s*-\s*(\d{4})\b/);
+            return m ? { year: Number(m[2]), number: Number(m[1]), raw: String(id || "") } : { year: -1, number: -1, raw: String(id || "") };
+        };
+        const list = claims.slice().sort((a, b) => {
+            const ka = claimSortKey(a.claim_id), kb = claimSortKey(b.claim_id);
+            return (kb.year - ka.year) || (kb.number - ka.number) || ka.raw.localeCompare(kb.raw, undefined, { numeric: true });
+        });
+        const machineLoc = (c) => {
+            if (c.machine_location) return cleanText(c.machine_location);
+            const wo = c.dealer_wo_so || c.wo_so || "";
+            const br = c.branch || "";
+            const cust = c.customer || "";
+            return [wo, br, cust].map(s => String(s || "").trim()).filter(Boolean).join(" - ");
+        };
+        const partsSummary = (c) => {
+            const pList = Array.isArray(c.parts) ? c.parts : [];
+            if (!pList.length) return "";
+            return pList.map(p => {
+                const no = p.replacementPartNo || p.failurePartNo || p.replacement_part_no || p.failure_part_no || "";
+                const desc = p.description || p.desc || "";
+                const q = p.qty ?? p.quantity ?? 1;
+                return `${no ? no + ' ' : ''}${desc ? '(' + desc + ') ' : ''}x${q}`.trim();
+            }).join('; ');
+        };
+        const claimRows = list.map(c => {
+            const warning = buildValidation(c);
+            const cur = effectiveClaimCurrency(c);
+            return [
+                cleanText(c.claim_id),
+                cleanText(c.claim_status || "Draft"),
+                cleanText(c.repair_status),
+                cleanText(c.dealer_wo_so || c.wo_so),
+                cleanText(c.model),
+                cleanText(c.serial_no),
+                cleanText(c.engine_serial_no),
+                cleanText(c.customer),
+                cleanText(c.branch),
+                cleanText(machineLoc(c)),
+                cleanText(c.distributor),
+                cleanText(c.distributor_no),
+                cleanText(c.dealer_code),
+                cleanText(c.dealer_name),
+                cleanText(c.dealer_claim_no),
+                cleanText(c.sdlg_no),
+                cleanText(c.sdlg_submission_no),
+                cleanText(c.app_code),
+                cleanText(c.claim_type),
+                cleanText(c.indent_no),
+                excelDate(c.sales_date),
+                excelDate(c.failure_date),
+                excelDate(c.dealer_repair_date),
+                excelDate(c.completion_date),
+                excelDate(c.dealer_claim_date),
+                excelDate(c.sdlg_audit_date),
+                excelDate(c.sdlg_approval_date),
+                excelDate(c.invoice_date),
+                excelDate(c.payment_date),
+                excelDate(c.status_date),
+                excelDate(c.input_date),
+                excelDate(c.last_updated),
+                cleanNumber(c.hm_failure),
+                cleanNumber(c.hm_completion),
+                cleanNumber(c.labour_hrs),
+                cleanNumber(c.mileage_km),
+                cleanNumber(c.mileage_to_site),
+                cleanText(c.fault_description),
+                cleanText(c.cause_analyze),
+                cleanText(c.causing_part_no),
+                cleanText(c.causing_part_desc),
+                cleanText(c.failure_part_location),
+                cleanText(c.repair_method),
+                cleanText(c.technical_personnel),
+                cleanText(c.feedback_contact || c.technician_contact || c.technical_personnel_phone),
+                cleanText(c.comment),
+                cleanText(c.status_update_reason),
+                cur,
+                cleanNumber(c.parts_total, 0),
+                cleanNumber(c.labour_amount, 0),
+                cleanNumber(c.mileage_amount, 0),
+                cleanNumber(c.other_amount, 0),
+                cleanNumber(c.total_amount, 0),
+                cleanText(c.invoice_no),
+                cleanNumber(c.payment_amount, 0),
+                cleanNumber(c.photo_count, 0),
+                warning ? 'CHECK' : 'OK',
+                warning,
+                partsSummary(c)
+            ];
+        });
+        const partRows = [];
+        list.forEach(c => {
+            const cur = effectiveClaimCurrency(c);
+            const pList = Array.isArray(c.parts) ? c.parts : [];
+            pList.forEach((p, idx) => {
+                partRows.push([
+                    cleanText(c.claim_id),
+                    cleanText(c.dealer_wo_so || c.wo_so),
+                    cleanText(c.model),
+                    cleanText(c.serial_no),
+                    cleanText(c.customer),
+                    cleanText(c.branch),
+                    idx + 1,
+                    cleanText(p.failurePartNo || p.failure_part_no),
+                    cleanText(p.replacementPartNo || p.replacement_part_no),
+                    cleanText(p.description || p.desc),
+                    cleanNumber(p.qty ?? p.quantity, 1),
+                    cleanNumber(p.unitPrice ?? p.unit_price, 0),
+                    cleanNumber(p.amount, 0),
+                    cur
+                ]);
+            });
+        });
         const styleTable = window.SDLGExportTableHelper.styleTable;
-        const claimWs=wb.addWorksheet('CLAIM_MONITORING',{properties:{defaultRowHeight:18}}); claimWs.addRows([claimHeaders,...claimRows]); const claimEnd=styleTable(claimWs,claimRows.length,claimHeaders.length,'ClaimMonitoring');
-        [24,16,22,22,18,15,16,18,24,22,18,24,14,34,14,14,12,18,18,14,14,42,55,24,30,34,42,22,12,12,16,16,16,16,16,20,12,12,14,40,14,18].forEach((w,i)=>claimWs.getColumn(i+1).width=w);
-        [15,16,18,19,20,41].forEach(i=>claimWs.getColumn(i).numFmt='dd-mmm-yyyy'); [17,21,29,30,31].forEach(i=>claimWs.getColumn(i).numFmt='#,##0'); [32,33,34,35,36].forEach(i=>claimWs.getColumn(i).numFmt='#,##0.00');
-        for(let r=2;r<=claimEnd;r++){const status=String(claimWs.getCell(r,11).value||'').toLowerCase(),dq=String(claimWs.getCell(r,39).value||'').toUpperCase();const sc=claimWs.getCell(r,11),qc=claimWs.getCell(r,39);if(status.includes('approved')||status.includes('settlement')||status.includes('paid'))sc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE2F0D9'}};else if(status.includes('reject'))sc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFCE4D6'}};else if(status.includes('audit'))sc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFF2CC'}};if(dq==='CHECK')qc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFCE4D6'}};else if(dq==='OK')qc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE2F0D9'}};if(String(claimWs.getCell(r,40).value||'').trim())claimWs.getCell(r,40).font={name:'Aptos',size:10,color:{argb:'FFC00000'},bold:true};if(r>2)claimWs.getRow(r).height=34;}
-        const partWs=wb.addWorksheet('PART_DETAIL',{properties:{defaultRowHeight:18}}); partWs.addRows([partHeaders,...partRows]); const partEnd=styleTable(partWs,partRows.length,partHeaders.length,'PartDetail'); [24,18,26,30,34,10,14,16,12].forEach((w,i)=>partWs.getColumn(i+1).width=w); partWs.getColumn(6).numFmt='#,##0'; [7,8].forEach(i=>partWs.getColumn(i).numFmt='#,##0.00'); for(let r=2;r<=partEnd;r++)partWs.getRow(r).height=24;
-        const filename=`SDLG_Warranty_Claim_Monitoring_${today()}.xlsx`; const output=await wb.xlsx.writeBuffer(); const blob=new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download=filename; link.style.display='none'; document.body.appendChild(link); link.click(); setTimeout(()=>{document.body.removeChild(link);URL.revokeObjectURL(url);},1500);
+        const claimWs = wb.addWorksheet('CLAIM_MONITORING', { properties: { defaultRowHeight: 22 } });
+        claimWs.addRows([claimHeaders, ...claimRows]);
+        styleTable(claimWs, claimRows.length, claimHeaders.length, 'ClaimMonitoringTable');
+
+        const partWs = wb.addWorksheet('PART_DETAIL', { properties: { defaultRowHeight: 22 } });
+        partWs.addRows([partHeaders, ...partRows]);
+        styleTable(partWs, partRows.length, partHeaders.length, 'PartDetailTable');
+
+        const summaryWs = wb.addWorksheet('SUMMARY_KPI', { views: [{ showGridLines: true }] });
+        const summaryData = [
+            ["METRIK BACKUP DATA KLAIM", "NILAI"],
+            ["Total Klaim Ter-Export", list.length],
+            ["Total Nilai USD", list.reduce((a, c) => effectiveClaimCurrency(c) === "USD" ? a + (+c.total_amount || 0) : a, 0)],
+            ["Total Nilai CNY", list.reduce((a, c) => effectiveClaimCurrency(c) === "CNY" ? a + (+c.total_amount || 0) : a, 0)],
+            ["Total Item Part Terganti", partRows.length],
+            ["Waktu Export (WIB)", new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })],
+            ["Sistem Sumber", "SDLG Warranty Operations Center (Database Backup)"],
+            ["Status: Draft", list.filter(c => (c.claim_status || "").toLowerCase() === "draft").length],
+            ["Status: Submitted to SDLG", list.filter(c => (c.claim_status || "").toLowerCase().includes("submitted")).length],
+            ["Status: Claimed to SDLG", list.filter(c => (c.claim_status || "").toLowerCase().includes("claimed")).length],
+            ["Status: Paid", list.filter(c => (c.claim_status || "").toLowerCase().includes("paid")).length],
+            ["Status: Rejected", list.filter(c => (c.claim_status || "").toLowerCase().includes("reject")).length],
+        ];
+        summaryWs.addRows(summaryData);
+        summaryWs.columns = [{ width: 30 }, { width: 35 }];
+        summaryWs.getRow(1).height = 28;
+        summaryWs.getRow(1).font = { name: 'Aptos', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        summaryWs.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+        summaryWs.getCell(3, 2).numFmt = '#,##0.00';
+        summaryWs.getCell(4, 2).numFmt = '#,##0.00';
+        for (let r = 2; r <= summaryData.length; r++) {
+            summaryWs.getRow(r).height = 22;
+            summaryWs.getCell(r, 1).font = { name: 'Aptos', size: 10, bold: true };
+            summaryWs.getCell(r, 2).font = { name: 'Aptos', size: 10 };
+        }
+
+        const filename = `SDLG_Warranty_Claim_Backup_${today()}.xlsx`;
+        const output = await wb.xlsx.writeBuffer();
+        const blob = new Blob([output], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url; link.download = filename; link.style.display = 'none';
+        document.body.appendChild(link); link.click();
+        setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1500);
     } catch(err) { console.error('[SDLG EXPORT]',err); alert('Export gagal: '+(err&&err.message?err.message:String(err))); }
 }
 // ─── HM ESTIMATION ENGINE ────────────────────────────────────────────────
@@ -5737,8 +5926,8 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     const wo = selectedClaim.dealer_wo_so || selectedClaim.wo_so || "";
     const branch = selectedClaim.branch || "";
     const customer = selectedClaim.customer || "";
-    // A branch/customer/WO is not a verified physical machine location.
-    const machineLocation = selectedClaim.machine_location || selectedClaim.service_location || selectedClaim.iov_address || "";
+    const compositeLocation = [wo, branch, customer].map(s => String(s || "").trim()).filter(Boolean).join(" - ");
+    const machineLocation = selectedClaim.machine_location || selectedClaim.service_location || selectedClaim.iov_address || compositeLocation;
     const wholeMachineWarranty = !claimPolicy ? "" : warrantyLoading
         ? "Checking warranty policy…"
         : warrantyError
@@ -6663,6 +6852,19 @@ SDLG_REPOSITORY.listClaims = async function () {
     activeHistoryClaimRef.current = tab === "list" ? detailId : null;
     const [masterMatches, setMasterMatches] = useState(null);
     const [matchLoading, setMatchLoading] = useState(false);
+    const [branchMasterList, setBranchMasterList] = useState([]);
+    const [branchSearchInput, setBranchSearchInput] = useState("");
+    const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
+    const [branchCreating, setBranchCreating] = useState(false);
+    useEffect(() => {
+        if (!sdlgSupabase) return;
+        fetchAllRows("branches", "id,branch_name,branch_code,is_active", "branch_name")
+            .then(rows => {
+                const active = (rows || []).filter(x => x.is_active !== false);
+                if (active.length) setBranchMasterList(active);
+            })
+            .catch(err => console.warn("Prefetch branches error:", err?.message || err));
+    }, [fetchAllRows]);
     const [masterTab, setMasterTab] = useState(() => { try { return sessionStorage.getItem("sdlg:master:tab") || "customers"; } catch (_) { return "customers"; } });
     useEffect(() => { try { sessionStorage.setItem("sdlg:master:tab", masterTab); } catch (_) {} }, [masterTab]);
     const [masterRows, setMasterRows] = useState([]);
@@ -8224,6 +8426,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 dealer_name_master: dealers.find(mm => mm.id === x.dealer_id)?.dealer_name || null,
                 dealer_code_master: dealers.find(mm => mm.id === x.dealer_id)?.dealer_code || null
             }));
+            setBranchMasterList(branchesActive);
             // Customer: exact canonical, alias, then fuzzy suggestions from master.
             const cn = window.SDLGBaseCustomerName(p.customer);
             const cc = customersActive.filter(x => window.SDLGBaseCustomerName(x.customer_name) === cn);
@@ -8241,6 +8444,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             let branchCandidates = branchesActive.filter(x => normalizeCompact(x.branch_name) === normalizeCompact(branchValue) || normalizeCompact(x.branch_code) === normalizeCompact(branchValue));
             if (!branchCandidates.length && bn)
                 branchCandidates = branchesActive.map(x => ({ ...x, _score: similarityScore(branchValue, x.branch_name) + 0.1 * (normalizeCompact(x.branch_code) === bn) })).filter(x => x._score >= 0.70).sort((x, y) => y._score - x._score).slice(0, 5);
+            if (!branchCandidates.length && !bn)
+                branchCandidates = branchesActive;
             // Model: exact master match; if serial contains a compact model token, use that as a strong suggestion (E621F -> E6210F, G913F -> G9138F, etc.).
             const inputModel = normalizeModel(window.SDLGCanonicalModel(p.model));
             // An explicitly prefixed SDLG model can use the matching single L-series
@@ -8428,6 +8633,56 @@ SDLG_REPOSITORY.listClaims = async function () {
     const resolveMasterLinks = (m) => { const one = x => { if (!x)
         return null; if (x.selectedId && x.candidates?.length)
         return x.candidates.find(c => c.id === x.selectedId) || null; return ["exact", "inferred"].includes(x?.confidence) && x.candidates?.length === 1 ? x.candidates[0] : null; }; const c = one(m?.customer), b = one(m?.branch), d = one(m?.dealer), mo = one(m?.model), ma = one(m?.machine), p = one(m?.part); return { customer_id: c?.id || null, branch_id: b?.id || null, dealer_id: d?.id || null, model_id: ma?.model_id || mo?.id || null, machine_id: ma?.id || null, causing_part_id: p?.id || null }; };
+    const selectBranch = (branchObj) => {
+        if (!branchObj) return;
+        const normName = String(branchObj.branch_name || "").trim().toUpperCase();
+        setParsed(prev => prev ? ({ ...prev, branch: normName }) : prev);
+        setMasterMatches(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                branch: {
+                    candidates: [branchObj],
+                    confidence: "exact",
+                    selectedId: branchObj.id,
+                    reason: `Dipilih dari Master Branch (${normName})`
+                }
+            };
+        });
+        setBranchSearchInput(normName);
+        setBranchDropdownOpen(false);
+        showToast(`✅ Cabang "${normName}" dipilih & dinormalisasi.`);
+    };
+    const createAndSelectBranch = async (rawName) => {
+        const normName = String(rawName || "").trim().toUpperCase();
+        if (!normName) {
+            showToast("Nama cabang tidak boleh kosong");
+            return;
+        }
+        setBranchCreating(true);
+        try {
+            const existing = branchMasterList.find(b => String(b.branch_name || "").trim().toUpperCase() === normName);
+            if (existing) {
+                selectBranch(existing);
+                return;
+            }
+            const { data, error } = await sdlgSupabase
+                .from("branches")
+                .insert([{ branch_name: normName, is_active: true }])
+                .select("id, branch_name, branch_code, is_active")
+                .single();
+            if (error) throw error;
+            const created = data || { id: null, branch_name: normName, is_active: true };
+            setBranchMasterList(prev => [...prev.filter(b => String(b.branch_name || "").trim().toUpperCase() !== normName), created].sort((a,b) => String(a.branch_name).localeCompare(String(b.branch_name))));
+            selectBranch(created);
+            showToast(`✅ Cabang baru "${normName}" berhasil disimpan ke database!`);
+        } catch (err) {
+            console.error("Gagal menambahkan cabang:", err);
+            showToast("❌ Gagal tambah cabang ke database: " + (err?.message || err));
+        } finally {
+            setBranchCreating(false);
+        }
+    };
     const canonicalizePayloadFromMachine = (base, matches) => {
         const machine = matches?.machine?.candidates?.find(x => x.id === matches?.machine?.selectedId) || (matches?.machine?.confidence === "exact" ? matches?.machine?.candidates?.[0] : null);
         if (!machine)
@@ -8571,6 +8826,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             // This eliminates gaps caused by preview/reserve calls or failed inserts.
             const id = await SDLG_USE_CASES.CreateClaim.execute(effectiveParsed, matches, row.id, autoTransitions || []);
             setParsed(null);
+            setBranchSearchInput("");
+            setBranchDropdownOpen(false);
             createIdempotencyRef.current = null;
             try {
                 sessionStorage.removeItem("sdlg_create_idempotency_key");
@@ -8637,6 +8894,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             await SDLG_USE_CASES.UpdateClaim.execute(existingClaim, effectiveParsed, matches, autoTransitions || []);
             const finalAuto = autoTransitions[autoTransitions.length - 1] || null;
             setParsed(null);
+            setBranchSearchInput("");
+            setBranchDropdownOpen(false);
             setRaw("");
             setSourceLockIssues([]);
             showToast(autoTransitions.length ? `✅ Klaim ${existingClaim.claim_id} diupdate · workflow otomatis sampai ${finalAuto.status}` : `✅ Klaim ${existingClaim.claim_id} berhasil diupdate!`);
@@ -8950,35 +9209,150 @@ SDLG_REPOSITORY.listClaims = async function () {
             const m = String(c.claim_id || "").match(/-(\d{4})-SDLG-PFR$/);
             return m ? m[1] : null;
         }).filter(Boolean))].sort().reverse(), [claims]);
+    const searchCorpusCache = new WeakMap();
     const getSearchCorpus = (c) => {
         if (!c) return "";
-        if (c._searchCorpus !== undefined) return c._searchCorpus;
+        if (searchCorpusCache.has(c)) return searchCorpusCache.get(c);
         try {
-            const text = Object.values(c).map(v => {
-                if (v == null) return "";
-                if (typeof v === "object") {
-                    try { return JSON.stringify(v); } catch (_) { return ""; }
+            const tokens = [];
+
+            // 1. Claim ID & variations (e.g. "0241-2026-SDLG-PFR", "0241", "241", "PFR0241", "PFR-0241", "PFR 0241")
+            const claimId = String(c.claim_id || "").trim();
+            if (claimId) {
+                tokens.push(claimId);
+                const cm = claimId.match(/^(\d+)-(\d{4})-SDLG-PFR$/i);
+                if (cm) {
+                    const rawNum = cm[1];
+                    const numNoZero = rawNum.replace(/^0+/, "");
+                    const yr = cm[2];
+                    tokens.push(rawNum, numNoZero, yr);
+                    tokens.push(`pfr${rawNum}`, `pfr-${rawNum}`, `pfr ${rawNum}`);
+                    if (numNoZero && numNoZero !== rawNum) {
+                        tokens.push(`pfr${numNoZero}`, `pfr-${numNoZero}`, `pfr ${numNoZero}`);
+                    }
                 }
-                return String(v);
-            }).join(" ").toLowerCase();
-            Object.defineProperty(c, '_searchCorpus', { value: text, writable: true, configurable: true, enumerable: false });
-            return text;
+            }
+
+            // Other claim identifiers
+            [c.dealer_claim_no, c.claim_no, c.sdlg_no, c.distributor_no, c.indent_no, c.app_code, c.sdlg_submission_no, c.invoice_no].forEach(v => {
+                if (v) tokens.push(String(v).trim());
+            });
+
+            // 2. Serial Number & VIN & Engine SN (support full, suffix 6, 7, 8 digits, no spaces/hyphens)
+            const serialRaw = String(c.serial_no || c.canonical_serial_no || "").trim();
+            if (serialRaw) {
+                tokens.push(serialRaw);
+                const serialClean = serialRaw.replace(/[^a-zA-Z0-9]/g, "");
+                tokens.push(serialClean);
+                for (let len of [6, 7, 8, 9, 10]) {
+                    if (serialClean.length >= len) {
+                        tokens.push(serialClean.slice(-len));
+                    }
+                }
+            }
+            [c.vin, c.canonical_vin, c.engine_serial_no, c.pin].forEach(v => {
+                if (v) {
+                    const s = String(v).trim();
+                    tokens.push(s, s.replace(/[^a-zA-Z0-9]/g, ""));
+                }
+            });
+
+            // 3. Model (support raw and alphanumeric, e.g. "L956F", "956F", "956", "E6210F", "6210")
+            const model = String(c.model || "").trim();
+            if (model) {
+                tokens.push(model);
+                const modelClean = model.replace(/[^a-zA-Z0-9]/g, "");
+                tokens.push(modelClean);
+                const numMatch = modelClean.match(/\d+/);
+                if (numMatch) tokens.push(numMatch[0]);
+            }
+
+            // 4. HM / Hour Meter (support exact number, with hr/hrs, rounded)
+            [c.hm_failure, c.hm_completion].forEach(hm => {
+                if (hm != null && hm !== "") {
+                    const hmStr = String(hm).trim();
+                    tokens.push(hmStr, `${hmStr}hr`, `${hmStr} hr`, `${hmStr}hrs`, `${hmStr} hrs`);
+                    const hmNum = Math.floor(Number(hm));
+                    if (!isNaN(hmNum)) tokens.push(String(hmNum));
+                }
+            });
+
+            // 5. Work Order (WO / SO)
+            const wo = String(c.dealer_wo_so || c.wo_so || "").trim();
+            if (wo) {
+                tokens.push(wo);
+                const woClean = wo.replace(/[^a-zA-Z0-9]/g, "");
+                tokens.push(woClean);
+                const woDigits = wo.replace(/[^0-9]/g, "");
+                if (woDigits) tokens.push(woDigits);
+            }
+
+            // 6. Customer & Branch & Dealer & Distributor
+            [c.customer, c.branch, c.dealer_name, c.dealer_code, c.distributor].forEach(v => {
+                if (v) tokens.push(String(v).trim());
+            });
+
+            // 7. Statuses
+            [c.claim_status, c.repair_status].forEach(v => {
+                if (v) tokens.push(String(v).trim());
+            });
+
+            // 8. Complaints & Technical details
+            [c.fault_description, c.cause_analyze, c.comment, c.causing_part_desc, c.repair_method, c.technical_personnel, c.failure_part_location].forEach(v => {
+                if (v) tokens.push(String(v).trim());
+            });
+
+            // 9. Parts
+            if (c.causing_part_no) tokens.push(String(c.causing_part_no).trim(), String(c.causing_part_no).replace(/^SLG-?/i, ""));
+            const partsList = Array.isArray(c.parts) ? c.parts : [];
+            partsList.forEach(p => {
+                if (p && typeof p === "object") {
+                    [p.failurePartNo, p.replacementPartNo, p.failure_part_no, p.replacement_part_no, p.part_no, p.description, p.desc].forEach(v => {
+                        if (v) tokens.push(String(v).trim(), String(v).replace(/^SLG-?/i, ""));
+                    });
+                }
+            });
+
+            // Fallback: any primitive values in c
+            Object.values(c).forEach(v => {
+                if (v != null && (typeof v === "string" || typeof v === "number")) {
+                    tokens.push(String(v).trim());
+                }
+            });
+
+            const corpus = tokens.filter(Boolean).join(" ").toLowerCase();
+            searchCorpusCache.set(c, corpus);
+            return corpus;
         } catch (_) { return ""; }
     };
     const filtered = useMemo(() => {
         const query = (search || "").trim().toLowerCase();
-        return claims.filter((c) => {
-            if (c.archived_at && !(isAdmin && showArchived))
-                return false;
-            const m = String(c.claim_id || "").match(/-(\d{4})-SDLG-PFR$/);
-            const y = m ? m[1] : "";
-            const matchYear = yearFilter === "all" || y === yearFilter;
-            const matchBranch = branchFilter === "all" || String(c.branch || "").trim() === branchFilter;
-            const matchStatus = statusFilter === "all" || c.claim_status === statusFilter;
-            if (!matchYear || !matchBranch || !matchStatus) return false;
-            if (!query) return true;
-            return getSearchCorpus(c).includes(query);
-        });
+        const queryTokens = query.split(/\s+/).filter(Boolean);
+
+        const filterWithScope = (ignoreFilters = false) => {
+            return claims.filter((c) => {
+                if (c.archived_at && !(isAdmin && showArchived))
+                    return false;
+                if (queryTokens.length > 0) {
+                    const corpus = getSearchCorpus(c);
+                    const matchQuery = queryTokens.every(tok => corpus.includes(tok));
+                    if (!matchQuery) return false;
+                }
+                if (ignoreFilters) return true;
+                const m = String(c.claim_id || "").match(/-(\d{4})-SDLG-PFR$/);
+                const y = m ? m[1] : "";
+                const matchYear = yearFilter === "all" || y === yearFilter;
+                const matchBranch = branchFilter === "all" || String(c.branch || "").trim() === branchFilter;
+                const matchStatus = statusFilter === "all" || c.claim_status === statusFilter;
+                return matchYear && matchBranch && matchStatus;
+            });
+        };
+
+        const scoped = filterWithScope(false);
+        if (scoped.length === 0 && queryTokens.length > 0) {
+            return filterWithScope(true);
+        }
+        return scoped;
     }, [claims, yearFilter, branchFilter, statusFilter, search, showArchived, isAdmin]);
     /* __SDLG_CLAIM_NEWEST_FIRST_V1__ */
     const sortDate = (value) => {
@@ -9763,7 +10137,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { padding: 18 } },
                     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10 } }, [['customer', 'Customer'], ['branch', 'Branch'], ['model', 'Model'], ['serialNo', 'Serial Number'], ['salesDate', 'Sales Date'], ['failureDate', 'Failure Date'], ['dealerRepairDate', 'Dealer Repair Date'], ['completionDate', 'Completion Date'], ['dealerClaimDate', 'Dealer Claim Date'], ['repairStatus', 'Repair Status'], ['dealerWoSo', 'Dealer WO/SO'], ['dealerClaimNo', 'Dealer Claim No.'], ['indentNo', 'Indent No.'], ['appCode', 'App Code'], ['distributorNo', 'Distributor No.'], ['faultDescription', 'Fault Description'], ['causeAnalyze', 'Cause Analyze'], ['comment', 'Comment'], ['repairMethod', 'Repair Method'], ['technicalPersonnel', 'Technical Personnel'], ['engineSerialNo', 'Engine Serial No.'], ['failurePartLocation', 'Failure Part Location'], ['customerApprovalDate', 'Customer Approval Date'], ['causingPartNo', 'Causing Part No.'], ['causingPartDesc', 'Causing Part Description']].map(([k, l]) => React.createElement("div", { id: issueAnchorId(k), key: k },
                         React.createElement("label", { style: { display: "block", fontSize: 10, fontWeight: 800, color: "#64748b", marginBottom: 4 } }, l),
-                        React.createElement("input", { value: parseReviewForm[k] ?? "", onChange: e => reviewSet(k, e.target.value), style: { width: "100%", padding: "8px 9px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 12 } })))),
+                        React.createElement("input", { value: parseReviewForm[k] ?? "", onChange: e => reviewSet(k, k === "branch" ? e.target.value.toUpperCase() : e.target.value), style: { width: "100%", padding: "8px 9px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 12, textTransform: k === "branch" ? "uppercase" : "none" } })))),
                     React.createElement("div", { style: { marginTop: 14, padding: 12, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10 } },
                         React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#334155", marginBottom: 8 } }, "\uD83D\uDD17 Master matching + saran penyelesaian"),
                         React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 8 } }, "Master matching adalah rekomendasi; semua field form yang tersedia tetap disimpan sebagai data claim."),
@@ -10052,9 +10426,180 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement("div", { style: { marginTop: 4 } }, sourceLockIssues.join(" • "))),
                     React.createElement("div", { style: { marginTop: 10, padding: 10, border: "1px solid #e2e8f0", background: "#f8fafc", borderRadius: 9 } },
                         React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#475569", marginBottom: 7 } }, "\uD83D\uDD17 MASTER MATCHING"),
-                        matchLoading ? React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Mengecek master...") : masterMatches ? React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 } }, Object.entries(masterMatches).map(([k, v]) => React.createElement("div", { key: k, style: { padding: "6px 7px", borderRadius: 7, background: v.confidence === "exact" ? "#dcfce7" : (v.confidence === "source-only" ? "#e0f2fe" : "#fef3c7"), color: v.confidence === "exact" ? "#166534" : (v.confidence === "source-only" ? "#0369a1" : "#92400e"), fontSize: 10, fontWeight: 700 } },
-                            React.createElement("div", null, k.toUpperCase()),
-                            React.createElement("div", { style: { fontWeight: 600, marginTop: 2 } }, v.candidates?.length === 1 ? (k === "machine" ? (v.candidates[0].serial_no || v.candidates[0].source_serial_no || v.candidates[0].model_name || "—") : (v.candidates[0].customer_name || v.candidates[0].branch_name || v.candidates[0].model_name || v.candidates[0].part_name || v.candidates[0].serial_no || v.candidates[0].dealer_name || v.candidates[0].dealer_code)) : v.candidates?.length ? `${v.candidates.length} kandidat` : (v.confidence === "source-only" ? "Source only" : "Tidak match"))))) : React.createElement("div", { style: { fontSize: 11, color: "#94a3b8" } }, "Master matching belum dijalankan.")),
+                        matchLoading ? React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Mengecek master...") : masterMatches ? React.createElement(React.Fragment, null,
+                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6 } }, Object.entries(masterMatches).map(([k, v]) => React.createElement("div", {
+                                key: k,
+                                onClick: k === "branch" ? () => setBranchDropdownOpen(prev => !prev) : undefined,
+                                title: k === "branch" ? "Klik untuk memilih atau input cabang" : undefined,
+                                style: {
+                                    padding: "6px 7px",
+                                    borderRadius: 7,
+                                    background: v.confidence === "exact" ? "#dcfce7" : (v.confidence === "source-only" ? "#e0f2fe" : "#fef3c7"),
+                                    color: v.confidence === "exact" ? "#166534" : (v.confidence === "source-only" ? "#0369a1" : "#92400e"),
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    cursor: k === "branch" ? "pointer" : "default",
+                                    border: k === "branch" ? (v.confidence === "exact" ? "1px solid #86efac" : "1.5px solid #f59e0b") : "none"
+                                }
+                            },
+                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                                    React.createElement("span", null, k.toUpperCase()),
+                                    k === "branch" && React.createElement("span", { style: { fontSize: 9, textDecoration: "underline", opacity: 0.85 } }, v.confidence === "exact" ? "ubah" : "input")
+                                ),
+                                React.createElement("div", { style: { fontWeight: 600, marginTop: 2 } }, v.candidates?.length === 1 ? (k === "machine" ? (v.candidates[0].serial_no || v.candidates[0].source_serial_no || v.candidates[0].model_name || "—") : (v.candidates[0].customer_name || v.candidates[0].branch_name || v.candidates[0].model_name || v.candidates[0].part_name || v.candidates[0].serial_no || v.candidates[0].dealer_name || v.candidates[0].dealer_code)) : v.candidates?.length ? `${v.candidates.length} kandidat` : (v.confidence === "source-only" ? "Source only" : "Tidak match"))))),
+                            React.createElement("div", {
+                                id: "sdlg-branch-typeahead-panel",
+                                style: {
+                                    marginTop: 10,
+                                    padding: "11px 13px",
+                                    background: "#ffffff",
+                                    border: (masterMatches.branch?.confidence === "exact" && masterMatches.branch?.candidates?.length === 1) ? "1.5px solid #86efac" : "1.5px solid #f59e0b",
+                                    borderRadius: 9,
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+                                }
+                            },
+                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 6 } },
+                                    React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: 6 } },
+                                        React.createElement("span", null, "🏢"),
+                                        React.createElement("span", null, "CABANG / BRANCH (NORMALISASI MASTER)"),
+                                        (masterMatches.branch?.confidence === "exact" && masterMatches.branch?.candidates?.length === 1)
+                                            ? React.createElement("span", { style: { background: "#dcfce7", color: "#166534", padding: "1px 7px", borderRadius: 5, fontSize: 10, fontWeight: 800 } }, `✓ Terpilih: ${masterMatches.branch.candidates[0].branch_name}`)
+                                            : React.createElement("span", { style: { background: "#fef3c7", color: "#92400e", padding: "1px 7px", borderRadius: 5, fontSize: 10, fontWeight: 800 } }, "⚠️ Wajib pilih cabang")
+                                    ),
+                                    React.createElement("div", { style: { fontSize: 10, color: "#64748b" } },
+                                        `${(branchMasterList.length || 23)} cabang di database`
+                                    )
+                                ),
+                                React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginBottom: 7, lineHeight: 1.4 } },
+                                    "Ketik nama cabang untuk memfilter drop list 23 cabang secara otomatis (CAPSLOCK). Jika cabang belum ada di database, opsi tambah cabang baru akan otomatis muncul."
+                                ),
+                                React.createElement("div", { style: { position: "relative" } },
+                                    React.createElement("input", {
+                                        type: "text",
+                                        value: branchSearchInput,
+                                        placeholder: (parsed.branch ? `Cabang terpilih: ${parsed.branch} — Ketik untuk cari cabang lain...` : "Ketik nama cabang (contoh: JAKARTA, PEKANBARU, BALIKPAPAN)..."),
+                                        onChange: (e) => {
+                                            const val = e.target.value.toUpperCase();
+                                            setBranchSearchInput(val);
+                                            setBranchDropdownOpen(true);
+                                        },
+                                        onFocus: () => setBranchDropdownOpen(true),
+                                        style: {
+                                            width: "100%",
+                                            boxSizing: "border-box",
+                                            padding: "8px 12px",
+                                            border: "1.5px solid #3b82f6",
+                                            borderRadius: 7,
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.5px",
+                                            background: "#f8fafc",
+                                            outline: "none"
+                                        }
+                                    }),
+                                    branchDropdownOpen && React.createElement("div", {
+                                        style: {
+                                            position: "absolute",
+                                            top: "100%",
+                                            left: 0,
+                                            right: 0,
+                                            marginTop: 4,
+                                            background: "#ffffff",
+                                            border: "1px solid #cbd5e1",
+                                            borderRadius: 8,
+                                            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.2)",
+                                            zIndex: 9999,
+                                            maxHeight: 220,
+                                            overflowY: "auto"
+                                        }
+                                    },
+                                    (() => {
+                                        const q = (branchSearchInput || "").trim().toUpperCase();
+                                        const all = branchMasterList.length > 0 ? branchMasterList : (masterMatches.branch?.candidates || []);
+                                        const filtered = q
+                                            ? all.filter(b => String(b.branch_name || "").toUpperCase().includes(q) || String(b.branch_code || "").toUpperCase().includes(q))
+                                            : all;
+                                        const exactMatch = all.some(b => String(b.branch_name || "").trim().toUpperCase() === q);
+                                        return React.createElement(React.Fragment, null,
+                                            filtered.length === 0 && !q && React.createElement("div", { style: { padding: "10px 12px", fontSize: 11, color: "#64748b" } }, "Memuat daftar cabang..."),
+                                            filtered.map(b => {
+                                                const name = String(b.branch_name || "").toUpperCase();
+                                                const isSelected = parsed?.branch === name;
+                                                return React.createElement("div", {
+                                                    key: b.id || name,
+                                                    onClick: () => selectBranch(b),
+                                                    style: {
+                                                        padding: "8px 12px",
+                                                        cursor: "pointer",
+                                                        borderBottom: "1px solid #f1f5f9",
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        color: "#0f172a",
+                                                        background: isSelected ? "#f0fdf4" : "#ffffff"
+                                                    },
+                                                    onMouseEnter: (e) => { e.currentTarget.style.background = isSelected ? "#dcfce7" : "#f1f5f9"; },
+                                                    onMouseLeave: (e) => { e.currentTarget.style.background = isSelected ? "#f0fdf4" : "#ffffff"; }
+                                                },
+                                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+                                                    React.createElement("span", { style: { color: "#2563eb" } }, "🏢"),
+                                                    React.createElement("span", null, name),
+                                                    isSelected ? React.createElement("span", { style: { color: "#166534", fontSize: 10, background: "#dcfce7", padding: "1px 6px", borderRadius: 4 } }, "✓ Terpilih") : null
+                                                ),
+                                                b.branch_code ? React.createElement("span", { style: { fontSize: 10, color: "#64748b", fontFamily: "monospace" } }, b.branch_code) : null
+                                                );
+                                            }),
+                                            q && !exactMatch && React.createElement("div", {
+                                                onClick: () => createAndSelectBranch(q),
+                                                style: {
+                                                    padding: "10px 12px",
+                                                    background: "#eff6ff",
+                                                    borderTop: "1.5px solid #93c5fd",
+                                                    cursor: branchCreating ? "wait" : "pointer",
+                                                    color: "#1d4ed8",
+                                                    fontWeight: 800,
+                                                    fontSize: 12,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 8
+                                                },
+                                                onMouseEnter: (e) => { e.currentTarget.style.background = "#dbeafe"; },
+                                                onMouseLeave: (e) => { e.currentTarget.style.background = "#eff6ff"; }
+                                            },
+                                            branchCreating ? "⏳ Sedang menambahkan cabang ke database..." : `➕ Tambah cabang baru: "${q}" ke Database`
+                                            ),
+                                            React.createElement("div", {
+                                                style: {
+                                                    padding: "6px 12px",
+                                                    background: "#f8fafc",
+                                                    borderTop: "1px solid #f1f5f9",
+                                                    display: "flex",
+                                                    justifyContent: "flex-end"
+                                                }
+                                            },
+                                            React.createElement("button", {
+                                                onClick: (e) => { e.stopPropagation(); setBranchDropdownOpen(false); },
+                                                style: {
+                                                    fontSize: 10,
+                                                    padding: "3px 8px",
+                                                    background: "#e2e8f0",
+                                                    color: "#475569",
+                                                    border: 0,
+                                                    borderRadius: 4,
+                                                    cursor: "pointer",
+                                                    fontWeight: 700
+                                                }
+                                            }, "✕ Tutup Dropdown")
+                                            )
+                                        );
+                                    })()
+                                    )
+                                )
+                            )
+                        ) : React.createElement("div", { style: { fontSize: 11, color: "#94a3b8" } }, "Master matching belum dijalankan.")),
                     parsed.parts?.length > 0 && (React.createElement(React.Fragment, null,
                         React.createElement("div", { style: { height: 12 } }),
                         React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 } },
@@ -10076,7 +10621,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         padding: "12px 18px", borderTop: "1px solid #f1f5f9", background: "#fafafa",
                         display: "flex", justifyContent: "flex-end", gap: 8,
                     } },
-                    React.createElement("button", { onClick: () => { setParsed(null); setSourceLockIssues([]); }, style: {
+                    React.createElement("button", { onClick: () => { setParsed(null); setSourceLockIssues([]); setBranchSearchInput(""); setBranchDropdownOpen(false); }, style: {
                             padding: "9px 16px", borderRadius: 8, border: "1px solid #e2e8f0",
                             background: "#fff", color: "#64748b", cursor: "pointer", fontSize: 13,
                         } }, "\u2715 Batal"),

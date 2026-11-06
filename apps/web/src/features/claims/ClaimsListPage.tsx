@@ -54,19 +54,31 @@ export function ClaimsListPage() {
       if (!showArchived && c.archived_at) return false;
       if (status !== 'all' && (c.claim_status || '') !== status) return false;
       if (!term) return true;
+      const serialClean = String(c.serial_no || '').replace(/[^a-zA-Z0-9]/g, '');
+      const serialSuffixes = [6, 7, 8].map(len => serialClean.length >= len ? serialClean.slice(-len) : '').filter(Boolean);
+      const claimMatch = String(c.claim_id || '').match(/^(\d+)-(\d{4})-SDLG-PFR$/i);
+      const claimNums = claimMatch ? [claimMatch[1], claimMatch[1].replace(/^0+/, ''), `pfr${claimMatch[1]}`, `pfr${claimMatch[1].replace(/^0+/, '')}`] : [];
+      const woDigits = String(c.dealer_wo_so || '').replace(/[^0-9]/g, '');
+
       const hay = [
         c.claim_id,
+        ...claimNums,
         c.serial_no,
+        serialClean,
+        ...serialSuffixes,
         c.model,
         c.customer,
         c.branch,
         c.dealer_wo_so,
+        woDigits,
         c.fault_description,
         c.causing_part_no,
       ]
+        .filter(Boolean)
         .join(' ')
         .toLowerCase();
-      return hay.includes(term);
+      const tokens = term.split(/\s+/).filter(Boolean);
+      return tokens.every(tok => hay.includes(tok));
     });
 
     out = [...out].sort((a, b) => {

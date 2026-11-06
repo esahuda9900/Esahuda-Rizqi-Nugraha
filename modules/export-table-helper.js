@@ -40,34 +40,55 @@
     const endCol = colLetter(colCount);
     const endRow = rowCount + 1;
 
-    // 1. Bikin Tabel Utama (TableStyleMedium2 = Zebra Stripes)
-    const table = ws.addTable({
-      name: name || 'DataTable',
-      ref: `A1:${endCol}${endRow}`,
-      headerRow: true,
-      totalsRow: false,
-      columns: Array.from({ length: colCount }, (_, i) => ({
-        name: String(ws.getCell(1, i + 1).value ?? '').trim() || `Column ${i + 1}`
-      })),
-      rows: Array.from({ length: rowCount }, (_, r) =>
-        Array.from({ length: colCount }, (_, c) => ws.getCell(r + 2, c + 1).value)
-      ),
-      style: { theme: 'TableStyleMedium2', showRowStripes: true }
-    });
-    table.commit();
+    // 1. Sanitize unique column names (Excel Tables strictly require unique non-empty header names)
+    const colNames = [];
+    const usedNames = new Set();
+    for (let c = 1; c <= colCount; c++) {
+      let raw = String(ws.getCell(1, c).value ?? '').trim() || `Col_${c}`;
+      raw = raw.replace(/[\[\]']/g, '').trim();
+      let colName = raw;
+      let counter = 1;
+      while (usedNames.has(colName.toLowerCase())) {
+        colName = `${raw}_${counter++}`;
+      }
+      usedNames.add(colName.toLowerCase());
+      colNames.push(colName);
+      ws.getCell(1, c).value = colName;
+    }
 
-    // 2. Set View (Freeze Header + Freeze Kolom Pertama)
+    // 2. Sanitize Table Name (must start with letter, letters/numbers/underscores only)
+    const safeName = (name || 'DataTable').replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z]/, 'T_');
+
+    // 3. Create Excel Table (ListObject) with native filter buttons & zebra stripes
+    try {
+      const table = ws.addTable({
+        name: safeName,
+        ref: `A1:${endCol}${endRow}`,
+        headerRow: true,
+        totalsRow: false,
+        columns: colNames.map(n => ({ name: n, filterButton: true })),
+        rows: Array.from({ length: rowCount }, (_, r) =>
+          Array.from({ length: colCount }, (_, c) => ws.getCell(r + 2, c + 1).value)
+        ),
+        style: { theme: 'TableStyleMedium9', showRowStripes: true }
+      });
+      if (table && typeof table.commit === 'function') {
+        table.commit();
+      }
+    } catch (e) {
+      console.warn('[SDLG Export] addTable notice:', e.message);
+    }
+
+    // 4. View Configuration: Freeze Header (Row 1) & Freeze Key ID (Col A), Show Grid Lines
     ws.views = [{ 
       state: 'frozen', 
       ySplit: 1, 
-      xSplit: 1, // Freeze kolom pertama (biasanya ID)
-      showGridLines: false 
+      xSplit: 1, 
+      showGridLines: true 
     }];
-    
-    ws.autoFilter = { from: 'A1', to: `${endCol}1` };
 
-    // 3. Style Header (Biru Navy & Teks Putih)
-    ws.getRow(1).height = 32;
+    // 5. Header Row Styling (Navy Blue, White Text, Bold, Middle-Aligned)
+    ws.getRow(1).height = 28;
     ws.getRow(1).eachCell((cell) => {
       cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
@@ -78,63 +99,79 @@
       };
     });
 
-    // 4. Loop Data: Auto-Style & Format
+    // 6. Data Row Formatting & Cell Alignment
     for (let c = 1; c <= colCount; c++) {
       const headerText = String(ws.getCell(1, c).value || '').toLowerCase();
       const column = ws.getColumn(c);
-      let maxLen = 10; // Minimal lebar 10
+      let maxLen = headerText.length;
+
+      const isDateCol = /date|tanggal|tgl|updated/i.test(headerText);
+      const isAmountCol = /amount|total|price|harga|biaya|nilai|nominal/i.test(headerText) && !/qty|quantity|count|hrs|km/i.test(headerText);
+      const isIntCol = /qty|quantity|count|foto|photo|hrs|hours|jam|mileage|hm|meter/i.test(headerText);
+      const isStatusCol = /status|state|result|kualitas|quality/i.test(headerText);
+      const isLongTextCol = /description|analyze|comment|reason|warning|catatan|keterangan|summary|location/i.test(headerText);
 
       for (let r = 2; r <= endRow; r++) {
         const cell = ws.getCell(r, c);
         const val = cell.value;
 
-        // Hitung panjang maksimal untuk Auto-Width
         if (val != null) {
-          const len = String(val).length;
-          if (len > maxLen) maxLen = len;
+          const strVal = String(val instanceof Date ? 'YYYY-MM-DD' : val);
+          if (strVal.length > maxLen) maxLen = Math.min(strVal.length, 50);
         }
 
-        // Styling Dasar
         cell.font = { name: 'Aptos', size: 10, color: { argb: 'FF1F2937' } };
-        cell.alignment = { vertical: 'top', wrapText: false };
+        cell.alignment = { 
+          vertical: 'middle', 
+          horizontal: isAmountCol || isIntCol ? 'right' : (isDateCol ? 'center' : 'left'),
+          wrapText: isLongTextCol 
+        };
 
-        // ─── AUTO FORMAT (Rupiah & Tanggal) ───
+        // Numbers: keep clean numbers without forced "Rp" so multi-currency formulas work
         if (typeof val === 'number') {
-          if (/amount|total|price|biaya|rp|nominal|value/i.test(headerText)) {
-            cell.numFmt = '"Rp" #,##0'; 
-            cell.alignment = { vertical: 'top', horizontal: 'right' }; // Rata kanan buat duit
-          } else if (/qty|quantity|count|jumlah|hari|days|aging/i.test(headerText)) {
+          if (isAmountCol) {
+            cell.numFmt = '#,##0.00';
+          } else if (isIntCol) {
             cell.numFmt = '#,##0';
-            cell.alignment = { vertical: 'top', horizontal: 'center' };
           }
-        } else if (typeof val === 'string' && /date|tanggal|tgl/i.test(headerText)) {
-          // Deteksi string tanggal sederhana
-          const d = new Date(val);
+        } else if (val instanceof Date) {
+          cell.numFmt = 'yyyy-mm-dd';
+        } else if (typeof val === 'string' && isDateCol && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+          const parts = val.slice(0, 10).split('-');
+          const d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
           if (!isNaN(d.getTime())) {
             cell.value = d;
-            cell.numFmt = 'DD-MMM-YYYY';
-            cell.alignment = { vertical: 'top', horizontal: 'center' };
+            cell.numFmt = 'yyyy-mm-dd';
           }
         }
 
-        // ─── CONDITIONAL FORMATTING (Warna Status) ───
-        if (/status|state|result|hasil/i.test(headerText) && typeof val === 'string') {
+        // Soft corporate status highlighting
+        if (isStatusCol && typeof val === 'string') {
           const v = val.toLowerCase();
-          if (/reject|gagal|fail|batal|cancel/i.test(v)) {
-            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF991B1B' } }; // Merah
+          if (/reject|gagal|fail|batal|cancel|check/i.test(v)) {
+            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF991B1B' } };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } };
-          } else if (/approve|success|berhasil|done|closed|paid/i.test(v)) {
-            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF166534' } }; // Hijau
+          } else if (/approve|success|berhasil|done|closed|paid|settlement|ok\b/i.test(v)) {
+            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF166534' } };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
-          } else if (/pending|hold|wait|tunggu|draft/i.test(v)) {
-            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF92400E' } }; // Kuning/Amber
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+          } else if (/pending|hold|wait|tunggu|draft|audit|submitted/i.test(v)) {
+            cell.font = { name: 'Aptos', size: 10, bold: true, color: { argb: 'FF854D0E' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF9C3' } };
           }
         }
+
+        cell.border = {
+          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+          right: { style: 'thin', color: { argb: 'FFF3F4F6' } }
+        };
       }
 
-      // Set Auto-Width (Maksimal 50 biar gak terlalu lebar)
-      column.width = Math.min(maxLen + 4, 50);
+      column.width = Math.max(12, Math.min(maxLen + 4, 45));
+      if (isLongTextCol) column.width = Math.max(column.width, 32);
+    }
+
+    for (let r = 2; r <= endRow; r++) {
+      ws.getRow(r).height = 22;
     }
 
     return endRow;
