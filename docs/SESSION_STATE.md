@@ -1,4 +1,4 @@
-# SESSION_STATE — 2026-11-06
+# SESSION_STATE — 2026-11-07
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
@@ -6,12 +6,11 @@
 - Latest deploys via static.yml successful as of last check. No open issues.
 - Claims count: 564 (stable).
 
-## Current health (2026-11-06 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 564. Recent claims: 8 in last 7 days (latest created 2026-11-04).
-- Status distribution: Paid 313, SDLG Audit 236, Draft 12, Rejected 3.
-- Security advisors: known warnings on SECURITY DEFINER RPCs (create/update/delete_sdlg_claim etc.) callable by authenticated — intentional for business logic. Leaked password protection disabled (known).
-- Performance advisors: auth RLS initplan on machines table (minor), many unused indexes (info), multiple permissive policies on ax_warranty_work_order_costs (minor).
-- Logs: no critical errors in recent window. Normal edge/postgrest/postgres activity present (non-critical).
+## Current health (2026-11-07 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 564. Recent claims: 8 in last 7 days.
+- Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
+- Performance advisors: minor known items (auth RLS initplan, unused indexes, multiple permissive policies).
+- Logs: minor postgrest timeouts ("Warp server error: Thread killed by timeout manager") persist non-critical. No critical errors.
 - Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
 
 ## Task Queue status
