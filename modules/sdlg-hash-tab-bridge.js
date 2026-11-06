@@ -22,7 +22,8 @@
 
   function tabFromHash(h) {
     h = String(h || '').replace(/^#\/?/, '').toLowerCase();
-    if (!h || h === 'overview' || h === 'dashboard') return 'dashboard';
+    if (!h) return '';
+    if (h === 'overview' || h === 'dashboard') return 'dashboard';
     if (h.indexOf('claims') === 0 || h.indexOf('list') === 0) return 'list';
     if (h.indexOf('new-claim') === 0 || h.indexOf('paste') === 0) return 'paste';
     if (h.indexOf('sdlg-input') === 0 || h.indexOf('sdlginput') === 0) return 'sdlginput';

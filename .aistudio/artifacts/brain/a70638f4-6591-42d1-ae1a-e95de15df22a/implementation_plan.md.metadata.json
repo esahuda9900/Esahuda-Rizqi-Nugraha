@@ -1,0 +1,6 @@
+{
+  "summary": "Pelan teknis menyeluruh untuk memperbaiki masalah tab Chrome refresh/pindah tab yang selalu memicu loading berulang serta reset posisi tab/klaim detail ke Overview pada web legacy production SDLG. Rencana mencakup isolasi re-auth event Supabase, pencegahan refetch redundant, dual-restore URL hash dan localStorage dengan skeleton loader, serta perlindungan preserve hash pada redirect.",
+  "updatedAt": "2026-11-06T01:28:45.036611793Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

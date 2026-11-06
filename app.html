@@ -5912,13 +5912,26 @@ function App() {
         window.SDLGNavState?.setPortalClaimId?.(safeId);
     };
     const [user, setUser] = useState(null);
+    const userRef = useRef(null);
+    userRef.current = user;
     const [authLoading, setAuthLoading] = useState(true);
+    const [authLoadingSlow, setAuthLoadingSlow] = useState(false);
+    useEffect(() => {
+        if (!authLoading) {
+            setAuthLoadingSlow(false);
+            return;
+        }
+        const timer = setTimeout(() => setAuthLoadingSlow(true), 5000);
+        return () => clearTimeout(timer);
+    }, [authLoading]);
     const [authRetry, setAuthRetry] = useState(0);
     const [loginEmail, setLoginEmail] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
     const [loginError, setLoginError] = useState("");
     const [loginLoading, setLoginLoading] = useState(false);
     const [userRole, setUserRole] = useState("viewer");
+    const userRoleRef = useRef("viewer");
+    userRoleRef.current = userRole;
     const [userBranchId, setUserBranchId] = useState(null);
     const profileGeneration = useRef(0);
     const claimsLoadGeneration = useRef(0);
@@ -6554,6 +6567,9 @@ SDLG_REPOSITORY.listClaims = async function () {
         return all;
     }, []);
     const [claims, setClaims] = useState([]);
+    const claimsRef = useRef([]);
+    claimsRef.current = claims;
+    const lastLoadedUserIdRef = useRef(null);
     const [claimsLoadError, setClaimsLoadError] = useState(null);
     const [actionCenterRows, setActionCenterRows] = useState([]);
     const [actionCenterLoadError, setActionCenterLoadError] = useState(null);
@@ -6951,6 +6967,12 @@ SDLG_REPOSITORY.listClaims = async function () {
             // Refreshing an existing token is not a logout/login navigation event.
             // Avoid clearing role and hiding the page on Chrome focus/session refresh.
             if (_event === "TOKEN_REFRESHED" || _event === "USER_UPDATED") return;
+            const nextUser = session?.user || null;
+            // When returning to this tab in Chrome, Supabase may fire SIGNED_IN or INITIAL_SESSION for the existing user.
+            // Do NOT tear down user role, clear data, or trigger refetches if the identity is unchanged:
+            if (nextUser && userRef.current && nextUser.id === userRef.current.id) {
+                return;
+            }
             const version = ++authEventVersion;
             ++profileGeneration.current;
             ++claimsLoadGeneration.current;
@@ -6958,9 +6980,10 @@ SDLG_REPOSITORY.listClaims = async function () {
             // Profile requests must start after the Supabase auth callback returns.
             profileTimer = setTimeout(() => {
                 if (!mounted || version !== authEventVersion) return;
-                const nextUser = session?.user || null;
-                setUserRole("viewer");
-                setUserBranchId(null);
+                if (!userRoleRef.current || userRoleRef.current === "viewer") {
+                    setUserRole("viewer");
+                    setUserBranchId(null);
+                }
                 setUser(nextUser);
                 withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.")
                     .catch(error => { if (mounted && version === authEventVersion) { setUserRole("viewer"); setUserBranchId(null); setLoginError(error.message); } })
@@ -7087,7 +7110,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             showToast("Konfigurasi Supabase belum diisi.");
             return;
         }
-        setLoading(true);
+        if (!claimsRef.current || claimsRef.current.length === 0) {
+            setLoading(true);
+        }
         setClaimsLoadError(null);
         try {
             /* PERF: first page for fast interactive list; full hydrate in background */
@@ -7109,6 +7134,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 })
             ]), 20000, "Pemuatan klaim terlalu lama. Periksa jaringan lalu coba lagi.");
             if (!current()) return;
+            claimsRef.current = all;
             setClaims(all);
             setClaimsLoadError(null);
             if (actionRows?.error) throw actionRows.error;
@@ -7127,15 +7153,23 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (current()) setLoading(false);
         }
     }, [user]);
-    useEffect(() => { if (user)
-        loadClaims();
-    else {
-        ++claimsLoadGeneration.current;
-        setClaims([]);
-        setActionCenterRows([]);
-        setActionCenterLoadError(null);
-        setLoading(false);
-    } }, [user, loadClaims]);
+    useEffect(() => {
+        if (user) {
+            if (claimsRef.current && claimsRef.current.length > 0 && lastLoadedUserIdRef.current === user.id) {
+                return;
+            }
+            lastLoadedUserIdRef.current = user.id;
+            loadClaims();
+        } else {
+            lastLoadedUserIdRef.current = null;
+            ++claimsLoadGeneration.current;
+            claimsRef.current = [];
+            setClaims([]);
+            setActionCenterRows([]);
+            setActionCenterLoadError(null);
+            setLoading(false);
+        }
+    }, [user, loadClaims]);
     useEffect(() => { if (user && !isAdmin && tab === "paste")
         setTab("list"); }, [user, isAdmin, tab]);
     const syncMasterUnits = useCallback(async () => {
@@ -9526,9 +9560,27 @@ SDLG_REPOSITORY.listClaims = async function () {
     // ─── RENDER ────────────────────────────────────────────────────────────
     return (React.createElement("div", { className: "app-shell", style: { minHeight: "100vh", background: "#f8fafc" } }, authLoading ? (React.createElement("div", { className: "login-loading", role: "status", "aria-live": "polite" },
         React.createElement("div", { className: "login-loading-card" },
-            React.createElement("div", { className: "login-loading-mark" }, "S"),
+            React.createElement("div", { className: "login-loading-mark", "aria-hidden": "true" }, "S"),
             React.createElement("div", { className: "login-loading-title" }, "Memeriksa akses"),
-            React.createElement("div", { className: "login-loading-copy" }, "Menghubungkan ke SDLG Warranty")))) : !user ? (React.createElement("main", { className: "login-screen" },
+            React.createElement("div", { className: "login-loading-copy" }, "Menghubungkan ke SDLG Warranty"),
+            React.createElement("div", { style: { fontSize: "12px", color: "#64748b", marginTop: "4px" } }, "Menyiapkan workspace dan hak akses..."),
+            authLoadingSlow && React.createElement("div", { style: { marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #f1f5f9" } },
+                React.createElement("button", {
+                    type: "button",
+                    onClick: () => { setAuthLoading(false); setUser(null); },
+                    style: {
+                        padding: "8px 16px",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        color: "#0f172a",
+                        cursor: "pointer",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                    }
+                }, "Buka Layar Login \u2192")
+            )))) : !user ? (React.createElement("main", { className: "login-screen" },
         React.createElement("section", { className: "login-layout", "aria-label": "Login SDLG Warranty" },
             React.createElement("div", { className: "login-intro" },
                 React.createElement("div", { className: "login-kicker" }, "INTERNAL WARRANTY OPERATIONS"),
@@ -10748,6 +10800,22 @@ SDLG_REPOSITORY.listClaims = async function () {
                     return null;
                 })()));
         })(),
+        tab === "list" && detailId && !detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14 } },
+                React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {
+                        padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
+                        background: "#fff", cursor: "pointer", fontSize: 13, color: "#475569",
+                    } }, "\u2190 Kembali"),
+                React.createElement("span", { style: { fontWeight: 800, fontSize: 14, fontFamily: "monospace" } }, detailId),
+                React.createElement("span", { style: { fontSize: 12, color: "#64748b", padding: "4px 8px", background: "#f1f5f9", borderRadius: 6 } }, loading ? "Memuat klaim..." : "Klaim tidak ditemukan")),
+            loading ? React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Memuat Detail Klaim"),
+                React.createElement("div", { style: { fontSize: 12 } }, "Menghubungkan ke database dan memulihkan data klaim..."))
+            : React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Klaim Tidak Ditemukan"),
+                React.createElement("div", { style: { fontSize: 12, marginBottom: 14 } }, `Nomor klaim "${detailId}" tidak ditemukan atau sudah dihapus.`),
+                React.createElement("button", { onClick: () => setDetailId(null), className: "secondary-btn" }, "Kembali ke Daftar Klaim"))
+        )),
         tab === "list" && detailId && detail && (React.createElement("div", { className: "page claim-detail-page", "data-sdlg-claim-detail": "1" },
             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" } },
                 React.createElement("button", { onClick: () => { setDetailId(null); setEditing(false); }, style: {

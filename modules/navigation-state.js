@@ -100,7 +100,13 @@
     },
     restoreDetailId: function (user) {
       var route = routeFromHash();
-      return route ? route.detailId : null;
+      if (route) {
+        return route.tab === 'list' ? route.detailId : null;
+      }
+      var st = readState(user);
+      if (st && st.tab === 'list' && st.detailId) return st.detailId;
+      var directClaim = normalizeDetailId(readRaw(CLAIM_KEY));
+      return directClaim || null;
     },
     persist: function (tab, user, detailId) {
       // React calls persist(tab) and persist(tab,null,detailId). Keep route authoritative.

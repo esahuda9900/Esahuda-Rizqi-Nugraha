@@ -577,7 +577,8 @@
   }
 
   function goApp() {
-    window.location.replace('./app.html?v=20261105-master-polish-v10');
+    var h = window.location.hash || '';
+    window.location.replace('./app.html?v=20261105-master-polish-v10' + h);
   }
 
   setTimeout(function () {
