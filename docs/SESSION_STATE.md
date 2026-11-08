@@ -1,4 +1,4 @@
-# SESSION_STATE — 2026-11-08
+# SESSION_STATE — 2026-11-09
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
@@ -6,11 +6,11 @@
 - Latest deploys via static.yml successful as of last check. No open issues.
 - Claims count: 564 (stable).
 
-## Current health (2026-11-08 monitoring)
+## Current health (2026-11-09 monitoring)
 - Supabase project ACTIVE_HEALTHY. Claims total 564. Recent claims: 8 in last 7 days (latest 2026-11-04).
 - Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
 - Performance advisors: minor known items (auth RLS initplan, unused indexes, multiple permissive policies).
-- Logs: low volume, minor postgrest activity, no critical errors observed.
+- Logs: low volume, minor postgrest timeouts ("Thread killed by timeout manager" — known non-critical), no critical errors observed.
 - Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
 
 ## Task Queue status
