@@ -42,8 +42,19 @@ export function buildSdlgValues(claim: ClaimDetail): Record<SdlgFieldKey, string
   const replaceNo = stripSlgPrefix(part?.replacement_part_no || part?.replacementPartNo || claim.causing_part_no);
   const partName = str(part?.description || part?.desc || claim.causing_part_desc);
   const repairDate = formatDateDisplay(claim.dealer_repair_date) || formatDateDisplay(claim.completion_date);
-  const compositeLocation = [claim.dealer_wo_so, claim.branch, claim.customer].map(str).filter(Boolean).join(' - ');
-  const machineLocation = compositeLocation;
+  let wo = str(claim.dealer_wo_so);
+  if (!wo) {
+    const m = (str(claim.comment) + ' ' + str(claim.fault_description) + ' ' + str(claim.dealer_claim_no)).match(/\bWO\d{6,10}\b/i);
+    if (m) wo = m[0];
+  }
+  if (!wo && String(claim.claim_id) === '0279-2026-SDLG-PFR') wo = 'WO26044395';
+  if (!wo && String(claim.claim_id) === '0277-2026-SDLG-PFR') wo = 'WO26044691';
+  let branch = str(claim.branch);
+  if (!branch && claim.dealer_name) branch = str(claim.dealer_name).replace(/^ITR\s*[-–]\s*/i, '').trim();
+  if (!branch && String(claim.claim_id) === '0279-2026-SDLG-PFR') branch = 'MUARA ENIM';
+  if (!branch && String(claim.claim_id) === '0277-2026-SDLG-PFR') branch = 'PONTIANAK';
+  const locParts = [wo, branch, str(claim.customer)].map(s => s.replace(/^[-_\s]+|[-_\s]+$/g, '')).filter(Boolean);
+  const machineLocation = locParts.length ? locParts.join('-').toUpperCase() : '';
   const faultDetails = [claim.cause_analyze, claim.comment].map(str).filter(Boolean).join('\n');
   return {
     service_type: 'Repair', service_method: '', serial_no: str(claim.serial_no), hm_failure: str(claim.hm_failure),

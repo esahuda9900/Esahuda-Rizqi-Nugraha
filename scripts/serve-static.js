@@ -3,7 +3,30 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const port = 3000;
+
+let port = 3000;
+if (process.env.PORT) {
+  const parsedPort = parseInt(process.env.PORT, 10);
+  if (!isNaN(parsedPort) && parsedPort > 0) {
+    port = parsedPort;
+  }
+}
+for (let i = 2; i < process.argv.length; i++) {
+  if (process.argv[i] === '--port' && process.argv[i + 1]) {
+    const parsedPort = parseInt(process.argv[i + 1], 10);
+    if (!isNaN(parsedPort) && parsedPort > 0) {
+      port = parsedPort;
+    }
+  }
+}
+
+let host = '0.0.0.0';
+for (let i = 2; i < process.argv.length; i++) {
+  if (process.argv[i] === '--host' && process.argv[i + 1]) {
+    host = process.argv[i + 1];
+  }
+}
+
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -12,25 +35,82 @@ const mimeTypes = {
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ttf': 'font/ttf',
+  '.ico': 'image/x-icon',
 };
 
 const previewDist = path.resolve(root, 'apps', 'web', 'dist');
+let isBuilding = false;
 
-if (!fs.existsSync(previewDist) || !fs.existsSync(path.resolve(previewDist, 'index.html'))) {
-  try {
-    const { execSync } = require('node:child_process');
-    console.log('Building React preview app (apps/web)...');
-    execSync('npm --prefix apps/web run build', { stdio: 'inherit' });
-  } catch (err) {
-    console.error('Failed to build apps/web:', err);
+function ensurePreviewBuilt() {
+  if (fs.existsSync(path.resolve(previewDist, 'index.html'))) {
+    return;
   }
+  if (isBuilding) return;
+  isBuilding = true;
+  console.log('Building React preview app (apps/web) in background...');
+  const { exec } = require('node:child_process');
+  exec('npm --prefix apps/web run build', (err) => {
+    isBuilding = false;
+    if (err) {
+      console.error('Failed to build apps/web:', err);
+    } else {
+      console.log('React preview app (apps/web) build ready.');
+    }
+  });
 }
 
 function safePath(urlPath) {
-  const pathname = decodeURIComponent(urlPath.split('?')[0]);
-  const requested = pathname === '/' ? '/index.html' : pathname;
-  const resolved = path.resolve(root, `.${requested}`);
-  return resolved.startsWith(root + path.sep) ? resolved : null;
+  try {
+    const pathname = decodeURIComponent((urlPath || '/').split('?')[0]);
+    const requested = pathname === '/' ? '/index.html' : pathname;
+    const resolved = path.resolve(root, `.${requested}`);
+    return resolved.startsWith(root + path.sep) ? resolved : null;
+  } catch {
+    return null;
+  }
+}
+
+function streamFile(targetPath, response, isHead) {
+  const ext = path.extname(targetPath).toLowerCase();
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+  fs.stat(targetPath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      response.end('Not found');
+      return;
+    }
+
+    response.writeHead(200, {
+      'Cache-Control': 'no-cache',
+      'Content-Type': contentType,
+      'Content-Length': stats.size,
+      'X-Content-Type-Options': 'nosniff',
+    });
+
+    if (isHead) {
+      response.end();
+      return;
+    }
+
+    const stream = fs.createReadStream(targetPath);
+    stream.on('error', (streamErr) => {
+      console.error('Stream error:', streamErr);
+      if (!response.headersSent) {
+        response.writeHead(500, { 'Content-Type': 'text/plain' });
+      }
+      response.end();
+    });
+
+    response.on('close', () => {
+      stream.destroy();
+    });
+
+    stream.pipe(response);
+  });
 }
 
 const bannerHtml = `
@@ -41,7 +121,22 @@ const bannerHtml = `
 
 const server = http.createServer((request, response) => {
   const rawUrl = request.url || '/';
-  const pathname = decodeURIComponent(rawUrl.split('?')[0]);
+  const isHead = request.method === 'HEAD';
+  let pathname = '/';
+  try {
+    pathname = decodeURIComponent(rawUrl.split('?')[0]);
+  } catch {
+    response.writeHead(400, { 'Content-Type': 'text/plain' });
+    response.end('Bad Request');
+    return;
+  }
+
+  // Health checks
+  if (pathname === '/healthz' || pathname === '/_health' || pathname === '/ping') {
+    response.writeHead(200, { 'Content-Type': 'text/plain' });
+    response.end('OK');
+    return;
+  }
 
   // Redirect /preview to /preview/
   if (pathname === '/preview' || pathname === '/Esahuda-Rizqi-Nugraha/preview') {
@@ -53,22 +148,23 @@ const server = http.createServer((request, response) => {
   // Handle React preview SPA
   const isPreview = pathname.startsWith('/preview/') || pathname.startsWith('/Esahuda-Rizqi-Nugraha/preview/');
   if (isPreview) {
+    if (!fs.existsSync(previewDist) || !fs.existsSync(path.resolve(previewDist, 'index.html'))) {
+      ensurePreviewBuilt();
+      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      response.end(`<!doctype html><html><head><meta http-equiv="refresh" content="2"><title>Loading Preview...</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px;"><h2>Menyiapkan React Preview...</h2><p style="color:#64748b;">Halaman akan dimuat otomatis dalam beberapa detik.</p></body></html>`);
+      return;
+    }
+
     const subPath = pathname.replace(/^(\/Esahuda-Rizqi-Nugraha)?\/preview/, '') || '/';
     const cleanSub = subPath === '/' ? '/index.html' : subPath;
     let target = path.resolve(previewDist, `.${cleanSub}`);
 
     if (!target.startsWith(previewDist + path.sep) || !fs.existsSync(target) || !fs.statSync(target).isFile()) {
-      // SPA fallback to preview index.html
       target = path.resolve(previewDist, 'index.html');
     }
 
     if (fs.existsSync(target) && fs.statSync(target).isFile()) {
-      response.writeHead(200, {
-        'Cache-Control': 'no-cache',
-        'Content-Type': mimeTypes[path.extname(target).toLowerCase()] || 'application/octet-stream',
-        'X-Content-Type-Options': 'nosniff',
-      });
-      fs.createReadStream(target).pipe(response);
+      streamFile(target, response, isHead);
       return;
     }
   }
@@ -78,12 +174,7 @@ const server = http.createServer((request, response) => {
     const cleanAsset = pathname.replace(/^(\/Esahuda-Rizqi-Nugraha)?/, '');
     const assetTarget = path.resolve(previewDist, `.${cleanAsset}`);
     if (assetTarget.startsWith(previewDist + path.sep) && fs.existsSync(assetTarget) && fs.statSync(assetTarget).isFile()) {
-      response.writeHead(200, {
-        'Cache-Control': 'no-cache',
-        'Content-Type': mimeTypes[path.extname(assetTarget).toLowerCase()] || 'application/octet-stream',
-        'X-Content-Type-Options': 'nosniff',
-      });
-      fs.createReadStream(assetTarget).pipe(response);
+      streamFile(assetTarget, response, isHead);
       return;
     }
   }
@@ -103,9 +194,7 @@ const server = http.createServer((request, response) => {
       return;
     }
 
-    const ext = path.extname(filePath).toLowerCase();
-
-    // In dev server, inject preview banner into legacy index.html so users can easily test React preview
+    // In dev server, inject preview banner into legacy index.html
     if (filePath.endsWith('index.html')) {
       fs.readFile(filePath, 'utf8', (readErr, content) => {
         if (readErr) {
@@ -114,22 +203,23 @@ const server = http.createServer((request, response) => {
           return;
         }
         const modified = content.replace('<body>', '<body>' + bannerHtml);
+        const buffer = Buffer.from(modified, 'utf-8');
         response.writeHead(200, {
           'Cache-Control': 'no-cache',
           'Content-Type': 'text/html; charset=utf-8',
+          'Content-Length': buffer.length,
           'X-Content-Type-Options': 'nosniff',
         });
-        response.end(modified);
+        if (isHead) {
+          response.end();
+        } else {
+          response.end(buffer);
+        }
       });
       return;
     }
 
-    response.writeHead(200, {
-      'Cache-Control': 'no-cache',
-      'Content-Type': mimeTypes[ext] || 'application/octet-stream',
-      'X-Content-Type-Options': 'nosniff',
-    });
-    fs.createReadStream(filePath).pipe(response);
+    streamFile(filePath, response, isHead);
   });
 });
 
@@ -140,8 +230,18 @@ server.on('error', (err) => {
   }
 });
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Static preview server listening on port ${port}`);
+server.listen(port, host, () => {
+  console.log(`Static preview server listening on http://${host}:${port}`);
+});
+
+ensurePreviewBuilt();
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
 
 process.on('SIGTERM', () => server.close(() => process.exit(0)));

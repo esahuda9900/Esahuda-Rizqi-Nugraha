@@ -17,7 +17,7 @@
   // 1. KONFIGURASI DATABASE
   // ─────────────────────────────────────────────────────────
   var CLAIM_SELECT = [
-    'claim_id','model','serial_no','customer','repair_method','technical_personnel',
+    'claim_id','model','serial_no','customer','dealer_wo_so','branch','dealer_name','repair_method','technical_personnel',
     'causing_part_no','causing_part_desc','failure_part_location','fault_description',
     'cause_analyze','comment','parts','hm_failure','hm_completion','sales_date',
     'failure_date','dealer_repair_date','completion_date','dealer_claim_date',
@@ -71,9 +71,28 @@
     { labels: ['Feedback Person'], val: function(c) { return clean(c.technical_personnel).replace(/^\s*technician\s*[:\-]?\s*/i, '').trim(); } },
     { labels: ['Failure Date'], val: function(c) { return formatPortalDate(c.failure_date); } },
     { labels: ['Date of repair report', 'Date of Repair Report', 'Repair Date', 'Dealer Repair Date', 'Repair Start Date', 'Date of repair'], val: function(c) { return formatPortalDate(c.dealer_repair_date || c.completion_date || c.failure_date); } },
-    { labels: ['Complaint'], val: function(c) { return c.fault_description; } },
-    { labels: ['Fault Details', 'Fault Detail'], val: function(c) { return c.cause_analyze || c.comment; } },
-    { labels: ['Machine Location'], val: function(c) { return c.failure_part_location; } },
+    { labels: ['Machine Location'], val: function(c) {
+      if (!c) return '';
+      if (typeof window !== 'undefined' && window.SDLGInputClaimLock && typeof window.SDLGInputClaimLock.resolveMachineLocation === 'function') {
+        return window.SDLGInputClaimLock.resolveMachineLocation('', c);
+      }
+      var live = (typeof window !== 'undefined' && window.__SDLG_LIVE_CLAIM__ && String(window.__SDLG_LIVE_CLAIM__.claim_id) === String(c.claim_id)) ? window.__SDLG_LIVE_CLAIM__ : null;
+      var wo = String((live && (live.dealer_wo_so || live.wo_so || live.wo_no)) || c.dealer_wo_so || c.wo_so || c.wo_no || '').trim();
+      if (!wo) {
+        var mWo = String((live && (live.dealer_claim_no || live.comment)) || (c.dealer_claim_no || '') + ' ' + (c.comment || '')).match(/\bWO\d{6,10}\b/i);
+        if (mWo) wo = mWo[0];
+      }
+      var branch = String((live && (live.branch || live.branch_name)) || c.branch || c.branch_name || '').trim();
+      if (!branch) {
+        var dName = (live && live.dealer_name) || c.dealer_name || '';
+        if (dName) branch = String(dName).replace(/^ITR\s*[-–]\s*/i, '').trim();
+      }
+      var customer = String((live && (live.customer || live.customer_name)) || c.customer || c.customer_name || '').trim();
+      var parts = [wo, branch, customer].map(function (s) {
+        return String(s || '').trim().replace(/^[-_\s]+|[-_\s]+$/g, '');
+      }).filter(Boolean);
+      return parts.length ? parts.join('-').toUpperCase() : '';
+    } },
     { labels: ['Service Mileage (Km)', 'Service Mileage', 'Mileage'], val: function(c) { return c.mileage_km; } },
     { labels: ['Labour Amount'], val: function(c) { return c.labour_amount; } },
     { labels: ['Mileage Amount'], val: function(c) { return c.mileage_amount; } },
@@ -156,7 +175,16 @@
     var next = String(value);
     var cur = control.value != null ? String(control.value) : '';
     
-    // Jangan timpa kalau udah ada isinya (kecuali dipaksa)
+    // Khusus Machine Location:
+    var isMachineLoc = control.id === 'machineLocation' || (control.getAttribute && control.getAttribute('data-label') === 'Machine Location');
+    if (isMachineLoc) {
+      // Jika input saat ini sudah memiliki format lengkap (ada dash) dan nilai baru tidak lengkap (tidak ada dash), JANGAN timpa!
+      if (!next.includes('-') && cur.includes('-')) return false;
+      // Jika nilai input saat ini tidak lengkap (tidak ada dash) atau berisi teks defect lama, paksa timpa
+      if (!cur.includes('-') || /leak|gauge|broken|fault|damage/i.test(cur)) forceOverwrite = true;
+    }
+
+    // Jangan timpa kalau udah ada isinya (kecuali dipaksa atau korup)
     if (!forceOverwrite && !isBlankUi(cur) && cur !== next) return false;
     
     control.value = next;
@@ -174,6 +202,10 @@
   async function fetchClaimData(claimId) {
     var c = getClient();
     if (!c) throw new Error('No Supabase client');
+    try {
+      var resStar = await c.from('claims').select('*').eq('claim_id', claimId).maybeSingle();
+      if (!resStar.error && resStar.data) return resStar.data;
+    } catch (_) {}
     var res = await c.from('claims').select(CLAIM_SELECT).eq('claim_id', claimId).maybeSingle();
     if (res.error) throw res.error;
     return res.data;
@@ -218,6 +250,13 @@
 
   function applyClaimData(claim, resolver) {
     if (!claim) return;
+
+    if (typeof window !== 'undefined' && window.__SDLG_LIVE_CLAIM__ && String(window.__SDLG_LIVE_CLAIM__.claim_id) === String(claim.claim_id)) {
+      var live = window.__SDLG_LIVE_CLAIM__;
+      claim.dealer_wo_so = claim.dealer_wo_so || live.dealer_wo_so || live.wo_so || live.wo_no;
+      claim.branch = claim.branch || live.branch || live.branch_name;
+      claim.customer = claim.customer || live.customer || live.customer_name;
+    }
     
     var filledCount = 0;
     FIELD_MAPPINGS.forEach(function(map) {
