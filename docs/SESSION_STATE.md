@@ -1,16 +1,16 @@
-# SESSION_STATE — 2026-11-09
+# SESSION_STATE — 2026-11-10
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
 - Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
 - Latest deploys via static.yml successful as of last check. No open issues.
-- Claims count: 564 (stable).
+- Claims count: 570 (increased slightly from previous 564).
 
-## Current health (2026-11-09 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 564. Recent claims: 8 in last 7 days (latest 2026-11-04).
+## Current health (2026-11-10 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 570. No critical data anomalies.
 - Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
 - Performance advisors: minor known items (auth RLS initplan, unused indexes, multiple permissive policies).
-- Logs: low volume, minor postgrest timeouts ("Thread killed by timeout manager" — known non-critical), no critical errors observed.
+- Logs: low volume in recent window, no critical errors observed. Minor postgrest timeouts remain known non-critical.
 - Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
 
 ## Task Queue status
@@ -27,3 +27,4 @@
 - Legacy production web running smoothly at root (`/`) with instant search and zero render thrashing.
 - Cutover policy strictly maintained (no unauthorized switch of `/`).
 - All checks green: `npm run verify`, `compile_applet`, `lint_applet`.
+- Open PR #12 remains on HOLD for preview workspace refresh (does not affect production).
