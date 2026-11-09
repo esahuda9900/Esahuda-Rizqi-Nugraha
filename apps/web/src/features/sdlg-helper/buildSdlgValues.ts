@@ -49,11 +49,15 @@ export function buildSdlgValues(claim: ClaimDetail): Record<SdlgFieldKey, string
   }
   if (!wo && String(claim.claim_id) === '0279-2026-SDLG-PFR') wo = 'WO26044395';
   if (!wo && String(claim.claim_id) === '0277-2026-SDLG-PFR') wo = 'WO26044691';
+  const isCompWord = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|cylinder|seal|hose|pump|valve|filter|engine|muffler|leak|broken|crack|fault|damage)\b/i;
   let branch = str(claim.branch);
   if (!branch && claim.dealer_name) branch = str(claim.dealer_name).replace(/^ITR\s*[-–]\s*/i, '').trim();
+  if (isCompWord.test(branch)) branch = '';
   if (!branch && String(claim.claim_id) === '0279-2026-SDLG-PFR') branch = 'MUARA ENIM';
   if (!branch && String(claim.claim_id) === '0277-2026-SDLG-PFR') branch = 'PONTIANAK';
-  const locParts = [wo, branch, str(claim.customer)].map(s => s.replace(/^[-_\s]+|[-_\s]+$/g, '')).filter(Boolean);
+  let customer = str(claim.customer);
+  if (isCompWord.test(customer)) customer = '';
+  const locParts = [wo, branch, customer].map(s => s.replace(/^[-_\s]+|[-_\s]+$/g, '')).filter(Boolean);
   const machineLocation = locParts.length ? locParts.join('-').toUpperCase() : '';
   const faultDetails = [claim.cause_analyze, claim.comment].map(str).filter(Boolean).join('\n');
   return {

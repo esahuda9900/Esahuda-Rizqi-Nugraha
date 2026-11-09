@@ -27,7 +27,16 @@
     }
   };
 
-  // 2. CANONICAL BRANCH DICTIONARY & ALIASES
+  // 2. COMPONENT, PART & DEFECT BLACKLIST
+  // These terms describe machine parts, assemblies, or failures and must NEVER be treated as branches.
+  var COMPONENT_OR_FAULT_PATTERN = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|carrier|bucket|boom|arm|cylinder|seal|sealing|gasket|o-?ring|hose|tube|pipe|fitting|valve|spool|pump|motor|engine|turbo|turbocharger|injector|nozzle|manifold|muffler|silencer|radiator|cooler|fan|belt|alternator|starter|battery|harness|wiring|sensor|switch|relay|controller|ecm|ecu|display|monitor|transmission|torque|converter|axle|differential|brake|caliper|disc|pad|tire|tyre|wheel|rim|cabin|cab|glass|door|light|lamp|air\s*conditioner|ac|compressor|condenser|evaporator|heater|grease|bearing|shaft|gear|exhaust|oil|fuel|water|coolant|leak|leaking|leakage|broken|crack|cracking|cracked|damage|damaged|burst|burnt|stuck|jammed|noise|noisy|vibration|loose|loosen|hot|overheat|drop|smoke|error|fault|failure|problem|trouble|repair|replace|replacement|service|inspect|check|maintenance|assy|assembly|kit|part|parts|so|wo|pfr|unit|machine)\b/i;
+
+  function isComponentOrFault(val) {
+    if (!val) return false;
+    return COMPONENT_OR_FAULT_PATTERN.test(String(val));
+  }
+
+  // 3. CANONICAL BRANCH DICTIONARY & ALIASES
   var BRANCH_ALIASES = [
     { canonical: 'MUARA ENIM', patterns: [/muara\s*enim/i, /muaraenim/i, /tanjung\s*enim/i, /\bmre\b/i] },
     { canonical: 'PONTIANAK', patterns: [/pontianak/i, /\bptk\b/i] },
@@ -53,10 +62,24 @@
     { canonical: 'TIMIKA', patterns: [/timika/i, /\btmk\b/i] },
     { canonical: 'SORONG', patterns: [/sorong/i] },
     { canonical: 'MANADO', patterns: [/manado/i, /\bmdc\b/i] },
-    { canonical: 'TARAKAN', patterns: [/tarakan/i, /\btrk\b/i] }
+    { canonical: 'TARAKAN', patterns: [/tarakan/i, /\btrk\b/i] },
+    { canonical: 'BENGKULU', patterns: [/bengkulu/i, /\bbkl\b/i] },
+    { canonical: 'KETAPANG', patterns: [/ketapang/i, /\bktp\b/i] },
+    { canonical: 'MEULABOH', patterns: [/meulaboh/i, /\bmeu\b/i] },
+    { canonical: 'LAHAT', patterns: [/lahat/i, /\blht\b/i] },
+    { canonical: 'PANGKAL PINANG', patterns: [/pangkal\s*pinang/i, /\bpkp\b/i] },
+    { canonical: 'BONTANG', patterns: [/bontang/i, /\bbtg\b/i] },
+    { canonical: 'SANGATTA', patterns: [/sangatta/i, /\bsgt\b/i] },
+    { canonical: 'TANAH BUMBU', patterns: [/tanah\s*bumbu/i, /\btnb\b/i] },
+    { canonical: 'TABALONG', patterns: [/tabalong/i, /\btbg\b/i] },
+    { canonical: 'MOROWALI', patterns: [/morowali/i, /\bmrw\b/i] },
+    { canonical: 'LUWUK', patterns: [/luwuk/i, /\blwk\b/i] },
+    { canonical: 'AMBON', patterns: [/ambon/i, /\bamb\b/i] },
+    { canonical: 'JAYAPURA', patterns: [/jayapura/i, /\bdjj\b/i] },
+    { canonical: 'TANJUNG REDEB', patterns: [/tanjung\s*redeb/i, /\btjr\b/i] }
   ];
 
-  // 3. REGEX & EXTRACTION ENGINE
+  // 4. REGEX & EXTRACTION ENGINE
   function clean(val) {
     if (val == null) return '';
     return String(val).trim();
@@ -77,11 +100,15 @@
     return '';
   }
 
-  function extractBranch(val) {
+  function extractBranch(val, isStrict) {
     var s = clean(val);
     if (!s) return '';
+    if (isComponentOrFault(s)) return '';
+
     // Strip common dealership prefixes
     var stripped = s.replace(/^ITR\s*[-–—:]\s*/i, '').replace(/_field$/i, '').trim();
+    if (isComponentOrFault(stripped)) return '';
+
     for (var i = 0; i < BRANCH_ALIASES.length; i++) {
       var item = BRANCH_ALIASES[i];
       for (var j = 0; j < item.patterns.length; j++) {
@@ -90,9 +117,14 @@
         }
       }
     }
-    // If not in aliases but has a clean branch word
-    if (/^[A-Za-z\s]{3,30}$/.test(stripped) && !/PT\b|CV\b|LEAKS|REPAIR|CLAIM/i.test(stripped)) {
-      return stripped.toUpperCase();
+
+    // Only allow explicit non-strict branch field if it looks like a clean geographic name
+    if (!isStrict) {
+      if (/^[A-Za-z\s]{3,30}$/.test(stripped) &&
+          !/PT\b|CV\b|LEAKS|REPAIR|CLAIM|FAULT|DAMAGE|SERVICE|REPORT|STATUS/i.test(stripped) &&
+          !isComponentOrFault(stripped)) {
+        return stripped.toUpperCase();
+      }
     }
     return '';
   }
@@ -102,10 +134,60 @@
     if (!s) return '';
     // Strip extraneous punctuation and leading/trailing dashes
     var c = s.replace(/^[-–—_\s]+|[-–—_\s]+$/g, '').trim();
-    return c ? c.toUpperCase() : '';
+    if (!c || isComponentOrFault(c)) return '';
+    return c.toUpperCase();
   }
 
-  // 4. STRING SPLITTING ANALYSIS
+  // 5. CROSS-CLAIM BRANCH RESOLVER
+  function findBranchFromOtherClaims(claim) {
+    if (!claim) return '';
+    var claimsPool = (typeof window !== 'undefined' && (window.__SDLG_ALL_CLAIMS__ || window.allClaims || window.__ALL_CLAIMS__)) || [];
+    if (!Array.isArray(claimsPool) || !claimsPool.length) return '';
+
+    var serial = clean(claim.serial_no || claim.canonical_serial_no);
+    var wo = extractWorkOrder(claim.dealer_wo_so || claim.wo_so);
+    var customer = clean(claim.customer || claim.customer_name);
+
+    // 1. By exact Serial Number (same machine = same branch)
+    if (serial) {
+      for (var i = 0; i < claimsPool.length; i++) {
+        var c = claimsPool[i];
+        if (c && c.claim_id !== claim.claim_id && clean(c.serial_no || c.canonical_serial_no) === serial) {
+          var b = extractBranch(c.branch || c.branch_name || c.dealer_name, true);
+          if (b) return b;
+        }
+      }
+    }
+
+    // 2. By exact WO
+    if (wo) {
+      for (var j = 0; j < claimsPool.length; j++) {
+        var c2 = claimsPool[j];
+        if (c2 && c2.claim_id !== claim.claim_id && extractWorkOrder(c2.dealer_wo_so || c2.wo_so) === wo) {
+          var b2 = extractBranch(c2.branch || c2.branch_name || c2.dealer_name, true);
+          if (b2) return b2;
+        }
+      }
+    }
+
+    // 3. By customer if only one branch exists for customer in pool
+    if (customer) {
+      var foundBranches = {};
+      for (var k = 0; k < claimsPool.length; k++) {
+        var c3 = claimsPool[k];
+        if (c3 && clean(c3.customer) === customer) {
+          var b3 = extractBranch(c3.branch || c3.branch_name || c3.dealer_name, true);
+          if (b3) foundBranches[b3] = (foundBranches[b3] || 0) + 1;
+        }
+      }
+      var branchKeys = Object.keys(foundBranches);
+      if (branchKeys.length === 1) return branchKeys[0];
+    }
+
+    return '';
+  }
+
+  // 6. STRING SPLITTING ANALYSIS
   function splitMachineLocation(str) {
     var s = clean(str);
     var result = {
@@ -134,8 +216,8 @@
       var p2 = rawParts.slice(2).join('-');
 
       var wo = extractWorkOrder(p0);
-      var br = extractBranch(p1);
-      var cu = extractCustomer(p2);
+      var br = isComponentOrFault(p1) ? '' : extractBranch(p1, false);
+      var cu = isComponentOrFault(p2) ? '' : extractCustomer(p2);
 
       if (wo && br && cu) {
         result.detectedWo = wo;
@@ -148,17 +230,17 @@
 
     // If 1 or 2 parts, or incomplete 3 parts: analyze each piece
     rawParts.forEach(function (part) {
+      if (isComponentOrFault(part)) return; // Skip components
       if (!result.detectedWo) {
         var w = extractWorkOrder(part);
         if (w) { result.detectedWo = w; return; }
       }
       if (!result.detectedBranch) {
-        var b = extractBranch(part);
+        var b = extractBranch(part, true);
         if (b) { result.detectedBranch = b; return; }
       }
       if (!result.detectedCustomer) {
-        // If it starts with PT, CV, or contains company indicators, or not WO/branch
-        if (/^(?:PT\.?|CV\.?|UD\.?)\b/i.test(part) || (!extractWorkOrder(part) && !extractBranch(part))) {
+        if (/^(?:PT\.?|CV\.?|UD\.?)\b/i.test(part) || (!extractWorkOrder(part) && !extractBranch(part, false))) {
           result.detectedCustomer = extractCustomer(part);
         }
       }
@@ -172,17 +254,20 @@
     return result;
   }
 
-  // 5. CANONICAL FORMATTER
+  // 7. CANONICAL FORMATTER
   function formatMachineLocation(wo, branch, customer) {
     var cleanWo = extractWorkOrder(wo) || clean(wo).toUpperCase();
-    var cleanBranch = extractBranch(branch) || clean(branch).toUpperCase();
-    var cleanCust = extractCustomer(customer) || clean(customer).toUpperCase();
+    var cleanBranch = isComponentOrFault(branch) ? '' : (extractBranch(branch, false) || clean(branch).toUpperCase());
+    var cleanCust = isComponentOrFault(customer) ? '' : (extractCustomer(customer) || clean(customer).toUpperCase());
+
+    if (isComponentOrFault(cleanBranch)) cleanBranch = '';
+    if (isComponentOrFault(cleanCust)) cleanCust = '';
 
     var parts = [cleanWo, cleanBranch, cleanCust].filter(Boolean);
     return parts.join('-');
   }
 
-  // 6. COMPREHENSIVE CLAIM RESOLVER WITH DETAILED DIAGNOSTICS
+  // 8. COMPREHENSIVE CLAIM RESOLVER WITH DETAILED DIAGNOSTICS
   function resolveMachineLocation(rawInput, claimContext) {
     var claim = claimContext || (typeof window !== 'undefined' ? window.__SDLG_LIVE_CLAIM__ : null) || {};
     var claimId = clean(claim.claim_id);
@@ -215,8 +300,6 @@
         claim.wo_no,
         claim.dealer_claim_no,
         claim.comment,
-        claim.fault_description,
-        claim.cause_analyze,
         claim.source_raw_text
       ];
       for (var i = 0; i < candidateWos.length; i++) {
@@ -229,22 +312,46 @@
       }
     }
 
-    // Step C: Recover Branch from claim record
+    // Step C: Recover Branch from claim record (CRITICAL: Never inspect fault/part fields)
     if (!branch) {
       var candidateBranches = [
         claim.branch,
         claim.branch_name,
         claim.dealer_name,
-        claim.comment,
-        claim.source_raw_text,
-        claim.fault_description,
-        claim.technical_personnel
+        claim.primary_resource_group,
+        claim.branch_location,
+        claim.location
       ];
       for (var j = 0; j < candidateBranches.length; j++) {
-        var eb = extractBranch(candidateBranches[j]);
-        if (eb) {
-          branch = eb;
-          branchSource = 'claim_field[' + j + ']';
+        var candidate = candidateBranches[j];
+        if (candidate && !isComponentOrFault(candidate)) {
+          var eb = extractBranch(candidate, false);
+          if (eb && !isComponentOrFault(eb)) {
+            branch = eb;
+            branchSource = 'claim_field[' + j + ']';
+            break;
+          }
+        }
+      }
+    }
+
+    // Step C.2: Recover Branch from other claims sharing serial_no, WO, or customer
+    if (!branch) {
+      var poolBranch = findBranchFromOtherClaims(claim);
+      if (poolBranch && !isComponentOrFault(poolBranch)) {
+        branch = poolBranch;
+        branchSource = 'cross_claim_pool';
+      }
+    }
+
+    // Step C.3: Check free-text (comment, raw text) with strict branch matching only
+    if (!branch) {
+      var freeTexts = [claim.comment, claim.source_raw_text];
+      for (var ft = 0; ft < freeTexts.length; ft++) {
+        var ebStrict = extractBranch(freeTexts[ft], true);
+        if (ebStrict && !isComponentOrFault(ebStrict)) {
+          branch = ebStrict;
+          branchSource = 'free_text[' + ft + ']';
           break;
         }
       }
@@ -252,8 +359,11 @@
 
     // Step D: Recover Customer from claim record
     if (!customer) {
-      customer = extractCustomer(claim.customer || claim.customer_name);
-      if (customer) customerSource = 'claim.customer';
+      var candCust = claim.customer || claim.customer_name;
+      if (candCust && !isComponentOrFault(candCust)) {
+        customer = extractCustomer(candCust);
+        if (customer) customerSource = 'claim.customer';
+      }
     }
 
     var finalFormatted = formatMachineLocation(wo, branch, customer);
@@ -298,6 +408,7 @@
     var controls = [];
     var selectors = [
       '#sdlg_machine_location',
+      '#sdlg_machineLocation',
       '#machineLocation',
       '[data-label="Machine Location"]',
       'input[data-sdlg-field][data-label="Machine Location"]',
@@ -332,10 +443,13 @@
       var currentVal = ctrl.value != null ? String(ctrl.value).trim() : '';
       var split = splitMachineLocation(currentVal);
 
-      // If missing WO or Branch or contains known corrupt words (e.g. defect description)
+      // If missing WO or Branch or contains known corrupt words (parts, defects, faults)
+      var hasCorruptPart = isComponentOrFault(currentVal) ||
+        /leak|gauge|broken|fault|damage|roller|idler|track|link|shoe|cylinder|hose|pump|valve|seal|filter|muffler/i.test(currentVal);
+
       var needsHealing = !split.isComplete ||
         !currentVal.includes('-') ||
-        /leak|gauge|broken|fault|damage/i.test(currentVal) ||
+        hasCorruptPart ||
         (liveClaim && KNOWN_CLAIMS[liveClaim.claim_id] && currentVal !== formatMachineLocation(KNOWN_CLAIMS[liveClaim.claim_id].wo, KNOWN_CLAIMS[liveClaim.claim_id].branch, KNOWN_CLAIMS[liveClaim.claim_id].customer));
 
       if (needsHealing) {

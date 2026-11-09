@@ -66,8 +66,12 @@ window.SDLG_LOAD_XLSX = function () {
     /* SDLG Input: React owns every field/copy action; no legacy sticky toolbar. */
     .page[data-sdlg-input-helper] [data-sdlg-copy],
     .page[data-sdlg-input-helper] [data-sdlg-copy-all] { display:inline-flex!important; visibility:visible!important; opacity:1!important; align-items:center; justify-content:center; }
-    .page[data-sdlg-input-helper] [data-sdlg-copy] { flex-shrink:0; min-height:28px; }
+    .page[data-sdlg-input-helper] [data-sdlg-copy] { flex-shrink:0; min-height:30px; }
     .page[data-sdlg-input-helper] [data-sdlg-field] { min-width:0; }
+    .sdlg-field-card:hover { border-color:#cbd5e1!important; box-shadow:0 3px 8px rgba(15,23,42,0.06)!important; }
+    .sdlg-field-card input:focus, .sdlg-field-card textarea:focus { border-color:#2563eb!important; box-shadow:0 0 0 3px rgba(37,99,235,0.12)!important; }
+    .sdlg-btn-copy:hover { background:#dbeafe!important; border-color:#93c5fd!important; }
+    .sdlg-btn-copy.is-copied { border-color:#86efac!important; background:#f0fdf4!important; color:#16a34a!important; }
     @media (max-width:700px) { .page[data-sdlg-input-helper] [style*="grid-template-columns"] { grid-template-columns:minmax(0,1fr)!important; } }
     @keyframes sdlgSlaCriticalPulse { 0%,100% { opacity:1; } 50% { opacity:.48; } }
     @media (prefers-reduced-motion: reduce) { [role="status"] { animation:none !important; } }
@@ -3254,7 +3258,7 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261105-master-polish-v10">
+<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261109-topbar-modern-v1">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
@@ -5082,13 +5086,20 @@ async function exportToExcel(claims) {
             return (kb.year - ka.year) || (kb.number - ka.number) || ka.raw.localeCompare(kb.raw, undefined, { numeric: true });
         });
         const machineLoc = (c) => {
+            if (typeof window !== "undefined" && window.SDLGInputClaimLock && typeof window.SDLGInputClaimLock.resolveMachineLocation === "function") {
+                const res = window.SDLGInputClaimLock.resolveMachineLocation("", c);
+                if (res) return res;
+            }
             const wo = cleanText(c.dealer_wo_so || c.wo_so);
-            const br = cleanText(c.branch);
-            const cust = cleanText(c.customer);
+            const isCompWord = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|cylinder|seal|hose|pump|valve|filter|engine|muffler|leak|broken|crack|fault|damage)\b/i;
+            let br = cleanText(c.branch);
+            if (isCompWord.test(br)) br = "";
+            let cust = cleanText(c.customer);
+            if (isCompWord.test(cust)) cust = "";
             const parts = [wo, br, cust].map(s => String(s || "").trim().replace(/^[-_\s]+|[-_\s]+$/g, "")).filter(Boolean);
             if (parts.length) return parts.join("-").toUpperCase();
             const raw = cleanText(c.machine_location);
-            return raw.includes("-") ? raw.toUpperCase() : "";
+            return raw.includes("-") && !isCompWord.test(raw) ? raw.toUpperCase() : "";
         };
         const partsSummary = (c) => {
             const pList = Array.isArray(c.parts) ? c.parts : [];
@@ -5704,8 +5715,9 @@ const PolicyDecisionCard = ({ claim }) => {
 
 function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack }) {
     const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;
-    if (typeof window !== "undefined" && selectedClaim) {
-        window.__SDLG_LIVE_CLAIM__ = selectedClaim;
+    if (typeof window !== "undefined") {
+        window.__SDLG_ALL_CLAIMS__ = claims;
+        if (selectedClaim) window.__SDLG_LIVE_CLAIM__ = selectedClaim;
     }
     const [warrantyMatrix, setWarrantyMatrix] = useState(null);
     const [warrantyLoading, setWarrantyLoading] = useState(false);
@@ -5932,11 +5944,11 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     const parts = Array.isArray(selectedClaim.parts) ? selectedClaim.parts : [];
     const fieldHtml = (key, label, value, required = false, multiline = false) => {
         const id = `sdlg_${key.replace(/[^A-Za-z0-9_-]/g, "_")}`;
-        const requiredMark = required ? ' <span style="color:#dc2626">*</span>' : "";
+        const requiredMark = required ? ' <span style="color:#ef4444;font-weight:700">*</span>' : "";
         const control = multiline
-            ? `<textarea id="${id}" data-sdlg-field data-label="${esc(label)}" rows="4" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;resize:vertical;outline:none">${esc(value)}</textarea>`
-            : `<input id="${id}" data-sdlg-field data-label="${esc(label)}" type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;background:#f8fafc">`;
-        return `<div style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px"><label for="${id}" style="font-size:11px;font-weight:800;color:#334155">${esc(label)}${requiredMark}</label><button type="button" data-sdlg-copy data-target="#${id}" style="border:1px solid #cbd5e1;background:#fff;border-radius:7px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">Copy</button></div>${control}</div>`;
+            ? `<textarea id="${id}" data-sdlg-field data-label="${esc(label)}" rows="4" style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-size:13px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;resize:vertical;outline:none;background:#ffffff;box-shadow:0 1px 2px rgba(15,23,42,0.03);line-height:1.55;color:#0f172a">${esc(value)}</textarea>`
+            : `<input id="${id}" data-sdlg-field data-label="${esc(label)}" type="text" value="${esc(value)}" style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 14px;font-size:13px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-weight:500;outline:none;background:#ffffff;box-shadow:0 1px 2px rgba(15,23,42,0.03);color:#0f172a">`;
+        return `<div class="sdlg-field-card" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;background:#ffffff;box-shadow:0 1px 3px rgba(15,23,42,0.04);transition:all 0.15s ease"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px"><label for="${id}" style="font-size:11px;font-weight:800;color:#0f172a;letter-spacing:0.04em;text-transform:uppercase">${esc(label)}${requiredMark}</label><button type="button" data-sdlg-copy data-target="#${id}" class="sdlg-btn-copy" style="border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease">Copy</button></div>${control}</div>`;
     };
 
     const defaultFeedbackPerson = sdlgFeedbackPerson(selectedClaim);
@@ -5952,14 +5964,17 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
             }
             if (!wo && String(selectedClaim.claim_id) === "0279-2026-SDLG-PFR") wo = "WO26044395";
             if (!wo && String(selectedClaim.claim_id) === "0277-2026-SDLG-PFR") wo = "WO26044691";
+            const isCompWord = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|cylinder|seal|hose|pump|valve|filter|engine|muffler|leak|broken|crack|fault|damage)\b/i;
             let branch = String((_liveForLoc && (_liveForLoc.branch || _liveForLoc.branch_name)) || selectedClaim.branch || selectedClaim.branch_name || "").trim();
             if (!branch) {
                 const dName = (_liveForLoc && _liveForLoc.dealer_name) || selectedClaim.dealer_name || "";
                 if (dName) branch = String(dName).replace(/^ITR\s*[-–]\s*/i, "").trim();
             }
+            if (isCompWord.test(branch)) branch = "";
             if (!branch && String(selectedClaim.claim_id) === "0279-2026-SDLG-PFR") branch = "MUARA ENIM";
             if (!branch && String(selectedClaim.claim_id) === "0277-2026-SDLG-PFR") branch = "PONTIANAK";
-            const customer = String((_liveForLoc && (_liveForLoc.customer || _liveForLoc.customer_name)) || selectedClaim.customer || selectedClaim.customer_name || "").trim();
+            let customer = String((_liveForLoc && (_liveForLoc.customer || _liveForLoc.customer_name)) || selectedClaim.customer || selectedClaim.customer_name || "").trim();
+            if (isCompWord.test(customer)) customer = "";
             const locParts = [wo, branch, customer].map(s => String(s || "").trim().replace(/^[-_\s]+|[-_\s]+$/g, "")).filter(Boolean);
             return locParts.length ? locParts.join("-").toUpperCase() : "";
         })();
@@ -6834,6 +6849,19 @@ SDLG_REPOSITORY.listClaims = async function () {
         return 2637.11;
     } });
     const [showFxEditor, setShowFxEditor] = useState(false);
+    const [showAccountModal, setShowAccountModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [accountModalTab, setAccountModalTab] = useState("profile"); // profile | users | audit
+    const [dbUsers, setDbUsers] = useState([]);
+    const [dbUsersLoading, setDbUsersLoading] = useState(false);
+    const [dbUsersError, setDbUsersError] = useState("");
+    const [dbUsersSearch, setDbUsersSearch] = useState("");
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [auditLogsLoading, setAuditLogsLoading] = useState(false);
+    const [branchesList, setBranchesList] = useState([]);
+    const [editingUserRole, setEditingUserRole] = useState(null);
+    const [newUserForm, setNewUserForm] = useState({ userId: "", displayName: "", role: "viewer", branchId: "" });
+    const [showAddUserForm, setShowAddUserForm] = useState(false);
     const [toast, setToast] = useState("");
     const toastTimerRef = useRef(null);
     const saveInFlightRef = useRef(false);
@@ -6988,6 +7016,94 @@ SDLG_REPOSITORY.listClaims = async function () {
         }
         showToast(`📋 ${label} disalin`);
     };
+    const loadDbUsers = useCallback(async () => {
+        if (!sdlgSupabase) return;
+        setDbUsersLoading(true);
+        setDbUsersError("");
+        try {
+            const [rolesRes, branchesRes] = await Promise.all([
+                sdlgSupabase
+                    .from("app_user_roles")
+                    .select("user_id, role, display_name, is_active, branch_id")
+                    .order("role", { ascending: true })
+                    .limit(200),
+                sdlgSupabase
+                    .from("branches")
+                    .select("id, branch_name")
+                    .limit(100)
+            ]);
+            if (rolesRes.error) throw rolesRes.error;
+            setDbUsers(Array.isArray(rolesRes.data) ? rolesRes.data : []);
+            if (Array.isArray(branchesRes?.data)) setBranchesList(branchesRes.data);
+        } catch (err) {
+            console.error("Gagal memuat data akun:", err);
+            setDbUsersError(err?.message || "Gagal membaca data akun dari database.");
+        } finally {
+            setDbUsersLoading(false);
+        }
+    }, []);
+
+    const loadAuditLogs = useCallback(async () => {
+        if (!sdlgSupabase) return;
+        setAuditLogsLoading(true);
+        try {
+            const { data, error } = await sdlgSupabase
+                .from("claim_status_history")
+                .select("id, claim_id, status, status_date, reason, created_at")
+                .order("created_at", { ascending: false })
+                .limit(40);
+            if (!error && Array.isArray(data)) setAuditLogs(data);
+        } catch (err) {
+            console.error("Gagal memuat log audit:", err);
+        } finally {
+            setAuditLogsLoading(false);
+        }
+    }, []);
+
+    const handleSaveUserRole = async (userId, newRole, newIsActive, newDisplayName, newBranchId) => {
+        if (!sdlgSupabase || !userId || !isAdmin) return;
+        try {
+            const payload = {
+                user_id: userId,
+                role: newRole,
+                is_active: newIsActive,
+                display_name: newDisplayName || null,
+                branch_id: newBranchId || null
+            };
+            const { error } = await sdlgSupabase
+                .from("app_user_roles")
+                .upsert(payload, { onConflict: "user_id" });
+            if (error) throw error;
+            showToast("✅ Akun & Role berhasil disimpan.");
+            setEditingUserRole(null);
+            loadDbUsers();
+            if (user?.id === userId) {
+                setUserRole(newRole);
+                try { sessionStorage.setItem("sdlg:cached_role", newRole); } catch (_) {}
+            }
+        } catch (err) {
+            showToast("❌ Gagal menyimpan role: " + (err?.message || "Error database"));
+        }
+    };
+
+    const handleCreateUserRole = async () => {
+        const uid = String(newUserForm.userId || "").trim();
+        if (!uid) {
+            showToast("⚠️ Masukkan User ID (UUID) akun.");
+            return;
+        }
+        await handleSaveUserRole(uid, newUserForm.role, true, newUserForm.displayName.trim() || null, newUserForm.branchId || null);
+        setNewUserForm({ userId: "", displayName: "", role: "viewer", branchId: "" });
+        setShowAddUserForm(false);
+    };
+
+    useEffect(() => {
+        if (showAccountModal && isAdmin) {
+            loadDbUsers();
+            loadAuditLogs();
+        }
+    }, [showAccountModal, isAdmin, loadDbUsers, loadAuditLogs]);
+
     useEffect(() => () => { if (toastTimerRef.current)
         clearTimeout(toastTimerRef.current); }, []);
     useEffect(() => {
@@ -7000,6 +7116,8 @@ SDLG_REPOSITORY.listClaims = async function () {
     useEffect(() => {
         const onKeyDown = (e) => {
             if (e.key === "Escape") {
+                if (showAccountModal) { setShowAccountModal(false); return; }
+                if (showSettingsModal) { setShowSettingsModal(false); return; }
                 if (parseReviewOpen) { setParseReviewOpen(false); return; }
                 if (statusReasonModal) { setStatusReasonModal(null); return; }
                 if (showFxEditor) { setShowFxEditor(false); return; }
@@ -7020,7 +7138,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [parseReviewOpen, statusReasonModal, showFxEditor, showMasterModal, dqResolve, tab, detailId]);
+    }, [parseReviewOpen, statusReasonModal, showFxEditor, showMasterModal, dqResolve, tab, detailId, showAccountModal, showSettingsModal]);
     // Prevent accidental loss of an unparsed pasted claim on browser refresh/close.
     useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -10192,11 +10310,24 @@ SDLG_REPOSITORY.listClaims = async function () {
                     ["quality", "Data Quality"],
                 ].map(([t, label]) => (React.createElement("button", { key: t, className: `nav-btn ${(tab === t && !detailId) || (tab === "list" && t === "list" && detailId) ? "active" : ""}`, onClick: () => { setTab(t); setDetailId(null); } }, label)))),
                 React.createElement("div", { className: "nav-tools" },
-                    React.createElement("div", { className: `connection-pill ${isOnline ? "" : "offline"}`, title: user?.email || "" },
+                    React.createElement("div", {
+                        className: `connection-pill ${isOnline ? "" : "offline"}`,
+                        title: "Klik untuk Manajemen Akun & Hak Akses",
+                        onClick: () => setShowAccountModal(true),
+                        role: "button",
+                        tabIndex: 0,
+                        "aria-label": "Manajemen Akun",
+                        style: { cursor: "pointer", userSelect: "none" }
+                    },
                         React.createElement("span", { className: `connection-dot ${isOnline ? "online" : "offline"}` }),
                         React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, isOnline ? (user?.email || "Signed in") : "Offline"),
                         React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 99, background: isAdmin ? "#dcfce7" : "#f1f5f9", color: isAdmin ? "#166534" : "#64748b", flexShrink: 0 } }, userRole === "warranty_admin" ? "Warranty Admin" : userRole === "admin" ? "Admin" : userRole === "branch_user" ? "Branch User" : "Viewer")),
-                    React.createElement("button", { className: "icon-btn", "aria-label": "Pengaturan kurs", title: "Pengaturan kurs", onClick: () => setShowFxEditor(true) }, "\u2699"),
+                    React.createElement("button", {
+                        className: "icon-btn",
+                        "aria-label": "Pengaturan Sistem & Workspace",
+                        title: "Pengaturan Sistem & Workspace",
+                        onClick: () => setShowSettingsModal(true)
+                    }, "\u2699"),
                     React.createElement("button", { onClick: handleLogout, style: { padding: "7px 10px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#64748b", cursor: "pointer" } }, "\u21AA Logout")))),
         policyRuntimeStatus === "degraded" && (React.createElement("div", { style: { maxWidth: 1180, margin: "12px auto 0", padding: "0 16px" } },
             React.createElement("div", { style: { background: "#fff7ed", border: "1px solid #fdba74", color: "#9a3412", borderRadius: 10, padding: "10px 12px", fontSize: 12, lineHeight: 1.5 } },
@@ -10431,6 +10562,222 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 } },
                     React.createElement("button", { onClick: () => setShowMasterModal(false), style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, cursor: "pointer" } }, "Batal"),
                     React.createElement("button", { onClick: saveMaster, disabled: !isOnline, style: { padding: "8px 14px", border: 0, background: "#1e40af", color: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 700 } }, "Simpan"))))),
+        showAccountModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setShowAccountModal(false) },
+            React.createElement("div", { className: "sdlg-modal-scroll", onClick: e => e.stopPropagation(), style: { background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)" } },
+                React.createElement("div", { style: { padding: "18px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#f8fafc" } },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+                        React.createElement("div", { style: { width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff", display: "grid", placeItems: "center", fontSize: 20 } }, "👤"),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 17, color: "#0f172a" } }, "Manajemen Akun & Hak Akses"),
+                            React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 } }, "Kelola profil login, hak akses pengguna, dan riwayat audit di Supabase."))),
+                    React.createElement("button", { onClick: () => setShowAccountModal(false), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 18, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "×")),
+                React.createElement("div", { style: { display: "flex", gap: 6, padding: "10px 24px", borderBottom: "1px solid #e2e8f0", background: "#ffffff" } },
+                    React.createElement("button", { className: `account-tab-btn ${accountModalTab === "profile" ? "active" : ""}`, onClick: () => setAccountModalTab("profile") }, "Profil Saya"),
+                    React.createElement("button", { className: `account-tab-btn ${accountModalTab === "users" ? "active" : ""}`, onClick: () => { setAccountModalTab("users"); if (isAdmin) loadDbUsers(); } }, `Semua Akun di Database ${dbUsers.length ? `(${dbUsers.length})` : ""}`),
+                    React.createElement("button", { className: `account-tab-btn ${accountModalTab === "audit" ? "active" : ""}`, onClick: () => { setAccountModalTab("audit"); if (isAdmin) loadAuditLogs(); } }, "Audit Aktivitas Terkini")),
+                React.createElement("div", { style: { padding: 24, overflowY: "auto", flex: 1 } },
+                    accountModalTab === "profile" && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 16, padding: 18, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12 } },
+                            React.createElement("div", { style: { width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #1d4ed8, #3b82f6)", color: "#fff", display: "grid", placeItems: "center", fontSize: 24, fontWeight: 800 } }, (user?.email || "U").slice(0, 1).toUpperCase()),
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: "#0f172a" } }, user?.email || "Signed in"),
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" } },
+                                    React.createElement("span", { style: { fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: isAdmin ? "#dcfce7" : "#f1f5f9", color: isAdmin ? "#166534" : "#475569" } }, userRole === "warranty_admin" ? "Warranty Admin" : userRole === "admin" ? "Admin" : userRole === "branch_user" ? "Branch User" : "Viewer"),
+                                    React.createElement("span", { style: { fontSize: 12, color: "#64748b" } }, isOnline ? "🟢 Status: Sesi Aktif" : "🔴 Status: Offline"),
+                                    user?.last_sign_in_at && React.createElement("span", { style: { fontSize: 11, color: "#94a3b8" } }, `· Login: ${new Date(user.last_sign_in_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`))),
+                            React.createElement("button", { onClick: handleLogout, style: { padding: "8px 14px", border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, "Logout")),
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+                            React.createElement("div", { style: { padding: 14, border: "1px solid #e2e8f0", borderRadius: 10, background: "#ffffff" } },
+                                React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 4 } }, "USER ID (UUID AUTH)"),
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 } },
+                                    React.createElement("code", { style: { fontSize: 11, fontFamily: "monospace", color: "#0f172a", wordBreak: "break-all" } }, user?.id || "—"),
+                                    user?.id && React.createElement("button", { onClick: () => copyToClipboard(user.id, "User ID"), style: { border: "1px solid #cbd5e1", background: "#f8fafc", borderRadius: 6, padding: "4px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer", flexShrink: 0 } }, "Copy"))),
+                            React.createElement("div", { style: { padding: 14, border: "1px solid #e2e8f0", borderRadius: 10, background: "#ffffff" } },
+                                React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 4 } }, "CABANG OPERASIONAL"),
+                                React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#0f172a" } }, userBranchId ? (branchesList.find(b => b.id === userBranchId)?.branch_name || userBranchId) : "Seluruh Cabang (Pusat / Kantor Utama)"))),
+                        React.createElement("div", { style: { padding: 14, border: "1px solid #dbeafe", background: "#eff6ff", borderRadius: 10, fontSize: 12, color: "#1e3a8a", lineHeight: 1.5 } },
+                            React.createElement("b", null, "Hak Akses & Otoritas: "),
+                            isAdmin ? "Akun Anda memiliki hak akses penuh (Admin). Anda dapat mengelola seluruh klaim, policy review, input Dealer Portal, master data, dan daftar akun user lain di database." : "Akun Anda berstatus Viewer. Anda dapat memantau data klaim, status warranty, dan mengunduh laporan ekspor. Hubungi administrator bila memerlukan izin edit."))
+                    ,
+                    accountModalTab === "users" && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } },
+                        !isAdmin ? React.createElement("div", { style: { padding: 24, textAlign: "center", color: "#64748b" } }, "🔒 Hanya role Admin / Warranty Admin yang berhak melihat daftar akun di database.") : (
+                            React.createElement(React.Fragment, null,
+                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" } },
+                                    React.createElement("input", {
+                                        type: "text",
+                                        value: dbUsersSearch,
+                                        onChange: e => setDbUsersSearch(e.target.value),
+                                        placeholder: "Cari display name, role, atau user ID...",
+                                        style: { padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 12, minWidth: 260 }
+                                    }),
+                                    React.createElement("div", { style: { display: "flex", gap: 8 } },
+                                        React.createElement("button", { onClick: loadDbUsers, disabled: dbUsersLoading, style: { padding: "8px 12px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, dbUsersLoading ? "Memuat…" : "🔄 Muat Ulang"),
+                                        React.createElement("button", { onClick: () => setShowAddUserForm(v => !v), style: { padding: "8px 12px", border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, showAddUserForm ? "Tutup Form" : "+ Daftarkan User Role")))
+                                ,
+                                showAddUserForm && React.createElement("div", { style: { padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 12 } },
+                                    React.createElement("div", { style: { fontWeight: 800, fontSize: 13, marginBottom: 10, color: "#0f172a" } }, "Daftarkan User Role Baru di Database"),
+                                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1.2fr 1fr 1fr", gap: 10 } },
+                                        React.createElement("div", null,
+                                            React.createElement("label", { style: { display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 3 } }, "User ID (UUID Auth) *"),
+                                            React.createElement("input", { value: newUserForm.userId, onChange: e => setNewUserForm({ ...newUserForm, userId: e.target.value }), placeholder: "Contoh: d93b82f6-...", style: { width: "100%", padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12 } })),
+                                        React.createElement("div", null,
+                                            React.createElement("label", { style: { display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 3 } }, "Display Name"),
+                                            React.createElement("input", { value: newUserForm.displayName, onChange: e => setNewUserForm({ ...newUserForm, displayName: e.target.value }), placeholder: "Nama / Email", style: { width: "100%", padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12 } })),
+                                        React.createElement("div", null,
+                                            React.createElement("label", { style: { display: "block", fontSize: 10, fontWeight: 700, color: "#64748b", marginBottom: 3 } }, "Peran (Role)"),
+                                            React.createElement("select", { value: newUserForm.role, onChange: e => setNewUserForm({ ...newUserForm, role: e.target.value }), style: { width: "100%", padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 12, background: "#fff" } },
+                                                React.createElement("option", { value: "viewer" }, "Viewer (Read-only)"),
+                                                React.createElement("option", { value: "admin" }, "Admin (Full Access)"),
+                                                React.createElement("option", { value: "warranty_admin" }, "Warranty Admin"),
+                                                React.createElement("option", { value: "branch_user" }, "Branch User")))),
+                                    React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 } },
+                                        React.createElement("button", { onClick: () => setShowAddUserForm(false), style: { padding: "6px 12px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 6, fontSize: 11, cursor: "pointer" } }, "Batal"),
+                                        React.createElement("button", { onClick: handleCreateUserRole, style: { padding: "6px 14px", border: "none", background: "#16a34a", color: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "Simpan User Role"))),
+                                dbUsersLoading && React.createElement("div", { style: { padding: 32, textAlign: "center", color: "#64748b" } }, "Memuat daftar akun dari database..."),
+                                dbUsersError && React.createElement("div", { style: { padding: 12, background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 8, fontSize: 12 } }, dbUsersError),
+                                !dbUsersLoading && !dbUsersError && React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" } },
+                                    React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } },
+                                        React.createElement("thead", null,
+                                            React.createElement("tr", { style: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" } },
+                                                React.createElement("th", { style: { padding: "10px 12px", fontWeight: 700, color: "#64748b" } }, "Pengguna / Display"),
+                                                React.createElement("th", { style: { padding: "10px 12px", fontWeight: 700, color: "#64748b" } }, "Role"),
+                                                React.createElement("th", { style: { padding: "10px 12px", fontWeight: 700, color: "#64748b" } }, "Status"),
+                                                React.createElement("th", { style: { padding: "10px 12px", fontWeight: 700, color: "#64748b" } }, "User ID"),
+                                                React.createElement("th", { style: { padding: "10px 12px", fontWeight: 700, color: "#64748b" } }, "Aksi"))),
+                                        React.createElement("tbody", null,
+                                            dbUsers.filter(u => {
+                                                if (!dbUsersSearch) return true;
+                                                const s = dbUsersSearch.toLowerCase();
+                                                return String(u.display_name || "").toLowerCase().includes(s) ||
+                                                    String(u.user_id || "").toLowerCase().includes(s) ||
+                                                    String(u.role || "").toLowerCase().includes(s);
+                                            }).map(u => {
+                                                const isSelf = user?.id === u.user_id;
+                                                const isEditing = editingUserRole?.user_id === u.user_id;
+                                                return React.createElement("tr", { key: u.user_id, style: { borderBottom: "1px solid #f1f5f9", background: isSelf ? "#f0fdf4" : "transparent" } },
+                                                    React.createElement("td", { style: { padding: "10px 12px" } },
+                                                        React.createElement("div", { style: { fontWeight: 700, color: "#0f172a" } }, u.display_name || "—"),
+                                                        isSelf && React.createElement("span", { style: { fontSize: 9, fontWeight: 800, padding: "1px 6px", background: "#dcfce7", color: "#166534", borderRadius: 4, marginTop: 2, display: "inline-block" } }, "AKUN ANDA")),
+                                                    React.createElement("td", { style: { padding: "10px 12px" } },
+                                                        isEditing ? React.createElement("select", { value: editingUserRole.role, onChange: e => setEditingUserRole({ ...editingUserRole, role: e.target.value }), style: { padding: "4px 8px", fontSize: 11, borderRadius: 6, border: "1px solid #cbd5e1" } },
+                                                            React.createElement("option", { value: "viewer" }, "viewer"),
+                                                            React.createElement("option", { value: "admin" }, "admin"),
+                                                            React.createElement("option", { value: "warranty_admin" }, "warranty_admin"),
+                                                            React.createElement("option", { value: "branch_user" }, "branch_user"))
+                                                        : React.createElement("span", { style: { fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: u.role === "admin" ? "#dcfce7" : u.role === "warranty_admin" ? "#dbeafe" : "#f1f5f9", color: u.role === "admin" ? "#166534" : u.role === "warranty_admin" ? "#1e40af" : "#475569" } }, u.role)),
+                                                    React.createElement("td", { style: { padding: "10px 12px" } },
+                                                        isEditing ? React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 5, fontSize: 11 } },
+                                                            React.createElement("input", { type: "checkbox", checked: editingUserRole.is_active !== false, onChange: e => setEditingUserRole({ ...editingUserRole, is_active: e.target.checked }) }), "Aktif")
+                                                        : React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: u.is_active === false ? "#dc2626" : "#16a34a" } }, u.is_active === false ? "🔴 Non-aktif" : "🟢 Aktif")),
+                                                    React.createElement("td", { style: { padding: "10px 12px", fontFamily: "monospace", fontSize: 11, color: "#64748b" } },
+                                                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+                                                            React.createElement("span", null, `${String(u.user_id || "").slice(0, 8)}…`),
+                                                            React.createElement("button", { onClick: () => copyToClipboard(u.user_id, "User ID"), title: "Salin User ID", style: { border: "none", background: "transparent", cursor: "pointer", fontSize: 11, padding: 0 } }, "📋"))),
+                                                    React.createElement("td", { style: { padding: "10px 12px" } },
+                                                        isEditing ? React.createElement("div", { style: { display: "flex", gap: 4 } },
+                                                            React.createElement("button", { onClick: () => handleSaveUserRole(u.user_id, editingUserRole.role, editingUserRole.is_active, editingUserRole.display_name, editingUserRole.branch_id), style: { padding: "3px 8px", background: "#16a34a", color: "#fff", border: "none", borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: "pointer" } }, "Simpan"),
+                                                            React.createElement("button", { onClick: () => setEditingUserRole(null), style: { padding: "3px 6px", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 10, cursor: "pointer" } }, "Batal"))
+                                                        : React.createElement("button", { onClick: () => setEditingUserRole({ user_id: u.user_id, role: u.role, is_active: u.is_active !== false, display_name: u.display_name || "" }), style: { padding: "3px 8px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 11, cursor: "pointer" } }, "Ubah"))
+                                                );
+                                            })))
+                                ))
+                    ),
+                    accountModalTab === "audit" && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
+                        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                            React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#0f172a" } }, "40 Aktivitas Perubahan Status Klaim Terkini"),
+                            React.createElement("button", { onClick: loadAuditLogs, disabled: auditLogsLoading, style: { padding: "6px 12px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, auditLogsLoading ? "Memuat…" : "🔄 Segarkan")),
+                        auditLogsLoading && React.createElement("div", { style: { padding: 32, textAlign: "center", color: "#64748b" } }, "Memuat riwayat audit..."),
+                        !auditLogsLoading && !auditLogs.length && React.createElement("div", { style: { padding: 32, textAlign: "center", color: "#64748b" } }, "Belum ada riwayat aktivitas yang tercatat."),
+                        !auditLogsLoading && auditLogs.length > 0 && React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden" } },
+                            React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11 } },
+                                React.createElement("thead", null,
+                                    React.createElement("tr", { style: { background: "#f8fafc", borderBottom: "1px solid #e2e8f0", textAlign: "left" } },
+                                        React.createElement("th", { style: { padding: "8px 10px", color: "#64748b" } }, "Claim ID"),
+                                        React.createElement("th", { style: { padding: "8px 10px", color: "#64748b" } }, "Status Baru"),
+                                        React.createElement("th", { style: { padding: "8px 10px", color: "#64748b" } }, "Tanggal Status"),
+                                        React.createElement("th", { style: { padding: "8px 10px", color: "#64748b" } }, "Alasan / Catatan"),
+                                        React.createElement("th", { style: { padding: "8px 10px", color: "#64748b" } }, "Waktu Audit (WIB)"))),
+                                React.createElement("tbody", null,
+                                    auditLogs.map(l => React.createElement("tr", { key: l.id, style: { borderBottom: "1px solid #f1f5f9" } },
+                                        React.createElement("td", { style: { padding: "8px 10px", fontFamily: "monospace", fontWeight: 700 } },
+                                            React.createElement("button", { onClick: () => { setTab("list"); setDetailId(l.claim_id); setShowAccountModal(false); }, style: { border: "none", background: "transparent", color: "#2563eb", cursor: "pointer", padding: 0, font: "inherit", textDecoration: "underline" } }, l.claim_id)),
+                                        React.createElement("td", { style: { padding: "8px 10px" } },
+                                            React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 99, background: statusColor(l.status), color: "#fff" } }, l.status)),
+                                        React.createElement("td", { style: { padding: "8px 10px", color: "#334155" } }, l.status_date ? portalDate(l.status_date) : "—"),
+                                        React.createElement("td", { style: { padding: "8px 10px", color: "#475569", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, l.reason || "—"),
+                                        React.createElement("td", { style: { padding: "8px 10px", color: "#64748b", whiteSpace: "nowrap" } }, l.created_at ? new Date(l.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "—"))))))
+                    ))),
+                React.createElement("div", { style: { padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    React.createElement("div", { style: { fontSize: 11, color: "#64748b" } },
+                        "Sistem terautentikasi via Supabase Auth · Role aktif: ",
+                        React.createElement("b", null, userRole)),
+                    React.createElement("button", { onClick: () => setShowAccountModal(false), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#334155", cursor: "pointer" } }, "Tutup"))))),
+        showSettingsModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setShowSettingsModal(false) },
+            React.createElement("div", { className: "sdlg-modal-scroll", onClick: e => e.stopPropagation(), style: { background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)" } },
+                React.createElement("div", { style: { padding: "18px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#f8fafc" } },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+                        React.createElement("div", { style: { width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #0284c7, #0ea5e9)", color: "#fff", display: "grid", placeItems: "center", fontSize: 20 } }, "⚙️"),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 17, color: "#0f172a" } }, "Pengaturan Sistem & Workspace"),
+                            React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 } }, "Konfigurasi kurs mata uang referensi, parameter operasional, dan diagnostik."))),
+                    React.createElement("button", { onClick: () => setShowSettingsModal(false), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 18, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "×")),
+                React.createElement("div", { style: { padding: 24, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 18 } },
+                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
+                            React.createElement("span", { style: { fontSize: 16 } }, "💱"),
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Kurs Mata Uang Referensi (FX Rates)"),
+                            React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 99, background: "#dbeafe", color: "#1e40af", fontWeight: 700, marginLeft: "auto" } }, "IDR Reference")),
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+                            React.createElement("div", null,
+                                React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 USD ke Rupiah (IDR)"),
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
+                                    React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
+                                    React.createElement("input", { type: "number", min: "0", step: "1", value: usdIdrRate, onChange: e => setUsdIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } }))),
+                            React.createElement("div", null,
+                                React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 CNY ke Rupiah (IDR)"),
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
+                                    React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
+                                    React.createElement("input", { type: "number", min: "0", step: "0.01", value: cnyIdrRate, onChange: e => setCnyIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } })))),
+                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 10, lineHeight: 1.5 } }, "💡 Nilai transaksi warranty claim tetap diproses dalam mata uang asli (USD / CNY). Total Rupiah digunakan semata-mata untuk komparasi dan agregasi pelaporan lokal."),
+                        React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 12 } },
+                            React.createElement("button", {
+                                onClick: () => {
+                                    const u = Number(usdIdrRate) || 17627;
+                                    const c = Number(cnyIdrRate) || 2637.11;
+                                    setUsdIdrRate(u);
+                                    setCnyIdrRate(c);
+                                    try {
+                                        localStorage.setItem("sdlg_usd_idr_rate", String(u));
+                                        localStorage.setItem("sdlg_cny_idr_rate", String(c));
+                                    } catch (_) {}
+                                    showToast("✅ Kurs mata uang berhasil disimpan.");
+                                },
+                                style: { padding: "8px 16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }
+                            }, "Simpan Perubahan Kurs"))),
+                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
+                            React.createElement("span", { style: { fontSize: 16 } }, "🛡️"),
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Integritas Data & Aturan Operasional")),
+                        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "SDLG Portal Machine Location Auto-Heal"),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Mencegah nama sparepart/kerusakan masuk ke kolom cabang dealer.")),
+                                React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ACTIVE")),
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "Standardisasi Format Tanggal"),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Tampilan tanggal seragam DD/MM/YYYY WIB; simpanan ISO standar.")),
+                                React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ENFORCED")))),
+                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#f8fafc" } },
+                        React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#334155", marginBottom: 8 } }, "Diagnostik & Versi Sistem"),
+                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 11 } },
+                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Database: "), React.createElement("b", null, "Supabase Cloud (frqvelcreczmnofldrga)")),
+                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Policy Runtime: "), React.createElement("b", { style: { color: "#166534" } }, policyRuntimeStatus === "database" ? "DB Verified (Authoritative)" : policyRuntimeStatus)),
+                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Arsitektur: "), React.createElement("b", null, "Legacy Production Monolith (v2.25)")),
+                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Total Klaim Aktif: "), React.createElement("b", null, `${claims.filter(c => !c.archived_at).length} klaim`))))),
+                React.createElement("div", { style: { padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end" } },
+                    React.createElement("button", { onClick: () => setShowSettingsModal(false), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#334155", cursor: "pointer" } }, "Tutup"))))),
         tab === "sdlginput" && isAdmin && (React.createElement(SDLGPortalInputPage, { claims, selectedClaimId: sdlgInputClaimId, onSelectClaim: selectSdlgInputClaim, onBack: () => setTab("list") })),
         tab === "sdlginput" && !isAdmin && (React.createElement("div", { className: "page" }, React.createElement("div", { style: { maxWidth: 700, margin: "80px auto", textAlign: "center" } }, React.createElement("div", { style: { fontSize: 42 } }, "🔒"), React.createElement("div", { className: "page-title", style: { marginTop: 8 } }, "Akses terbatas"), React.createElement("div", { style: { color: "#64748b", marginTop: 5 } }, "Akun Viewer tidak dapat menyiapkan input Dealer Portal.")))),
         tab === "paste" && !isAdmin && (React.createElement("div", { style: { maxWidth: 780, margin: "0 auto", padding: "60px 16px", textAlign: "center" } },
@@ -11982,7 +12329,7 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   <script src="./modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
 <script>
 (function () {
-  var HREF = "styles/sdlg-dashboard-polish.css?v=20261105-overview-v2";
+  var HREF = "styles/sdlg-dashboard-polish.css?v=20261109-topbar-modern-v1";
   function pin() {
     var link = document.getElementById("sdlg-shell-polish") || document.querySelector('link[href*="sdlg-dashboard-polish"]');
     if (!link) {

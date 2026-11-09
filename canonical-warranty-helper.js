@@ -82,12 +82,15 @@
         var mWo = String((live && (live.dealer_claim_no || live.comment)) || (c.dealer_claim_no || '') + ' ' + (c.comment || '')).match(/\bWO\d{6,10}\b/i);
         if (mWo) wo = mWo[0];
       }
+      var isCompWord = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|cylinder|seal|hose|pump|valve|filter|engine|muffler|leak|broken|crack|fault|damage)\b/i;
       var branch = String((live && (live.branch || live.branch_name)) || c.branch || c.branch_name || '').trim();
       if (!branch) {
         var dName = (live && live.dealer_name) || c.dealer_name || '';
         if (dName) branch = String(dName).replace(/^ITR\s*[-–]\s*/i, '').trim();
       }
+      if (isCompWord.test(branch)) branch = '';
       var customer = String((live && (live.customer || live.customer_name)) || c.customer || c.customer_name || '').trim();
+      if (isCompWord.test(customer)) customer = '';
       var parts = [wo, branch, customer].map(function (s) {
         return String(s || '').trim().replace(/^[-_\s]+|[-_\s]+$/g, '');
       }).filter(Boolean);
