@@ -1,13 +1,13 @@
-# SESSION_STATE — 2026-11-10
+# SESSION_STATE — 2026-11-11
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
 - Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
 - Latest deploys via static.yml successful as of last check. No open issues.
-- Claims count: 570 (increased slightly from previous 564).
+- Claims count: 572 (increased slightly from previous 570).
 
-## Current health (2026-11-10 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 570. No critical data anomalies.
+## Current health (2026-11-11 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 572. No critical data anomalies (2 archived, 0 missing status).
 - Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
 - Performance advisors: minor known items (auth RLS initplan, unused indexes, multiple permissive policies).
 - Logs: low volume in recent window, no critical errors observed. Minor postgrest timeouts remain known non-critical.
