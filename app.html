@@ -6943,6 +6943,21 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [masterRows, setMasterRows] = useState([]);
     const [masterLoading, setMasterLoading] = useState(false);
     const [masterSearch, setMasterSearch] = useState("");
+    const [masterPage, setMasterPage] = useState(1);
+    const [masterPageSize, setMasterPageSize] = useState(50);
+    const [masterSortCol, setMasterSortCol] = useState("");
+    const [masterSortAsc, setMasterSortAsc] = useState(true);
+    const [masterStatusFilter, setMasterStatusFilter] = useState("all");
+    const [masterBranchFilter, setMasterBranchFilter] = useState("all");
+    const [masterFamilyFilter, setMasterFamilyFilter] = useState("all");
+    const [masterAnomalyOnly, setMasterAnomalyOnly] = useState(false);
+    const [masterCounts, setMasterCounts] = useState({});
+    const [masterDetailRow, setMasterDetailRow] = useState(null);
+    const [masterExporting, setMasterExporting] = useState(false);
+    const [showMasterImportModal, setShowMasterImportModal] = useState(false);
+    const [masterImportText, setMasterImportText] = useState("");
+    const [masterImporting, setMasterImporting] = useState(false);
+    const masterDataCacheRef = useRef({});
     const [showMasterModal, setShowMasterModal] = useState(false);
     const [masterForm, setMasterForm] = useState({});
     const [editingMaster, setEditingMaster] = useState(null);
@@ -7122,6 +7137,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 if (statusReasonModal) { setStatusReasonModal(null); return; }
                 if (showFxEditor) { setShowFxEditor(false); return; }
                 if (showMasterModal) { setShowMasterModal(false); return; }
+                if (showMasterImportModal) { setShowMasterImportModal(false); return; }
+                if (masterDetailRow) { setMasterDetailRow(null); return; }
                 if (dqResolve) { setDqResolve(null); return; }
                 if (tab === "list" && detailId) { setDetailId(null); return; }
             }
@@ -7132,13 +7149,17 @@ SDLG_REPOSITORY.listClaims = async function () {
                         e.preventDefault();
                         const searchEl = document.querySelector(".claims-searchbar input, .search-box input");
                         if (searchEl) { searchEl.focus(); searchEl.select(); }
+                    } else if (tab === "masters") {
+                        e.preventDefault();
+                        const searchEl = document.querySelector(".master-search-input");
+                        if (searchEl) { searchEl.focus(); searchEl.select(); }
                     }
                 }
             }
         };
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
-    }, [parseReviewOpen, statusReasonModal, showFxEditor, showMasterModal, dqResolve, tab, detailId, showAccountModal, showSettingsModal]);
+    }, [parseReviewOpen, statusReasonModal, showFxEditor, showMasterModal, masterDetailRow, dqResolve, tab, detailId, showAccountModal, showSettingsModal]);
     // Prevent accidental loss of an unparsed pasted claim on browser refresh/close.
     useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -7184,12 +7205,96 @@ SDLG_REPOSITORY.listClaims = async function () {
     }, [parsing, parseStartedAt]);
     const fmtElapsed = (sec) => { const m = Math.floor(sec / 60), s = sec % 60; return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`; };
     const MASTER_CONFIG = {
-        customers: { table: "customers", title: "Customers", singular: "Customer", fields: [["customer_code", "Customer Code"], ["customer_name", "Customer Name"], ["customer_type", "Type"]], search: ["customer_name", "customer_code", "customer_type"] },
-        branches: { table: "branches", title: "Branches", singular: "Branch", fields: [["branch_code", "Branch Code"], ["branch_name", "Branch Name"]], search: ["branch_name", "branch_code"] },
-        dealers: { table: "dealers", title: "Dealers", singular: "Dealer", fields: [["dealer_code", "Dealer Code"], ["dealer_name", "Dealer Name"]], search: ["dealer_name", "dealer_code"] },
-        models: { table: "models", title: "Models", singular: "Model", fields: [["model_code", "Model Code"], ["model_name", "Model Name"]], search: ["model_code", "model_name"] },
-        parts: { table: "parts_master", title: "Parts", singular: "Part", fields: [["part_no", "Part Number"], ["part_name", "Part Name"]], search: ["part_no", "part_name"] },
-        machines: { table: "machines", title: "Machines / Units", singular: "Unit", fields: [["serial_no", "Serial No."]], search: ["serial_no"] },
+        machines: {
+            table: "machines",
+            title: "Machines / Units",
+            singular: "Unit",
+            icon: "🚜",
+            badgeColor: "#0284c7",
+            fields: [
+                ["serial_no", "Serial No. (VIN)"],
+                ["osf_model", "Model"],
+                ["customer_name_source", "Customer"],
+                ["branch_id", "Branch"],
+                ["osf_sales_date", "Sales Date"],
+                ["osf_departure_date", "B/L Departure Date"],
+            ],
+            search: ["serial_no", "source_serial_no", "osf_model", "customer_name_source"],
+            select: "id,serial_no,source_serial_no,model_id,customer_id,branch_id,dealer_id,is_active,osf_model,customer_name_source,osf_departure_date,osf_sales_date,created_at,updated_at",
+            orderCol: "serial_no",
+        },
+        customers: {
+            table: "customers",
+            title: "Customers",
+            singular: "Customer",
+            icon: "🏢",
+            badgeColor: "#2563eb",
+            fields: [
+                ["customer_code", "Customer Code"],
+                ["customer_name", "Customer Name"],
+                ["customer_type", "Customer Type"],
+            ],
+            search: ["customer_name", "customer_code", "customer_type"],
+            select: "id,customer_code,customer_name,customer_type,is_active,created_at,updated_at",
+            orderCol: "customer_name",
+        },
+        branches: {
+            table: "branches",
+            title: "Branches",
+            singular: "Branch",
+            icon: "📌",
+            badgeColor: "#059669",
+            fields: [
+                ["branch_code", "Branch Code"],
+                ["branch_name", "Branch Name"],
+            ],
+            search: ["branch_name", "branch_code"],
+            select: "id,branch_code,branch_name,is_active,created_at,updated_at",
+            orderCol: "branch_name",
+        },
+        dealers: {
+            table: "dealers",
+            title: "Dealers",
+            singular: "Dealer",
+            icon: "🤝",
+            badgeColor: "#d97706",
+            fields: [
+                ["dealer_code", "Dealer Code"],
+                ["dealer_name", "Dealer Name"],
+            ],
+            search: ["dealer_name", "dealer_code"],
+            select: "id,dealer_code,dealer_name,is_active,created_at,updated_at",
+            orderCol: "dealer_code",
+        },
+        models: {
+            table: "models",
+            title: "Models",
+            singular: "Model",
+            icon: "⚙️",
+            badgeColor: "#7c3aed",
+            fields: [
+                ["model_code", "Model Code"],
+                ["model_name", "Model Name"],
+                ["product_family", "Product Family"],
+            ],
+            search: ["model_code", "model_name", "product_family"],
+            select: "id,model_code,model_name,product_family,is_active,created_at,updated_at",
+            orderCol: "model_code",
+        },
+        parts: {
+            table: "parts_master",
+            title: "Parts Master",
+            singular: "Part",
+            icon: "🔧",
+            badgeColor: "#ea580c",
+            fields: [
+                ["part_no", "Part Number"],
+                ["part_name", "Part Name"],
+            ],
+            search: ["part_no", "part_name"],
+            select: "id,part_no,part_name,is_active,created_at,updated_at",
+            orderCol: "part_no",
+        },
     };
     // ─── SDLG BUSINESS RULES / CLEANUP RULES ───────────────────────────────
     const DQ_BUILD = "V2.35.11_SERIAL_MATCH_FIXED";
@@ -7233,14 +7338,37 @@ SDLG_REPOSITORY.listClaims = async function () {
         return { serial: sn, modelToken: token, unitNo: String(parseInt(suffix, 10)) === "NaN" ? suffix : String(parseInt(suffix, 10)), suffix };
     };
     const cleanText = (v) => String(v || "").trim().replace(/\s+/g, " ");
-    const loadMasterData = useCallback(async (kind = masterTab) => {
+    const refreshMasterCounts = useCallback(async () => {
+        try {
+            const counts = {};
+            await Promise.all(Object.entries(MASTER_CONFIG).map(async ([k, cfg]) => {
+                const { count, error } = await sdlgSupabase.from(cfg.table).select("id", { count: "exact", head: true });
+                if (!error && count !== null && count !== undefined) {
+                    counts[k] = count;
+                }
+            }));
+            setMasterCounts(counts);
+        } catch (_) {}
+    }, []);
+
+    const loadMasterData = useCallback(async (kind = masterTab, force = false) => {
         const cfg = MASTER_CONFIG[kind];
         if (!cfg)
             return;
+        if (!force && masterDataCacheRef.current[kind] && masterDataCacheRef.current[kind].length > 0) {
+            setMasterRows(masterDataCacheRef.current[kind]);
+            setMasterPage(1);
+            return;
+        }
         setMasterLoading(true);
         try {
-            const data = await fetchAllRows(cfg.table, "*", cfg.fields?.[0]?.[0] || "id");
+            const selectFields = cfg.select || "*";
+            const orderField = cfg.orderCol || cfg.fields?.[0]?.[0] || "id";
+            const data = await fetchAllRows(cfg.table, selectFields, orderField);
+            masterDataCacheRef.current[kind] = data || [];
             setMasterRows(data || []);
+            setMasterPage(1);
+            refreshMasterCounts();
         }
         catch (e) {
             showToast("Gagal load master: " + (e?.message || "Unknown error"));
@@ -7248,9 +7376,15 @@ SDLG_REPOSITORY.listClaims = async function () {
         finally {
             setMasterLoading(false);
         }
-    }, [masterTab, fetchAllRows]);
-    useEffect(() => { if (tab === "masters")
-        loadMasterData(masterTab); }, [tab, masterTab, loadMasterData]);
+    }, [masterTab, fetchAllRows, refreshMasterCounts]);
+
+    useEffect(() => {
+        if (tab === "masters") {
+            loadMasterData(masterTab);
+            refreshMasterCounts();
+        }
+    }, [tab, masterTab, loadMasterData, refreshMasterCounts]);
+
     const openMasterNew = () => {
         const cfg = MASTER_CONFIG[masterTab];
         const initial = {};
@@ -7260,18 +7394,26 @@ SDLG_REPOSITORY.listClaims = async function () {
         setMasterForm(initial);
         setShowMasterModal(true);
     };
+
     const openMasterEdit = (row) => {
         setEditingMaster(row);
         setMasterForm({ ...row });
         setShowMasterModal(true);
     };
+
     const saveMaster = async () => {
         const cfg = MASTER_CONFIG[masterTab];
         const payload = {};
-        cfg.fields.forEach(([k]) => { payload[k] = (masterForm[k] ?? "").toString().trim() || null; });
+        cfg.fields.forEach(([k]) => {
+            if (k === "branch_id") {
+                payload[k] = masterForm[k] || null;
+            } else {
+                payload[k] = (masterForm[k] ?? "").toString().trim() || null;
+            }
+        });
         payload.is_active = masterForm.is_active !== false;
         if (!payload[cfg.fields[0][0]]) {
-            showToast("Field utama wajib diisi.");
+            showToast("Field utama (" + cfg.fields[0][1] + ") wajib diisi.");
             return;
         }
         const action = editingMaster
@@ -7282,22 +7424,209 @@ SDLG_REPOSITORY.listClaims = async function () {
             showToast("Gagal simpan master: " + error.message);
             return;
         }
-        showToast(editingMaster ? "✅ Master diupdate" : "✅ Master ditambahkan");
+        showToast(editingMaster ? "✅ Master berhasil diupdate" : "✅ Master berhasil ditambahkan");
         setShowMasterModal(false);
-        await loadMasterData(masterTab);
+        delete masterDataCacheRef.current[masterTab];
+        await loadMasterData(masterTab, true);
     };
+
     const toggleMasterActive = async (row) => {
         const cfg = MASTER_CONFIG[masterTab];
         const next = row.is_active === false;
         const { error } = await sdlgSupabase.from(cfg.table).update({ is_active: next, updated_at: new Date().toISOString() }).eq("id", row.id);
-        if (error)
+        if (error) {
             showToast("Gagal update: " + error.message);
-        else {
-            showToast(next ? "✅ Diaktifkan" : "✅ Dinonaktifkan");
-            await loadMasterData(masterTab);
+        } else {
+            showToast(next ? "✅ Record diaktifkan" : "✅ Record dinonaktifkan");
+            delete masterDataCacheRef.current[masterTab];
+            await loadMasterData(masterTab, true);
         }
     };
-    const filteredMasterRows = masterRows.filter(row => !masterSearch || MASTER_CONFIG[masterTab].search.some(k => String(row[k] ?? "").toLowerCase().includes(masterSearch.toLowerCase())));
+
+    const exportMasterDataXlsx = async () => {
+        const cfg = MASTER_CONFIG[masterTab];
+        if (!cfg) return;
+        setMasterExporting(true);
+        try {
+            const XLSX = await window.SDLG_LOAD_XLSX();
+            const exportRows = filteredMasterRows.map((row, idx) => {
+                const item = { "No": idx + 1 };
+                cfg.fields.forEach(([k, label]) => {
+                    if (k === "branch_id") {
+                        const bName = branchMasterList.find(b => b.id === row.branch_id)?.branch_name || row.branch_id || "—";
+                        item[label] = bName;
+                    } else {
+                        item[label] = row[k] ?? "—";
+                    }
+                });
+                item["Status"] = row.is_active === false ? "Inactive" : "Active";
+                if (row.created_at) item["Created At"] = row.created_at;
+                if (row.updated_at) item["Updated At"] = row.updated_at;
+                return item;
+            });
+            const ws = XLSX.utils.json_to_sheet(exportRows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, cfg.title.slice(0, 31));
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `SDLG_Master_${cfg.singular}_${dateStr}.xlsx`);
+            showToast(`✅ Berhasil ekspor ${exportRows.length} baris ${cfg.title}`);
+        } catch (err) {
+            showToast("❌ Gagal ekspor Excel: " + (err?.message || "Unknown error"));
+        } finally {
+            setMasterExporting(false);
+        }
+    };
+
+    const copyMasterDataTsv = () => {
+        const cfg = MASTER_CONFIG[masterTab];
+        if (!cfg || filteredMasterRows.length === 0) return;
+        const headers = ["No", ...cfg.fields.map(([, label]) => label), "Status"];
+        const rows = filteredMasterRows.map((row, idx) => {
+            const cells = [idx + 1];
+            cfg.fields.forEach(([k]) => {
+                if (k === "branch_id") {
+                    cells.push(branchMasterList.find(b => b.id === row.branch_id)?.branch_name || row.branch_id || "—");
+                } else {
+                    cells.push(row[k] ?? "—");
+                }
+            });
+            cells.push(row.is_active === false ? "Inactive" : "Active");
+            return cells.join("\t");
+        });
+        const tsv = [headers.join("\t"), ...rows].join("\n");
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(tsv);
+            showToast(`📋 Berhasil menyalin ${filteredMasterRows.length} baris (TSV / siap paste ke Excel)`);
+        }
+    };
+
+    const isRowAnomaly = useCallback((row, tabKey = masterTab) => {
+        if (!row) return false;
+        if (tabKey === "machines") {
+            return !row.branch_id || !row.osf_sales_date || !row.customer_name_source || !row.osf_departure_date;
+        }
+        if (tabKey === "models") {
+            return !row.product_family || !row.model_code;
+        }
+        if (tabKey === "customers") {
+            return !row.customer_code || !row.customer_type;
+        }
+        if (tabKey === "parts") {
+            return !row.part_name || String(row.part_name).trim().length === 0;
+        }
+        return false;
+    }, [masterTab]);
+
+    const anomalyCount = useMemo(() => {
+        return masterRows.filter(r => isRowAnomaly(r, masterTab)).length;
+    }, [masterRows, masterTab, isRowAnomaly]);
+
+    const relatedClaims = useMemo(() => {
+        if (!masterDetailRow) return [];
+        if (masterTab === "machines") {
+            const sn = String(masterDetailRow.serial_no || "").trim().toUpperCase();
+            if (!sn) return [];
+            return claims.filter(c => String(c.serial_no || c.source_serial_no || "").trim().toUpperCase() === sn);
+        }
+        if (masterTab === "customers") {
+            const cName = String(masterDetailRow.customer_name || "").trim().toLowerCase();
+            if (!cName) return [];
+            return claims.filter(c => String(c.customer_name || "").trim().toLowerCase().includes(cName));
+        }
+        if (masterTab === "parts") {
+            const pNo = String(masterDetailRow.part_no || "").trim().toUpperCase();
+            if (!pNo) return [];
+            return claims.filter(c => String(c.part_no || "").trim().toUpperCase() === pNo || (Array.isArray(c.parts) && c.parts.some(p => String(p.part_no || "").trim().toUpperCase() === pNo)));
+        }
+        return [];
+    }, [masterDetailRow, masterTab, claims]);
+
+    const executeMasterImport = async () => {
+        const cfg = MASTER_CONFIG[masterTab];
+        if (!cfg || !masterImportText.trim()) return;
+        setMasterImporting(true);
+        try {
+            const lines = masterImportText.trim().split("\n").map(l => l.trim()).filter(Boolean);
+            if (lines.length === 0) {
+                showToast("Tidak ada baris teks untuk diimpor.");
+                return;
+            }
+            const firstLine = lines[0].toLowerCase();
+            const isHeader = cfg.fields.some(([k, l]) => firstLine.includes(k.toLowerCase()) || firstLine.includes(l.toLowerCase()));
+            const dataLines = isHeader ? lines.slice(1) : lines;
+            
+            const payloadRows = dataLines.map(line => {
+                const sep = line.includes("\t") ? "\t" : ",";
+                const parts = line.split(sep).map(p => p.trim().replace(/^["']|["']$/g, ""));
+                const item = {};
+                cfg.fields.forEach(([k], i) => {
+                    if (k === "branch_id") {
+                        const matchBranch = branchMasterList.find(b => b.branch_name?.toLowerCase() === (parts[i] || "").toLowerCase() || b.branch_code?.toLowerCase() === (parts[i] || "").toLowerCase());
+                        item[k] = matchBranch ? matchBranch.id : (parts[i] || null);
+                    } else {
+                        item[k] = parts[i] || null;
+                    }
+                });
+                item.is_active = true;
+                return item;
+            }).filter(r => r[cfg.fields[0][0]]);
+
+            if (payloadRows.length === 0) {
+                showToast("Format baris tidak valid atau field utama kosong.");
+                return;
+            }
+
+            const { error } = await sdlgSupabase.from(cfg.table).upsert(payloadRows);
+            if (error) {
+                showToast("Gagal import data: " + error.message);
+                return;
+            }
+
+            showToast(`✅ Berhasil import ${payloadRows.length} record ke ${cfg.title}`);
+            setShowMasterImportModal(false);
+            setMasterImportText("");
+            delete masterDataCacheRef.current[masterTab];
+            await loadMasterData(masterTab, true);
+        } catch (err) {
+            showToast("Error saat import: " + (err?.message || "Unknown error"));
+        } finally {
+            setMasterImporting(false);
+        }
+    };
+
+    const filteredMasterRows = useMemo(() => {
+        const cfg = MASTER_CONFIG[masterTab];
+        if (!cfg) return [];
+        let list = masterRows.filter(row => {
+            if (masterStatusFilter === "active" && row.is_active === false) return false;
+            if (masterStatusFilter === "inactive" && row.is_active !== false) return false;
+            if (masterAnomalyOnly && !isRowAnomaly(row, masterTab)) return false;
+            if (masterBranchFilter !== "all" && row.branch_id !== masterBranchFilter) return false;
+            if (masterFamilyFilter !== "all") {
+                if (masterTab === "models" && row.product_family !== masterFamilyFilter) return false;
+                if (masterTab === "machines") {
+                    const modelStr = String(row.osf_model || "").toLowerCase();
+                    if (masterFamilyFilter === "Excavator" && !modelStr.includes("e6") && !modelStr.includes("e7")) return false;
+                    if (masterFamilyFilter === "Wheel Loader" && !modelStr.includes("l9") && !modelStr.includes("lg9")) return false;
+                    if (masterFamilyFilter === "Motor Grader" && !modelStr.includes("g9")) return false;
+                    if (masterFamilyFilter === "Road Roller" && !modelStr.includes("rs")) return false;
+                }
+            }
+            if (!masterSearch) return true;
+            const term = masterSearch.toLowerCase().trim();
+            const searchFields = cfg.search || [];
+            return searchFields.some(k => String(row[k] ?? "").toLowerCase().includes(term));
+        });
+        if (masterSortCol) {
+            list = [...list].sort((a, b) => {
+                const va = a[masterSortCol] ?? "";
+                const vb = b[masterSortCol] ?? "";
+                const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" });
+                return masterSortAsc ? cmp : -cmp;
+            });
+        }
+        return list;
+    }, [masterRows, masterTab, masterSearch, masterStatusFilter, masterAnomalyOnly, masterBranchFilter, masterFamilyFilter, masterSortCol, masterSortAsc, isRowAnomaly]);
     // ─── AUTH / USER ROLE ───────────────────────────────────────────────────
     const loadUserProfile = useCallback(async (currentUser) => {
         const generation = ++profileGeneration.current;
@@ -10547,21 +10876,168 @@ SDLG_REPOSITORY.listClaims = async function () {
                 background: "#0f172a", color: "#fff", padding: "10px 20px", borderRadius: 10,
                 fontSize: 13, fontWeight: 600, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,.3)",
             } }, toast)),
-        showMasterModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 350, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setShowMasterModal(false) },
-            React.createElement("div", { className: "sdlg-modal-scroll", onClick: e => e.stopPropagation(), style: { background: "#fff", borderRadius: 14, padding: 22, maxWidth: 520, width: "100%" } },
-                React.createElement("div", { style: { fontWeight: 800, fontSize: 16, marginBottom: 12 } },
-                    editingMaster ? "Edit" : "Tambah",
-                    " ",
-                    MASTER_CONFIG[masterTab].singular),
-                React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, MASTER_CONFIG[masterTab].fields.map(([key, label]) => React.createElement("div", { key: key },
-                    React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 4 } }, label),
-                    React.createElement("input", { value: masterForm[key] ?? "", onChange: e => setMasterForm({ ...masterForm, [key]: e.target.value }), style: { width: "100%", padding: "8px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13 } })))),
-                React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#475569", marginTop: 12 } },
-                    React.createElement("input", { type: "checkbox", checked: masterForm.is_active !== false, onChange: e => setMasterForm({ ...masterForm, is_active: e.target.checked }) }),
-                    " Active"),
-                React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 } },
-                    React.createElement("button", { onClick: () => setShowMasterModal(false), style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, cursor: "pointer" } }, "Batal"),
-                    React.createElement("button", { onClick: saveMaster, disabled: !isOnline, style: { padding: "8px 14px", border: 0, background: "#1e40af", color: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 700 } }, "Simpan"))))),
+        showMasterModal && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setShowMasterModal(false) },
+            React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation(), style: { maxWidth: 560 } },
+                React.createElement("div", { className: "master-drawer-head" },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                        React.createElement("span", { style: { fontSize: 20 } }, MASTER_CONFIG[masterTab]?.icon || "📁"),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a" } },
+                                editingMaster ? `Edit ${MASTER_CONFIG[masterTab].singular}` : `Tambah ${MASTER_CONFIG[masterTab].singular}`),
+                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
+                                `Tabel: ${MASTER_CONFIG[masterTab].table} • Pastikan integritas kode unik.`))),
+                    React.createElement("button", { onClick: () => setShowMasterModal(false), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕")),
+                React.createElement("div", { className: "master-drawer-body" },
+                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } }, MASTER_CONFIG[masterTab].fields.map(([key, label]) => {
+                        const isPrimary = key === MASTER_CONFIG[masterTab].fields[0][0];
+                        if (key === "branch_id") {
+                            return React.createElement("div", { key: key, style: { gridColumn: "span 2" } },
+                                React.createElement("div", { style: { fontSize: 11, color: "#475569", fontWeight: 700, marginBottom: 4 } }, label),
+                                React.createElement("select", { value: masterForm[key] ?? "", onChange: e => setMasterForm({ ...masterForm, [key]: e.target.value }), style: { width: "100%", padding: "9px 11px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, background: "#fff" } },
+                                    React.createElement("option", { value: "" }, "-- Pilih Cabang --"),
+                                    branchMasterList.map(b => React.createElement("option", { key: b.id, value: b.id }, `${b.branch_name} (${b.branch_code || "—"})`))));
+                        }
+                        if (key === "product_family") {
+                            return React.createElement("div", { key: key },
+                                React.createElement("div", { style: { fontSize: 11, color: "#475569", fontWeight: 700, marginBottom: 4 } }, label),
+                                React.createElement("select", { value: masterForm[key] ?? "", onChange: e => setMasterForm({ ...masterForm, [key]: e.target.value }), style: { width: "100%", padding: "9px 11px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, background: "#fff" } },
+                                    React.createElement("option", { value: "" }, "-- Pilih Family --"),
+                                    ["Excavator", "Wheel Loader", "Motor Grader", "Road Roller", "Backhoe Loader", "Other"].map(f => React.createElement("option", { key: f, value: f }, f))));
+                        }
+                        return React.createElement("div", { key: key, style: isPrimary ? { gridColumn: "span 2" } : {} },
+                            React.createElement("div", { style: { fontSize: 11, color: "#475569", fontWeight: 700, marginBottom: 4 } },
+                                label,
+                                isPrimary && React.createElement("span", { style: { color: "#dc2626", marginLeft: 4 } }, "*")),
+                            React.createElement("input", {
+                                type: key.includes("date") ? "date" : "text",
+                                value: masterForm[key] ?? "",
+                                onChange: e => setMasterForm({ ...masterForm, [key]: e.target.value }),
+                                placeholder: `Masukkan ${label.toLowerCase()}...`,
+                                style: {
+                                    width: "100%", padding: "9px 11px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13,
+                                    fontFamily: (key.includes("code") || key.includes("no") || key === "serial_no") ? 'var(--sdlg-font-mono, monospace)' : 'inherit'
+                                }
+                            }));
+                    })),
+                    React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#334155", fontWeight: 600, marginTop: 4, cursor: "pointer" } },
+                        React.createElement("input", { type: "checkbox", checked: masterForm.is_active !== false, onChange: e => setMasterForm({ ...masterForm, is_active: e.target.checked }), style: { width: 16, height: 16, cursor: "pointer" } }),
+                        " Record Aktif (dapat digunakan sebagai validasi)")),
+                React.createElement("div", { style: { padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 } },
+                    React.createElement("button", { onClick: () => setShowMasterModal(false), style: { padding: "9px 14px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Batal"),
+                    React.createElement("button", { onClick: saveMaster, disabled: !isOnline, style: { padding: "9px 18px", border: 0, background: "var(--ui-primary, #2563eb)", color: "#fff", borderRadius: 8, cursor: isOnline ? "pointer" : "not-allowed", fontWeight: 700, fontSize: 13, boxShadow: "0 2px 6px rgba(37,99,235,0.25)" } }, "💾 Simpan Record"))))),
+        masterDetailRow && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setMasterDetailRow(null) },
+            React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation() },
+                React.createElement("div", { className: "master-drawer-head" },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                        React.createElement("span", { style: { fontSize: 22 } }, MASTER_CONFIG[masterTab]?.icon || "📁"),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a" } },
+                                `${MASTER_CONFIG[masterTab]?.singular || "Record"} Inspector`),
+                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
+                                `ID: ${masterDetailRow.id || "—"}`))),
+                    React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕")),
+                React.createElement("div", { className: "master-drawer-body" },
+                    React.createElement("div", { className: "master-detail-grid" },
+                        MASTER_CONFIG[masterTab]?.fields.map(([k, label]) => {
+                            let val = masterDetailRow[k];
+                            if (k === "branch_id") {
+                                val = branchMasterList.find(b => b.id === masterDetailRow.branch_id)?.branch_name || masterDetailRow.branch_id;
+                            }
+                            return React.createElement("div", { key: k, className: "master-detail-item" },
+                                React.createElement("div", { className: "master-detail-k" }, label),
+                                React.createElement("div", { className: "master-detail-v", style: (k.includes("code") || k.includes("no") || k === "serial_no") ? { fontFamily: 'var(--sdlg-font-mono, monospace)' } : {} },
+                                    String(val || "—")));
+                        }),
+                        React.createElement("div", { className: "master-detail-item" },
+                            React.createElement("div", { className: "master-detail-k" }, "Status Operasional"),
+                            React.createElement("div", { className: "master-detail-v" },
+                                React.createElement("span", { className: `master-status-dot ${masterDetailRow.is_active === false ? "inactive" : "active"}` },
+                                    masterDetailRow.is_active === false ? "Nonaktif (Inactive)" : "Aktif (Active)"))),
+                        masterDetailRow.created_at && React.createElement("div", { className: "master-detail-item" },
+                            React.createElement("div", { className: "master-detail-k" }, "Waktu Dibuat"),
+                            React.createElement("div", { className: "master-detail-v" }, masterDetailRow.created_at)),
+                        masterDetailRow.updated_at && React.createElement("div", { className: "master-detail-item" },
+                            React.createElement("div", { className: "master-detail-k" }, "Waktu Diperbarui"),
+                            React.createElement("div", { className: "master-detail-v" }, masterDetailRow.updated_at))),
+                    relatedClaims.length > 0 ? (
+                        React.createElement("div", { className: "master-related-claims-box" },
+                            React.createElement("div", null,
+                                React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#1e3a8a", display: "flex", alignItems: "center", gap: 6 } },
+                                    "📑 Terkait dengan ",
+                                    React.createElement("span", { style: { background: "#2563eb", color: "#fff", padding: "1px 6px", borderRadius: 4, fontVariantNumeric: "tabular-nums" } }, relatedClaims.length),
+                                    " klaim di database"),
+                                React.createElement("div", { style: { fontSize: 11, color: "#475569", marginTop: 2 } },
+                                    "Entitas ini memiliki riwayat klaim aktif di sistem.")),
+                            React.createElement("button", {
+                                onClick: () => {
+                                    const targetQuery = masterDetailRow.serial_no || masterDetailRow.customer_name || masterDetailRow.part_no || "";
+                                    setMasterDetailRow(null);
+                                    setTab("list");
+                                    setFilterSearch(targetQuery);
+                                    showToast("🔍 Menampilkan klaim untuk " + targetQuery);
+                                },
+                                style: { padding: "6px 12px", background: "#2563eb", color: "#fff", border: 0, borderRadius: 6, fontWeight: 700, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }
+                            }, "🔍 Lihat Daftar Klaim"))
+                    ) : (
+                        React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#64748b" } },
+                            "ℹ️ Belum ada riwayat klaim yang terasosiasi langsung dengan record ini.")
+                    ),
+                    React.createElement("div", { style: { background: "#f1f5f9", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 } },
+                        React.createElement("div", { style: { fontSize: 11, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                            `Tabel Supabase: "${MASTER_CONFIG[masterTab]?.table}"`),
+                        React.createElement("button", { onClick: () => { navigator.clipboard?.writeText(JSON.stringify(masterDetailRow, null, 2)); showToast("✅ JSON disalin ke clipboard"); }, style: { padding: "4px 8px", fontSize: 11, fontWeight: 700, border: "1px solid #cbd5e1", background: "#fff", borderRadius: 6, cursor: "pointer" } }, "📋 Copy JSON"))),
+                React.createElement("div", { style: { padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    isAdmin ? React.createElement("div", { style: { display: "flex", gap: 8 } },
+                        React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); openMasterEdit(r); }, style: { padding: "8px 12px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "✏ Edit Record"),
+                        React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); toggleMasterActive(r); }, style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", color: "#475569", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600 } },
+                            masterDetailRow.is_active === false ? "Aktifkan" : "Nonaktifkan")) : React.createElement("div", null),
+                    React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "Tutup"))))),
+        showMasterImportModal && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setShowMasterImportModal(false) },
+            React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation(), style: { maxWidth: 640 } },
+                React.createElement("div", { className: "master-drawer-head" },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                        React.createElement("span", { style: { fontSize: 22 } }, "📥"),
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a" } },
+                                `Bulk Import Excel / TSV — ${MASTER_CONFIG[masterTab]?.title}`),
+                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
+                                `Paste baris data dari Excel atau Google Sheets ke tabel "${MASTER_CONFIG[masterTab]?.table}"`))),
+                    React.createElement("button", { onClick: () => setShowMasterImportModal(false), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕")),
+                React.createElement("div", { className: "master-drawer-body" },
+                    React.createElement("div", { style: { background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#1e3a8a" } },
+                        React.createElement("div", { style: { fontWeight: 700, marginBottom: 2 } }, "Urutan Kolom yang Diharapkan:"),
+                        React.createElement("div", { style: { fontFamily: "var(--sdlg-font-mono, monospace)", fontSize: 11, color: "#1e40af" } },
+                            MASTER_CONFIG[masterTab]?.fields.map(([, l]) => l).join("  |  ")),
+                        React.createElement("div", { style: { fontSize: 11, color: "#475569", marginTop: 4 } },
+                            "Tips: Copy range sel langsung dari Excel/Spreadsheet (Ctrl+C) lalu Paste (Ctrl+V) di kotak bawah.")),
+                    React.createElement("textarea", {
+                        value: masterImportText,
+                        onChange: e => setMasterImportText(e.target.value),
+                        placeholder: "Tempel baris data Excel (tab-separated) atau CSV di sini...",
+                        rows: 8,
+                        style: { width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 12, fontFamily: "var(--sdlg-font-mono, monospace)", resize: "vertical" }
+                    }),
+                    (() => {
+                        const lines = masterImportText.trim().split("\n").filter(l => l.trim().length > 0);
+                        return React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#475569" } },
+                            React.createElement("span", null, "Terdeteksi: ", React.createElement("strong", { style: { color: "#0f172a" } }, lines.length), " baris data"),
+                            lines.length > 0 && React.createElement("button", {
+                                onClick: () => setMasterImportText(""),
+                                style: { background: "none", border: 0, color: "#dc2626", cursor: "pointer", fontSize: 11, textDecoration: "underline" }
+                            }, "Bersihkan Teks"));
+                    })()),
+                React.createElement("div", { style: { padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end", gap: 10 } },
+                    React.createElement("button", { onClick: () => setShowMasterImportModal(false), style: { padding: "9px 14px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Batal"),
+                    React.createElement("button", {
+                        onClick: executeMasterImport,
+                        disabled: masterImporting || !masterImportText.trim(),
+                        style: {
+                            padding: "9px 18px", border: 0,
+                            background: masterImportText.trim() ? "var(--ui-primary, #2563eb)" : "#cbd5e1",
+                            color: "#fff", borderRadius: 8, cursor: masterImportText.trim() && !masterImporting ? "pointer" : "not-allowed",
+                            fontWeight: 700, fontSize: 13, boxShadow: masterImportText.trim() ? "0 2px 6px rgba(37,99,235,0.25)" : "none"
+                        }
+                    }, masterImporting ? "Mengimpor..." : "🚀 Proses Import ke Supabase"))))),
         showAccountModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setShowAccountModal(false) },
             React.createElement("div", { className: "sdlg-modal-scroll", onClick: e => e.stopPropagation(), style: { background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 860, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)" } },
                 React.createElement("div", { style: { padding: "18px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#f8fafc" } },
@@ -11180,35 +11656,301 @@ SDLG_REPOSITORY.listClaims = async function () {
                             background: sourceLockIssues.length > 0 ? "#cbd5e1" : "linear-gradient(135deg,#059669,#10b981)",
                             color: sourceLockIssues.length > 0 ? "#64748b" : "#fff", cursor: sourceLockIssues.length > 0 ? "not-allowed" : "pointer", fontWeight: 700, fontSize: 13,
                         } }, "\uD83D\uDCBE Simpan ke Supabase"))))))),
-        tab === "masters" && !detailId && (React.createElement("div", { style: { maxWidth: 1100, margin: "0 auto", padding: "20px 16px" } },
-            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" } },
+        tab === "masters" && !detailId && (React.createElement("div", { className: "master-root" },
+            // 1. Header Band
+            React.createElement("div", { className: "master-header-band" },
                 React.createElement("div", null,
-                    React.createElement("h2", { style: { marginBottom: 4 } }, "\uD83D\uDDC2 Master Data"),
-                    React.createElement("div", { style: { fontSize: 12, color: "#64748b" } }, "Reference data utama untuk menjaga input claim tetap konsisten.")),
-                isAdmin && (React.createElement("button", { onClick: openMasterNew, style: { padding: "8px 12px", border: 0, background: "#1e40af", color: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 700 } },
-                    "\uFF0B Tambah ",
-                    MASTER_CONFIG[masterTab].singular))),
-            React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 } }, Object.entries(MASTER_CONFIG).map(([k, cfg]) => React.createElement("button", { key: k, onClick: () => { setMasterTab(k); setMasterSearch(""); }, style: { padding: "7px 11px", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700, background: masterTab === k ? "#1e40af" : "#e2e8f0", color: masterTab === k ? "#fff" : "#475569" } }, cfg.title))),
-            React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12 } },
-                React.createElement("input", { value: masterSearch, onChange: e => setMasterSearch(e.target.value), placeholder: "🔍 Cari " + MASTER_CONFIG[masterTab].title.toLowerCase() + "...", style: { flex: 1, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 9, fontSize: 13, outline: "none", background: "#fff" } }),
-                React.createElement("button", { onClick: () => loadMasterData(masterTab), style: { padding: "10px 12px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 9, cursor: "pointer" } }, "\u21BB"),
-                masterTab === "machines" && isAdmin && React.createElement("button", { onClick: syncMasterUnits, disabled: masterLoading, style: { padding: "10px 12px", border: 0, background: "#0f766e", color: "#fff", borderRadius: 9, cursor: masterLoading ? "not-allowed" : "pointer", fontWeight: 800 } }, masterLoading ? "Syncing…" : "⬇ Sync 3.676 Unit")),
-            React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" } }, masterLoading ? React.createElement("div", { style: { padding: 50, textAlign: "center", color: "#94a3b8" } }, "Loading...") : filteredMasterRows.length === 0 ? React.createElement("div", { style: { padding: 50, textAlign: "center", color: "#94a3b8" } }, "Belum ada data.") : (React.createElement("div", { style: { overflowX: "auto" } },
-                React.createElement("table", { style: { width: "100%", fontSize: 12 } },
-                    React.createElement("thead", null,
-                        React.createElement("tr", { style: { background: "#f8fafc" } },
-                            MASTER_CONFIG[masterTab].fields.map(([k, l]) => React.createElement("th", { key: k, style: { padding: "9px 10px", textAlign: "left", color: "#64748b", borderBottom: "1px solid #e2e8f0" } }, l)),
-                            React.createElement("th", { style: { padding: "9px 10px", textAlign: "left", color: "#64748b", borderBottom: "1px solid #e2e8f0" } }, "Status"),
-                            React.createElement("th", null))),
-                    React.createElement("tbody", null, filteredMasterRows.slice(0, 200).map(row => React.createElement("tr", { key: row.id },
-                        MASTER_CONFIG[masterTab].fields.map(([k]) => React.createElement("td", { key: k, style: { padding: "8px 10px", borderBottom: "1px solid #f1f5f9", fontFamily: (k.includes("code") || k.includes("no")) ? "monospace" : "inherit" } }, row[k] || "—")),
-                        React.createElement("td", { style: { padding: "8px 10px", borderBottom: "1px solid #f1f5f9" } },
-                            React.createElement(Pill, { color: row.is_active === false ? "#94a3b8" : "#16a34a" }, row.is_active === false ? "Inactive" : "Active")),
-                        React.createElement("td", { style: { padding: "8px 10px", borderBottom: "1px solid #f1f5f9", whiteSpace: "nowrap" } }, isAdmin && (React.createElement(React.Fragment, null,
-                            React.createElement("button", { onClick: () => openMasterEdit(row), style: { padding: "4px 8px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, cursor: "pointer", fontSize: 10 } }, "Edit"),
-                            " ",
-                            React.createElement("button", { onClick: () => toggleMasterActive(row), style: { padding: "4px 8px", border: "1px solid #e2e8f0", background: "#fff", color: "#475569", borderRadius: 6, cursor: "pointer", fontSize: 10 } }, row.is_active === false ? "Aktifkan" : "Nonaktifkan"))))))))))),
-            React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 8 } }, "Maksimal 200 hasil ditampilkan per view."))),
+                    React.createElement("div", { className: "master-breadcrumb" },
+                        "Master Data",
+                        React.createElement("span", { "aria-hidden": "true" }, "/"),
+                        "Enterprise Catalog"),
+                    React.createElement("h1", { className: "master-title" },
+                        React.createElement("span", null, MASTER_CONFIG[masterTab]?.icon || "📁"),
+                        `Master Data — ${MASTER_CONFIG[masterTab]?.title || "Reference"}`),
+                    React.createElement("p", { className: "master-sub" },
+                        "Reference data utama untuk menjaga akurasi input klaim, validasi Serial Machine, Model, Suku Cadang, Customer, Cabang, dan Dealer.")),
+                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
+                    masterTab === "machines" && isAdmin && React.createElement("button", {
+                        onClick: syncMasterUnits,
+                        disabled: masterLoading,
+                        className: "master-btn-action",
+                        style: { background: "#0f766e", color: "#fff", borderColor: "#0f766e" },
+                        title: "Sinkronisasi dataset 3.676 machine unit dari seed resmi"
+                    }, masterLoading ? "Syncing…" : "⬇ Sync 3.676 Unit"),
+                    isAdmin && React.createElement("button", {
+                        onClick: () => setShowMasterImportModal(true),
+                        className: "master-btn-action",
+                        title: "Import data massal via paste teks Excel / CSV"
+                    }, "📥 Bulk Import Excel"),
+                    isAdmin && React.createElement("button", {
+                        onClick: openMasterNew,
+                        className: "master-btn-action master-btn-primary"
+                    }, `＋ Tambah ${MASTER_CONFIG[masterTab]?.singular || "Record"}`))),
+
+            // 2. Summary KPI Grid
+            React.createElement("div", { className: "master-kpi-grid" },
+                React.createElement("div", { className: "master-kpi-card" },
+                    React.createElement("div", null,
+                        React.createElement("div", { className: "master-kpi-label" }, `Total ${MASTER_CONFIG[masterTab]?.title}`),
+                        React.createElement("div", { className: "master-kpi-val" },
+                            (masterCounts[masterTab] ?? masterRows.length).toLocaleString())),
+                    React.createElement("div", { className: "master-kpi-icon" }, MASTER_CONFIG[masterTab]?.icon || "📦")),
+                React.createElement("div", { className: "master-kpi-card" },
+                    React.createElement("div", null,
+                        React.createElement("div", { className: "master-kpi-label" }, "Status Aktif"),
+                        React.createElement("div", { className: "master-kpi-val", style: { color: "#16a34a" } },
+                            masterRows.filter(r => r.is_active !== false).length.toLocaleString())),
+                    React.createElement("div", { className: "master-kpi-icon", style: { color: "#16a34a", background: "#f0fdf4" } }, "✓")),
+                React.createElement("div", { className: "master-kpi-card" },
+                    React.createElement("div", null,
+                        React.createElement("div", { className: "master-kpi-label" }, "Status Nonaktif"),
+                        React.createElement("div", { className: "master-kpi-val", style: { color: "#64748b" } },
+                            masterRows.filter(r => r.is_active === false).length.toLocaleString())),
+                    React.createElement("div", { className: "master-kpi-icon", style: { color: "#64748b" } }, "⏸")),
+                React.createElement("div", { className: "master-kpi-card" },
+                    React.createElement("div", null,
+                        React.createElement("div", { className: "master-kpi-label" }, "Hasil Saring / Filter"),
+                        React.createElement("div", { className: "master-kpi-val", style: { color: "#2563eb" } },
+                            filteredMasterRows.length.toLocaleString())),
+                    React.createElement("div", { className: "master-kpi-icon", style: { color: "#2563eb", background: "#eff6ff" } }, "🔍"))),
+
+            // 3. Segmented Navigation Tabs
+            React.createElement("div", { className: "master-nav-tabs" },
+                Object.entries(MASTER_CONFIG).map(([k, cfg]) => {
+                    const count = masterCounts[k] !== undefined ? masterCounts[k] : (k === masterTab ? masterRows.length : null);
+                    return React.createElement("button", {
+                        key: k,
+                        className: `master-nav-btn ${masterTab === k ? "active" : ""}`,
+                        onClick: () => { setMasterTab(k); setMasterSearch(""); setMasterPage(1); setMasterSortCol(""); setMasterBranchFilter("all"); setMasterFamilyFilter("all"); setMasterAnomalyOnly(false); }
+                    },
+                    React.createElement("span", null, cfg.icon),
+                    React.createElement("span", null, cfg.title),
+                    count !== null && React.createElement("span", { className: "master-nav-badge" }, count.toLocaleString()));
+                })),
+
+            // 4. Toolbar Row
+            React.createElement("div", { className: "master-toolbar-row" },
+                React.createElement("div", { className: "master-search-box" },
+                    React.createElement("span", { className: "master-search-icon" }, "🔍"),
+                    React.createElement("input", {
+                        className: "master-search-input",
+                        value: masterSearch,
+                        onChange: e => { setMasterSearch(e.target.value); setMasterPage(1); },
+                        placeholder: `Cari ${MASTER_CONFIG[masterTab]?.title.toLowerCase()} (kode, nama, serial...)... (Tekan /)`
+                    }),
+                    React.createElement("span", { className: "master-kbd", title: "Tekan / untuk mencari" }, "/"),
+                    masterSearch && React.createElement("button", {
+                        className: "master-search-clear",
+                        onClick: () => { setMasterSearch(""); setMasterPage(1); },
+                        title: "Reset pencarian"
+                    }, "✕")),
+                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
+                    React.createElement("select", {
+                        className: "master-select-filter",
+                        value: masterStatusFilter,
+                        onChange: e => { setMasterStatusFilter(e.target.value); setMasterPage(1); },
+                        title: "Filter berdasarkan status aktif/nonaktif"
+                    },
+                    React.createElement("option", { value: "all" }, "Semua Status"),
+                    React.createElement("option", { value: "active" }, "Hanya Aktif"),
+                    React.createElement("option", { value: "inactive" }, "Hanya Nonaktif")),
+                    React.createElement("select", {
+                        className: "master-select-filter",
+                        value: masterPageSize,
+                        onChange: e => { setMasterPageSize(Number(e.target.value)); setMasterPage(1); },
+                        title: "Pilih jumlah baris per halaman"
+                    },
+                    React.createElement("option", { value: 25 }, "25 baris/hal"),
+                    React.createElement("option", { value: 50 }, "50 baris/hal"),
+                    React.createElement("option", { value: 100 }, "100 baris/hal"),
+                    React.createElement("option", { value: 200 }, "200 baris/hal")),
+                    React.createElement("button", {
+                        onClick: copyMasterDataTsv,
+                        disabled: filteredMasterRows.length === 0,
+                        className: "master-btn-action",
+                        title: "Salin tabel aktif ke clipboard (format TSV/spreadsheet)"
+                    }, "📋 Salin Tabel"),
+                    React.createElement("button", {
+                        onClick: exportMasterDataXlsx,
+                        disabled: masterExporting || filteredMasterRows.length === 0,
+                        className: "master-btn-action",
+                        title: "Unduh data yang tersaring ke file Excel (.xlsx)"
+                    }, masterExporting ? "Mengunduh…" : "⬇ Unduh Excel"),
+                    React.createElement("button", {
+                        onClick: () => loadMasterData(masterTab, true),
+                        disabled: masterLoading,
+                        className: "master-btn-action",
+                        title: "Muat ulang data dari database Supabase"
+                    },
+                    React.createElement("span", { style: masterLoading ? { display: "inline-block", animation: "spin 1s linear infinite" } : {} }, "↻"),
+                    " Refresh"))),
+
+            // 4B. Quick Filter Chips Row
+            React.createElement("div", { className: "master-filter-chip-row", style: { marginBottom: 14 } },
+                React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#64748b", marginRight: 4 } }, "Filter Cepat:"),
+                React.createElement("button", {
+                    className: `master-filter-chip ${masterStatusFilter === "all" && !masterAnomalyOnly && masterBranchFilter === "all" && masterFamilyFilter === "all" ? "active" : ""}`,
+                    onClick: () => { setMasterStatusFilter("all"); setMasterAnomalyOnly(false); setMasterBranchFilter("all"); setMasterFamilyFilter("all"); setMasterPage(1); }
+                }, "Semua Data"),
+                React.createElement("button", {
+                    className: `master-filter-chip ${masterStatusFilter === "active" && !masterAnomalyOnly ? "active" : ""}`,
+                    onClick: () => { setMasterStatusFilter("active"); setMasterAnomalyOnly(false); setMasterPage(1); }
+                }, "✓ Aktif"),
+                React.createElement("button", {
+                    className: `master-filter-chip ${masterStatusFilter === "inactive" && !masterAnomalyOnly ? "active" : ""}`,
+                    onClick: () => { setMasterStatusFilter("inactive"); setMasterAnomalyOnly(false); setMasterPage(1); }
+                }, "⏸ Nonaktif"),
+                React.createElement("button", {
+                    className: `master-filter-chip ${masterAnomalyOnly ? "anomaly-active" : ""}`,
+                    onClick: () => { setMasterAnomalyOnly(!masterAnomalyOnly); setMasterPage(1); },
+                    title: "Saring record yang memiliki data tidak lengkap / butuh verifikasi"
+                },
+                "⚠️ Butuh Perhatian",
+                anomalyCount > 0 && React.createElement("span", { style: { background: "#fee2e2", color: "#991b1b", padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 800 } }, anomalyCount.toLocaleString())),
+                (masterTab === "machines" || masterTab === "models") && React.createElement(React.Fragment, null,
+                    React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#94a3b8", margin: "0 4px" } }, "•"),
+                    ["Excavator", "Wheel Loader", "Motor Grader", "Road Roller", "Backhoe Loader"].map(fam => {
+                        const isFamActive = masterFamilyFilter === fam;
+                        return React.createElement("button", {
+                            key: fam,
+                            className: `master-filter-chip ${isFamActive ? "active" : ""}`,
+                            onClick: () => { setMasterFamilyFilter(isFamActive ? "all" : fam); setMasterPage(1); }
+                        }, fam);
+                    })),
+                masterTab === "machines" && branchMasterList.length > 0 && React.createElement("select", {
+                    className: "master-select-filter",
+                    value: masterBranchFilter,
+                    onChange: e => { setMasterBranchFilter(e.target.value); setMasterPage(1); },
+                    style: { marginLeft: "auto", fontSize: 11, padding: "4px 8px" },
+                    title: "Saring berdasarkan Cabang Unit"
+                },
+                React.createElement("option", { value: "all" }, "Semua Cabang Unit"),
+                branchMasterList.map(b => React.createElement("option", { key: b.id, value: b.id }, b.branch_name)))),
+
+            // 5. Table Card & Data Rows
+            React.createElement("div", { className: "master-table-card" },
+                masterLoading ? React.createElement("div", { style: { padding: "16px 0" } },
+                    Array.from({ length: 8 }).map((_, i) => React.createElement("div", { key: i, className: "master-skeleton-row" }))) :
+                filteredMasterRows.length === 0 ? React.createElement("div", { style: { padding: "64px 24px", textAlign: "center" } },
+                    React.createElement("div", { style: { fontSize: 36, marginBottom: 12 } }, "🔍"),
+                    React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 } }, "Tidak ada data yang cocok"),
+                    React.createElement("div", { style: { fontSize: 13, color: "#64748b", maxWidth: 400, margin: "0 auto 16px" } },
+                        masterSearch ? `Tidak ditemukan data untuk pencarian "${masterSearch}".` : "Belum ada record data untuk kategori ini di Supabase."),
+                    (masterSearch || masterStatusFilter !== "all" || masterAnomalyOnly || masterBranchFilter !== "all" || masterFamilyFilter !== "all") && React.createElement("button", {
+                        onClick: () => { setMasterSearch(""); setMasterStatusFilter("all"); setMasterAnomalyOnly(false); setMasterBranchFilter("all"); setMasterFamilyFilter("all"); setMasterPage(1); },
+                        className: "master-btn-action",
+                        style: { margin: "0 auto" }
+                    }, "Reset Semua Filter")) :
+                React.createElement(React.Fragment, null,
+                    React.createElement("div", { className: "master-table-wrap" },
+                        React.createElement("table", { className: "master-table" },
+                            React.createElement("thead", null,
+                                React.createElement("tr", null,
+                                    React.createElement("th", { style: { width: 44, textAlign: "center" } }, "#"),
+                                    MASTER_CONFIG[masterTab].fields.map(([k, l]) => {
+                                        const isSorted = masterSortCol === k;
+                                        return React.createElement("th", {
+                                            key: k,
+                                            className: "sortable",
+                                            onClick: () => {
+                                                if (masterSortCol === k) setMasterSortAsc(!masterSortAsc);
+                                                else { setMasterSortCol(k); setMasterSortAsc(true); }
+                                            },
+                                            title: `Urutkan berdasarkan ${l}`
+                                        },
+                                        l,
+                                        isSorted && React.createElement("span", { style: { marginLeft: 5, color: "#2563eb" } }, masterSortAsc ? "▲" : "▼"));
+                                    }),
+                                    React.createElement("th", { style: { width: 110 } }, "Status"),
+                                    React.createElement("th", { style: { width: 140, textAlign: "right" } }, "Aksi"))),
+                            React.createElement("tbody", null,
+                                filteredMasterRows.slice((masterPage - 1) * masterPageSize, masterPage * masterPageSize).map((row, idx) => {
+                                    const rowNum = (masterPage - 1) * masterPageSize + idx + 1;
+                                    const isAnomaly = isRowAnomaly(row, masterTab);
+                                    return React.createElement("tr", { key: row.id || rowNum },
+                                        React.createElement("td", { style: { textAlign: "center", color: "#94a3b8", fontVariantNumeric: "tabular-nums" } }, rowNum),
+                                        MASTER_CONFIG[masterTab].fields.map(([k], fieldIdx) => {
+                                            let cellVal = row[k];
+                                            if (k === "branch_id") {
+                                                cellVal = branchMasterList.find(b => b.id === row.branch_id)?.branch_name || row.branch_id || "—";
+                                            } else if (k.includes("date") && cellVal) {
+                                                try {
+                                                    const d = new Date(cellVal);
+                                                    if (!isNaN(d.getTime())) {
+                                                        cellVal = d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+                                                    }
+                                                } catch (_) {}
+                                            }
+                                            const isCode = k.includes("code") || k.includes("no") || k === "serial_no";
+                                            const isPrimary = fieldIdx === 0;
+                                            return React.createElement("td", {
+                                                key: k,
+                                                className: isCode ? "master-code" : "",
+                                                title: String(row[k] || "")
+                                            },
+                                            cellVal || "—",
+                                            isPrimary && isAnomaly && React.createElement("span", { className: "master-anomaly-tag", style: { marginLeft: 6 } }, "⚠️ Tidak Lengkap"));
+                                        }),
+                                        React.createElement("td", null,
+                                            React.createElement("span", { className: `master-status-dot ${row.is_active === false ? "inactive" : "active"}` },
+                                                row.is_active === false ? "Inactive" : "Active")),
+                                        React.createElement("td", { style: { textAlign: "right", whiteSpace: "nowrap" } },
+                                            React.createElement("button", {
+                                                onClick: () => setMasterDetailRow(row),
+                                                style: { padding: "4px 8px", border: "1px solid #e2e8f0", background: "#fff", color: "#334155", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, marginRight: 4 }
+                                            }, "Detail"),
+                                            isAdmin && React.createElement(React.Fragment, null,
+                                                React.createElement("button", {
+                                                    onClick: () => openMasterEdit(row),
+                                                    style: { padding: "4px 8px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 700, marginRight: 4 }
+                                                }, "Edit"),
+                                                React.createElement("button", {
+                                                    onClick: () => toggleMasterActive(row),
+                                                    style: { padding: "4px 8px", border: "1px solid #e2e8f0", background: "#fff", color: row.is_active === false ? "#16a34a" : "#dc2626", borderRadius: 6, cursor: "pointer", fontSize: 11 }
+                                                }, row.is_active === false ? "Aktifkan" : "Nonaktifkan"))));
+                                })))),
+                    // 6. Pagination Bar
+                    React.createElement("div", { className: "master-footer-pagination" },
+                        React.createElement("div", null,
+                            `Menampilkan ${((masterPage - 1) * masterPageSize) + 1}–${Math.min(masterPage * masterPageSize, filteredMasterRows.length)} dari ${filteredMasterRows.length.toLocaleString()} record`,
+                            masterRows.length !== filteredMasterRows.length && ` (disaring dari ${masterRows.length.toLocaleString()})`),
+                        (() => {
+                            const totalPages = Math.max(1, Math.ceil(filteredMasterRows.length / masterPageSize));
+                            const pageNumbers = [];
+                            const startP = Math.max(1, masterPage - 2);
+                            const endP = Math.min(totalPages, masterPage + 2);
+                            for (let p = startP; p <= endP; p++) pageNumbers.push(p);
+                            return React.createElement("div", { className: "master-page-controls" },
+                                React.createElement("button", {
+                                    className: "master-page-btn",
+                                    disabled: masterPage <= 1,
+                                    onClick: () => setMasterPage(1),
+                                    title: "Halaman Pertama"
+                                }, "«"),
+                                React.createElement("button", {
+                                    className: "master-page-btn",
+                                    disabled: masterPage <= 1,
+                                    onClick: () => setMasterPage(p => Math.max(1, p - 1)),
+                                    title: "Halaman Sebelumnya"
+                                }, "‹"),
+                                pageNumbers.map(p => React.createElement("button", {
+                                    key: p,
+                                    className: `master-page-btn ${masterPage === p ? "active" : ""}`,
+                                    onClick: () => setMasterPage(p)
+                                }, p)),
+                                React.createElement("button", {
+                                    className: "master-page-btn",
+                                    disabled: masterPage >= totalPages,
+                                    onClick: () => setMasterPage(p => Math.min(totalPages, p + 1)),
+                                    title: "Halaman Selanjutnya"
+                                }, "›"),
+                                React.createElement("button", {
+                                    className: "master-page-btn",
+                                    disabled: masterPage >= totalPages,
+                                    onClick: () => setMasterPage(totalPages),
+                                    title: "Halaman Terakhir"
+                                }, "»"));
+                        })()))))),
         tab === "quality" && !detailId && (React.createElement("div", { style: { maxWidth: 1180, margin: "0 auto", padding: "20px 16px" } },
             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" } },
                 React.createElement("div", null,
