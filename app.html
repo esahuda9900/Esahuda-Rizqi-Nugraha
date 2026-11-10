@@ -20,10 +20,10 @@
   <link rel="stylesheet" href="styles/sdlg-base.css" />
   <link rel="stylesheet" href="styles/sdlg-components.css" />
   <link rel="stylesheet" href="styles/sdlg-ops-clean-v1.css" data-sdlg-ops-clean="1" />
-  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css?v=20261105-nestfix" />
+  <link rel="stylesheet" href="styles/sdlg-modern-refresh.css?v=20261110-expert-v3" />
   <link rel="stylesheet" href="styles/sdlg-responsive.css" />
   <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
-  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261105-card-modern-v3" />
+  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261110-expert-v3" />
   <link rel="stylesheet" href="styles/sdlg-overview-v1.css?v=20261030-action-today-v1" />
   
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
@@ -7590,6 +7590,12 @@ SDLG_REPOSITORY.listClaims = async function () {
         if (tabKey === "customers") {
             return !row.customer_code || !row.customer_type;
         }
+        if (tabKey === "branches") {
+            return !row.branch_code || !row.branch_name;
+        }
+        if (tabKey === "dealers") {
+            return !row.dealer_code || !row.dealer_name;
+        }
         if (tabKey === "parts") {
             return !row.part_name || String(row.part_name).trim().length === 0;
         }
@@ -7703,8 +7709,17 @@ SDLG_REPOSITORY.listClaims = async function () {
             }
             if (!masterSearch) return true;
             const term = masterSearch.toLowerCase().trim();
-            const searchFields = cfg.search || [];
-            return searchFields.some(k => String(row[k] ?? "").toLowerCase().includes(term));
+            const searchKeys = Array.from(new Set([
+                ...(cfg.search || []),
+                ...(cfg.fields ? cfg.fields.map(([k]) => k) : [])
+            ]));
+            const matchesDirect = searchKeys.some(k => String(row[k] ?? "").toLowerCase().includes(term));
+            if (matchesDirect) return true;
+            if (masterTab === "machines" && row.branch_id) {
+                const bName = branchMasterList.find(b => b.id === row.branch_id)?.branch_name || "";
+                if (bName.toLowerCase().includes(term)) return true;
+            }
+            return false;
         });
         if (masterSortCol) {
             list = [...list].sort((a, b) => {
@@ -7715,7 +7730,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             });
         }
         return list;
-    }, [masterRows, masterTab, masterSearch, masterStatusFilter, masterAnomalyOnly, masterBranchFilter, masterFamilyFilter, masterSortCol, masterSortAsc, isRowAnomaly]);
+    }, [masterRows, masterTab, masterSearch, masterStatusFilter, masterAnomalyOnly, masterBranchFilter, masterFamilyFilter, masterSortCol, masterSortAsc, isRowAnomaly, branchMasterList]);
     // ─── AUTH / USER ROLE ───────────────────────────────────────────────────
     const loadUserProfile = useCallback(async (currentUser) => {
         const generation = ++profileGeneration.current;
@@ -11356,7 +11371,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         onClick: () => {
                                             setMasterDetailRow(null);
                                             setTab("list");
-                                            setFilterSearch(sn);
+                                            setSearch(sn);
                                             showToast("🔍 Menampilkan klaim untuk unit " + sn);
                                         },
                                         style: { padding: "8px 14px", border: 0, background: "#2563eb", color: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 }
@@ -11419,7 +11434,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                             const targetQuery = masterDetailRow.serial_no || masterDetailRow.customer_name || masterDetailRow.part_no || "";
                                             setMasterDetailRow(null);
                                             setTab("list");
-                                            setFilterSearch(targetQuery);
+                                            setSearch(targetQuery);
                                             showToast("🔍 Menampilkan klaim untuk " + targetQuery);
                                         },
                                         style: { padding: "6px 12px", background: "#2563eb", color: "#fff", border: 0, borderRadius: 6, fontWeight: 700, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }
@@ -12176,104 +12191,119 @@ SDLG_REPOSITORY.listClaims = async function () {
                     count !== null && React.createElement("span", { className: "master-nav-badge" }, count.toLocaleString()));
                 })),
 
-            // 4. Toolbar Row
-            React.createElement("div", { className: "master-toolbar-row" },
-                React.createElement("div", { className: "master-search-box" },
-                    React.createElement("span", { className: "master-search-icon" }, "🔍"),
-                    React.createElement("input", {
-                        className: "master-search-input",
-                        value: masterSearch,
-                        onChange: e => { setMasterSearch(e.target.value); setMasterPage(1); },
-                        placeholder: `Cari ${MASTER_CONFIG[masterTab]?.title.toLowerCase()} (kode, nama, serial...)... (Tekan /)`
-                    }),
-                    React.createElement("span", { className: "master-kbd", title: "Tekan / untuk mencari" }, "/"),
-                    masterSearch && React.createElement("button", {
-                        className: "master-search-clear",
-                        onClick: () => { setMasterSearch(""); setMasterPage(1); },
-                        title: "Reset pencarian"
-                    }, "✕")),
-                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
-                    React.createElement("select", {
-                        className: "master-select-filter",
-                        value: masterStatusFilter,
-                        onChange: e => { setMasterStatusFilter(e.target.value); setMasterPage(1); },
-                        title: "Filter berdasarkan status aktif/nonaktif"
-                    },
-                    React.createElement("option", { value: "all" }, "Semua Status"),
-                    React.createElement("option", { value: "active" }, "Hanya Aktif"),
-                    React.createElement("option", { value: "inactive" }, "Hanya Nonaktif")),
-                    React.createElement("select", {
-                        className: "master-select-filter",
-                        value: masterPageSize,
-                        onChange: e => { setMasterPageSize(Number(e.target.value)); setMasterPage(1); },
-                        title: "Pilih jumlah baris per halaman"
-                    },
-                    React.createElement("option", { value: 25 }, "25 baris/hal"),
-                    React.createElement("option", { value: 50 }, "50 baris/hal"),
-                    React.createElement("option", { value: 100 }, "100 baris/hal"),
-                    React.createElement("option", { value: 200 }, "200 baris/hal")),
-                    React.createElement("button", {
-                        onClick: copyMasterDataTsv,
-                        disabled: filteredMasterRows.length === 0,
-                        className: "master-btn-action",
-                        title: "Salin tabel aktif ke clipboard (format TSV/spreadsheet)"
-                    }, "📋 Salin Tabel"),
-                    React.createElement("button", {
-                        onClick: exportMasterDataXlsx,
-                        disabled: masterExporting || filteredMasterRows.length === 0,
-                        className: "master-btn-action",
-                        title: "Unduh data yang tersaring ke file Excel (.xlsx)"
-                    }, masterExporting ? "Mengunduh…" : "⬇ Unduh Excel"),
-                    React.createElement("button", {
-                        onClick: () => loadMasterData(masterTab, true),
-                        disabled: masterLoading,
-                        className: "master-btn-action",
-                        title: "Muat ulang data dari database Supabase"
-                    },
-                    React.createElement("span", { style: masterLoading ? { display: "inline-block", animation: "spin 1s linear infinite" } : {} }, "↻"),
-                    " Refresh"))),
-
-            // 4B. Quick Filter Chips Row
-            React.createElement("div", { className: "master-filter-chip-row", style: { marginBottom: 14 } },
-                React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#64748b", marginRight: 4 } }, "Filter Cepat:"),
-                React.createElement("button", {
-                    className: `master-filter-chip ${masterStatusFilter === "all" && !masterAnomalyOnly && masterBranchFilter === "all" && masterFamilyFilter === "all" ? "active" : ""}`,
-                    onClick: () => { setMasterStatusFilter("all"); setMasterAnomalyOnly(false); setMasterBranchFilter("all"); setMasterFamilyFilter("all"); setMasterPage(1); }
-                }, "Semua Data"),
-                React.createElement("button", {
-                    className: `master-filter-chip ${masterStatusFilter === "active" && !masterAnomalyOnly ? "active" : ""}`,
-                    onClick: () => { setMasterStatusFilter("active"); setMasterAnomalyOnly(false); setMasterPage(1); }
-                }, "✓ Aktif"),
-                React.createElement("button", {
-                    className: `master-filter-chip ${masterStatusFilter === "inactive" && !masterAnomalyOnly ? "active" : ""}`,
-                    onClick: () => { setMasterStatusFilter("inactive"); setMasterAnomalyOnly(false); setMasterPage(1); }
-                }, "⏸ Nonaktif"),
-                React.createElement("button", {
-                    className: `master-filter-chip ${masterAnomalyOnly ? "anomaly-active" : ""}`,
-                    onClick: () => { setMasterAnomalyOnly(!masterAnomalyOnly); setMasterPage(1); },
-                    title: "Saring record yang memiliki data tidak lengkap / butuh verifikasi"
-                },
-                "⚠️ Butuh Perhatian",
-                anomalyCount > 0 && React.createElement("span", { style: { background: "#fee2e2", color: "#991b1b", padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 800 } }, anomalyCount.toLocaleString())),
-                (masterTab === "machines" || masterTab === "models") && React.createElement(React.Fragment, null,
-                    React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#94a3b8", margin: "0 4px" } }, "•"),
-                    ["Excavator", "Wheel Loader", "Motor Grader", "Road Roller", "Backhoe Loader"].map(fam => {
-                        const isFamActive = masterFamilyFilter === fam;
-                        return React.createElement("button", {
-                            key: fam,
-                            className: `master-filter-chip ${isFamActive ? "active" : ""}`,
-                            onClick: () => { setMasterFamilyFilter(isFamActive ? "all" : fam); setMasterPage(1); }
-                        }, fam);
-                    })),
-                masterTab === "machines" && branchMasterList.length > 0 && React.createElement("select", {
-                    className: "master-select-filter",
-                    value: masterBranchFilter,
-                    onChange: e => { setMasterBranchFilter(e.target.value); setMasterPage(1); },
-                    style: { marginLeft: "auto", fontSize: 11, padding: "4px 8px" },
-                    title: "Saring berdasarkan Cabang Unit"
-                },
-                React.createElement("option", { value: "all" }, "Semua Cabang Unit"),
-                branchMasterList.map(b => React.createElement("option", { key: b.id, value: b.id }, b.branch_name)))),
+            // 4. Main Toolbar Panel (Integrated Search, Filters & Actions)
+            React.createElement("div", { className: "master-toolbar-panel" },
+                // 4A. Top Row: Search Box + Selects + Action Buttons
+                React.createElement("div", { className: "master-toolbar-top" },
+                    React.createElement("div", { className: "search-box master-search-box" },
+                        React.createElement("span", { className: "search-icon", "aria-hidden": "true" },
+                            React.createElement("svg", { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2.2", strokeLinecap: "round", strokeLinejoin: "round" },
+                                React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
+                                React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" }))),
+                        React.createElement("input", {
+                            className: "sdlg-input master-search-input",
+                            type: "text",
+                            value: masterSearch,
+                            onChange: e => { setMasterSearch(e.target.value); setMasterPage(1); },
+                            placeholder: `Cari ${MASTER_CONFIG[masterTab]?.title.toLowerCase()} (kode, nama, serial...)... (Tekan /)`,
+                            "aria-label": `Cari ${MASTER_CONFIG[masterTab]?.title}`
+                        }),
+                        masterSearch ? React.createElement("button", {
+                            className: "search-clear-btn",
+                            onClick: () => { setMasterSearch(""); setMasterPage(1); },
+                            title: "Reset pencarian",
+                            type: "button",
+                            "aria-label": "Reset pencarian"
+                        }, "\u00D7") : React.createElement("kbd", { className: "master-search-kbd", title: "Tekan / untuk mencari" }, "/")
+                    ),
+                    React.createElement("div", { className: "master-toolbar-actions" },
+                        React.createElement("select", {
+                            className: "master-select-filter",
+                            value: masterStatusFilter,
+                            onChange: e => { setMasterStatusFilter(e.target.value); setMasterPage(1); },
+                            title: "Filter berdasarkan status aktif/nonaktif"
+                        },
+                        React.createElement("option", { value: "all" }, "Semua Status"),
+                        React.createElement("option", { value: "active" }, "Hanya Aktif"),
+                        React.createElement("option", { value: "inactive" }, "Hanya Nonaktif")),
+                        React.createElement("select", {
+                            className: "master-select-filter master-pagesize-select",
+                            value: masterPageSize,
+                            onChange: e => { setMasterPageSize(Number(e.target.value)); setMasterPage(1); },
+                            title: "Pilih jumlah baris per halaman"
+                        },
+                        React.createElement("option", { value: 25 }, "25 baris"),
+                        React.createElement("option", { value: 50 }, "50 baris"),
+                        React.createElement("option", { value: 100 }, "100 baris"),
+                        React.createElement("option", { value: 200 }, "200 baris")),
+                        React.createElement("button", {
+                            onClick: copyMasterDataTsv,
+                            disabled: filteredMasterRows.length === 0,
+                            className: "master-btn-action",
+                            title: "Salin tabel aktif ke clipboard (format TSV/spreadsheet)"
+                        }, "📋 Salin"),
+                        React.createElement("button", {
+                            onClick: exportMasterDataXlsx,
+                            disabled: masterExporting || filteredMasterRows.length === 0,
+                            className: "master-btn-action",
+                            title: "Unduh data yang tersaring ke file Excel (.xlsx)"
+                        }, masterExporting ? "Mengunduh…" : "⬇ Excel"),
+                        React.createElement("button", {
+                            onClick: () => loadMasterData(masterTab, true),
+                            disabled: masterLoading,
+                            className: "master-btn-action",
+                            title: "Muat ulang data dari database Supabase"
+                        },
+                        React.createElement("span", { style: masterLoading ? { display: "inline-block", animation: "spin 1s linear infinite" } : {} }, "↻"),
+                        " Refresh")
+                    )
+                ),
+                // 4B. Bottom Row: Quick Filter Chips + Category + Branch Filter
+                React.createElement("div", { className: "master-filter-bar" },
+                    React.createElement("div", { className: "master-filter-chips-group" },
+                        React.createElement("span", { className: "master-filter-heading" }, "Filter Cepat:"),
+                        React.createElement("button", {
+                            className: `master-filter-chip ${masterStatusFilter === "all" && !masterAnomalyOnly && masterBranchFilter === "all" && masterFamilyFilter === "all" ? "active" : ""}`,
+                            onClick: () => { setMasterStatusFilter("all"); setMasterAnomalyOnly(false); setMasterBranchFilter("all"); setMasterFamilyFilter("all"); setMasterPage(1); }
+                        }, "Semua Data"),
+                        React.createElement("button", {
+                            className: `master-filter-chip ${masterStatusFilter === "active" && !masterAnomalyOnly ? "active" : ""}`,
+                            onClick: () => { setMasterStatusFilter("active"); setMasterAnomalyOnly(false); setMasterPage(1); }
+                        }, "✓ Aktif"),
+                        React.createElement("button", {
+                            className: `master-filter-chip ${masterStatusFilter === "inactive" && !masterAnomalyOnly ? "active" : ""}`,
+                            onClick: () => { setMasterStatusFilter("inactive"); setMasterAnomalyOnly(false); setMasterPage(1); }
+                        }, "⏸ Nonaktif"),
+                        React.createElement("button", {
+                            className: `master-filter-chip ${masterAnomalyOnly ? "anomaly-active" : ""}`,
+                            onClick: () => { setMasterAnomalyOnly(!masterAnomalyOnly); setMasterPage(1); },
+                            title: "Saring record yang memiliki data tidak lengkap / butuh verifikasi"
+                        },
+                        "⚠️ Butuh Perhatian",
+                        anomalyCount > 0 && React.createElement("span", { className: "anomaly-count-pill" }, anomalyCount.toLocaleString())),
+                        (masterTab === "machines" || masterTab === "models") && React.createElement(React.Fragment, null,
+                            React.createElement("span", { className: "master-chip-divider" }, "•"),
+                            ["Excavator", "Wheel Loader", "Motor Grader", "Road Roller", "Backhoe Loader"].map(fam => {
+                                const isFamActive = masterFamilyFilter === fam;
+                                return React.createElement("button", {
+                                    key: fam,
+                                    className: `master-filter-chip ${isFamActive ? "active" : ""}`,
+                                    onClick: () => { setMasterFamilyFilter(isFamActive ? "all" : fam); setMasterPage(1); }
+                                }, fam);
+                            }))
+                    ),
+                    masterTab === "machines" && branchMasterList.length > 0 && React.createElement("div", { className: "master-branch-filter-box" },
+                        React.createElement("select", {
+                            className: "master-select-filter master-branch-select",
+                            value: masterBranchFilter,
+                            onChange: e => { setMasterBranchFilter(e.target.value); setMasterPage(1); },
+                            title: "Saring berdasarkan Cabang Unit"
+                        },
+                        React.createElement("option", { value: "all" }, "📍 Semua Cabang Unit"),
+                        branchMasterList.map(b => React.createElement("option", { key: b.id, value: b.id }, b.branch_name)))
+                    )
+                )
+            ),
 
             // 4C. Machine Unit 360 View Mode & Insight Bar
             masterTab === "machines" && React.createElement("div", {
@@ -12329,7 +12359,12 @@ SDLG_REPOSITORY.listClaims = async function () {
                             });
                             const claimParts = Array.from(new Set(unitClaims.map(c => c.causing_part_desc || c.fault_description || "Issue").filter(Boolean))).slice(0, 2);
                             const modelName = row.osf_model || row.model_id || "SDLG Unit";
-                            const custName = row.customer_name_source || row.contract_customer || row.customer_id || "Customer Belum Terdata";
+                            const isExcavator = modelName.toLowerCase().includes("e6") || modelName.toLowerCase().includes("e7") || modelName.toLowerCase().includes("excavator");
+                            const isLoader = modelName.toUpperCase().startsWith("L") || modelName.toUpperCase().includes("95") || modelName.toUpperCase().includes("93") || modelName.toUpperCase().includes("96") || modelName.toUpperCase().includes("EFJ");
+                            const machineIcon = isExcavator ? "🏗️" : isLoader ? "🚜" : "⚙️";
+                            const custRaw = row.customer_name_source || row.contract_customer || row.customer_id;
+                            const hasCustomer = Boolean(custRaw && String(custRaw).trim());
+                            const custName = hasCustomer ? custRaw : "Customer Belum Terdata";
                             const branchName = branchMasterList.find(b => b.id === row.branch_id)?.branch_name || row.branch_id || "—";
                             const arrivalDate = row.bill_of_lading_date || row.osf_departure_date;
                             const salesDate = row.sale_date || row.osf_sales_date;
@@ -12342,61 +12377,69 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 } catch (_) {}
                                 return String(dVal).slice(0, 10);
                             };
-                            const hasAlert = !salesDate || !arrivalDate || (!row.customer_id && !row.customer_name_source);
                             return React.createElement("div", {
                                 key: row.id || row.serial_no || idx,
-                                className: `master-unit-card ${hasAlert ? "has-alert" : ""}`,
+                                className: "master-unit-card",
                                 onClick: () => setMasterDetailRow(row),
                                 title: "Klik untuk membuka Unit 360° Inspector lengkap"
                             },
+                                // Header: Model Badge + Active Status
                                 React.createElement("div", { className: "master-unit-card-header" },
-                                    React.createElement("div", null,
-                                        React.createElement("span", { className: "master-unit-model-badge" }, modelName),
-                                        row.product_type && React.createElement("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 6, fontWeight: 600 } }, row.product_type)
+                                    React.createElement("div", { className: "master-unit-model-badge" },
+                                        React.createElement("span", { className: "master-unit-model-name" }, modelName),
+                                        row.product_type && React.createElement("span", { className: "master-unit-type-tag" }, row.product_type)
                                     ),
-                                    React.createElement("span", {
-                                        className: `master-status-dot ${row.is_active === false ? "inactive" : "active"}`,
-                                        style: { margin: 0 }
-                                    }, row.is_active === false ? "Inactive" : "Active")
-                                ),
-                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 } },
-                                    React.createElement("div", { className: "master-unit-serial" }, row.serial_no || "NO SERIAL"),
-                                    row.source_serial_no && row.source_serial_no !== row.serial_no && React.createElement("span", { style: { fontSize: 10, color: "#64748b", fontFamily: "monospace" } }, `SRC: ${row.source_serial_no}`)
-                                ),
-                                React.createElement("div", { className: "master-unit-customer", title: custName },
-                                    "🏢 ", custName
-                                ),
-                                React.createElement("div", { className: "master-unit-branch" },
-                                    "📍 Cabang: ", React.createElement("strong", null, branchName)
-                                ),
-                                React.createElement("div", { className: "master-unit-chips" },
-                                    arrivalDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Arrival / Bill of Lading" },
-                                        "🚢 Arr: ", formatDateShort(arrivalDate)
-                                    ) : React.createElement("span", { className: "master-unit-chip chip-missing", title: "Tanggal Arrival belum terdata di database" },
-                                        "⚠️ Arr: Kosong"
-                                    ),
-                                    salesDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Sales Delivery" },
-                                        "📅 Sales: ", formatDateShort(salesDate)
-                                    ) : React.createElement("span", { className: "master-unit-chip chip-missing", title: "Tanggal Sales belum terdata di database" },
-                                        "⚠️ Sales: Kosong"
-                                    ),
-                                    pdiDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Operation / PDI" },
-                                        "⚡ PDI: ", formatDateShort(pdiDate)
-                                    ) : null
-                                ),
-                                unitClaims.length > 0 ? React.createElement("div", { className: "master-unit-claim-pill has-claims" },
-                                    React.createElement("span", null, `⚠️ ${unitClaims.length} Klaim Warranty${claimParts.length ? ` (${claimParts.join(", ")})` : ""}`),
-                                    React.createElement("span", { style: { fontSize: 10, color: "#991b1b", textDecoration: "underline", fontWeight: 700 } }, "Lihat →")
-                                ) : React.createElement("div", { className: "master-unit-claim-pill no-claims" },
-                                    React.createElement("span", null, "✓ Belum Ada Riwayat Klaim")
-                                ),
-                                React.createElement("div", { className: "master-unit-card-footer" },
-                                    React.createElement("span", { style: { fontSize: 11, color: "#64748b" } },
-                                        "Klik untuk buka Unit 360°"
-                                    ),
-                                    React.createElement("span", { className: "master-unit-cta-link" },
-                                        "Detail Unit →"
+                                    React.createElement("div", { className: `master-unit-status-text ${row.is_active === false ? "inactive" : "active"}` },
+                                        React.createElement("span", { className: "master-status-indicator" }),
+                                        React.createElement("span", null, row.is_active === false ? "Inactive" : "Active")
                                     )
+                                ),
+                                // Serial VIN Block
+                                React.createElement("div", { className: "master-unit-vin-block" },
+                                    React.createElement("div", { className: "master-unit-vin-left" },
+                                        React.createElement("span", { className: "master-unit-vin-label" }, "VIN / SN"),
+                                        React.createElement("span", { className: "master-unit-vin-code" }, row.serial_no || "NO SERIAL")
+                                    ),
+                                    row.source_serial_no && row.source_serial_no !== row.serial_no && React.createElement("div", { className: "master-unit-vin-alt", title: "Source Serial Original" }, `SRC: ${row.source_serial_no}`)
+                                ),
+                                // Meta Box: Customer & Cabang
+                                React.createElement("div", { className: "master-unit-meta-box" },
+                                    React.createElement("div", { className: "master-unit-meta-row" },
+                                        React.createElement("span", { className: "master-unit-meta-label" }, "Customer"),
+                                        React.createElement("span", { className: `master-unit-meta-val ${!hasCustomer ? "is-empty" : ""}`, title: custName }, custName)
+                                    ),
+                                    React.createElement("div", { className: "master-unit-meta-row" },
+                                        React.createElement("span", { className: "master-unit-meta-label" }, "Cabang"),
+                                        React.createElement("span", { className: "master-unit-meta-val" }, branchName)
+                                    )
+                                ),
+                                // Dates Grid: Arrival & Sales
+                                React.createElement("div", { className: "master-unit-dates-grid" },
+                                    React.createElement("div", { className: `master-date-box ${arrivalDate ? "has-val" : "is-empty"}` },
+                                        React.createElement("span", { className: "master-date-lbl" }, "Arrival / B/L"),
+                                        React.createElement("span", { className: "master-date-val" }, arrivalDate ? formatDateShort(arrivalDate) : "—")
+                                    ),
+                                    React.createElement("div", { className: `master-date-box ${salesDate ? "has-val" : "is-empty"}` },
+                                        React.createElement("span", { className: "master-date-lbl" }, "Sales Date"),
+                                        React.createElement("span", { className: "master-date-val" }, salesDate ? formatDateShort(salesDate) : "Belum Terjual")
+                                    )
+                                ),
+                                // Warranty & Claims Banner
+                                unitClaims.length > 0 ? React.createElement("div", { className: "master-unit-claim-banner has-claims" },
+                                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden" } },
+                                        React.createElement("span", null, "⚠️"),
+                                        React.createElement("span", { style: { fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                                            `${unitClaims.length} Klaim Garansi${claimParts.length ? ` · ${claimParts.join(", ")}` : ""}`)
+                                    ),
+                                    React.createElement("span", { className: "master-unit-claim-cta" }, "Audit →")
+                                ) : React.createElement("div", { className: "master-unit-claim-banner is-clean" },
+                                    React.createElement("span", null, "✓"),
+                                    React.createElement("span", null, "Bebas Riwayat Klaim")
+                                ),
+                                // Footer CTA
+                                React.createElement("div", { className: "master-unit-card-footer" },
+                                    React.createElement("span", { className: "master-unit-footer-hint" }, "Unit 360° Inspector"),
+                                    React.createElement("span", { className: "master-unit-footer-cta" }, "Buka Detail →")
                                 )
                             );
                         })
@@ -13209,10 +13252,31 @@ SDLG_REPOSITORY.listClaims = async function () {
                         } }, "\u2190 Kembali"),
                     React.createElement("span", { style: { fontWeight: 800, fontSize: 14, fontFamily: "monospace" } }, detailId),
                     React.createElement("span", { style: { fontSize: 12, color: "#64748b", padding: "4px 8px", background: "#f1f5f9", borderRadius: 6 } }, isHydrating ? "Memuat klaim..." : "Klaim tidak ditemukan")),
-                isHydrating ? React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
-                    React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Memuat Detail Klaim"),
-                    React.createElement("div", { style: { fontSize: 12 } }, "Menghubungkan ke database dan memulihkan data klaim..."))
-                : React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
+                isHydrating ? React.createElement("div", { className: "detail-grid", style: { marginTop: 14 } },
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } },
+                        React.createElement("div", { className: "card card-pad", style: { padding: 20 } },
+                            React.createElement("div", { className: "skeleton", style: { height: 18, width: "35%", marginBottom: 16 } }),
+                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 } },
+                                React.createElement("div", { className: "skeleton", style: { height: 50, borderRadius: 8 } }),
+                                React.createElement("div", { className: "skeleton", style: { height: 50, borderRadius: 8 } }),
+                                React.createElement("div", { className: "skeleton", style: { height: 50, borderRadius: 8 } })
+                            )
+                        ),
+                        React.createElement("div", { className: "card card-pad", style: { padding: 20 } },
+                            React.createElement("div", { className: "skeleton", style: { height: 18, width: "30%", marginBottom: 14 } }),
+                            React.createElement("div", { className: "skeleton", style: { height: 14, width: "85%", marginBottom: 10 } }),
+                            React.createElement("div", { className: "skeleton", style: { height: 14, width: "70%", marginBottom: 10 } }),
+                            React.createElement("div", { className: "skeleton", style: { height: 14, width: "60%" } })
+                        )
+                    ),
+                    React.createElement("div", { className: "sticky-side" },
+                        React.createElement("div", { className: "card card-pad", style: { padding: 20 } },
+                            React.createElement("div", { className: "skeleton", style: { height: 20, width: "60%", marginBottom: 14 } }),
+                            React.createElement("div", { className: "skeleton", style: { height: 72, borderRadius: 8, marginBottom: 12 } }),
+                            React.createElement("div", { className: "skeleton", style: { height: 40, borderRadius: 8 } })
+                        )
+                    )
+                ) : React.createElement("div", { className: "card card-pad", style: { padding: 32, textAlign: "center", color: "#64748b" } },
                     React.createElement("div", { style: { fontWeight: 700, fontSize: 15, marginBottom: 6 } }, "Klaim Tidak Ditemukan"),
                     React.createElement("div", { style: { fontSize: 12, marginBottom: 14 } }, `Nomor klaim "${detailId}" tidak ditemukan atau sudah dihapus.`),
                     React.createElement("button", { onClick: () => setDetailId(null), className: "secondary-btn" }, "Kembali ke Daftar Klaim"))

@@ -867,3 +867,84 @@
     transition: none !important;
   }
 }
+
+/* ==========================================================================
+   Master Data Toolbar & Search Specificity Guarantees
+   ========================================================================== */
+.master-toolbar-panel .search-box {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 360px !important;
+  min-width: 260px !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.master-toolbar-panel .search-box .search-icon {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: #64748b !important;
+  pointer-events: none !important;
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.master-toolbar-panel .search-box input,
+.master-toolbar-panel .search-box .sdlg-input {
+  width: 100% !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 44px 0 44px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 13.5px !important;
+  outline: none !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.master-toolbar-panel .search-box input:focus,
+.master-toolbar-panel .search-box .sdlg-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.master-toolbar-panel .search-box input::placeholder,
+.master-toolbar-panel .search-box .sdlg-input::placeholder {
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  opacity: 1 !important;
+}
+
+.master-toolbar-panel .search-clear-btn {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  display: grid !important;
+  place-items: center !important;
+  z-index: 3 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
