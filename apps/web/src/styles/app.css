@@ -79,6 +79,40 @@ label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
   backdrop-filter: blur(10px);
 }
 .login-card h1 { margin: 0; font-size: 22px; }
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-input-wrapper input {
+  padding-right: 42px;
+}
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  padding: 6px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 8px;
+  line-height: 1;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.password-toggle-btn:hover {
+  color: var(--text) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.password-toggle-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 
 .shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100%; }
 .sidebar {

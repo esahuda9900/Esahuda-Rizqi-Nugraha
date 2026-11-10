@@ -1119,6 +1119,37 @@ tbody tr:hover td{background:#f6f9ff!important}
   padding:0 13px!important;
   font-size:13px!important;
 }
+.login-password-wrapper{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+}
+.login-password-wrapper input{
+  padding-right:44px!important;
+}
+.login-password-toggle{
+  position:absolute!important;
+  right:8px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  background:transparent!important;
+  border:0!important;
+  padding:6px!important;
+  margin:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  cursor:pointer!important;
+  color:var(--sdlg-faint,#93a0b2)!important;
+  border-radius:6px!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+.login-password-toggle:hover{
+  color:var(--sdlg-text,#0d1526)!important;
+  background:rgba(147,160,178,0.15)!important;
+}
 .login-submit{
   width:100%!important;
   min-height:46px!important;
@@ -5628,8 +5659,15 @@ class SDLGErrorBoundary extends React.Component {
                     React.createElement("div", { style: { fontSize: 26, marginBottom: 8 } }, "\u26A0\uFE0F"),
                     React.createElement("div", { style: { fontSize: 18, fontWeight: 850, color: "#991b1b" } }, "Halaman mengalami error"),
                     React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 6, lineHeight: 1.6 } }, "Data di database tetap aman. Muat ulang halaman untuk memulihkan tampilan."),
-                    React.createElement("div", { style: { marginTop: 12, padding: 10, background: "#fef2f2", borderRadius: 8, fontSize: 11, color: "#7f1d1d", wordBreak: "break-word" } }, this.state.message),
-                    React.createElement("button", { onClick: () => window.location.reload(), style: { marginTop: 14, padding: "9px 13px", border: 0, background: "#b91c1c", color: "#fff", borderRadius: 8, fontWeight: 800, cursor: "pointer" } }, "\u21BB Muat ulang")));
+                    React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" } },
+                        React.createElement("button", { onClick: () => window.location.reload(), style: { padding: "9px 13px", border: 0, background: "#b91c1c", color: "#fff", borderRadius: 8, fontWeight: 800, cursor: "pointer" } }, "\u21BB Muat ulang"),
+                        React.createElement("button", {
+                            onClick: () => {
+                                try { sessionStorage.clear(); } catch (_) {}
+                                window.location.href = window.location.pathname;
+                            },
+                            style: { padding: "9px 13px", border: "1px solid #cbd5e1", background: "#fff", color: "#334155", borderRadius: 8, fontWeight: 700, cursor: "pointer" }
+                        }, "Reset & Buka Beranda"))));
         }
         return this.props.children;
     }
@@ -6168,6 +6206,8 @@ function App() {
     const [authRetry, setAuthRetry] = useState(0);
     const [loginEmail, setLoginEmail] = useState("");
     const [loginPassword, setLoginPassword] = useState("");
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
     const [loginError, setLoginError] = useState("");
     const [userRole, setUserRole] = useState(() => {
         try { return sessionStorage.getItem("sdlg:cached_role") || "viewer"; } catch (_) { return "viewer"; }
@@ -6938,7 +6978,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             })
             .catch(err => console.warn("Prefetch branches error:", err?.message || err));
     }, [fetchAllRows]);
-    const [masterTab, setMasterTab] = useState(() => { try { return sessionStorage.getItem("sdlg:master:tab") || "customers"; } catch (_) { return "customers"; } });
+    const [masterTab, setMasterTab] = useState(() => { try { return sessionStorage.getItem("sdlg:master:tab") || "machines"; } catch (_) { return "machines"; } });
     useEffect(() => { try { sessionStorage.setItem("sdlg:master:tab", masterTab); } catch (_) {} }, [masterTab]);
     const [masterRows, setMasterRows] = useState([]);
     const [masterLoading, setMasterLoading] = useState(false);
@@ -6953,6 +6993,45 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [masterAnomalyOnly, setMasterAnomalyOnly] = useState(false);
     const [masterCounts, setMasterCounts] = useState({});
     const [masterDetailRow, setMasterDetailRow] = useState(null);
+    const [masterViewMode, setMasterViewMode] = useState("cards");
+    const [unitAxWos, setUnitAxWos] = useState([]);
+    const [unitAxLoading, setUnitAxLoading] = useState(false);
+
+    useEffect(() => {
+        if (!masterDetailRow || masterTab !== "machines" || !sdlgSupabase) {
+            setUnitAxWos([]);
+            return;
+        }
+        let cancelled = false;
+        const sn = String(masterDetailRow.serial_no || "").trim();
+        const srcSn = String(masterDetailRow.source_serial_no || "").trim();
+        const snTail = sn.replace(/\D/g, '').slice(-6);
+        if (!sn && !srcSn) {
+            setUnitAxWos([]);
+            return;
+        }
+        setUnitAxLoading(true);
+        (async () => {
+            try {
+                const terms = Array.from(new Set([sn, srcSn, snTail].filter(Boolean))).filter(x => x.length >= 4);
+                if (terms.length === 0) return;
+                const filterOr = terms.map(t => `serial_no.ilike.%${t}%,chassis_no.ilike.%${t}%`).join(',');
+                const { data, error } = await sdlgSupabase
+                    .from('ax_warranty_work_orders')
+                    .select('*')
+                    .or(filterOr)
+                    .limit(20);
+                if (!cancelled && !error && data) {
+                    setUnitAxWos(data);
+                }
+            } catch (err) {
+                console.warn('AX WO lookup exception:', err);
+            } finally {
+                if (!cancelled) setUnitAxLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [masterDetailRow, masterTab]);
     const [masterExporting, setMasterExporting] = useState(false);
     const [showMasterImportModal, setShowMasterImportModal] = useState(false);
     const [masterImportText, setMasterImportText] = useState("");
@@ -7220,7 +7299,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 ["osf_departure_date", "B/L Departure Date"],
             ],
             search: ["serial_no", "source_serial_no", "osf_model", "customer_name_source"],
-            select: "id,serial_no,source_serial_no,model_id,customer_id,branch_id,dealer_id,is_active,osf_model,customer_name_source,osf_departure_date,osf_sales_date,created_at,updated_at",
+            select: "*",
             orderCol: "serial_no",
         },
         customers: {
@@ -7525,8 +7604,18 @@ SDLG_REPOSITORY.listClaims = async function () {
         if (!masterDetailRow) return [];
         if (masterTab === "machines") {
             const sn = String(masterDetailRow.serial_no || "").trim().toUpperCase();
-            if (!sn) return [];
-            return claims.filter(c => String(c.serial_no || c.source_serial_no || "").trim().toUpperCase() === sn);
+            const srcSn = String(masterDetailRow.source_serial_no || "").trim().toUpperCase();
+            if (!sn && !srcSn) return [];
+            const snTail = sn.replace(/\D/g, '').slice(-6);
+            return claims.filter(c => {
+                const cSn = String(c.serial_no || "").trim().toUpperCase();
+                const cSrc = String(c.source_serial_no || "").trim().toUpperCase();
+                const cTail = cSn.replace(/\D/g, '').slice(-6);
+                if (sn && (cSn === sn || cSrc === sn || cSn.endsWith(sn) || sn.endsWith(cSn))) return true;
+                if (srcSn && (cSn === srcSn || cSrc === srcSn)) return true;
+                if (snTail && snTail.length >= 6 && cTail === snTail) return true;
+                return false;
+            });
         }
         if (masterTab === "customers") {
             const cName = String(masterDetailRow.customer_name || "").trim().toLowerCase();
@@ -10614,7 +10703,23 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement("input", { id: "login-email", type: "email", value: loginEmail, onChange: e => setLoginEmail(e.target.value), required: true, autoComplete: "username", placeholder: "nama@perusahaan.com" })),
                     React.createElement("div", { className: "login-field" },
                         React.createElement("div", { className: "login-label-row" }, React.createElement("label", { htmlFor: "login-password" }, "Password"), React.createElement("span", { className: "login-support-hint" }, "Hubungi admin jika perlu bantuan")),
-                        React.createElement("input", { id: "login-password", type: "password", value: loginPassword, onChange: e => setLoginPassword(e.target.value), required: true, autoComplete: "current-password", placeholder: "Masukkan password" })),
+                        React.createElement("div", { className: "login-password-wrapper" },
+                            React.createElement("input", { id: "login-password", type: showLoginPassword ? "text" : "password", value: loginPassword, onChange: e => setLoginPassword(e.target.value), required: true, autoComplete: "current-password", placeholder: "Masukkan password" }),
+                            React.createElement("button", {
+                                type: "button",
+                                className: "login-password-toggle",
+                                onClick: () => setShowLoginPassword(!showLoginPassword),
+                                "aria-label": showLoginPassword ? "Sembunyikan password" : "Lihat password",
+                                title: showLoginPassword ? "Sembunyikan password" : "Lihat password",
+                                tabIndex: -1
+                            }, showLoginPassword ? React.createElement("svg", { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+                                React.createElement("path", { d: "M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" }),
+                                React.createElement("line", { x1: 1, y1: 1, x2: 23, y2: 23 })
+                            ) : React.createElement("svg", { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+                                React.createElement("path", { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }),
+                                React.createElement("circle", { cx: 12, cy: 12, r: 3 })
+                            ))
+                        )),
                     loginError && React.createElement("div", { id: "login-error", className: "login-error", role: "alert" }, React.createElement("span", { "aria-hidden": "true" }, "!"), React.createElement("span", null, loginError)),
                     React.createElement("button", { className: "login-submit", type: "submit", disabled: loginLoading, "aria-busy": loginLoading }, React.createElement("span", null, loginLoading ? "Memverifikasi akses..." : "Masuk ke dashboard"), loginLoading && React.createElement("span", { className: "login-spinner", "aria-hidden": "true" }, "")),
                 React.createElement("p", { id: "login-help", className: "login-help" }, "Akun dikelola oleh administrator PT. Indo Traktor Utama."),
@@ -10926,72 +11031,415 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("button", { onClick: () => setShowMasterModal(false), style: { padding: "9px 14px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 } }, "Batal"),
                     React.createElement("button", { onClick: saveMaster, disabled: !isOnline, style: { padding: "9px 18px", border: 0, background: "var(--ui-primary, #2563eb)", color: "#fff", borderRadius: 8, cursor: isOnline ? "pointer" : "not-allowed", fontWeight: 700, fontSize: 13, boxShadow: "0 2px 6px rgba(37,99,235,0.25)" } }, "💾 Simpan Record"))))),
         masterDetailRow && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setMasterDetailRow(null) },
-            React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation() },
-                React.createElement("div", { className: "master-drawer-head" },
-                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
-                        React.createElement("span", { style: { fontSize: 22 } }, MASTER_CONFIG[masterTab]?.icon || "📁"),
-                        React.createElement("div", null,
-                            React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a" } },
-                                `${MASTER_CONFIG[masterTab]?.singular || "Record"} Inspector`),
-                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
-                                `ID: ${masterDetailRow.id || "—"}`))),
-                    React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕")),
-                React.createElement("div", { className: "master-drawer-body" },
-                    React.createElement("div", { className: "master-detail-grid" },
-                        MASTER_CONFIG[masterTab]?.fields.map(([k, label]) => {
-                            let val = masterDetailRow[k];
-                            if (k === "branch_id") {
-                                val = branchMasterList.find(b => b.id === masterDetailRow.branch_id)?.branch_name || masterDetailRow.branch_id;
-                            }
-                            return React.createElement("div", { key: k, className: "master-detail-item" },
-                                React.createElement("div", { className: "master-detail-k" }, label),
-                                React.createElement("div", { className: "master-detail-v", style: (k.includes("code") || k.includes("no") || k === "serial_no") ? { fontFamily: 'var(--sdlg-font-mono, monospace)' } : {} },
-                                    String(val || "—")));
-                        }),
-                        React.createElement("div", { className: "master-detail-item" },
-                            React.createElement("div", { className: "master-detail-k" }, "Status Operasional"),
-                            React.createElement("div", { className: "master-detail-v" },
-                                React.createElement("span", { className: `master-status-dot ${masterDetailRow.is_active === false ? "inactive" : "active"}` },
-                                    masterDetailRow.is_active === false ? "Nonaktif (Inactive)" : "Aktif (Active)"))),
-                        masterDetailRow.created_at && React.createElement("div", { className: "master-detail-item" },
-                            React.createElement("div", { className: "master-detail-k" }, "Waktu Dibuat"),
-                            React.createElement("div", { className: "master-detail-v" }, masterDetailRow.created_at)),
-                        masterDetailRow.updated_at && React.createElement("div", { className: "master-detail-item" },
-                            React.createElement("div", { className: "master-detail-k" }, "Waktu Diperbarui"),
-                            React.createElement("div", { className: "master-detail-v" }, masterDetailRow.updated_at))),
-                    relatedClaims.length > 0 ? (
-                        React.createElement("div", { className: "master-related-claims-box" },
-                            React.createElement("div", null,
-                                React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#1e3a8a", display: "flex", alignItems: "center", gap: 6 } },
-                                    "📑 Terkait dengan ",
-                                    React.createElement("span", { style: { background: "#2563eb", color: "#fff", padding: "1px 6px", borderRadius: 4, fontVariantNumeric: "tabular-nums" } }, relatedClaims.length),
-                                    " klaim di database"),
-                                React.createElement("div", { style: { fontSize: 11, color: "#475569", marginTop: 2 } },
-                                    "Entitas ini memiliki riwayat klaim aktif di sistem.")),
-                            React.createElement("button", {
-                                onClick: () => {
-                                    const targetQuery = masterDetailRow.serial_no || masterDetailRow.customer_name || masterDetailRow.part_no || "";
-                                    setMasterDetailRow(null);
-                                    setTab("list");
-                                    setFilterSearch(targetQuery);
-                                    showToast("🔍 Menampilkan klaim untuk " + targetQuery);
-                                },
-                                style: { padding: "6px 12px", background: "#2563eb", color: "#fff", border: 0, borderRadius: 6, fontWeight: 700, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }
-                            }, "🔍 Lihat Daftar Klaim"))
-                    ) : (
-                        React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#64748b" } },
-                            "ℹ️ Belum ada riwayat klaim yang terasosiasi langsung dengan record ini.")
-                    ),
-                    React.createElement("div", { style: { background: "#f1f5f9", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 } },
-                        React.createElement("div", { style: { fontSize: 11, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
-                            `Tabel Supabase: "${MASTER_CONFIG[masterTab]?.table}"`),
-                        React.createElement("button", { onClick: () => { navigator.clipboard?.writeText(JSON.stringify(masterDetailRow, null, 2)); showToast("✅ JSON disalin ke clipboard"); }, style: { padding: "4px 8px", fontSize: 11, fontWeight: 700, border: "1px solid #cbd5e1", background: "#fff", borderRadius: 6, cursor: "pointer" } }, "📋 Copy JSON"))),
-                React.createElement("div", { style: { padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" } },
-                    isAdmin ? React.createElement("div", { style: { display: "flex", gap: 8 } },
-                        React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); openMasterEdit(r); }, style: { padding: "8px 12px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "✏ Edit Record"),
-                        React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); toggleMasterActive(r); }, style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", color: "#475569", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600 } },
-                            masterDetailRow.is_active === false ? "Aktifkan" : "Nonaktifkan")) : React.createElement("div", null),
-                    React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "Tutup"))))),
+            React.createElement("div", {
+                className: `master-drawer-card ${masterTab === "machines" ? "unit360-modal-card" : ""}`,
+                onClick: e => e.stopPropagation(),
+                style: masterTab === "machines" ? { maxWidth: 920, width: "95vw" } : {}
+            },
+                masterTab === "machines" ? (
+                    (() => {
+                        const u = masterDetailRow;
+                        const sn = String(u.serial_no || u.source_serial_no || "—");
+                        const model = String(u.osf_model || u.model || "SDLG Machine");
+                        const customer = String(u.customer_name_source || u.customer_name || "—");
+                        const branchName = branchMasterList.find(b => b.id === u.branch_id)?.branch_name || u.branch_id || "—";
+                        const isExcavator = model.toLowerCase().includes("e6") || model.toLowerCase().includes("e7") || model.toLowerCase().includes("excavator");
+                        const isLoader = model.toUpperCase().startsWith("L") || model.toUpperCase().includes("95") || model.toUpperCase().includes("93") || model.toUpperCase().includes("96");
+                        const productIcon = isExcavator ? "🏗️" : isLoader ? "🚜" : "⚙️";
+                        const productFamily = isExcavator ? "Excavator" : isLoader ? "Wheel Loader" : (u.product_type || "SDLG Unit");
+
+                        const departureDate = u.osf_departure_date || u.bill_of_lading_date || null;
+                        const salesDate = u.osf_sales_date || u.sale_date || null;
+                        const pdiDate = u.operation_start_date || u.pdi_date || null;
+
+                        const formatD = (d) => {
+                            if (!d) return null;
+                            try {
+                                const dt = new Date(d);
+                                if (isNaN(dt.getTime())) return String(d);
+                                return dt.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+                            } catch (_) { return String(d); }
+                        };
+
+                        let blCapDate = null;
+                        if (departureDate) {
+                            try {
+                                const d = new Date(departureDate);
+                                d.setMonth(d.getMonth() + 30);
+                                blCapDate = d;
+                            } catch (_) {}
+                        }
+                        let salesExpiryDate = null;
+                        if (salesDate) {
+                            try {
+                                const d = new Date(salesDate);
+                                d.setMonth(d.getMonth() + (u.contract_customer ? 24 : 18));
+                                salesExpiryDate = d;
+                            } catch (_) {}
+                        }
+                        let effectiveExpiry = null;
+                        if (blCapDate && salesExpiryDate) {
+                            effectiveExpiry = blCapDate < salesExpiryDate ? blCapDate : salesExpiryDate;
+                        } else if (salesExpiryDate) {
+                            effectiveExpiry = salesExpiryDate;
+                        } else if (blCapDate) {
+                            effectiveExpiry = blCapDate;
+                        }
+
+                        const now = new Date();
+                        let warrantyStatus = "UNKNOWN";
+                        let warrantyLabel = "Status Garansi Belum Ditentukan";
+                        let warrantyColor = "#64748b";
+                        let warrantyBg = "#f1f5f9";
+                        if (!salesDate) {
+                            warrantyStatus = "UNSOLD";
+                            warrantyLabel = "Unit Stock / Belum Terjual";
+                            warrantyColor = "#b45309";
+                            warrantyBg = "#fef3c7";
+                        } else if (effectiveExpiry && now <= effectiveExpiry) {
+                            warrantyStatus = "IN_WARRANTY";
+                            warrantyLabel = `In Warranty (s/d ${formatD(effectiveExpiry)})`;
+                            warrantyColor = "#15803d";
+                            warrantyBg = "#dcfce7";
+                        } else if (effectiveExpiry && now > effectiveExpiry) {
+                            warrantyStatus = "EXPIRED";
+                            warrantyLabel = `Out of Warranty (Exp: ${formatD(effectiveExpiry)})`;
+                            warrantyColor = "#b91c1c";
+                            warrantyBg = "#fee2e2";
+                        }
+
+                        const uniqueParts = Array.from(new Set(relatedClaims.map(c => c.causing_part_desc || c.causing_part_no || c.fault_description || "Komponen").filter(Boolean)));
+                        const totalClaimsAmount = relatedClaims.reduce((acc, c) => acc + (Number(c.total_amount) || 0), 0);
+                        const approvedClaims = relatedClaims.filter(c => c.claim_status === "Approved" || c.claim_status === "Paid");
+
+                        return React.createElement(React.Fragment, null,
+                            React.createElement("div", { className: "master-drawer-head" },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                                    React.createElement("span", { style: { fontSize: 24 } }, productIcon),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 } },
+                                            `${model} — Unit 360° Inspector`,
+                                            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: warrantyBg, color: warrantyColor } },
+                                                warrantyLabel)),
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
+                                            `Serial VIN: ${sn} • Cabang: ${branchName} • Customer: ${customer}`))),
+                                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+                                    React.createElement("button", {
+                                        onClick: () => { navigator.clipboard?.writeText(sn); showToast("✅ VIN " + sn + " disalin"); },
+                                        className: "master-btn-action",
+                                        style: { padding: "4px 8px", fontSize: 11 }
+                                    }, "📋 Salin VIN"),
+                                    React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕"))),
+
+                            React.createElement("div", { className: "master-drawer-body", style: { padding: "20px 24px" } },
+                                React.createElement("div", { className: "unit360-hero-banner" },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { className: "unit360-hero-title" },
+                                            productIcon,
+                                            `SDLG ${model}`,
+                                            React.createElement("span", { style: { fontSize: 12, fontWeight: 600, color: "#94a3b8", background: "rgba(255,255,255,0.1)", padding: "2px 8px", borderRadius: 6 } }, productFamily)),
+                                        React.createElement("div", { className: "unit360-hero-vin" },
+                                            "VIN: ", sn,
+                                            u.source_serial_no && u.source_serial_no !== sn && React.createElement("span", { style: { opacity: 0.75, fontSize: 11 } }, ` (Alt: ${u.source_serial_no})`)),
+                                        React.createElement("div", { style: { marginTop: 8, fontSize: 12.5, color: "#cbd5e1", display: "flex", gap: 14, flexWrap: "wrap" } },
+                                            React.createElement("span", null, "🏢 Customer: ", React.createElement("strong", { style: { color: "#fff" } }, customer)),
+                                            React.createElement("span", null, "📍 Cabang: ", React.createElement("strong", { style: { color: "#fff" } }, branchName)))),
+                                    React.createElement("div", { style: { textAlign: "right" } },
+                                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700 } }, "Status Garansi Unit"),
+                                        React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: warrantyStatus === "IN_WARRANTY" ? "#4ade80" : warrantyStatus === "UNSOLD" ? "#fde047" : "#f87171", marginTop: 4 } },
+                                            warrantyLabel),
+                                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", marginTop: 2 } },
+                                            u.contract_customer ? "★ Customer Kontrak (Tier 24 Bln)" : "Standard Tier (18 Bln)"))),
+
+                                React.createElement("div", { className: "unit360-insight-box" },
+                                    React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: 8 } },
+                                        "💡 Diagnosa & Insight Unit:",
+                                        React.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: "#64748b" } }, "(Analisis Otomatis Database)")),
+
+                                    React.createElement("div", { className: "unit360-insight-item" },
+                                        React.createElement("span", { style: { fontSize: 18 } }, salesDate ? "✅" : "⚠️"),
+                                        React.createElement("div", null,
+                                            React.createElement("strong", { style: { color: salesDate ? "#15803d" : "#b45309" } },
+                                                salesDate ? `Sales Date Terdata (${formatD(salesDate)})` : "Sales Date Masih Kosong"),
+                                            React.createElement("div", { style: { fontSize: 11.5, color: "#475569" } },
+                                                salesDate
+                                                    ? `Unit telah diserahterimakan kepada customer ${customer}. Periode garansi dealer resmi berjalan.`
+                                                    : "Unit belum tercatat memiliki tanggal penjualan resmi di database. Jika unit sudah dioperasikan customer, lengkapi tanggal sales agar klaim warranty tidak terkendala reject."))),
+
+                                    React.createElement("div", { className: "unit360-insight-item" },
+                                        React.createElement("span", { style: { fontSize: 18 } }, departureDate ? "🚢" : "⚠️"),
+                                        React.createElement("div", null,
+                                            React.createElement("strong", { style: { color: departureDate ? "#1e40af" : "#b45309" } },
+                                                departureDate ? `B/L Departure / Arrival Pabrik (${formatD(departureDate)})` : "Tanggal Arrival / B/L Departure Kosong"),
+                                            React.createElement("div", { style: { fontSize: 11.5, color: "#475569" } },
+                                                departureDate
+                                                    ? `Departure date dari SDLG resmi tercatat. Batas B/L cap max 30 bulan adalah: ${blCapDate ? formatD(blCapDate) : "—"}.`
+                                                    : "Data B/L departure belum terdata di master, tanggal kedatangan pabrik perlu diverifikasi untuk kepastian B/L Cap 30 bulan."))),
+
+                                    React.createElement("div", { className: "unit360-insight-item" },
+                                        React.createElement("span", { style: { fontSize: 18 } }, relatedClaims.length > 0 ? "🛠️" : "✨"),
+                                        React.createElement("div", null,
+                                            React.createElement("strong", { style: { color: relatedClaims.length > 0 ? "#1d4ed8" : "#15803d" } },
+                                                relatedClaims.length > 0
+                                                    ? `Riwayat Warranty: ${relatedClaims.length} Kasus Klaim Terdaftar`
+                                                    : "Unit Bersih dari Klaim Warranty"),
+                                            React.createElement("div", { style: { fontSize: 11.5, color: "#475569" } },
+                                                relatedClaims.length > 0
+                                                    ? `Pernah terjadi klaim pada komponen: ${uniqueParts.slice(0, 5).join(", ")}${uniqueParts.length > 5 ? ` (+${uniqueParts.length - 5} lainnya)` : ""}. Total nilai klaim diajukan: Rp ${totalClaimsAmount.toLocaleString("id-ID")} (${approvedClaims.length} disetujui/dibayar).`
+                                                    : "Belum pernah ada pengajuan klaim kerusakan atau warranty service untuk unit ini di sistem."))),
+
+                                    unitAxWos.length > 0 && React.createElement("div", { className: "unit360-insight-item" },
+                                        React.createElement("span", { style: { fontSize: 18 } }, "🔧"),
+                                        React.createElement("div", null,
+                                            React.createElement("strong", { style: { color: "#4338ca" } },
+                                                `Dynamics AX: ${unitAxWos.length} Service Work Order Ditemukan`),
+                                            React.createElement("div", { style: { fontSize: 11.5, color: "#475569" } },
+                                                `Terdapat catatan service/reparasi internal Dynamics AX untuk unit ini (WO: ${unitAxWos.map(w => w.wo_no).slice(0, 3).join(", ")}).`)))),
+
+                                React.createElement("div", { className: "unit360-section-title" },
+                                    React.createElement("span", null, "📅 Siklus Tanggal & Jam Operasi Unit"),
+                                    React.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: "#64748b" } }, "B/L Pabrik → PDI → Sales → Garansi")),
+
+                                React.createElement("div", { className: "unit360-timeline-grid" },
+                                    React.createElement("div", { className: `unit360-timeline-card ${departureDate ? "has-data" : "is-empty"}` },
+                                        React.createElement("div", { className: "unit360-timeline-label" }, "1. Arrival / B/L"),
+                                        React.createElement("div", { className: "unit360-timeline-val", style: { color: departureDate ? "#0f172a" : "#b45309" } },
+                                            departureDate ? formatD(departureDate) : "⚠️ Kosong"),
+                                        React.createElement("div", { className: "unit360-timeline-sub" },
+                                            departureDate ? "Departure dari SDLG" : "Belum diinput di master")),
+
+                                    React.createElement("div", { className: `unit360-timeline-card ${pdiDate ? "has-data" : "is-empty"}` },
+                                        React.createElement("div", { className: "unit360-timeline-label" }, "2. PDI / Stock"),
+                                        React.createElement("div", { className: "unit360-timeline-val", style: { color: pdiDate ? "#0f172a" : "#64748b" } },
+                                            pdiDate ? formatD(pdiDate) : "— Belum Ada"),
+                                        React.createElement("div", { className: "unit360-timeline-sub" },
+                                            pdiDate ? "Inspeksi / Pre-Delivery" : "Opsional di master")),
+
+                                    React.createElement("div", { className: `unit360-timeline-card ${salesDate ? "has-data" : "is-empty"}` },
+                                        React.createElement("div", { className: "unit360-timeline-label" }, "3. Sales Date"),
+                                        React.createElement("div", { className: "unit360-timeline-val", style: { color: salesDate ? "#166534" : "#b45309" } },
+                                            salesDate ? formatD(salesDate) : "⚠️ Kosong"),
+                                        React.createElement("div", { className: "unit360-timeline-sub" },
+                                            salesDate ? "Serah terima customer" : "Unit belum terjual")),
+
+                                    React.createElement("div", { className: `unit360-timeline-card ${blCapDate ? "is-future" : "is-empty"}` },
+                                        React.createElement("div", { className: "unit360-timeline-label" }, "4. B/L Cap 30 Bln"),
+                                        React.createElement("div", { className: "unit360-timeline-val", style: { color: blCapDate ? "#1d4ed8" : "#94a3b8" } },
+                                            blCapDate ? formatD(blCapDate) : "—"),
+                                        React.createElement("div", { className: "unit360-timeline-sub" },
+                                            blCapDate ? "Batas akhir klaim SDLG" : "Perlu B/L Date")),
+
+                                    React.createElement("div", { className: `unit360-timeline-card ${effectiveExpiry ? (now <= effectiveExpiry ? "has-data" : "is-empty") : "is-empty"}` },
+                                        React.createElement("div", { className: "unit360-timeline-label" }, "5. Garansi Berakhir"),
+                                        React.createElement("div", { className: "unit360-timeline-val", style: { color: effectiveExpiry ? (now <= effectiveExpiry ? "#16a34a" : "#dc2626") : "#94a3b8" } },
+                                            effectiveExpiry ? formatD(effectiveExpiry) : "—"),
+                                        React.createElement("div", { className: "unit360-timeline-sub" },
+                                            effectiveExpiry ? (now <= effectiveExpiry ? "Status: Aktif" : "Status: Expired") : "Belum ditentukan"))),
+
+                                React.createElement("div", { className: "unit360-section-title" },
+                                    React.createElement("span", null, `📑 Riwayat Klaim Garansi (${relatedClaims.length})`),
+                                    relatedClaims.length > 0 && React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#2563eb" } },
+                                        `Total Nilai: Rp ${totalClaimsAmount.toLocaleString("id-ID")}`)),
+
+                                relatedClaims.length === 0 ? (
+                                    React.createElement("div", { style: { background: "#f8fafc", border: "1px dashed #cbd5e1", borderRadius: 10, padding: "20px", textAlign: "center", color: "#64748b", fontSize: 12.5 } },
+                                        "✨ Tidak ada riwayat klaim garansi untuk unit ini di database. Unit dalam kondisi operasional normal.")
+                                ) : (
+                                    React.createElement("div", { style: { overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 10 } },
+                                        React.createElement("table", { className: "unit360-subtable" },
+                                            React.createElement("thead", null,
+                                                React.createElement("tr", null,
+                                                    React.createElement("th", null, "No. Klaim"),
+                                                    React.createElement("th", null, "Tgl Kerusakan"),
+                                                    React.createElement("th", null, "HM"),
+                                                    React.createElement("th", null, "Komponen / Deskripsi"),
+                                                    React.createElement("th", null, "Jalur Garansi"),
+                                                    React.createElement("th", null, "Status"),
+                                                    React.createElement("th", { style: { textAlign: "right" } }, "Nilai Klaim"))),
+                                            React.createElement("tbody", null,
+                                                relatedClaims.map((c) => {
+                                                    const statusStyle = {
+                                                        Approved: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
+                                                        Paid: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
+                                                        Submitted: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
+                                                        Draft: { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" },
+                                                        Rejected: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca" },
+                                                    }[c.claim_status] || { bg: "#f8fafc", color: "#334155", border: "#e2e8f0" };
+
+                                                    return React.createElement("tr", { key: c.claim_id },
+                                                        React.createElement("td", null,
+                                                            React.createElement("button", {
+                                                                type: "button",
+                                                                className: "unit360-claim-link",
+                                                                onClick: () => {
+                                                                    setMasterDetailRow(null);
+                                                                    setTab("list");
+                                                                    setDetailId(c.claim_id);
+                                                                    showToast("📂 Membuka klaim " + c.claim_id);
+                                                                },
+                                                                title: "Klik untuk membuka detail klaim ini"
+                                                            }, c.claim_id)),
+                                                        React.createElement("td", { style: { whiteSpace: "nowrap" } }, formatD(c.failure_date) || "—"),
+                                                        React.createElement("td", { style: { fontFamily: "var(--sdlg-font-mono, monospace)", fontWeight: 700 } },
+                                                            c.hm_failure ? `${c.hm_failure} hrs` : "—"),
+                                                        React.createElement("td", null,
+                                                            React.createElement("div", { style: { fontWeight: 700, color: "#0f172a" } },
+                                                                c.causing_part_desc || c.causing_part_no || "—"),
+                                                            c.fault_description && React.createElement("div", { style: { fontSize: 11, color: "#64748b", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                                                                c.fault_description)),
+                                                        React.createElement("td", null,
+                                                            React.createElement("span", { style: { fontSize: 10.5, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: c.policy_final_route === "MARKETING" ? "#fef3c7" : "#dbeafe", color: c.policy_final_route === "MARKETING" ? "#92400e" : "#1e40af" } },
+                                                                c.policy_final_route || "SDLG")),
+                                                        React.createElement("td", null,
+                                                            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}` } },
+                                                                c.claim_status || "Draft")),
+                                                        React.createElement("td", { style: { textAlign: "right", fontFamily: "var(--sdlg-font-mono, monospace)", fontWeight: 700 } },
+                                                            c.total_amount ? `Rp ${Number(c.total_amount).toLocaleString("id-ID")}` : "—"));
+                                                }))))),
+
+                                (unitAxWos.length > 0 || unitAxLoading) && React.createElement(React.Fragment, null,
+                                    React.createElement("div", { className: "unit360-section-title" },
+                                        React.createElement("span", null, `🔧 Dynamics AX Work Orders (${unitAxWos.length})`),
+                                        unitAxLoading && React.createElement("span", { style: { fontSize: 11, color: "#64748b" } }, "Memuat data AX…")),
+                                    unitAxWos.length > 0 && React.createElement("div", { style: { overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 10 } },
+                                        React.createElement("table", { className: "unit360-subtable" },
+                                            React.createElement("thead", null,
+                                                React.createElement("tr", null,
+                                                    React.createElement("th", null, "WO No."),
+                                                    React.createElement("th", null, "Tanggal WO"),
+                                                    React.createElement("th", null, "Tipe"),
+                                                    React.createElement("th", null, "Status"),
+                                                    React.createElement("th", null, "Deskripsi"),
+                                                    React.createElement("th", null, "Resource Group"))),
+                                            React.createElement("tbody", null,
+                                                unitAxWos.map(w => React.createElement("tr", { key: w.wo_no },
+                                                    React.createElement("td", { style: { fontFamily: "var(--sdlg-font-mono, monospace)", fontWeight: 700, color: "#1d4ed8" } }, w.wo_no),
+                                                    React.createElement("td", null, formatD(w.created_date) || "—"),
+                                                    React.createElement("td", null,
+                                                        React.createElement("span", { style: { fontSize: 10.5, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: w.wo_type === "WAR" ? "#eff6ff" : "#f1f5f9", color: w.wo_type === "WAR" ? "#1e40af" : "#475569" } },
+                                                            w.wo_type || "—")),
+                                                    React.createElement("td", null, w.status || "—"),
+                                                    React.createElement("td", { style: { maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, w.description || "—"),
+                                                    React.createElement("td", null, w.primary_resource_group || "—"))))))),
+
+                                React.createElement("div", { className: "unit360-section-title" },
+                                    React.createElement("span", null, "🗄️ Semua Atribut Master Unit (Database Supabase)"),
+                                    React.createElement("button", {
+                                        onClick: () => { navigator.clipboard?.writeText(JSON.stringify(u, null, 2)); showToast("✅ Seluruh JSON data unit disalin"); },
+                                        className: "master-btn-action",
+                                        style: { padding: "4px 8px", fontSize: 11 }
+                                    }, "📋 Copy JSON")),
+
+                                React.createElement("div", { className: "master-detail-grid", style: { gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" } },
+                                    Object.entries(u).map(([col, val]) => {
+                                        let displayVal = val;
+                                        if (col === "branch_id") {
+                                            displayVal = branchMasterList.find(b => b.id === val)?.branch_name || val;
+                                        } else if (col.includes("date") && val) {
+                                            displayVal = formatD(val);
+                                        } else if (typeof val === "boolean") {
+                                            displayVal = val ? "True" : "False";
+                                        } else if (val === null || val === undefined) {
+                                            displayVal = "—";
+                                        }
+                                        return React.createElement("div", { key: col, className: "master-detail-item" },
+                                            React.createElement("div", { className: "master-detail-k" }, col.replace(/_/g, " ")),
+                                            React.createElement("div", {
+                                                className: "master-detail-v",
+                                                style: col.includes("id") || col.includes("serial") ? { fontFamily: "var(--sdlg-font-mono, monospace)", fontSize: 12 } : {}
+                                            }, String(displayVal)));
+                                    }))),
+
+                            React.createElement("div", { style: { padding: "14px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 } },
+                                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+                                    React.createElement("button", {
+                                        onClick: () => {
+                                            setMasterDetailRow(null);
+                                            setTab("list");
+                                            setFilterSearch(sn);
+                                            showToast("🔍 Menampilkan klaim untuk unit " + sn);
+                                        },
+                                        style: { padding: "8px 14px", border: 0, background: "#2563eb", color: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 }
+                                    }, "🔍 Buka di Tab Claims"),
+                                    isAdmin && React.createElement("button", {
+                                        onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); openMasterEdit(r); },
+                                        style: { padding: "8px 12px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 }
+                                    }, "✏ Edit Unit")),
+                                React.createElement("button", {
+                                    onClick: () => setMasterDetailRow(null),
+                                    style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 }
+                                }, "Tutup Inspector"))
+                        );
+                    })()
+                ) : (
+                    React.createElement(React.Fragment, null,
+                        React.createElement("div", { className: "master-drawer-head" },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                                React.createElement("span", { style: { fontSize: 22 } }, MASTER_CONFIG[masterTab]?.icon || "📁"),
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: { fontWeight: 800, fontSize: 16, color: "#0f172a" } },
+                                        `${MASTER_CONFIG[masterTab]?.singular || "Record"} Inspector`),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } },
+                                        `ID: ${masterDetailRow.id || "—"}`))),
+                            React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 16, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "✕")),
+                        React.createElement("div", { className: "master-drawer-body" },
+                            React.createElement("div", { className: "master-detail-grid" },
+                                MASTER_CONFIG[masterTab]?.fields.map(([k, label]) => {
+                                    let val = masterDetailRow[k];
+                                    if (k === "branch_id") {
+                                        val = branchMasterList.find(b => b.id === masterDetailRow.branch_id)?.branch_name || masterDetailRow.branch_id;
+                                    }
+                                    return React.createElement("div", { key: k, className: "master-detail-item" },
+                                        React.createElement("div", { className: "master-detail-k" }, label),
+                                        React.createElement("div", { className: "master-detail-v", style: (k.includes("code") || k.includes("no") || k === "serial_no") ? { fontFamily: 'var(--sdlg-font-mono, monospace)' } : {} },
+                                            String(val || "—")));
+                                }),
+                                React.createElement("div", { className: "master-detail-item" },
+                                    React.createElement("div", { className: "master-detail-k" }, "Status Operasional"),
+                                    React.createElement("div", { className: "master-detail-v" },
+                                        React.createElement("span", { className: `master-status-dot ${masterDetailRow.is_active === false ? "inactive" : "active"}` },
+                                            masterDetailRow.is_active === false ? "Nonaktif (Inactive)" : "Aktif (Active)"))),
+                                masterDetailRow.created_at && React.createElement("div", { className: "master-detail-item" },
+                                    React.createElement("div", { className: "master-detail-k" }, "Waktu Dibuat"),
+                                    React.createElement("div", { className: "master-detail-v" }, masterDetailRow.created_at)),
+                                masterDetailRow.updated_at && React.createElement("div", { className: "master-detail-item" },
+                                    React.createElement("div", { className: "master-detail-k" }, "Waktu Diperbarui"),
+                                    React.createElement("div", { className: "master-detail-v" }, masterDetailRow.updated_at))),
+                            relatedClaims.length > 0 ? (
+                                React.createElement("div", { className: "master-related-claims-box" },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#1e3a8a", display: "flex", alignItems: "center", gap: 6 } },
+                                            "📑 Terkait dengan ",
+                                            React.createElement("span", { style: { background: "#2563eb", color: "#fff", padding: "1px 6px", borderRadius: 4, fontVariantNumeric: "tabular-nums" } }, relatedClaims.length),
+                                            " klaim di database"),
+                                        React.createElement("div", { style: { fontSize: 11, color: "#475569", marginTop: 2 } },
+                                            "Entitas ini memiliki riwayat klaim aktif di sistem.")),
+                                    React.createElement("button", {
+                                        onClick: () => {
+                                            const targetQuery = masterDetailRow.serial_no || masterDetailRow.customer_name || masterDetailRow.part_no || "";
+                                            setMasterDetailRow(null);
+                                            setTab("list");
+                                            setFilterSearch(targetQuery);
+                                            showToast("🔍 Menampilkan klaim untuk " + targetQuery);
+                                        },
+                                        style: { padding: "6px 12px", background: "#2563eb", color: "#fff", border: 0, borderRadius: 6, fontWeight: 700, fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }
+                                    }, "🔍 Lihat Daftar Klaim"))
+                            ) : (
+                                React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#64748b" } },
+                                    "ℹ️ Belum ada riwayat klaim yang terasosiasi langsung dengan record ini.")
+                            ),
+                            React.createElement("div", { style: { background: "#f1f5f9", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 } },
+                                React.createElement("div", { style: { fontSize: 11, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                                    `Tabel Supabase: "${MASTER_CONFIG[masterTab]?.table}"`),
+                                React.createElement("button", { onClick: () => { navigator.clipboard?.writeText(JSON.stringify(masterDetailRow, null, 2)); showToast("✅ JSON disalin ke clipboard"); }, style: { padding: "4px 8px", fontSize: 11, fontWeight: 700, border: "1px solid #cbd5e1", background: "#fff", borderRadius: 6, cursor: "pointer" } }, "📋 Copy JSON"))),
+                        React.createElement("div", { style: { padding: "14px 22px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                            isAdmin ? React.createElement("div", { style: { display: "flex", gap: 8 } },
+                                React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); openMasterEdit(r); }, style: { padding: "8px 12px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "✏ Edit Record"),
+                                React.createElement("button", { onClick: () => { const r = masterDetailRow; setMasterDetailRow(null); toggleMasterActive(r); }, style: { padding: "8px 12px", border: "1px solid #e2e8f0", background: "#fff", color: "#475569", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600 } },
+                                    masterDetailRow.is_active === false ? "Aktifkan" : "Nonaktifkan")) : React.createElement("div", null),
+                            React.createElement("button", { onClick: () => setMasterDetailRow(null), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "Tutup")))
+                )
+            ))),
         showMasterImportModal && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setShowMasterImportModal(false) },
             React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation(), style: { maxWidth: 640 } },
                 React.createElement("div", { className: "master-drawer-head" },
@@ -11827,6 +12275,30 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("option", { value: "all" }, "Semua Cabang Unit"),
                 branchMasterList.map(b => React.createElement("option", { key: b.id, value: b.id }, b.branch_name)))),
 
+            // 4C. Machine Unit 360 View Mode & Insight Bar
+            masterTab === "machines" && React.createElement("div", {
+                style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }
+            },
+                React.createElement("div", { className: "master-unit-hint", style: { margin: 0, flex: 1, minWidth: 260 } },
+                    React.createElement("span", { style: { fontSize: 16 } }, "💡"),
+                    React.createElement("div", null,
+                        React.createElement("strong", null, "Unit 360° Inspector: "),
+                        "Klik kartu atau baris unit mana saja untuk membuka audit lengkap (Arrival, Maintenance Stock, PDI, Sales Date, histori klaim garansi, dan Dynamics AX WO).")
+                ),
+                React.createElement("div", { className: "master-view-toggle" },
+                    React.createElement("button", {
+                        className: `master-view-toggle-btn ${masterViewMode === "cards" ? "active" : ""}`,
+                        onClick: () => setMasterViewMode("cards"),
+                        title: "Tampilan Card Unit (Visual & Informatif)"
+                    }, "⊞ Card Unit"),
+                    React.createElement("button", {
+                        className: `master-view-toggle-btn ${masterViewMode === "table" ? "active" : ""}`,
+                        onClick: () => setMasterViewMode("table"),
+                        title: "Tampilan Tabel Kompak"
+                    }, "☰ Tabel")
+                )
+            ),
+
             // 5. Table Card & Data Rows
             React.createElement("div", { className: "master-table-card" },
                 masterLoading ? React.createElement("div", { style: { padding: "16px 0" } },
@@ -11842,6 +12314,93 @@ SDLG_REPOSITORY.listClaims = async function () {
                         style: { margin: "0 auto" }
                     }, "Reset Semua Filter")) :
                 React.createElement(React.Fragment, null,
+                    masterTab === "machines" && masterViewMode === "cards" ?
+                    React.createElement("div", { className: "master-unit-grid" },
+                        filteredMasterRows.slice((masterPage - 1) * masterPageSize, masterPage * masterPageSize).map((row, idx) => {
+                            const s = String(row.serial_no || "").trim().toUpperCase();
+                            const src = String(row.source_serial_no || "").trim().toUpperCase();
+                            const tail = s.length >= 6 ? s.slice(-6) : "";
+                            const unitClaims = (claims || []).filter(c => {
+                                const cs = String(c.chassis_no || c.serial_no || "").trim().toUpperCase();
+                                if (!cs) return false;
+                                return (s && (cs === s || cs.includes(s))) ||
+                                       (src && (cs === src || cs.includes(src))) ||
+                                       (tail && tail.length >= 6 && cs.includes(tail));
+                            });
+                            const claimParts = Array.from(new Set(unitClaims.map(c => c.causing_part_desc || c.fault_description || "Issue").filter(Boolean))).slice(0, 2);
+                            const modelName = row.osf_model || row.model_id || "SDLG Unit";
+                            const custName = row.customer_name_source || row.contract_customer || row.customer_id || "Customer Belum Terdata";
+                            const branchName = branchMasterList.find(b => b.id === row.branch_id)?.branch_name || row.branch_id || "—";
+                            const arrivalDate = row.bill_of_lading_date || row.osf_departure_date;
+                            const salesDate = row.sale_date || row.osf_sales_date;
+                            const pdiDate = row.operation_start_date;
+                            const formatDateShort = (dVal) => {
+                                if (!dVal) return null;
+                                try {
+                                    const d = new Date(dVal);
+                                    if (!isNaN(d.getTime())) return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+                                } catch (_) {}
+                                return String(dVal).slice(0, 10);
+                            };
+                            const hasAlert = !salesDate || !arrivalDate || (!row.customer_id && !row.customer_name_source);
+                            return React.createElement("div", {
+                                key: row.id || row.serial_no || idx,
+                                className: `master-unit-card ${hasAlert ? "has-alert" : ""}`,
+                                onClick: () => setMasterDetailRow(row),
+                                title: "Klik untuk membuka Unit 360° Inspector lengkap"
+                            },
+                                React.createElement("div", { className: "master-unit-card-header" },
+                                    React.createElement("div", null,
+                                        React.createElement("span", { className: "master-unit-model-badge" }, modelName),
+                                        row.product_type && React.createElement("span", { style: { fontSize: 11, color: "#64748b", marginLeft: 6, fontWeight: 600 } }, row.product_type)
+                                    ),
+                                    React.createElement("span", {
+                                        className: `master-status-dot ${row.is_active === false ? "inactive" : "active"}`,
+                                        style: { margin: 0 }
+                                    }, row.is_active === false ? "Inactive" : "Active")
+                                ),
+                                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 } },
+                                    React.createElement("div", { className: "master-unit-serial" }, row.serial_no || "NO SERIAL"),
+                                    row.source_serial_no && row.source_serial_no !== row.serial_no && React.createElement("span", { style: { fontSize: 10, color: "#64748b", fontFamily: "monospace" } }, `SRC: ${row.source_serial_no}`)
+                                ),
+                                React.createElement("div", { className: "master-unit-customer", title: custName },
+                                    "🏢 ", custName
+                                ),
+                                React.createElement("div", { className: "master-unit-branch" },
+                                    "📍 Cabang: ", React.createElement("strong", null, branchName)
+                                ),
+                                React.createElement("div", { className: "master-unit-chips" },
+                                    arrivalDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Arrival / Bill of Lading" },
+                                        "🚢 Arr: ", formatDateShort(arrivalDate)
+                                    ) : React.createElement("span", { className: "master-unit-chip chip-missing", title: "Tanggal Arrival belum terdata di database" },
+                                        "⚠️ Arr: Kosong"
+                                    ),
+                                    salesDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Sales Delivery" },
+                                        "📅 Sales: ", formatDateShort(salesDate)
+                                    ) : React.createElement("span", { className: "master-unit-chip chip-missing", title: "Tanggal Sales belum terdata di database" },
+                                        "⚠️ Sales: Kosong"
+                                    ),
+                                    pdiDate ? React.createElement("span", { className: "master-unit-chip chip-date", title: "Tanggal Operation / PDI" },
+                                        "⚡ PDI: ", formatDateShort(pdiDate)
+                                    ) : null
+                                ),
+                                unitClaims.length > 0 ? React.createElement("div", { className: "master-unit-claim-pill has-claims" },
+                                    React.createElement("span", null, `⚠️ ${unitClaims.length} Klaim Warranty${claimParts.length ? ` (${claimParts.join(", ")})` : ""}`),
+                                    React.createElement("span", { style: { fontSize: 10, color: "#991b1b", textDecoration: "underline", fontWeight: 700 } }, "Lihat →")
+                                ) : React.createElement("div", { className: "master-unit-claim-pill no-claims" },
+                                    React.createElement("span", null, "✓ Belum Ada Riwayat Klaim")
+                                ),
+                                React.createElement("div", { className: "master-unit-card-footer" },
+                                    React.createElement("span", { style: { fontSize: 11, color: "#64748b" } },
+                                        "Klik untuk buka Unit 360°"
+                                    ),
+                                    React.createElement("span", { className: "master-unit-cta-link" },
+                                        "Detail Unit →"
+                                    )
+                                )
+                            );
+                        })
+                    ) :
                     React.createElement("div", { className: "master-table-wrap" },
                         React.createElement("table", { className: "master-table" },
                             React.createElement("thead", null,
@@ -11867,7 +12426,13 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 filteredMasterRows.slice((masterPage - 1) * masterPageSize, masterPage * masterPageSize).map((row, idx) => {
                                     const rowNum = (masterPage - 1) * masterPageSize + idx + 1;
                                     const isAnomaly = isRowAnomaly(row, masterTab);
-                                    return React.createElement("tr", { key: row.id || rowNum },
+                                    const isMachine = masterTab === "machines";
+                                    return React.createElement("tr", {
+                                        key: row.id || rowNum,
+                                        className: isMachine ? "master-row-clickable" : "",
+                                        onClick: isMachine ? () => setMasterDetailRow(row) : undefined,
+                                        title: isMachine ? "Klik baris untuk membuka Unit 360° Inspector" : undefined
+                                    },
                                         React.createElement("td", { style: { textAlign: "center", color: "#94a3b8", fontVariantNumeric: "tabular-nums" } }, rowNum),
                                         MASTER_CONFIG[masterTab].fields.map(([k], fieldIdx) => {
                                             let cellVal = row[k];
@@ -11896,16 +12461,16 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                 row.is_active === false ? "Inactive" : "Active")),
                                         React.createElement("td", { style: { textAlign: "right", whiteSpace: "nowrap" } },
                                             React.createElement("button", {
-                                                onClick: () => setMasterDetailRow(row),
+                                                onClick: (e) => { e.stopPropagation(); setMasterDetailRow(row); },
                                                 style: { padding: "4px 8px", border: "1px solid #e2e8f0", background: "#fff", color: "#334155", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, marginRight: 4 }
-                                            }, "Detail"),
+                                            }, isMachine ? "Unit 360°" : "Detail"),
                                             isAdmin && React.createElement(React.Fragment, null,
                                                 React.createElement("button", {
-                                                    onClick: () => openMasterEdit(row),
+                                                    onClick: (e) => { e.stopPropagation(); openMasterEdit(row); },
                                                     style: { padding: "4px 8px", border: "1px solid #dbeafe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 700, marginRight: 4 }
                                                 }, "Edit"),
                                                 React.createElement("button", {
-                                                    onClick: () => toggleMasterActive(row),
+                                                    onClick: (e) => { e.stopPropagation(); toggleMasterActive(row); },
                                                     style: { padding: "4px 8px", border: "1px solid #e2e8f0", background: "#fff", color: row.is_active === false ? "#16a34a" : "#dc2626", borderRadius: 6, cursor: "pointer", fontSize: 11 }
                                                 }, row.is_active === false ? "Aktifkan" : "Nonaktifkan"))));
                                 })))),
