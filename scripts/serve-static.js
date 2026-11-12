@@ -194,8 +194,8 @@ const server = http.createServer((request, response) => {
       return;
     }
 
-    // In dev server, inject preview banner into legacy index.html
-    if (filePath.endsWith('index.html')) {
+    // In dev server, inject preview banner into legacy index.html and app.html
+    if (filePath.endsWith('index.html') || filePath.endsWith('app.html')) {
       fs.readFile(filePath, 'utf8', (readErr, content) => {
         if (readErr) {
           response.writeHead(500, { 'Content-Type': 'text/plain' });
