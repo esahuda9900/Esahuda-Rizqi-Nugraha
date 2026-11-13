@@ -74,7 +74,7 @@
     { labels: ['Machine Location'], val: function(c) {
       if (!c) return '';
       if (typeof window !== 'undefined' && window.SDLGInputClaimLock && typeof window.SDLGInputClaimLock.resolveMachineLocation === 'function') {
-        return window.SDLGInputClaimLock.resolveMachineLocation('', c);
+        return window.SDLGInputClaimLock.resolveMachineLocation(c.machine_location || '', c, { silent: true });
       }
       var live = (typeof window !== 'undefined' && window.__SDLG_LIVE_CLAIM__ && String(window.__SDLG_LIVE_CLAIM__.claim_id) === String(c.claim_id)) ? window.__SDLG_LIVE_CLAIM__ : null;
       var wo = String((live && (live.dealer_wo_so || live.wo_so || live.wo_no)) || c.dealer_wo_so || c.wo_so || c.wo_no || '').trim();

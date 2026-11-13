@@ -484,11 +484,10 @@
   flex-shrink: 0 !important;
 }
 
-/* Leading icon box */
+/* Leading icon box (targeted strictly via .claim-row-icon so non-admin rows without checkboxes don't style the main body container) */
 .claim-row .claim-row-icon,
-.claim-row > div:nth-child(2),
 .app-shell:not(:has(.login-screen)) .claim-row .claim-row-icon,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row > div:nth-child(2) {
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row .claim-row-icon {
   width: 44px !important;
   height: 44px !important;
   border-radius: 12px !important;
@@ -504,9 +503,8 @@
 }
 
 .claim-row:hover .claim-row-icon,
-.claim-row:hover > div:nth-child(2),
 .app-shell:not(:has(.login-screen)) .claim-row:hover .claim-row-icon,
-.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover > div:nth-child(2) {
+.app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claim-row:hover .claim-row-icon {
   background: #2563eb !important;
   color: #ffffff !important;
   border-color: #1d4ed8 !important;
@@ -801,7 +799,7 @@
     padding: 12px !important;
   }
 
-  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select {
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar > .sdlg-select {
     flex: 1 1 calc(50% - 6px) !important;
     min-width: 130px !important;
   }
@@ -809,11 +807,14 @@
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) {
     flex: 1 1 calc(50% - 6px) !important;
     min-width: 140px !important;
+    max-width: 100% !important;
   }
 
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) .sdlg-select {
-    flex: 1 1 auto !important;
-    width: 100% !important;
+    flex: 1 1 0% !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(input[type="checkbox"]) {
@@ -845,11 +846,19 @@
 
 @media (max-width: 480px) {
   /* On small mobile screens, selects and labels stack cleanly without horizontal scroll or overlap */
-  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar .sdlg-select,
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar > .sdlg-select,
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) {
     flex: 1 1 100% !important;
     width: 100% !important;
-    min-width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-filter-bar label:has(select) .sdlg-select {
+    flex: 1 1 0% !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .app-shell:not(:has(.login-screen)) .page:has(.claims-searchbar) .claims-searchbar > .sdlg-btn,

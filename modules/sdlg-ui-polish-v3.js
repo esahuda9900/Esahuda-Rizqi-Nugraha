@@ -59,6 +59,7 @@
   }
 
   function tick() {
+    if (!onLoginPage()) return;
     hidePipelineBannerOnLogin();
     ensureStatusPill();
     autoFocusLogin();
@@ -68,12 +69,15 @@
     tick();
     if (typeof MutationObserver !== 'undefined') {
       var t = null;
-      new MutationObserver(function () {
-        clearTimeout(t);
-        t = setTimeout(tick, 120);
-      }).observe(document.documentElement, { childList: true, subtree: true });
+      var target = document.body || document.documentElement;
+      if (target) {
+        new MutationObserver(function () {
+          if (!onLoginPage()) return;
+          clearTimeout(t);
+          t = setTimeout(tick, 100);
+        }).observe(target, { childList: true, subtree: true });
+      }
     }
-    setInterval(tick, 1500);
   }
 
   if (document.readyState === 'loading') {

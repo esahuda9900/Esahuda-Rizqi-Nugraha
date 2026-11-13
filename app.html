@@ -46,7 +46,7 @@
   <script src="./modules/claim-fields.js?v=20261030-stable-v2"></script>
   <script src="./modules/sdlg-repository.js?v=20261030-stable-v2"></script>
   <script src="./modules/paste-parse-ux.js?v=20261030-stable-v2"></script>
-  <script src="./modules/sdlg-input-claim-lock.js?v=20261109-canonical-lock"></script>
+  <script src="./modules/sdlg-input-claim-lock.js?v=20261113-canonical-lock-v4"></script>
   <script>
 window.SDLG_LOAD_XLSX = function () {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -310,8 +310,8 @@ label{color:var(--ui-ink-2)!important;font-weight:650!important}.form-label{colo
 .status-track{background:#eef1f6!important;border-radius:999px!important}.status-step.active{background:var(--ui-brand)!important}.status-step.complete{background:var(--ui-success)!important}
 hr{border:0!important;border-top:1px solid var(--ui-line)!important}.divider{background:var(--ui-line)!important}
 ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cdd3df;border:3px solid var(--ui-bg);border-radius:999px}::-webkit-scrollbar-thumb:hover{background:#aeb7c6}
-@media (max-width:980px){.topbar-inner{padding:0 18px!important}.brand{min-width:auto!important}.brand-sub{display:none}.page{padding:24px 18px 42px!important}.nav-scroll{mask-image:linear-gradient(90deg,#000 92%,transparent)}}
-@media (max-width:720px){.topbar{height:64px!important}.topbar-inner{padding:0 14px!important;gap:10px!important}.brand-mark{width:34px!important;height:34px!important;border-radius:11px!important}.brand-title{font-size:13px!important}.nav-tools{margin-left:auto}.nav-scroll{position:absolute;top:64px;left:0;right:0;padding:8px 14px;background:rgba(244,246,251,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--ui-line);overflow-x:auto}.page{padding:76px 14px 34px!important}.page-title{font-size:28px!important}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}.card{border-radius:14px!important}.modal,.dialog{border-radius:18px!important;margin:12px!important;max-height:calc(100dvh - 24px)!important}.primary-btn,.secondary-btn,.btn-primary,.btn-secondary{min-height:42px}.table-wrap{overflow-x:auto}.data-table,table{min-width:680px}}
+@media (max-width:980px){.topbar-inner{padding:0 18px!important}.brand{min-width:auto!important}.brand-sub{display:none}.page{padding:24px 18px 42px!important}}
+@media (max-width:720px){.topbar{height:auto!important}.topbar-inner{padding:8px 14px!important;flex-wrap:wrap!important;gap:8px!important}.brand-mark{width:34px!important;height:34px!important;border-radius:11px!important}.brand-title{font-size:13px!important}.nav-tools{margin-left:auto}.nav-scroll{position:static;flex:0 0 100%;width:100%;padding:3px;overflow-x:auto}.page{padding:16px 14px 34px!important}.page-title{font-size:28px!important}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}.card{border-radius:14px!important}.modal,.dialog{border-radius:18px!important;margin:12px!important;max-height:calc(100dvh - 24px)!important}.primary-btn,.secondary-btn,.btn-primary,.btn-secondary{min-height:42px}.table-wrap{overflow-x:auto}.data-table,table{min-width:680px}}
 @media (max-width:420px){.brand-title{max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metric-grid{grid-template-columns:1fr!important}.page-title{font-size:26px!important}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -3006,6 +3006,39 @@ button:hover,
   .sdlg-route-summary__reason { font-size: 12px !important; }
 }
 
+.claim-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+.claim-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.hm-metrics-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, .9fr) 1.1fr 1.1fr 1.1fr;
+  gap: 10px;
+}
+@media (max-width: 960px) {
+  .hm-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .claim-info-grid,
+  .claim-edit-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+@media (max-width: 560px) {
+  .hm-metrics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 </style>
 
 
@@ -3498,18 +3531,55 @@ const latestStatusReason = (raw) => {
     return raw || "";
 };
 const buildStatusHistoryValue = (history) => STATUS_HISTORY_PREFIX + JSON.stringify(history);
+const normalizeStatusHistoryEntries = (entries = [], claim = null) => {
+    const list = Array.isArray(entries) ? entries.filter(Boolean) : [];
+    const mapped = list.map((h, idx) => {
+        const rawDate = h?.date || h?.status_date || (h?.created_at ? String(h.created_at).slice(0, 10) : "");
+        const reason = String(h?.reason || "");
+        const isInitial = Boolean(h?.initial || /^initial history migrated/i.test(reason));
+        const rank = Number.isFinite(WORKFLOW_RANK?.[h?.status]) ? WORKFLOW_RANK[h.status] : 99;
+        return {
+            ...h,
+            displayDate: rawDate || "",
+            date: rawDate || h?.date || "",
+            _isInitial: isInitial,
+            _sortDate: rawDate || (isInitial ? "0000-00-00" : ""),
+            _rank: rank,
+            _created: String(h?.created_at || ""),
+            _idx: idx
+        };
+    });
+    mapped.sort((a, b) => {
+        if (a._isInitial !== b._isInitial) return a._isInitial ? -1 : 1;
+        if (a._sortDate && b._sortDate && a._sortDate !== b._sortDate) return a._sortDate.localeCompare(b._sortDate);
+        if (Boolean(a._sortDate) !== Boolean(b._sortDate)) return a._sortDate ? 1 : -1;
+        if (a._rank !== b._rank) return a._rank - b._rank;
+        if (a._created && b._created && a._created !== b._created) return a._created.localeCompare(b._created);
+        return a._idx - b._idx;
+    });
+    return mapped;
+};
 const statusHistoryForClaim = (claim) => {
     const h = parseStatusHistory(claim?.status_update_reason);
     if (h.length)
-        return h;
+        return normalizeStatusHistoryEntries(h, claim);
     if (!claim)
         return [];
-    return [{ status: claim.claim_status || "Draft", date: claim.input_date || "", reason: claim.status_update_reason || "", initial: true }];
+    return normalizeStatusHistoryEntries([{ status: claim.claim_status || "Draft", date: claim.status_date || claim.input_date || "", reason: claim.status_update_reason || "", initial: true }], claim);
 };
-const statusMeta = (claim) => {
-    const h = statusHistoryForClaim(claim);
-    const last = h.length ? h[h.length - 1] : null;
-    return { status: last?.status || claim?.claim_status || "Draft", date: last?.date || claim?.input_date || "", reason: last?.reason || "" };
+const statusMeta = (claim, dbHistory = null) => {
+    const normalized = Array.isArray(dbHistory) && dbHistory.length
+        ? normalizeStatusHistoryEntries(dbHistory, claim)
+        : statusHistoryForClaim(claim);
+    const matchingCurrent = claim?.claim_status
+        ? normalized.filter(x => x.status === claim.claim_status).slice(-1)[0]
+        : null;
+    const last = matchingCurrent || (normalized.length ? normalized[normalized.length - 1] : null);
+    return {
+        status: claim?.claim_status || last?.status || "Draft",
+        date: claim?.status_date || last?.displayDate || last?.date || claim?.input_date || "",
+        reason: last?.reason || (typeof claim?.status_update_reason === "string" && !claim.status_update_reason.startsWith(STATUS_HISTORY_PREFIX) ? claim.status_update_reason : "")
+    };
 };
 const statusAgingDays = (claim) => {
     const status = claim?.claim_status;
@@ -5102,7 +5172,7 @@ async function exportToExcel(claims) {
         const buildValidation = (c) => {
             const issues = [];
             const sales = iso(c.sales_date), failure = iso(c.failure_date), completion = iso(c.completion_date), claimDate = iso(c.dealer_claim_date);
-            const ex = String(c.date_exception || "").startsWith("PRE_SALE_FAILURE:");
+            const ex = Boolean(c.yard_failure_confirmed || String(c.date_exception || "").trim().toUpperCase() === "YARD_FAILURE" || String(c.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:"));
             if (sales && failure && failure < sales && !ex) issues.push("Failure Date before Sales Date");
             if (failure && completion && completion < failure) issues.push("Completion Date before Failure Date");
             if (completion && claimDate && claimDate < completion) issues.push("Dealer Claim Date before Completion Date");
@@ -5118,7 +5188,7 @@ async function exportToExcel(claims) {
         });
         const machineLoc = (c) => {
             if (typeof window !== "undefined" && window.SDLGInputClaimLock && typeof window.SDLGInputClaimLock.resolveMachineLocation === "function") {
-                const res = window.SDLGInputClaimLock.resolveMachineLocation("", c);
+                const res = window.SDLGInputClaimLock.resolveMachineLocation(c.machine_location || "", c, { silent: true });
                 if (res) return res;
             }
             const wo = cleanText(c.dealer_wo_so || c.wo_so);
@@ -5736,8 +5806,24 @@ const PolicyDecisionCard = ({ claim }) => {
                 React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 5 } }, `Basis: ${repairBase || "—"} → ${claimDate || todayLocal} · target ${target}D · cutoff ${cutoff}D`)),
             React.createElement("div", { style: { padding: 10, border: "1px solid #e2e8f0", borderRadius: 9 } },
                 React.createElement("div", { style: { fontSize: 10, color: "#64748b", fontWeight: 800 } }, "WARRANTY COVERAGE"),
-                React.createElement("div", { style: { marginTop: 4, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" } }, React.createElement("b", null, policyRow?.warranty_assessment || "DATA GAP"), badge(policyRow?.warranty_assessment === "Covered" ? "PASS" : "DATA", policyRow?.product_family ? (policyRow.model_scope || policyRow.product_family) : "Data belum cukup")),
-                React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 5 } }, policyRow?.component_category ? `Component scope: ${policyRow.component_category}` : "Belum ada assessment policy ter-resolve untuk claim ini.")),
+                (() => {
+                    const assess = String(policyRow?.warranty_assessment || "").trim();
+                    const isCovered = /^(covered|in[\s_-]?warranty|eligible)/i.test(assess);
+                    const isExpired = /(out[\s_-]?of[\s_-]?warranty|after effective expiry|expired|not[\s_-]?eligible)/i.test(assess);
+                    const covKind = isCovered ? "PASS" : isExpired ? "FAIL" : "DATA";
+                    const covBadgeText = isExpired ? "OUT OF WARRANTY" : isCovered ? "IN WARRANTY" : (policyRow?.product_family ? (policyRow.model_scope || policyRow.product_family) : "Data belum cukup");
+                    const scopeMeta = [
+                        policyRow?.model_scope || policyRow?.product_family,
+                        policyRow?.component_category ? `Component scope: ${policyRow.component_category}` : null,
+                        policyRow?.sale_date ? `Sales: ${policyRow.sale_date}` : null,
+                        policyRow?.bill_of_lading_date ? `B/L: ${policyRow.bill_of_lading_date}` : null
+                    ].filter(Boolean).join(" · ");
+                    return React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { marginTop: 4, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" } },
+                            React.createElement("b", { style: { fontSize: 12, lineHeight: 1.4 } }, assess || "DATA GAP"),
+                            badge(covKind, covBadgeText)),
+                        React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 5 } }, scopeMeta || "Belum ada assessment policy ter-resolve untuk claim ini."));
+                })()),
             engineFault && React.createElement("div", { style: { padding: 10, border: "1px solid #e2e8f0", borderRadius: 9 } },
                 React.createElement("div", { style: { fontSize: 10, color: "#64748b", fontWeight: 800 } }, "ENGINE EVIDENCE"),
                 React.createElement("div", { style: { marginTop: 4, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" } }, React.createElement("b", null, hasEnginePlate && hasComponentPlate ? "Required evidence present" : "Evidence incomplete"), badge(hasEnginePlate && hasComponentPlate ? "PASS" : "WARN", hasEnginePlate && hasComponentPlate ? "PASS" : "CHECK")),
@@ -5992,7 +6078,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack })
     const defaultFeedbackPerson = sdlgFeedbackPerson(selectedClaim);
     const feedbackContact = selectedClaim.feedback_contact || selectedClaim.technician_contact || selectedClaim.technical_personnel_phone || "";
     const machineLocation = (typeof window !== "undefined" && window.SDLGInputClaimLock && typeof window.SDLGInputClaimLock.resolveMachineLocation === "function")
-        ? window.SDLGInputClaimLock.resolveMachineLocation("", selectedClaim)
+        ? window.SDLGInputClaimLock.resolveMachineLocation(selectedClaim.machine_location || "", selectedClaim)
         : (() => {
             const _liveForLoc = (typeof window !== "undefined" && window.__SDLG_LIVE_CLAIM__ && selectedClaim && String(window.__SDLG_LIVE_CLAIM__.claim_id) === String(selectedClaim.claim_id)) ? window.__SDLG_LIVE_CLAIM__ : selectedClaim;
             let wo = String((_liveForLoc && (_liveForLoc.dealer_wo_so || _liveForLoc.wo_so || _liveForLoc.wo_no)) || selectedClaim.dealer_wo_so || selectedClaim.wo_so || selectedClaim.wo_no || "").trim();
@@ -6939,6 +7025,7 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [yearFilter, setYearFilter] = useState(() => { try { return sessionStorage.getItem("sdlg:list:year") || "all"; } catch (_) { return "all"; } }); // default semua tahun agar data historis langsung terlihat
     const [editing, setEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
+    const [editError, setEditError] = useState("");
     const [saving, setSaving] = useState(false);
     const [page, setPage] = useState(1);
     const [claimSort, setClaimSort] = useState(() => { try { return sessionStorage.getItem("sdlg:list:sort") || "claim_desc"; } catch (_) { return "claim_desc"; } });
@@ -6974,7 +7061,10 @@ SDLG_REPOSITORY.listClaims = async function () {
         fetchAllRows("branches", "id,branch_name,branch_code,is_active", "branch_name")
             .then(rows => {
                 const active = (rows || []).filter(x => x.is_active !== false);
-                if (active.length) setBranchMasterList(active);
+                if (active.length) {
+                    setBranchMasterList(active);
+                    if (typeof window !== "undefined") window.__SDLG_BRANCHES__ = active;
+                }
             })
             .catch(err => console.warn("Prefetch branches error:", err?.message || err));
     }, [fetchAllRows]);
@@ -8330,12 +8420,13 @@ SDLG_REPOSITORY.listClaims = async function () {
             // Avoid clearing role and hiding the page on Chrome focus/session refresh.
             if (_event === "TOKEN_REFRESHED" || _event === "USER_UPDATED") return;
             const nextUser = session?.user || null;
+            const curUserRef = typeof userRef !== "undefined" ? userRef.current : null;
             // When returning to this tab in Chrome, Supabase may fire SIGNED_IN or INITIAL_SESSION for the existing user.
             // Do NOT tear down user role, clear data, or trigger refetches if the identity is unchanged:
-            if (nextUser && userRef.current && nextUser.id === userRef.current.id) {
+            if (nextUser && curUserRef && nextUser.id === curUserRef.id) {
                 return;
             }
-            if (!nextUser && !userRef.current) return;
+            if (!nextUser && !curUserRef) return;
             const version = ++authEventVersion;
             ++profileGeneration.current;
             clearTimeout(profileTimer);
@@ -8354,7 +8445,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.")
                     .catch(error => {
                         if (mounted && version === authEventVersion) {
-                            if (!userRoleRef.current || userRoleRef.current === "viewer") {
+                            const curRoleRef = typeof userRoleRef !== "undefined" ? userRoleRef.current : null;
+                            if (!curRoleRef || curRoleRef === "viewer") {
                                 setUserRole("viewer");
                                 setUserBranchId(null);
                             }
@@ -8483,7 +8575,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             showToast("Konfigurasi Supabase belum diisi.");
             return;
         }
-        if (!claimsRef.current || claimsRef.current.length === 0) {
+        if (typeof claimsRef === "undefined" || !claimsRef.current || claimsRef.current.length === 0) {
             setLoading(true);
         }
         setClaimsLoadError(null);
@@ -8512,7 +8604,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                 })
             ]), 20000, "Pemuatan klaim terlalu lama. Periksa jaringan lalu coba lagi.");
             if (!current()) return;
-            claimsRef.current = all;
+            if (typeof claimsRef !== "undefined") claimsRef.current = all;
+            if (typeof window !== "undefined") window.__SDLG_ALL_CLAIMS__ = all;
             setClaims(all);
             setClaimsLoadError(null);
             if (actionRows?.error) throw actionRows.error;
@@ -8705,6 +8798,12 @@ SDLG_REPOSITORY.listClaims = async function () {
             setErr("Gagal membaca Excel: " + e.message);
         }
     };
+    const isClaimYardConfirmed = (c) => Boolean(
+        c?.yardFailureConfirmed ||
+        c?.yard_failure_confirmed ||
+        String(c?.date_exception || "").trim().toUpperCase() === "YARD_FAILURE" ||
+        String(c?.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:")
+    );
     const validateBusinessDates = (p) => {
         const issues = [];
         const fields = [
@@ -8726,7 +8825,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (normalized[a] && normalized[b] && normalized[a] > normalized[b])
                 issues.push(msg);
         };
-        before("Sales Date", "Failure Date", "Failure Date sebelum Sales Date — perlu konfirmasi Yard Failure atau koreksi tanggal");
+        if (!isClaimYardConfirmed(p)) {
+            before("Sales Date", "Failure Date", "Failure Date sebelum Sales Date — perlu konfirmasi Yard Failure atau koreksi tanggal");
+        }
         before("Failure Date", "Dealer Repair Date", "Dealer Repair Date sebelum Failure Date");
         before("Dealer Repair Date", "Completion Date", "Completion Date sebelum Dealer Repair Date");
         before("Completion Date", "Dealer Claim Date", "Dealer Claim Date sebelum Completion Date");
@@ -9277,7 +9378,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             dealer_repair_date: p.dealerRepairDate || null,
             completion_date: p.completionDate || null,
             dealer_claim_date: p.dealerClaimDate || null,
-            date_exception: p.yardFailureConfirmed ? "YARD_FAILURE" : null,
+            date_exception: p.yardFailureConfirmed
+                ? (String(p.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:") ? p.date_exception : "YARD_FAILURE")
+                : null,
             yard_failure_confirmed: !!p.yardFailureConfirmed,
             fault_description: p.faultDescription || null,
             cause_analyze: p.causeAnalyze || null,
@@ -9350,7 +9453,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             add("date:completion", "Completion Date sebelum Dealer Repair Date", "Periksa Completion Date dan Dealer Repair Date", "date");
         if (ds.dealerClaimDate && ds.failureDate && ds.dealerClaimDate < ds.failureDate)
             add("date:dealerClaim", "Dealer Claim Date sebelum Failure Date", "Periksa Dealer Claim Date dan Failure Date", "date");
-        if (ds.salesDate && ds.failureDate && ds.failureDate < ds.salesDate && !p.yardFailureConfirmed)
+        if (ds.salesDate && ds.failureDate && ds.failureDate < ds.salesDate && !isClaimYardConfirmed(p))
             add("yard", "Failure Date sebelum Sales Date — kemungkinan unit yard", "Konfirmasi Yard Failure atau koreksi tanggal", "date");
         const criticalDateLabels = [
             ["source-date:salesDate", "Sales Date", ["Sales Date"], "salesDate"],
@@ -9426,7 +9529,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         setParseReviewMode(mode);
         setParseReviewClaim(claim);
         setParseReviewForm({ ...parsed, parts: Array.isArray(parsed.parts) ? parsed.parts.map(x => ({ ...x })) : [] });
-        setParseReviewAcknowledged(false);
+        setParseReviewAcknowledged(Boolean(parsed?.yardFailureConfirmed || (claim && isClaimYardConfirmed(claim))));
         setParseSolveTarget(issue || null);
         setParseReviewOpen(true);
         if (issue) {
@@ -9458,13 +9561,15 @@ SDLG_REPOSITORY.listClaims = async function () {
             next.claimType = "Campaign";
         if (next.dealerCode)
             next.dealerCode = normalizeDealerCode(next.dealerCode);
-        const yardIssue = next.salesDate && next.failureDate && new Date(String(next.failureDate) + "T00:00:00") < new Date(String(next.salesDate) + "T00:00:00");
-        if (yardIssue && parseReviewAcknowledged)
-            next.yardFailureConfirmed = true;
+        const salesIso = normalizeDateInput(next.salesDate);
+        const failureIso = normalizeDateInput(next.failureDate);
+        const yardIssue = Boolean(salesIso && failureIso && failureIso < salesIso);
+        next.yardFailureConfirmed = yardIssue ? !!parseReviewAcknowledged : false;
         next.serialConfirmed = !!parseReviewForm.serialConfirmed;
         const sourcePartsFinal = extractSourcePartsForClient(raw);
         if (sourcePartsFinal.length) next.parts = sourcePartsFinal;
         const refreshedLockIssues = validateSourceLock(next, raw);
+        const refreshedValidationIssues = validateParsed(next, raw);
         setSourceLockIssues(refreshedLockIssues);
         setParsed(next);
         // Re-run matching for changed values, but preserve explicit user selections/manual confirmations.
@@ -9489,6 +9594,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (refreshedLockIssues.length) {
                 setErr("🔒 SOURCE LOCK: " + refreshedLockIssues.join(" • "));
             }
+            else if (refreshedValidationIssues.length) {
+                setErr("⚠️ Periksa data: " + refreshedValidationIssues.join(" • "));
+            }
             else {
                 setErr("");
             }
@@ -9496,16 +9604,23 @@ SDLG_REPOSITORY.listClaims = async function () {
         catch (e) {
             setErr("Gagal refresh master matching: " + e.message);
         }
-        setParseReviewAcknowledged(true);
+        setParseReviewAcknowledged(!!next.yardFailureConfirmed);
         showToast("✅ Review diterapkan. Sekarang bisa lanjut simpan kalau semua warning sudah diselesaikan.");
     };
     const proceedSaveAfterReview = async (mode, claim = null) => {
         if (saveInFlightRef.current || saving)
             return;
+        const effectiveForCheck = parsed ? {
+            ...parsed,
+            yardFailureConfirmed: parsed.yardFailureConfirmed != null
+                ? !!parsed.yardFailureConfirmed
+                : Boolean(claim && isClaimYardConfirmed(claim)),
+            date_exception: parsed.date_exception || claim?.date_exception || null
+        } : {};
         // Re-check source truth immediately before any write. This prevents edits made
         // in Review & Konfirmasi from bypassing Source Lock.
-        const currentLockIssues = validateSourceLock(parsed || {}, raw);
-        const currentValidationIssues = validateParsed(parsed || {}, raw);
+        const currentLockIssues = validateSourceLock(effectiveForCheck, raw);
+        const currentValidationIssues = validateParsed(effectiveForCheck, raw);
         setSourceLockIssues(currentLockIssues);
         if (currentLockIssues.length) {
             setErr("❌ Simpan diblokir: SOURCE LOCK menemukan ketidaksesuaian dengan data sumber. " + currentLockIssues.join(" • "));
@@ -10060,6 +10175,10 @@ SDLG_REPOSITORY.listClaims = async function () {
         const sourcePartsForSave = extractSourcePartsForClient(raw);
         const effectiveParsed = {
             ...preventAppCodeAsWo(parsed),
+            yardFailureConfirmed: parsed.yardFailureConfirmed != null
+                ? !!parsed.yardFailureConfirmed
+                : isClaimYardConfirmed(existingClaim),
+            date_exception: parsed.date_exception || existingClaim?.date_exception || null,
             model: canonicalMasterModelName(parsed.model, masterMatches),
             currency: normalizeClaimCurrency(parsed.currency, raw, parsed.dealerClaimNo),
             parts: sourcePartsForSave.length ? sourcePartsForSave : (Array.isArray(parsed.parts) ? parsed.parts.filter(part => String(part?.failurePartNo || part?.replacementPartNo || "").trim()) : [])
@@ -10268,7 +10387,8 @@ SDLG_REPOSITORY.listClaims = async function () {
             payment_date: detail.payment_date || "",
             payment_amount: detail.payment_amount ?? "",
             rejection_reason: detail.rejection_reason || "",
-            yard_failure_confirmed: !!detail.yard_failure_confirmed,
+            yard_failure_confirmed: isClaimYardConfirmed(detail),
+            date_exception: detail.date_exception || null,
             currency: detail.currency || "CNY",
             labour_hrs: detail.labour_hrs ?? "",
             labour_rate: detail.labour_rate ?? "",
@@ -10281,15 +10401,19 @@ SDLG_REPOSITORY.listClaims = async function () {
             mileage_amount: detail.mileage_amount ?? 0,
             other_amount: detail.other_amount ?? 0,
         });
+        if (typeof setEditError === "function") setEditError("");
         setEditing(true);
     };
     const saveEdit = async () => {
         if (!detail || saving || saveInFlightRef.current)
             return;
         if (!navigator.onLine) {
-            showToast("❌ Tidak ada koneksi internet. Perubahan belum disimpan.");
+            const msg = "❌ Tidak ada koneksi internet. Perubahan belum disimpan.";
+            if (typeof setEditError === "function") setEditError(msg);
+            showToast(msg);
             return;
         }
+        if (typeof setEditError === "function") setEditError("");
         saveInFlightRef.current = true;
         setSaving(true);
         try {
@@ -10312,10 +10436,14 @@ SDLG_REPOSITORY.listClaims = async function () {
                 model: editForm.model, serialNo: editForm.serial_no, failureDate: editForm.failure_date,
                 salesDate: editForm.sales_date, dealerRepairDate: editForm.dealer_repair_date,
                 completionDate: editForm.completion_date, dealerClaimDate: editForm.dealer_claim_date,
-                customerApprovalDate: editForm.customer_approval_date, parts: normalizedParts
+                customerApprovalDate: editForm.customer_approval_date, parts: normalizedParts,
+                yardFailureConfirmed: !!editForm.yard_failure_confirmed,
+                yard_failure_confirmed: !!editForm.yard_failure_confirmed
             }, "");
             if (editValidationIssues.length) {
-                showToast("❌ Update diblokir: " + editValidationIssues.join(" • "));
+                const msg = "❌ Update diblokir: " + editValidationIssues.join(" • ");
+                if (typeof setEditError === "function") setEditError(msg);
+                showToast(msg);
                 setSaving(false);
                 return;
             }
@@ -10351,6 +10479,14 @@ SDLG_REPOSITORY.listClaims = async function () {
                 payment_amount: editForm.payment_amount === "" ? null : Number(editForm.payment_amount),
                 rejection_reason: editForm.rejection_reason || null,
                 yard_failure_confirmed: !!editForm.yard_failure_confirmed,
+                date_exception: editForm.yard_failure_confirmed
+                    ? (String(editForm.date_exception || detail?.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:")
+                        ? (editForm.date_exception || detail?.date_exception)
+                        : "YARD_FAILURE")
+                    : ((String(editForm.date_exception || detail?.date_exception || "").trim().toUpperCase() === "YARD_FAILURE" ||
+                        String(editForm.date_exception || detail?.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:"))
+                        ? null
+                        : (editForm.date_exception || detail?.date_exception || null)),
                 hm_failure: editForm.hm_failure === "" ? null : Number(editForm.hm_failure),
                 hm_completion: editForm.hm_completion === "" ? null : Number(editForm.hm_completion),
                 repair_status: editForm.repair_status || (editForm.completion_date ? "Repair Completed" : "Repair Not Completed"),
@@ -10387,11 +10523,13 @@ SDLG_REPOSITORY.listClaims = async function () {
         catch (e) {
             const conflict = e?.code === "40001" || e?.status === 409;
             const uncertain = e?.status === 0 || /network|fetch|timeout|connection|respons.*tidak/i.test(String(e?.message || e));
-            showToast(conflict
+            const errMsg = conflict
                 ? "Klaim berubah di tab atau pengguna lain. Perubahan tetap di form. Salin perubahan sebelum memuat ulang dan membandingkan versi."
                 : uncertain
                     ? "Status penyimpanan belum dapat dipastikan karena koneksi atau respons terputus. Perubahan tetap di form. Periksa data server sebelum mencoba lagi."
-                    : "Penyimpanan gagal. Perubahan tetap di form. " + (e?.message || "Server menolak permintaan."));
+                    : "Penyimpanan gagal. Perubahan tetap di form. " + (e?.message || "Server menolak permintaan.");
+            if (typeof setEditError === "function") setEditError(errMsg);
+            showToast(errMsg);
             // Preserve editForm and editing state. No reload or navigation on failure.
         }
         finally {
@@ -11272,21 +11410,32 @@ SDLG_REPOSITORY.listClaims = async function () {
                         className: `connection-pill ${isOnline ? "" : "offline"}`,
                         title: "Klik untuk Manajemen Akun & Hak Akses",
                         onClick: () => setShowAccountModal(true),
+                        onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowAccountModal(true); } },
                         role: "button",
                         tabIndex: 0,
                         "aria-label": "Manajemen Akun",
                         style: { cursor: "pointer", userSelect: "none" }
                     },
                         React.createElement("span", { className: `connection-dot ${isOnline ? "online" : "offline"}` }),
-                        React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, isOnline ? (user?.email || "Signed in") : "Offline"),
+                        React.createElement("span", { className: "connection-email", style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, isOnline ? (user?.email || "Signed in") : "Offline"),
                         React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 99, background: isAdmin ? "#dcfce7" : "#f1f5f9", color: isAdmin ? "#166534" : "#64748b", flexShrink: 0 } }, userRole === "warranty_admin" ? "Warranty Admin" : userRole === "admin" ? "Admin" : userRole === "branch_user" ? "Branch User" : "Viewer")),
                     React.createElement("button", {
+                        type: "button",
                         className: "icon-btn",
                         "aria-label": "Pengaturan Sistem & Workspace",
                         title: "Pengaturan Sistem & Workspace",
                         onClick: () => setShowSettingsModal(true)
-                    }, "\u2699"),
-                    React.createElement("button", { onClick: handleLogout, style: { padding: "7px 10px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#64748b", cursor: "pointer" } }, "\u21AA Logout")))),
+                    }, React.createElement("svg", { viewBox: "0 0 24 24", width: 15, height: 15, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+                        React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
+                        React.createElement("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" })
+                    )),
+                    React.createElement("button", { type: "button", onClick: handleLogout, style: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#475569", cursor: "pointer" } },
+                        React.createElement("svg", { viewBox: "0 0 24 24", width: 13, height: 13, fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
+                            React.createElement("path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }),
+                            React.createElement("polyline", { points: "16 17 21 12 16 7" }),
+                            React.createElement("line", { x1: 21, y1: 12, x2: 9, y2: 12 })
+                        ),
+                        "Logout")))),
         policyRuntimeStatus === "degraded" && (React.createElement("div", { style: { maxWidth: 1180, margin: "12px auto 0", padding: "0 16px" } },
             React.createElement("div", { style: { background: "#fff7ed", border: "1px solid #fdba74", color: "#9a3412", borderRadius: 10, padding: "10px 12px", fontSize: 12, lineHeight: 1.5 } },
                 React.createElement("b", null, "\u26A0 Policy Runtime Degraded."),
@@ -12785,6 +12934,38 @@ SDLG_REPOSITORY.listClaims = async function () {
                     renderSourceCapture(parsed.source_fields),
                     React.createElement(Row, { label: "Causing Part", value: parsed.causingPartNo, mono: true }),
                     React.createElement(Row, { label: "Causing Part Description", value: parsed.causingPartDesc }),
+                    (() => {
+                        const sIso = normalizeDateInput(parsed?.salesDate);
+                        const fIso = normalizeDateInput(parsed?.failureDate);
+                        if (!sIso || !fIso || fIso >= sIso) return null;
+                        const confirmed = Boolean(parsed?.yardFailureConfirmed || (matchedClaim && parsed?.yardFailureConfirmed == null && isClaimYardConfirmed(matchedClaim)));
+                        return React.createElement("div", {
+                            style: {
+                                marginTop: 10, padding: "11px 13px", borderRadius: 10,
+                                border: confirmed ? "1px solid #86efac" : "1px solid #f59e0b",
+                                background: confirmed ? "#f0fdf4" : "#fffbeb",
+                                display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap"
+                            }
+                        },
+                            React.createElement("label", { style: { display: "flex", alignItems: "flex-start", gap: 9, cursor: "pointer", fontSize: 11.5, color: confirmed ? "#166534" : "#78350f", flex: "1 1 280px" } },
+                                React.createElement("input", {
+                                    type: "checkbox",
+                                    checked: confirmed,
+                                    onChange: e => {
+                                        const checked = e.target.checked;
+                                        setParsed(prev => prev ? { ...prev, yardFailureConfirmed: checked } : prev);
+                                        setParseReviewAcknowledged(checked);
+                                        if (checked && /Failure Date sebelum Sales Date/i.test(String(err || ""))) {
+                                            setErr("");
+                                        }
+                                    },
+                                    style: { marginTop: 2, accentColor: "#7c3aed" }
+                                }),
+                                React.createElement("span", null,
+                                    React.createElement("b", null, confirmed ? "✅ Yard Failure Dikonfirmasi" : "⚠️ Konfirmasi Yard Failure Diperlukan"),
+                                    React.createElement("div", { style: { fontSize: 10.5, marginTop: 2, opacity: 0.9 } },
+                                        `Failure Date (${fIso}) lebih awal dari Sales Date (${sIso}). Centang konfirmasi jika unit mengalami failure saat masih di yard dealer.`))));
+                    })(),
                     masterMatches && getParsedReviewIssues(parsed, masterMatches).length > 0 && (React.createElement("div", { style: { marginTop: 10, padding: 11, border: "1px solid #fbbf24", background: "#fffbeb", borderRadius: 9 } },
                         React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 } },
                             React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#92400e" } },
@@ -14422,8 +14603,15 @@ SDLG_REPOSITORY.listClaims = async function () {
                             outline: detail.claim_status === s ? `2px solid ${statusColor(s)}44` : "none",
                         } }, s)))))),
             (() => {
-                const meta = statusMeta(detail);
-                const history = statusHistoryDb.length ? statusHistoryDb : statusHistoryForClaim(detail);
+                const hasDbHistory = statusHistoryDb.length > 0;
+                const hasInlineHistory = parseStatusHistory(detail.status_update_reason).length > 0;
+                const meta = statusMeta(detail, statusHistoryDb);
+                const history = normalizeStatusHistoryEntries(hasDbHistory ? statusHistoryDb : statusHistoryForClaim(detail), detail);
+                const reversed = history.slice().reverse();
+                const currentIdx = (() => {
+                    const idx = reversed.findIndex(x => x.status === detail.claim_status);
+                    return idx >= 0 ? idx : 0;
+                })();
                 const aging = statusAgingDays(detail);
                 const processAging = claimAging(detail);
                 return (React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "11px 14px", marginBottom: 12 } },
@@ -14451,13 +14639,13 @@ SDLG_REPOSITORY.listClaims = async function () {
                         meta.reason),
                     history.length > 0 && (React.createElement("div", { style: { marginTop: 10, paddingTop: 9, borderTop: "1px solid #f1f5f9" } },
                         React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 7 } }, "STATUS HISTORY"),
-                        !parseStatusHistory(detail.status_update_reason).length && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginBottom: 7 } }, "Snapshot awal dari data existing. Update berikutnya akan tersimpan sebagai history permanen di database."),
-                        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 7 } }, history.slice().reverse().map((h, i) => React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "92px 1fr auto", gap: 8, alignItems: "start", fontSize: 11 } },
-                            React.createElement("span", { style: { color: "#94a3b8" } }, h.date || "—"),
+                        (!hasDbHistory && !hasInlineHistory) && React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginBottom: 7 } }, "Snapshot awal dari data existing. Update berikutnya akan tersimpan sebagai history permanen di database."),
+                        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 7 } }, reversed.map((h, i) => React.createElement("div", { key: h.id || `${h.status}-${i}`, style: { display: "grid", gridTemplateColumns: "92px 1fr auto", gap: 8, alignItems: "start", fontSize: 11 } },
+                            React.createElement("span", { style: { color: "#64748b", fontVariantNumeric: "tabular-nums" } }, h.displayDate || h.date || h.status_date || "—"),
                             React.createElement("div", null,
                                 React.createElement(Pill, { color: statusColor(h.status) }, h.status),
                                 h.reason && React.createElement("div", { style: { color: "#64748b", marginTop: 3, whiteSpace: "pre-wrap" } }, h.reason)),
-                            i === 0 && React.createElement("span", { style: { fontWeight: 700, color: "#16a34a" } }, "CURRENT"))))))));
+                            i === currentIdx && React.createElement("span", { style: { fontWeight: 700, color: "#16a34a" } }, "CURRENT"))))))));
             })(),
             detail.claim_status === "Rejected" && latestStatusReason(detail.status_update_reason) && (React.createElement("div", { style: { background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 10, padding: "10px 14px", marginBottom: 12 } },
                 React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#be123c", marginBottom: 3 } }, "Alasan Reject"),
@@ -14510,7 +14698,55 @@ SDLG_REPOSITORY.listClaims = async function () {
                     border: "1px solid #e2e8f0", marginBottom: 12,
                 } },
                 React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } }, editing ? "✏️ Edit Info" : "Info"),
-                editing ? (React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
+                editing ? (React.createElement(React.Fragment, null,
+                    editError && React.createElement("div", { role: "alert", style: { marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
+                        React.createElement("span", null, editError),
+                        (() => {
+                            const sIso = normalizeDateInput(editForm.sales_date);
+                            const fIso = normalizeDateInput(editForm.failure_date);
+                            if (sIso && fIso && fIso < sIso && !editForm.yard_failure_confirmed) {
+                                return React.createElement("button", {
+                                    type: "button",
+                                    onClick: () => {
+                                        setEditForm(prev => ({ ...prev, yard_failure_confirmed: true }));
+                                        setEditError("");
+                                    },
+                                    style: { padding: "5px 10px", borderRadius: 7, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#6d28d9", fontWeight: 800, fontSize: 11, cursor: "pointer" }
+                                }, "✅ Konfirmasi Yard Failure");
+                            }
+                            return null;
+                        })()),
+                    (() => {
+                        const sIso = normalizeDateInput(editForm.sales_date);
+                        const fIso = normalizeDateInput(editForm.failure_date);
+                        if (!sIso || !fIso || fIso >= sIso) return null;
+                        const confirmed = !!editForm.yard_failure_confirmed;
+                        return React.createElement("div", {
+                            style: {
+                                marginBottom: 12, padding: "10px 12px", borderRadius: 9,
+                                border: confirmed ? "1px solid #86efac" : "1px solid #ddd6fe",
+                                background: confirmed ? "#f0fdf4" : "#f5f3ff",
+                                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap"
+                            }
+                        },
+                            React.createElement("div", { style: { fontSize: 12, color: confirmed ? "#166534" : "#5b21b6" } },
+                                React.createElement("b", null, confirmed ? "✅ Yard Failure Dikonfirmasi" : "⚠️ Yard Failure Confirmation"),
+                                React.createElement("div", { style: { fontSize: 11, opacity: 0.9, marginTop: 2 } },
+                                    `Failure Date (${fIso}) sebelum Sales Date (${sIso}). ${confirmed ? "Siap disimpan sebagai YARD_FAILURE." : "Centang konfirmasi atau koreksi tanggal sebelum menyimpan."}`)),
+                            React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: confirmed ? "#166534" : "#6d28d9", cursor: "pointer" } },
+                                React.createElement("input", {
+                                    type: "checkbox",
+                                    checked: confirmed,
+                                    onChange: e => {
+                                        const checked = e.target.checked;
+                                        setEditForm(prev => ({ ...prev, yard_failure_confirmed: checked }));
+                                        if (checked && /Failure Date sebelum Sales Date/i.test(String(editError || ""))) setEditError("");
+                                    },
+                                    style: { accentColor: "#7c3aed" }
+                                }),
+                                "Confirmed Yard Failure"));
+                    })(),
+                    React.createElement("div", { className: "claim-edit-grid" },
                     [
                         ["model", "Model"], ["serial_no", "Serial No."], ["indent_no", "Indent No."],
                         ["customer", "Customer"], ["dealer_code", "Dealer Code"], ["branch", "Branch"],
@@ -14521,7 +14757,30 @@ SDLG_REPOSITORY.listClaims = async function () {
                         ["currency", "Currency"], ["total_amount", "Total Amount"],
                     ].map(([key, label]) => (React.createElement("div", { key: key },
                         React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, label),
-                        React.createElement("input", { value: editForm[key] ?? "", onChange: e => setEditForm({ ...editForm, [key]: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, outline: "none" } })))),
+                        key === "repair_status"
+                            ? React.createElement("select", {
+                                value: editForm.repair_status || (editForm.completion_date ? "Repair Completed" : "Repair Not Completed"),
+                                onChange: e => setEditForm({ ...editForm, repair_status: e.target.value }),
+                                style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }
+                            }, ["Repair Completed", "Repair Not Completed"].map(opt => React.createElement("option", { key: opt, value: opt }, opt)))
+                            : React.createElement("input", {
+                                value: editForm[key] ?? "",
+                                onChange: e => {
+                                    const val = e.target.value;
+                                    setEditForm(prev => {
+                                        const next = { ...prev, [key]: val };
+                                        if (key === "completion_date") {
+                                            const iso = normalizeDateInput(val);
+                                            if (iso && (!prev.repair_status || prev.repair_status === "Repair Not Completed")) {
+                                                next.repair_status = "Repair Completed";
+                                            }
+                                        }
+                                        return next;
+                                    });
+                                    if (editError) setEditError("");
+                                },
+                                style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, outline: "none" }
+                            })))),
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Status"),
                         React.createElement("select", { value: editForm.claim_status || "", onChange: e => setEditForm({ ...editForm, claim_status: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13 } }, WORKFLOW_STATUSES.concat(["Claimed to SDLG"]).filter((x, i, a) => a.indexOf(x) === i).map(s => React.createElement("option", { key: s, value: s }, s)))),
@@ -14531,11 +14790,11 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Yard Failure Confirmation"),
                         React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#475569" } },
-                            React.createElement("input", { type: "checkbox", checked: !!editForm.yard_failure_confirmed, onChange: e => setEditForm({ ...editForm, yard_failure_confirmed: e.target.checked }) }),
+                            React.createElement("input", { type: "checkbox", checked: !!editForm.yard_failure_confirmed, onChange: e => { const checked = e.target.checked; setEditForm({ ...editForm, yard_failure_confirmed: checked }); if (checked && /Failure Date sebelum Sales Date/i.test(String(editError || ""))) setEditError(""); } }),
                             " Confirmed unit was still in dealer yard at failure")),
                     React.createElement("div", { style: { gridColumn: "1 / -1" } },
                         React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Rejection Reason"),
-                        React.createElement("textarea", { value: editForm.rejection_reason || "", onChange: e => setEditForm({ ...editForm, rejection_reason: e.target.value }), rows: 2, style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, resize: "vertical" } })))) : (React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" } },
+                        React.createElement("textarea", { value: editForm.rejection_reason || "", onChange: e => setEditForm({ ...editForm, rejection_reason: e.target.value }), rows: 2, style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, resize: "vertical" } }))))) : (React.createElement("div", { className: "claim-info-grid" },
                     React.createElement("div", null,
                         React.createElement(Row, { label: "Customer", value: detail.customer }),
                         React.createElement(Row, { label: "Distributor", value: detail.distributor }),
@@ -14552,7 +14811,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement(Row, { label: "HM Failure", value: detail.hm_failure != null ? detail.hm_failure + " hr" : null }),
                         React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" }),
                         React.createElement(Row, { label: "Completion Date", value: detail.completion_date }),
-                        React.createElement(Row, { label: "Repair Status", value: detail.repair_status }),
+                        React.createElement(Row, { label: "Repair Status", value: detail.completion_date && detail.repair_status === "Repair Not Completed" ? `${detail.repair_status} (Completion Date terisi: ${detail.completion_date})` : detail.repair_status }),
                         React.createElement(Row, { label: "HM Completion", value: detail.hm_completion != null ? detail.hm_completion + " hr" : null }),
                         React.createElement(Row, { label: "Distributor No.", value: detail.distributor_no, mono: true }),
                         React.createElement(Row, { label: "Dealer Claim No.", value: detail.dealer_claim_no, mono: true }),
@@ -14567,7 +14826,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                             React.createElement("div", { className: "section-title" }, hm.confidence === 'Direct' ? 'Current HM (GPS)' : 'Estimated Current HM'),
                             React.createElement("div", { className: "section-sub" }, hm.confidence === 'Direct' ? 'Snapshot GPS menjadi sumber Current HM untuk serial ini.' : 'Estimasi operasional — selalu memiliki angka, tetapi bukan direct meter reading.')),
                         React.createElement(Pill, { color: confColor }, hm.confidence === 'Direct' ? 'GPS direct' : `${hm.confidence} confidence`)),
-                    React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'minmax(180px,.9fr) 1.1fr 1.1fr 1.1fr', gap: 10 } },
+                    React.createElement("div", { className: "hm-metrics-grid" },
                         React.createElement("div", { style: { padding: '13px 14px', borderRadius: 10, background: '#eff6ff', border: '1px solid #dbeafe' } },
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', fontWeight: 700 } }, hm.confidence === 'Direct' ? 'CURRENT HM (GPS)' : 'ESTIMATED CURRENT HM'),
                             React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: '#0f172a', marginTop: 5 } },
@@ -14591,9 +14850,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } }, hm.confidence === 'Direct' ? `Captured: ${hm.gpsCapturedAt || '—'}` : React.createElement(React.Fragment, null,
                                 "B/L: ",
                                 hm.blDate || '—',
-                                " ",
-                                React.createElement("span", { style: { fontStyle: 'italic' } }, "(OSF Departure)"))),
-                            hm.confidence !== 'Direct' && React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } },
+                                hm.blDate ? React.createElement("span", { style: { fontStyle: 'italic' } }, " (OSF Departure)") : null)),
+                            hm.confidence !== 'Direct' && hm.expectedHigh > hm.expectedLow && React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } },
                                 "Range: ",
                                 hm.expectedLow.toLocaleString('en-US'),
                                 "\u2013",
@@ -14634,40 +14892,77 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 } }, detail.evidence_items.map((e, i) => React.createElement("div", { key: i, style: { padding: "8px 10px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8 } },
                     React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#64748b" } }, e?.label || "Evidence"),
                     React.createElement("div", { style: { fontSize: 12, color: "#1e293b", marginTop: 3, whiteSpace: "pre-wrap" } }, e?.value || "")))))),
-            (editing || (detail.parts && detail.parts.length > 0)) && (React.createElement("div", { style: {
+            (editing || (detail.parts && detail.parts.length > 0)) && (() => {
+                const activeParts = editing ? (editForm.parts || []) : (detail.parts || []);
+                const partRowAmount = (p) => {
+                    const qty = p?.qty === "" || p?.qty == null ? null : Number(p.qty);
+                    const unitPrice = p?.unitPrice === "" || p?.unitPrice == null ? null : Number(p.unitPrice);
+                    if (p?.amount != null && p?.amount !== "" && Number.isFinite(Number(p.amount))) return Number(p.amount);
+                    if (Number.isFinite(qty) && Number.isFinite(unitPrice)) return qty * unitPrice;
+                    return 0;
+                };
+                const partsLineSum = activeParts.reduce((acc, p) => acc + partRowAmount(p), 0);
+                const liveLabour = editing ? (Number(editForm.labour_hrs || 0) * Number(editForm.labour_rate || 0)) : Number(detail.labour_amount || 0);
+                const liveMileage = editing ? (Number(editForm.mileage_km || 0) * Number(editForm.mileage_rate || 0)) : Number(detail.mileage_amount || 0);
+                const liveOther = editing ? Number(editForm.other_amount || 0) : Number(detail.other_amount || 0);
+                const shownPartsTotal = editing ? partsLineSum : Number(detail.parts_total || 0);
+                const shownTotal = editing ? (partsLineSum + liveLabour + liveMileage + liveOther) : Number(detail.total_amount || 0);
+                const currencyLabel = (editing ? editForm.currency : detail.currency) || "USD";
+                const hasPartsMismatch = !editing && activeParts.length > 0 && partsLineSum > 0 && Math.abs(partsLineSum - Number(detail.parts_total || 0)) > 0.05;
+                return React.createElement("div", { style: {
                     background: "#fff", borderRadius: 10, padding: "14px 16px",
                     border: "1px solid #e2e8f0", marginBottom: 12, overflowX: "auto",
                 } },
-                React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } },
-                    "Part Replacement (",
-                    (editing ? (editForm.parts || []).length : detail.parts.length),
-                    ")"),
+                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 } },
+                    React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase" } },
+                        "Part Replacement (", activeParts.length, ")"),
+                    hasPartsMismatch && React.createElement("span", {
+                        style: { fontSize: 11, fontWeight: 700, color: "#b45309", background: "#fffbeb", border: "1px solid #fde68a", padding: "3px 8px", borderRadius: 999 }
+                    }, `⚠️ Jumlah rincian part (${currencyLabel} ${fmt2(partsLineSum)}) berbeda dari Parts tercatat (${currencyLabel} ${fmt2(detail.parts_total)})`)),
                 React.createElement("table", { style: { width: "100%", fontSize: 12 } },
                     React.createElement("thead", null,
                         React.createElement("tr", { style: { background: "#f8fafc" } }, ["Failure Part", "Replace Part", "Description", "Qty", "Unit Price", "Amount", ...(editing ? ["Action"] : [])].map((h) => (React.createElement("th", { key: h, style: { padding: "6px 8px", border: "1px solid #e2e8f0", textAlign: "left", color: "#64748b", fontWeight: 600 } }, h))))),
-                    React.createElement("tbody", null, (editing ? (editForm.parts || []) : detail.parts).map((p, i) => (React.createElement("tr", { key: i, style: { background: i % 2 === 0 ? "#fff" : "#fafafa" } },
-                        ["failurePartNo", "replacementPartNo", "description", "qty", "unitPrice"].map((k, ki) => React.createElement("td", { key: k, style: { padding: "5px 8px", border: "1px solid #e2e8f0" } }, editing ? React.createElement("input", { value: p[k] ?? "", onChange: e => { const parts = [...(editForm.parts || [])]; parts[i] = { ...parts[i], [k]: e.target.value }; setEditForm({ ...editForm, parts }); }, style: { width: "100%", padding: "4px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11 } }) : p[k])),
-                        React.createElement("td", { style: { padding: "5px 8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700 } }, fmt2(Number(p.qty || 0) * Number(p.unitPrice || 0))),
+                    React.createElement("tbody", null, activeParts.map((p, i) => (React.createElement("tr", { key: i, style: { background: i % 2 === 0 ? "#fff" : "#fafafa" } },
+                        ["failurePartNo", "replacementPartNo", "description", "qty", "unitPrice"].map((k) => React.createElement("td", { key: k, style: { padding: "5px 8px", border: "1px solid #e2e8f0" } }, editing ? React.createElement("input", {
+                            value: p[k] ?? "",
+                            onChange: e => {
+                                const val = e.target.value;
+                                const parts = [...(editForm.parts || [])];
+                                const updated = { ...parts[i], [k]: val };
+                                if (k === "qty" || k === "unitPrice") {
+                                    const q = Number(updated.qty);
+                                    const u = Number(updated.unitPrice);
+                                    updated.amount = (updated.qty !== "" && updated.unitPrice !== "" && Number.isFinite(q) && Number.isFinite(u)) ? Number((q * u).toFixed(2)) : null;
+                                }
+                                parts[i] = updated;
+                                setEditForm({ ...editForm, parts });
+                            },
+                            style: { width: "100%", padding: "4px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 11 }
+                        }) : p[k])),
+                        React.createElement("td", { style: { padding: "5px 8px", border: "1px solid #e2e8f0", textAlign: "right", fontWeight: 700, fontVariantNumeric: "tabular-nums" } }, fmt2(partRowAmount(p))),
                         editing && React.createElement("td", { style: { padding: "5px", border: "1px solid #e2e8f0" } },
-                            React.createElement("button", { onClick: () => { const parts = (editForm.parts || []).filter((_, x) => x !== i); setEditForm({ ...editForm, parts }); }, style: { border: "none", background: "#fee2e2", borderRadius: 5, padding: "4px 6px", cursor: "pointer" } }, "\u2715"))))))),
-                editing && React.createElement("button", { onClick: () => setEditForm({ ...editForm, parts: [...(editForm.parts || []), { failurePartNo: "", replacementPartNo: "", description: "", qty: 1, unitPrice: 0, amount: 0 }] }), style: { marginTop: 8, padding: "7px 10px", border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "\uFF0B Tambah Part"),
+                            React.createElement("button", { type: "button", onClick: () => { const parts = (editForm.parts || []).filter((_, x) => x !== i); setEditForm({ ...editForm, parts }); }, style: { border: "none", background: "#fee2e2", borderRadius: 5, padding: "4px 6px", cursor: "pointer" } }, "\u2715"))))))),
+                editing && React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 } },
+                    React.createElement("button", { type: "button", onClick: () => setEditForm({ ...editForm, parts: [...(editForm.parts || []), { failurePartNo: "", replacementPartNo: "", description: "", qty: 1, unitPrice: 0, amount: 0 }] }), style: { padding: "7px 10px", border: "1px solid #bfdbfe", background: "#eff6ff", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 700 } }, "\uFF0B Tambah Part"),
+                    React.createElement("button", { type: "button", onClick: () => setEditForm(prev => ({ ...prev, parts_total: Number(partsLineSum.toFixed(2)), labour_amount: Number(liveLabour.toFixed(2)), mileage_amount: Number(liveMileage.toFixed(2)), total_amount: Number(shownTotal.toFixed(2)) })), style: { padding: "7px 10px", border: "1px solid #cbd5e1", background: "#f8fafc", borderRadius: 7, cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#334155" } }, "↻ Sinkronkan Total")),
                 React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 10 } },
-                    React.createElement("div", { style: { background: "#0f172a", borderRadius: 8, padding: "10px 14px", minWidth: 200 } },
-                        [["Parts", detail.parts_total], ["Labour", detail.labour_amount], ["Mileage", detail.mileage_amount], ["Other", detail.other_amount]].map(([l, v]) => (React.createElement("div", { key: l, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "2px 0", color: "rgba(255,255,255,.6)" } },
+                    React.createElement("div", { style: { background: "#0f172a", borderRadius: 8, padding: "10px 14px", minWidth: 220 } },
+                        [["Parts", shownPartsTotal], ["Labour", liveLabour], ["Mileage", liveMileage], ["Other", liveOther]].map(([l, v]) => (React.createElement("div", { key: l, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "2px 0", color: "rgba(255,255,255,.72)", fontVariantNumeric: "tabular-nums" } },
                             React.createElement("span", null, l),
                             React.createElement("span", null,
-                                detail.currency,
+                                currencyLabel,
                                 " ",
                                 fmt2(v))))),
                         React.createElement("div", { style: {
                                 borderTop: "1px solid rgba(255,255,255,.15)", marginTop: 4, paddingTop: 4,
-                                display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 13,
+                                display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 13, fontVariantNumeric: "tabular-nums"
                             } },
-                            React.createElement("span", { style: { color: "#fff" } }, "TOTAL"),
+                            React.createElement("span", { style: { color: "#fff" } }, editing ? "TOTAL (Live)" : "TOTAL"),
                             React.createElement("span", { style: { color: "#60a5fa" } },
-                                detail.currency,
+                                currencyLabel,
                                 " ",
-                                fmt2(detail.total_amount)))))))))))));
+                                fmt2(shownTotal))))));
+            })()))))))
 }
 // V2.28 design-system smoke test: verifies the public UI contract without mutating app state.
 window.SDLGWebDesignStressTest = function () {
@@ -14757,25 +15052,29 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
 
 <script src="./canonical-warranty-helper.js?v=20261105-smart-engine-v2"></script>
   <script src="./modules/sdlg-hash-router.js?v=20261030-stable-v2"></script>
-  <script src="./modules/sdlg-input-claim-lock.js"></script>
   <script src="./modules/sdlg-portal-finance-ux.js"></script>
   <script src="./modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
 <script>
 (function () {
   var HREF = "styles/sdlg-dashboard-polish.css?v=20261109-topbar-modern-v1";
   function pin() {
+    var head = document.head || document.documentElement;
     var link = document.getElementById("sdlg-shell-polish") || document.querySelector('link[href*="sdlg-dashboard-polish"]');
     if (!link) {
       link = document.createElement("link");
       link.id = "sdlg-shell-polish";
       link.rel = "stylesheet";
     }
-    link.href = HREF;
-    (document.head || document.documentElement).appendChild(link);
+    if ((link.getAttribute("href") || "") !== HREF) {
+      link.href = HREF;
+    }
+    if (link.parentNode !== head || head.lastElementChild !== link) {
+      head.appendChild(link);
+    }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pin);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pin, { once: true });
   else pin();
-  window.addEventListener("load", pin);
+  window.addEventListener("load", pin, { once: true });
 })();
 </script>
 </body>

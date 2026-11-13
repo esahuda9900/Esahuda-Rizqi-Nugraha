@@ -37,7 +37,7 @@
       var href = './styles/sdlg-claim-detail-toolbar-fix.css?v=20261030-toolbar-fix-v1';
       var existing = document.getElementById('sdlg-claim-detail-toolbar-fix');
       if (existing) {
-        existing.href = href;
+        if ((existing.getAttribute('href') || '') !== href) existing.href = href;
         return;
       }
       var link = document.createElement('link');
@@ -53,7 +53,9 @@
       var href = './styles/sdlg-claims-ui-fix.css?v=20261030-toolbar-fix-v1';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
-        for (var i = 0; i < links.length; i++) links[i].href = href;
+        for (var i = 0; i < links.length; i++) {
+          if ((links[i].getAttribute('href') || '') !== href) links[i].href = href;
+        }
         return;
       }
       if (document.getElementById('sdlg-claims-ui-fix-bust')) return;
@@ -133,19 +135,23 @@
     try {
       if (typeof MutationObserver !== 'undefined') {
         var tmr = null;
-        new MutationObserver(function () {
-          clearTimeout(tmr);
-          tmr = setTimeout(upgradeClaimsDom, 80);
-        }).observe(document.documentElement, { childList: true, subtree: true });
+        var rootTarget = document.getElementById('root') || document.body || document.documentElement;
+        if (rootTarget) {
+          new MutationObserver(function () {
+            clearTimeout(tmr);
+            tmr = setTimeout(upgradeClaimsDom, 100);
+          }).observe(rootTarget, { childList: true, subtree: true });
+        }
       }
-      setInterval(upgradeClaimsDom, 2000);
     } catch (_) {}
     tryPolyfillListPage();
     ensureXlsxLoader();
-    var tries = 0;
-    var t = setInterval(function () {
-      if (tryPolyfillListPage() || ++tries > 40) clearInterval(t);
-    }, 250);
+    if (!tryPolyfillListPage()) {
+      var tries = 0;
+      var t = setInterval(function () {
+        if (tryPolyfillListPage() || ++tries > 40) clearInterval(t);
+      }, 250);
+    }
   }
 
   if (document.readyState === 'loading') {

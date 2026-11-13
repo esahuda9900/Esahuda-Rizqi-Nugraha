@@ -113,11 +113,6 @@ function streamFile(targetPath, response, isHead) {
   });
 }
 
-const bannerHtml = `
-<div id="preview-switch-banner" style="background:#1d4ed8;color:#ffffff;padding:10px 16px;text-align:center;font-size:13px;font-family:system-ui,-apple-system,sans-serif;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;position:relative;z-index:99999;box-shadow:0 2px 6px rgba(0,0,0,0.15)">
-  <span>🚀 <strong>Web Baru SDLG (React SPA):</strong> Siap diuji di rute preview</span>
-  <a href="/preview/" style="background:#fde047;color:#1e3a8a;padding:4px 12px;border-radius:6px;text-decoration:none;font-weight:700;font-size:12px">Buka React Preview →</a>
-</div>`;
 
 const server = http.createServer((request, response) => {
   const rawUrl = request.url || '/';
@@ -191,31 +186,6 @@ const server = http.createServer((request, response) => {
     if (statError || !stats.isFile()) {
       response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       response.end('Not found');
-      return;
-    }
-
-    // In dev server, inject preview banner into legacy index.html and app.html
-    if (filePath.endsWith('index.html') || filePath.endsWith('app.html')) {
-      fs.readFile(filePath, 'utf8', (readErr, content) => {
-        if (readErr) {
-          response.writeHead(500, { 'Content-Type': 'text/plain' });
-          response.end('Error loading page');
-          return;
-        }
-        const modified = content.replace('<body>', '<body>' + bannerHtml);
-        const buffer = Buffer.from(modified, 'utf-8');
-        response.writeHead(200, {
-          'Cache-Control': 'no-cache',
-          'Content-Type': 'text/html; charset=utf-8',
-          'Content-Length': buffer.length,
-          'X-Content-Type-Options': 'nosniff',
-        });
-        if (isHead) {
-          response.end();
-        } else {
-          response.end(buffer);
-        }
-      });
       return;
     }
 

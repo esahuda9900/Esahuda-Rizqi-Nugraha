@@ -1602,9 +1602,6 @@ tbody tr:hover td { background: var(--ui-surface-hover) !important; }
 .master-entity-claims-table tr:hover td {
   background: #f8fafc;
 }
-  border-radius: 4px;
-  padding: 1px 6px;
-}
 
 /* Related Claims Link Box in Drawer */
 .master-related-claims-box {
