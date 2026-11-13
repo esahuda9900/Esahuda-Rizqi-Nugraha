@@ -50,12 +50,9 @@
 
   function bustClaimsUiCss() {
     try {
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261030-toolbar-fix-v1';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261112-ui-expert-v5';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
-        for (var i = 0; i < links.length; i++) {
-          if ((links[i].getAttribute('href') || '') !== href) links[i].href = href;
-        }
         return;
       }
       if (document.getElementById('sdlg-claims-ui-fix-bust')) return;
@@ -138,8 +135,9 @@
         var rootTarget = document.getElementById('root') || document.body || document.documentElement;
         if (rootTarget) {
           new MutationObserver(function () {
+            if (!document.querySelector('.page:has(.claims-searchbar)')) return;
             clearTimeout(tmr);
-            tmr = setTimeout(upgradeClaimsDom, 100);
+            tmr = setTimeout(upgradeClaimsDom, 80);
           }).observe(rootTarget, { childList: true, subtree: true });
         }
       }

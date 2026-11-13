@@ -164,19 +164,28 @@
       var all = (firstResult && firstResult.data) || [];
       var totalCount = firstResult && firstResult.count;
 
-      // 2. If count is known, parallelize remaining pages concurrently
+      // 2. If count is known, load remaining pages with bounded concurrency (max 4 workers)
       if (typeof totalCount === 'number' && totalCount > PAGE_SIZE) {
         var totalPages = Math.min(MAX_PAGES_SAFETY, Math.ceil(totalCount / PAGE_SIZE));
-        var remainingPagePromises = [];
-        for (var p = 1; p < totalPages; p++) {
-          remainingPagePromises.push(repo.listClaimsPage(p));
+        var pageResults = new Array(totalPages - 1);
+        var nextPage = 1;
+        var workerCount = Math.min(4, totalPages - 1);
+        async function pageWorker() {
+          while (nextPage < totalPages) {
+            var currentPage = nextPage++;
+            pageResults[currentPage - 1] = await repo.listClaimsPage(currentPage);
+          }
         }
-        var remainingPages = await Promise.all(remainingPagePromises);
-        for (var i = 0; i < remainingPages.length; i++) {
-          all = all.concat(remainingPages[i] || []);
+        var workers = [];
+        for (var w = 0; w < workerCount; w++) {
+          workers.push(pageWorker());
+        }
+        await Promise.all(workers);
+        for (var i = 0; i < pageResults.length; i++) {
+          all = all.concat(pageResults[i] || []);
         }
         writeCountCache(all.length);
-        debugLog('listClaims parallel done', all.length);
+        debugLog('listClaims bounded-parallel done', all.length);
         return all;
       }
 

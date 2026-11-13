@@ -99,29 +99,44 @@ table td {
 /* --------------------------------------------------------------------------
    2. APP SHELL & TOP NAVIGATION BAR
    -------------------------------------------------------------------------- */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip !important;
+}
+
 .app-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   min-height: 100vh !important;
   min-height: 100svh !important;
   background: transparent !important;
+  overflow-x: clip !important;
 }
 
 .topbar,
 .app-shell .topbar,
-body > header {
+.app-shell:not(:has(.login-screen)) .topbar,
+body > header,
+.app-shell > header {
   position: sticky !important;
   top: 0 !important;
-  z-index: 200 !important;
+  z-index: 300 !important;
   min-height: 64px !important;
   height: auto !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(18px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 4px 16px -2px rgba(15, 23, 42, 0.02) !important;
+  width: 100% !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 6px 18px -8px rgba(15, 23, 42, 0.06) !important;
 }
 
 .topbar-inner,
-.app-shell .topbar-inner {
+.app-shell .topbar-inner,
+.app-shell:not(:has(.login-screen)) .topbar-inner {
   max-width: 1400px !important;
   min-height: 64px !important;
   height: auto !important;
@@ -179,7 +194,7 @@ body > header {
   letter-spacing: 0.01em !important;
   margin-top: 1px !important;
   white-space: nowrap !important;
-  max-width: 215px !important;
+  max-width: 340px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
@@ -270,7 +285,7 @@ body > header {
   align-items: center !important;
   gap: 7px !important;
   height: 36px !important;
-  padding: 0 11px !important;
+  padding: 0 8px 0 11px !important;
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 9px !important;
@@ -279,7 +294,7 @@ body > header {
   color: #334155 !important;
   box-shadow: var(--sdlg-shadow-xs) !important;
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease !important;
-  max-width: 235px !important;
+  max-width: 340px !important;
   white-space: nowrap !important;
 }
 
@@ -287,7 +302,7 @@ body > header {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  max-width: 132px !important;
+  max-width: 220px !important;
 }
 
 .connection-pill:hover,
@@ -373,23 +388,56 @@ body > header {
   color: #0f172a !important;
 }
 
-/* Laptop / Compact Desktop: cleanly dock tabs into full-width row 2 instead of clipping button labels */
-@media (max-width: 1179px) {
+/* Compact Desktop / Preview (1080px–1259px): keep 1 crisp horizontal row without clipping */
+@media (min-width: 1080px) and (max-width: 1259px) {
+  .topbar-inner,
+  .app-shell .topbar-inner,
+  .app-shell:not(:has(.login-screen)) .topbar-inner {
+    padding: 0 16px !important;
+    gap: 10px !important;
+  }
+  .brand-title,
+  .app-shell .brand-title {
+    font-size: 13.5px !important;
+  }
+  .brand-sub,
+  .app-shell .brand-sub {
+    font-size: 10px !important;
+    max-width: 260px !important;
+  }
+  .nav-btn,
+  .app-shell .nav-btn,
+  .app-shell:not(:has(.login-screen)) .nav-btn {
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+  .connection-pill .connection-email {
+    max-width: 175px !important;
+  }
+}
+
+/* Tablet / Narrow Windows (< 1080px): clean 2-row header with flush hairline sub-navigation */
+@media (max-width: 1079px) {
   .topbar,
   .app-shell .topbar,
   .app-shell:not(:has(.login-screen)) .topbar {
     height: auto !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   .topbar-inner,
   .app-shell .topbar-inner,
   .app-shell:not(:has(.login-screen)) .topbar-inner {
     flex-wrap: wrap !important;
-    padding: 10px 20px !important;
-    gap: 8px 16px !important;
+    padding: 9px 18px 6px !important;
+    gap: 8px 14px !important;
   }
   .brand,
   .app-shell .brand {
     order: 1 !important;
+    min-width: 0 !important;
   }
   .nav-tools,
   .app-shell .nav-tools,
@@ -409,9 +457,29 @@ body > header {
     width: 100% !important;
     justify-content: flex-start !important;
     overflow-x: auto !important;
-    margin: 0 !important;
+    margin: 2px 0 0 0 !important;
+    padding: 6px 0 2px 0 !important;
+    gap: 4px !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-top: 1px solid #eef2f7 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     mask-image: none !important;
     -webkit-mask-image: none !important;
+  }
+  .nav-btn:hover,
+  .app-shell .nav-btn:hover,
+  .app-shell:not(:has(.login-screen)) .nav-btn:hover {
+    background: #f1f5f9 !important;
+  }
+  .nav-btn.active,
+  .nav-btn[aria-current="page"],
+  .app-shell .nav-btn.active,
+  .app-shell:not(:has(.login-screen)) .nav-btn.active {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.14) !important;
   }
 }
 
@@ -419,10 +487,16 @@ body > header {
    3. PAGES & CONTAINERS
    -------------------------------------------------------------------------- */
 .page,
-.app-shell .page {
+.app-shell .page,
+.master-root,
+.app-shell .master-root,
+.sdlg-claim-workspace {
+  width: 100% !important;
   max-width: 1320px !important;
+  min-width: 0 !important;
   margin: 0 auto !important;
   padding: 24px 20px 48px !important;
+  box-sizing: border-box !important;
 }
 
 .eyebrow,
@@ -462,7 +536,7 @@ h1 {
 .card-pad,
 .app-shell .card,
 .app-shell .card-pad,
-[class*="-card"]:not(.login-card) {
+[class*="-card"]:not(.login-card):not(.sdlg-fin-summary-card) {
   background: #ffffff !important;
   border: 1px solid rgba(226, 232, 240, 0.95) !important;
   border-radius: var(--sdlg-radius-lg) !important;
@@ -543,9 +617,9 @@ h1 {
 .app-shell .metric-grid,
 .app-shell .overview-kpi-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
-  gap: 14px !important;
-  margin-bottom: 20px !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 12px !important;
+  margin-bottom: 18px !important;
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
@@ -560,22 +634,23 @@ h1 {
   background: #ffffff !important;
   border: 1px solid var(--sdlg-slate-200) !important;
   border-radius: var(--sdlg-radius-md) !important;
-  padding: 16px 18px !important;
+  padding: 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   box-shadow: var(--sdlg-shadow-xs) !important;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
   position: relative !important;
+  min-width: 0 !important;
 }
 
 .metric-card:hover,
 .overview-kpi:hover,
 .claims-kpi:hover {
   border-color: #cbd5e1 !important;
-  box-shadow: var(--sdlg-shadow-md) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
+  transform: none !important;
 }
 
 /* Strip out any legacy left borders */
@@ -597,14 +672,24 @@ h1 {
 }
 
 .metric-value,
-.overview-kpi__value,
-.claims-kpi__value {
-  font-size: 26px !important;
-  line-height: 1.1 !important;
+.overview-kpi__value {
+  font-size: 24px !important;
+  line-height: 1.15 !important;
   font-weight: 800 !important;
-  letter-spacing: -0.035em !important;
+  letter-spacing: -0.03em !important;
   color: var(--sdlg-slate-900) !important;
   font-variant-numeric: tabular-nums !important;
+  word-break: break-word !important;
+}
+
+.claims-kpi__value {
+  font-size: clamp(16px, 1.45vw, 20px) !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--sdlg-slate-900) !important;
+  font-variant-numeric: tabular-nums !important;
+  word-break: break-word !important;
 }
 
 .overview-kpi__hint,
@@ -1472,7 +1557,7 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
     height: auto !important;
   }
   .topbar-inner {
-    padding: 8px 12px !important;
+    padding: 8px 12px 6px !important;
     flex-wrap: wrap !important;
     gap: 8px !important;
   }
@@ -1488,8 +1573,13 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
     width: 100% !important;
     max-width: 100% !important;
     justify-content: flex-start !important;
-    margin: 0 !important;
-    padding: 3px !important;
+    margin: 2px 0 0 0 !important;
+    padding: 6px 0 2px !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-top: 1px solid #eef2f7 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
     mask-image: none !important;
     -webkit-mask-image: none !important;
   }
@@ -2110,11 +2200,38 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 /* --------------------------------------------------------------------------
    19.12 PARTS REPLACEMENT TABLE & FINANCIAL SLIP (Panel 12)
    -------------------------------------------------------------------------- */
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(table):has([style*="Part Replacement"]) {
-  padding: 18px 22px !important;
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page > div:has(table):has([style*="Part Replacement"]),
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-parts-card {
+  padding: 20px 22px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--sdlg-slate-200) !important;
+  border-radius: var(--sdlg-radius-lg) !important;
+  box-shadow: var(--sdlg-shadow-sm) !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page table {
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-parts-table-wrap {
+  width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  border: 1px solid var(--sdlg-slate-200) !important;
+  border-radius: var(--sdlg-radius-md) !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  margin-top: 4px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-parts-table-wrap > table.sdlg-parts-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page table:not(.sdlg-parts-table) {
   width: 100% !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -2127,11 +2244,11 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page table thead th {
   background: var(--sdlg-slate-50) !important;
   color: var(--sdlg-slate-600) !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  font-size: 10.5px !important;
+  font-weight: 750 !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  padding: 9px 12px !important;
+  letter-spacing: 0.06em !important;
+  padding: 10px 12px !important;
   border-bottom: 1px solid var(--sdlg-slate-200) !important;
   border-top: none !important;
   border-left: none !important;
@@ -2139,7 +2256,7 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page table tbody td {
-  padding: 9px 12px !important;
+  padding: 10px 12px !important;
   font-size: 12.5px !important;
   color: var(--sdlg-slate-800) !important;
   border-bottom: 1px solid var(--sdlg-slate-100) !important;
@@ -2148,8 +2265,8 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
   border-right: none !important;
 }
 
-.app-shell:not(:has(.login-screen)) .page.claim-detail-page table tbody tr:hover {
-  background: #f8fafc !important;
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page table tbody tr:hover td {
+  background: #f1f6ff !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page table tbody tr:last-child td {
@@ -2157,14 +2274,52 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 }
 
 /* Financial Total Card (Receipt Slip) */
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card,
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page div[style*="background: #0f172a"],
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page div[style*="background: rgb(15, 23, 42)"] {
-  background: linear-gradient(145deg, #090d16 0%, #0f172a 60%, #1e293b 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--sdlg-radius-md) !important;
-  padding: 16px 20px !important;
-  min-width: 260px !important;
-  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.35) !important;
+  background: linear-gradient(145deg, #0f172a 0%, #172554 100%) !important;
+  background-color: #0f172a !important;
+  border: 1px solid rgba(96, 165, 250, 0.25) !important;
+  border-radius: 13px !important;
+  padding: 14px 18px !important;
+  min-width: 268px !important;
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  color: #e2e8f0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-row {
+  color: #cbd5e1 !important;
+  font-size: 12px !important;
+  padding: 3.5px 0 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-row span:first-child {
+  color: #cbd5e1 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-row span:last-child {
+  color: #f8fafc !important;
+  font-family: var(--sdlg-mono) !important;
+  font-weight: 650 !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-total {
+  border-top: 1px solid rgba(148, 163, 184, 0.28) !important;
+  margin-top: 8px !important;
+  padding-top: 9px !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-total span:first-child {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.app-shell:not(:has(.login-screen)) .page.claim-detail-page .sdlg-fin-summary-card .sdlg-fin-total span:last-child {
+  color: #38bdf8 !important;
+  font-family: var(--sdlg-mono) !important;
+  font-size: 15.5px !important;
+  font-weight: 800 !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page div[style*="background: #0f172a"] div[style*="color: rgba(255,255,255,.6)"],
@@ -2246,7 +2401,7 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 .sdlg-field-card:hover {
   border-color: #cbd5e1 !important;
   box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.03) !important;
-  transform: translateY(-1px) !important;
+  transform: none !important;
 }
 
 .sdlg-field-card:focus-within {
@@ -2428,7 +2583,278 @@ button, a, input, select, textarea {
 .connection-pill:hover {
   border-color: #3b82f6 !important;
   background: #f8faff !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12) !important;
-  transform: translateY(-0.5px) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1) !important;
+  transform: none !important;
 }
+
+.sdlg-fx-input-group:focus-within {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+}
+
+.sdlg-fx-input-group input.sdlg-fx-input {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.sdlg-fx-input-group input.sdlg-fx-input:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   25. MASTER DATA LAYOUT, FILTER BAR & UNIT CARD OVERFLOW FIXES
+   -------------------------------------------------------------------------- */
+.master-root > *,
+.master-header-band,
+.master-kpi-grid,
+.master-nav-tabs,
+.master-toolbar-panel,
+.master-toolbar-top,
+.master-filter-bar,
+.master-inspector-bar,
+.master-table-card {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.master-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)) !important;
+  gap: 12px !important;
+}
+
+.master-kpi-card:hover {
+  transform: none !important;
+}
+
+.master-toolbar-panel {
+  border-radius: 14px !important;
+  padding: 14px 16px !important;
+}
+
+.master-toolbar-top {
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+.master-toolbar-panel .search-box,
+.master-search-box {
+  flex: 1 1 260px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.master-toolbar-panel .search-box input,
+.master-toolbar-panel .search-box .sdlg-input,
+.master-search-box .master-search-input {
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+.master-toolbar-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 1 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.master-select-filter,
+.master-btn-action {
+  height: 40px !important;
+}
+
+.master-filter-bar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  padding-top: 11px !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.master-filter-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.master-filter-chips-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.master-filter-chip {
+  height: 30px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  border-radius: 7px !important;
+}
+
+.master-branch-filter-box {
+  margin-left: auto !important;
+  flex-shrink: 0 !important;
+  max-width: 100% !important;
+}
+
+.master-branch-select {
+  height: 32px !important;
+  min-width: 170px !important;
+  max-width: 240px !important;
+}
+
+.master-inspector-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.master-unit-hint {
+  flex: 1 1 320px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.master-view-toggle {
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  white-space: nowrap !important;
+}
+
+.master-table-card,
+.master-toolbar-panel {
+  scroll-margin-top: 112px !important;
+}
+
+/* In card grid mode, render unit cards cleanly on the slate canvas without nested double card borders */
+.master-table-card:has(.master-unit-grid) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.master-table-card:has(.master-unit-grid) .master-footer-pagination {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  margin-top: 4px !important;
+}
+
+.master-unit-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)) !important;
+  gap: 14px !important;
+  padding: 2px 0 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.master-unit-card {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 16px !important;
+  border-radius: 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+.master-unit-card:hover {
+  transform: none !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.14), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+}
+
+.master-unit-card-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.master-unit-model-badge {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  flex-wrap: wrap !important;
+}
+
+.master-unit-status-text {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  padding-top: 2px !important;
+}
+
+.master-unit-vin-block,
+.master-unit-vin-left,
+.master-unit-meta-row,
+.master-unit-dates-grid,
+.master-unit-warranty-grid {
+  min-width: 0 !important;
+}
+
+.master-copy-btn {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 720px) {
+  .master-root {
+    padding: 16px 12px 32px !important;
+  }
+  .master-toolbar-panel {
+    padding: 12px !important;
+  }
+  .master-toolbar-actions > select,
+  .master-toolbar-actions > button {
+    flex: 1 1 auto !important;
+  }
+  .master-branch-filter-box {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+  .master-branch-select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
 

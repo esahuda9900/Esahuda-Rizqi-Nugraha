@@ -37,24 +37,26 @@
     s.textContent = `
       @media (max-width: 900px) {
         /* --- GLOBAL RESET --- */
-        html, body { width: 100% !important; max-width: 100% !important; min-width: 0 !important; overflow-x: hidden !important; }
+        html, body { width: 100% !important; max-width: 100% !important; min-width: 0 !important; overflow-x: clip !important; }
         body { font-size: 14px !important; -webkit-text-size-adjust: 100% !important; }
-        .page, .app-shell:not(:has(.login-screen)) .page { padding: 14px 12px calc(28px + env(safe-area-inset-bottom, 0px)) !important; max-width: 100% !important; width: 100% !important; box-sizing: border-box !important; }
+        .page, .master-root, .app-shell:not(:has(.login-screen)) .page, .app-shell:not(:has(.login-screen)) .master-root { padding: 14px 12px calc(28px + env(safe-area-inset-bottom, 0px)) !important; max-width: 100% !important; width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; }
 
         /* --- TOPBAR SOLID (CSS order only, zero React DOM mutation) --- */
         .topbar,
         .app-shell:not(:has(.login-screen)) .topbar {
           height: auto !important; min-height: 0 !important; overflow: visible !important;
-          position: sticky !important; top: 0 !important; z-index: 200 !important;
-          background: rgba(255, 255, 255, 0.94) !important;
-          border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
-          backdrop-filter: blur(16px) saturate(160%) !important;
+          position: sticky !important; top: 0 !important; z-index: 300 !important;
+          background: #ffffff !important;
+          background-color: #ffffff !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
         }
         .topbar-inner,
         .app-shell:not(:has(.login-screen)) .topbar-inner {
           height: auto !important; min-height: 0 !important; max-width: none !important; width: 100% !important;
           display: flex !important; flex-wrap: wrap !important; align-items: center !important; justify-content: space-between !important;
-          gap: 8px !important; padding: 8px 12px !important; box-sizing: border-box !important;
+          gap: 8px !important; padding: 8px 12px 6px !important; box-sizing: border-box !important;
         }
 
         /* Brand & Title */
@@ -70,15 +72,15 @@
         .nav-tools .icon-btn { flex: 0 0 auto !important; min-width: 34px !important; min-height: 34px !important; width: 34px !important; height: 34px !important; }
         .nav-tools > button:not(.icon-btn) { flex: 0 0 auto !important; white-space: nowrap !important; min-height: 34px !important; height: 34px !important; font-size: 11.5px !important; padding: 0 10px !important; }
 
-        /* Nav Scroll (Row 2 full-width cleanly scrollable without clipping desktop pills) */
+        /* Nav Scroll (Row 2 clean hairline sub-nav without blank gray capsule) */
         .nav-scroll,
         .app-shell:not(:has(.login-screen)) .nav-scroll {
           order: 3 !important; position: static !important; top: auto !important; left: auto !important; right: auto !important;
           flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important;
           display: flex !important; flex-wrap: nowrap !important; justify-content: flex-start !important;
           overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important;
-          gap: 3px !important; padding: 3px !important; margin: 0 !important;
-          background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important;
+          gap: 4px !important; padding: 6px 0 2px !important; margin: 2px 0 0 !important;
+          background: transparent !important; border: 0 !important; border-top: 1px solid #eef2f7 !important; border-radius: 0 !important; box-shadow: none !important;
           mask-image: none !important; -webkit-mask-image: none !important;
         }
         .nav-scroll::-webkit-scrollbar { display: none !important; }

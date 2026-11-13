@@ -125,27 +125,33 @@
     if (cur === next || cur === next.replace(/^#/, '#')) {
       return parse(next);
     }
+    var emittedViaHashChange = false;
     try {
       if (opts.replace !== false && root.history && root.history.replaceState) {
         root.history.replaceState(null, '', (root.location.pathname || '') + (root.location.search || '') + next);
         try {
+          emittedViaHashChange = true;
           root.dispatchEvent(new HashChangeEvent('hashchange'));
         } catch (_) {
           try {
+            emittedViaHashChange = true;
             root.dispatchEvent(new Event('hashchange'));
-          } catch (__) {}
+          } catch (__) {
+            emittedViaHashChange = false;
+          }
         }
       } else {
         root.location.hash = next.replace(/^#/, '');
       }
     } catch (err) {
+      emittedViaHashChange = false;
       debugLog('navigate error', err && err.message);
       try {
         root.location.hash = next.replace(/^#/, '');
       } catch (_) {}
     }
     var state = parse(next);
-    emit(state);
+    if (!emittedViaHashChange) emit(state);
     return state;
   }
 
