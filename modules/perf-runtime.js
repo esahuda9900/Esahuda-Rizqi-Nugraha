@@ -5,31 +5,7 @@
   'use strict';
 
   function upgradeClaimsDom() {
-    try {
-      var page = document.querySelector('.page:has(.claims-searchbar)');
-      if (!page) return;
-      page.querySelectorAll('.claim-row.sdlg-card').forEach(function (el) {
-        el.classList.remove('sdlg-card');
-      });
-      page.querySelectorAll('.sdlg-card').forEach(function (el) {
-        if (el.classList.contains('claim-row')) return;
-        if (el.querySelector('button, input, select, textarea, a')) return;
-        if (el.children.length > 4) return;
-        el.classList.remove('sdlg-card');
-        el.classList.add('claims-kpi');
-        var kids = el.children;
-        if (kids[0] && !kids[0].classList.contains('claims-kpi__label')) {
-          kids[0].classList.add('claims-kpi__label');
-        }
-        if (kids[1] && !kids[1].classList.contains('claims-kpi__value')) {
-          kids[1].classList.add('claims-kpi__value');
-        }
-      });
-      var firstKpi = page.querySelector('.claims-kpi');
-      if (firstKpi && firstKpi.parentElement && !firstKpi.parentElement.classList.contains('claims-kpi-grid')) {
-        firstKpi.parentElement.classList.add('claims-kpi-grid');
-      }
-    } catch (_) {}
+    /* Markup is natively rendered by React in app.html (.claims-kpi-grid/.claims-kpi) */
   }
 
   function bustClaimDetailToolbarCss() {
@@ -50,7 +26,7 @@
 
   function bustClaimsUiCss() {
     try {
-      var href = './styles/sdlg-claims-ui-fix.css?v=20261112-ui-expert-v5';
+      var href = './styles/sdlg-claims-ui-fix.css?v=20261113-ui-expert-v6';
       var links = document.querySelectorAll('link[rel="stylesheet"][href*="claims-ui-fix"]');
       if (links && links.length) {
         return;
@@ -128,27 +104,10 @@
   function boot() {
     bustClaimsUiCss();
     bustClaimDetailToolbarCss();
-    upgradeClaimsDom();
-    try {
-      if (typeof MutationObserver !== 'undefined') {
-        var tmr = null;
-        var rootTarget = document.getElementById('root') || document.body || document.documentElement;
-        if (rootTarget) {
-          new MutationObserver(function () {
-            if (!document.querySelector('.page:has(.claims-searchbar)')) return;
-            clearTimeout(tmr);
-            tmr = setTimeout(upgradeClaimsDom, 80);
-          }).observe(rootTarget, { childList: true, subtree: true });
-        }
-      }
-    } catch (_) {}
     tryPolyfillListPage();
     ensureXlsxLoader();
-    if (!tryPolyfillListPage()) {
-      var tries = 0;
-      var t = setInterval(function () {
-        if (tryPolyfillListPage() || ++tries > 40) clearInterval(t);
-      }, 250);
+    if (!window.SDLG_REPOSITORY) {
+      window.addEventListener('load', tryPolyfillListPage, { once: true });
     }
   }
 
@@ -159,7 +118,7 @@
   }
 
   window.SDLGPerfRuntime = {
-    version: '1.7.1-toolbar-fix',
+    version: '1.8.0-clean-perf',
     tryPolyfillListPage: tryPolyfillListPage,
     bustClaimsUiCss: bustClaimsUiCss,
     bustClaimDetailToolbarCss: bustClaimDetailToolbarCss,

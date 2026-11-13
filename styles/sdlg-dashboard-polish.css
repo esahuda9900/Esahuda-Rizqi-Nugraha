@@ -74,7 +74,6 @@ body {
   background-image: 
     radial-gradient(1200px 500px at 50% -40px, rgba(29, 78, 216, 0.06), transparent 70%),
     radial-gradient(1000px 400px at 85% 10%, rgba(14, 165, 233, 0.04), transparent 60%) !important;
-  background-attachment: fixed !important;
   line-height: 1.5 !important;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
@@ -1814,9 +1813,8 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
   align-items: center !important;
   flex-wrap: wrap !important;
   gap: 16px !important;
-  background: #ffffff !important;
-  border: 1px solid var(--sdlg-slate-200) !important;
-  border-left: 4px solid var(--sdlg-primary) !important;
+  background: #f8faff !important;
+  border: 1px solid #bfdbfe !important;
   border-radius: var(--sdlg-radius-md) !important;
   padding: 14px 18px !important;
   box-shadow: var(--sdlg-shadow-xs) !important;
@@ -1974,8 +1972,8 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
   margin-top: 10px !important;
   padding: 10px 16px !important;
   background: rgba(15, 23, 42, 0.65) !important;
-  border-left: 3px solid #38bdf8 !important;
-  border-radius: 0 8px 8px 0 !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  border-radius: 8px !important;
   color: #e2e8f0 !important;
   font-size: 13px !important;
   font-style: normal !important;
@@ -2072,8 +2070,7 @@ div:has(> button[style*="background: #1e40af"]) button:not([style*="color: #fff"
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step.current .dot {
   background: var(--sdlg-primary) !important;
-  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.25) !important;
-  animation: stepPulse 1.8s infinite ease-in-out !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.22) !important;
 }
 
 .app-shell:not(:has(.login-screen)) .page.claim-detail-page .status-step.current .status-step-label {

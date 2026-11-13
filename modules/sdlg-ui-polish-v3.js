@@ -39,43 +39,28 @@
     } catch (_) {}
   }
 
-  function ensureStatusPill() {
-    if (!onLoginPage()) return;
-    var intro = document.querySelector('.login-intro');
-    if (!intro) return;
-    if (intro.querySelector('.login-status-pill')) return;
-    var trust = intro.querySelector('.login-trust-list');
-    var pill = document.createElement('div');
-    pill.className = 'login-status-pill';
-    pill.setAttribute('role', 'status');
-    pill.innerHTML =
-      '<span class="login-status-dot" aria-hidden="true"></span>' +
-      '<span>Sistem siap · Silakan login</span>';
-    if (trust && trust.parentNode) {
-      trust.parentNode.insertBefore(pill, trust);
-    } else {
-      intro.appendChild(pill);
-    }
-  }
-
   function tick() {
-    if (!onLoginPage()) return;
+    if (!onLoginPage()) return false;
     hidePipelineBannerOnLogin();
-    ensureStatusPill();
     autoFocusLogin();
+    return true;
   }
 
   function boot() {
     tick();
     if (typeof MutationObserver !== 'undefined') {
       var t = null;
-      var target = document.body || document.documentElement;
+      var target = document.getElementById('root') || document.body || document.documentElement;
       if (target) {
-        new MutationObserver(function () {
-          if (!onLoginPage()) return;
+        var obs = new MutationObserver(function () {
+          if (!onLoginPage()) {
+            if (document.querySelector('.topbar')) obs.disconnect();
+            return;
+          }
           clearTimeout(t);
           t = setTimeout(tick, 100);
-        }).observe(target, { childList: true, subtree: true });
+        });
+        obs.observe(target, { childList: true, subtree: true });
       }
     }
   }

@@ -63,7 +63,6 @@
         background: var(--toast-bg) !important;
         color: var(--toast-text) !important;
         border: 1px solid var(--toast-border) !important;
-        border-left-width: 4px !important;
         border-radius: 12px !important;
         box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.06) !important;
         padding: 14px 16px !important;
@@ -71,15 +70,15 @@
         position: relative !important; overflow: hidden !important;
         opacity: 1 !important; visibility: visible !important;
         transform: translateX(0) !important;
-        animation: sdlgNotifyToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        animation: sdlgNotifyToastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
       }
 
       @keyframes sdlgNotifyToastIn {
-        from { opacity: 0; transform: translateX(32px) scale(0.96); }
+        from { opacity: 0; transform: translateX(24px) scale(0.98); }
         to { opacity: 1; transform: translateX(0) scale(1); }
       }
       @keyframes sdlgNotifyToastOut {
-        to { opacity: 0; transform: translateX(32px) scale(0.96); }
+        to { opacity: 0; transform: translateX(24px) scale(0.98); }
       }
       @keyframes sdlgProgress {
         from { width: 100%; }
@@ -87,13 +86,13 @@
       }
 
       #${CONTAINER_ID} .sdlg-toast--closing {
-        animation: sdlgNotifyToastOut 0.25s ease forwards !important;
+        animation: sdlgNotifyToastOut 0.2s ease forwards !important;
       }
 
-      #${CONTAINER_ID} .sdlg-toast--error   { border-left-color: #dc2626 !important; }
-      #${CONTAINER_ID} .sdlg-toast--warning { border-left-color: #d97706 !important; }
-      #${CONTAINER_ID} .sdlg-toast--success { border-left-color: #059669 !important; }
-      #${CONTAINER_ID} .sdlg-toast--info    { border-left-color: #1d4ed8 !important; }
+      #${CONTAINER_ID} .sdlg-toast--error   { border-color: #fecaca !important; }
+      #${CONTAINER_ID} .sdlg-toast--warning { border-color: #fde68a !important; }
+      #${CONTAINER_ID} .sdlg-toast--success { border-color: #a7f3d0 !important; }
+      #${CONTAINER_ID} .sdlg-toast--info    { border-color: #bfdbfe !important; }
 
       #${CONTAINER_ID} .sdlg-toast__icon {
         width: 30px !important; height: 30px !important; border-radius: 8px !important;

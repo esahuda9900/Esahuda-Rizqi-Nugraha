@@ -1914,34 +1914,38 @@ tbody tr:hover td { background: var(--ui-surface-hover) !important; }
   font-weight: 500;
 }
 
-/* Lifecycle Dates 2-Column Grid */
+/* Lifecycle Dates 3-Column Grid (B/L China -> Arrival ITR Yard -> Sales Date) */
 .master-unit-dates-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 1px;
 }
 
 .master-date-box {
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 7px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   border: 1px solid #eef2f6;
   background: #f8fafc;
+  min-width: 0;
 }
 
 .master-date-lbl {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .master-date-val {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
@@ -1949,7 +1953,7 @@ tbody tr:hover td { background: var(--ui-surface-hover) !important; }
 }
 
 .master-date-box.is-empty .master-date-val {
-  color: #b45309;
+  color: #94a3b8;
   font-family: inherit;
   font-size: 11px;
 }
@@ -2661,9 +2665,9 @@ button:active:not(:disabled),
   font-weight: 700;
 }
 .sdlg-dga-tier-badge.contract {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
 }
 .sdlg-dga-tier-badge.standard {
   background: #f1f5f9;

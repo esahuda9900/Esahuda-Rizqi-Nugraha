@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="styles/sdlg-modern-refresh.css?v=20261112-ui-expert-v5" />
   <link rel="stylesheet" href="styles/sdlg-responsive.css" />
   <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
-  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261112-ui-expert-v5" />
+  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261113-ui-expert-v6" />
   <link rel="stylesheet" href="styles/sdlg-overview-v1.css?v=20261030-action-today-v1" />
   
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
@@ -3322,19 +3322,43 @@ input[type="checkbox"],input[type="radio"]{
    overflow kill, 16px inputs (no iOS zoom), and improved touch targets. */
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
-<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261112-ui-expert-v5">
+<link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261113-ui-expert-v6">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
-  
-  
+  .sdlg-preboot{max-width:1180px;margin:0 auto;padding:20px 18px 40px;font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;color:#0f172a}
+  .sdlg-preboot-bar{height:58px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .sdlg-preboot-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px}
+  .sdlg-preboot-mark{width:30px;height:30px;border-radius:8px;background:#1d4ed8;color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+  .sdlg-preboot-shimmer{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:sdlgPreboot 1.4s ease-in-out infinite;border-radius:10px}
+  .sdlg-preboot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  @media(max-width:720px){.sdlg-preboot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @keyframes sdlgPreboot{0%{background-position:100% 0}100%{background-position:-100% 0}}
 </style>
 </head>
 <body>
-  <div id="root"></div>
-  <div id="sdlg-boot-error" style="display:none;max-width:920px;margin:24px auto;padding:16px;border:1px solid #fecaca;background:#fff1f2;color:#991b1b;border-radius:12px;font-family:Arial,sans-serif">
+  <div id="root">
+    <div class="sdlg-preboot" data-sdlg-preboot="1" aria-busy="true" aria-label="Memuat portal SDLG Warranty">
+      <div class="sdlg-preboot-bar">
+        <div class="sdlg-preboot-brand">
+          <div class="sdlg-preboot-mark">S</div>
+          <span>SDLG Warranty</span>
+        </div>
+        <div class="sdlg-preboot-shimmer" style="width:140px;height:14px"></div>
+      </div>
+      <div class="sdlg-preboot-grid">
+        <div class="sdlg-preboot-shimmer" style="height:82px"></div>
+        <div class="sdlg-preboot-shimmer" style="height:82px"></div>
+        <div class="sdlg-preboot-shimmer" style="height:82px"></div>
+        <div class="sdlg-preboot-shimmer" style="height:82px"></div>
+      </div>
+      <div class="sdlg-preboot-shimmer" style="height:240px;border-radius:14px"></div>
+    </div>
+  </div>
+  <div id="sdlg-boot-error" style="display:none;max-width:920px;margin:24px auto;padding:16px 20px;border:1px solid #fecaca;background:#fff1f2;color:#991b1b;border-radius:12px;font-family:system-ui,-apple-system,sans-serif">
     <div style="font-weight:800;margin-bottom:6px">SDLG Warranty gagal memulai aplikasi.</div>
-    <div id="sdlg-boot-error-text" style="font-size:13px;white-space:pre-wrap" aria-live="assertive"></div>
+    <div id="sdlg-boot-error-text" style="font-size:13px;white-space:pre-wrap;margin-bottom:12px" aria-live="assertive"></div>
+    <button type="button" onclick="window.location.reload()" style="padding:8px 14px;border:1px solid #fca5a5;background:#ffffff;color:#991b1b;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">Muat Ulang Halaman</button>
   </div>
   <script>
     (function(){
@@ -3422,7 +3446,7 @@ input[type="checkbox"],input[type="radio"]{
     window.setTimeout(function(){
       var root=document.getElementById("root");
       var boot=document.getElementById("sdlg-boot-error");
-      if(root && !root.firstElementChild && (!boot || boot.style.display!=="block")){
+      if(root && (!root.firstElementChild || root.querySelector("[data-sdlg-preboot]")) && (!boot || boot.style.display!=="block")){
         showBoot("Aplikasi belum berhasil melakukan render. Periksa akses CDN, koneksi Supabase, lalu muat ulang halaman.");
       }
     },5000);
@@ -5696,7 +5720,8 @@ function estimateCurrentHM(claim, claims = [], prebuiltModel = null) {
     const latestTrusted = anchors.length ? anchors[anchors.length - 1] : null;
     const picked = chooseHMRate(claim, model);
     let rate = picked.rate, basis = picked.basis, confidence = picked.confidence;
-    let anchorDate = latestTrusted?.date || dateObj(osfDepartureDate(serial)) || dateObj(claim?.sales_date) || claimFailureDate;
+    const blFromClaim = claim?.bill_of_lading_date || claim?.osf_departure_date || osfDepartureDate(serial) || null;
+    let anchorDate = latestTrusted?.date || dateObj(blFromClaim) || dateObj(claim?.sales_date) || claimFailureDate;
     let anchorHM = latestTrusted?.hm != null ? Number(latestTrusted.hm) : null;
     let startDate = anchorDate;
     let downtimeDays = 0;
@@ -5716,6 +5741,28 @@ function estimateCurrentHM(claim, claims = [], prebuiltModel = null) {
         anchorDate = claimCompletionDate;
         anchorHM = claimCompletionHM;
         startDate = claimCompletionDate;
+    }
+    if (!startDate) {
+        return {
+            estimatedHM: null,
+            estimatedHMExact: null,
+            rateHpd: null,
+            basis: 'Data Referensi Tidak Tersedia',
+            confidence: 'Unavailable',
+            lastKnownHM: anchorHM != null ? Number(anchorHM) : null,
+            referenceDate: null,
+            blDate: blFromClaim,
+            observationCount: obs.length,
+            machineHasHistory: obs.length >= 2 || !!claimFailureHM,
+            gpsHM: null,
+            gpsCapturedAt: null,
+            gpsModel: null,
+            operatingDays: null,
+            downtimeDays: 0,
+            expectedLow: null,
+            expectedHigh: null,
+            note: 'Belum ada tanggal B/L, Sales Date, Failure Date, atau HM meter yang valid untuk menghitung estimasi.'
+        };
     }
     const operatingDays = Math.max(0, Math.floor((todayDt - startDate) / 86400000));
     let estimate = anchorHM != null ? anchorHM + rate * operatingDays : Math.max(0, rate * operatingDays);
@@ -5738,7 +5785,7 @@ function estimateCurrentHM(claim, claims = [], prebuiltModel = null) {
     const spread = modelStats && Number.isFinite(modelStats.p25) && Number.isFinite(modelStats.p75)
         ? { low: Math.max(anchorHM || 0, (anchorHM || 0) + modelStats.p25 * operatingDays),
             high: Math.max(anchorHM || 0, (anchorHM || 0) + modelStats.p75 * operatingDays) } : null;
-    const sourceDate = anchorDate ? anchorDate.toISOString().slice(0, 10) : osfDepartureDate(serial) || claim?.sales_date || claim?.failure_date || null;
+    const sourceDate = anchorDate ? anchorDate.toISOString().slice(0, 10) : blFromClaim || claim?.sales_date || claim?.failure_date || null;
     const lastKnownHM = anchorHM != null ? Number(anchorHM) : null;
     return {
         estimatedHM: Math.round(estimate),
@@ -5748,7 +5795,7 @@ function estimateCurrentHM(claim, claims = [], prebuiltModel = null) {
         confidence: confidence || 'Low',
         lastKnownHM,
         referenceDate: sourceDate,
-        blDate: osfDepartureDate(serial),
+        blDate: blFromClaim,
         observationCount: obs.length,
         machineHasHistory: obs.length >= 2 || !!claimFailureHM,
         gpsHM: null,
@@ -5760,31 +5807,21 @@ function estimateCurrentHM(claim, claims = [], prebuiltModel = null) {
         expectedHigh: spread?.high != null ? Math.round(spread.high) : Math.round(estimate),
         note: latestTrusted
             ? `Anchor HM ${Math.round(anchorHM)} hr @ ${sourceDate}; ${operatingDays} hari operasi dipakai untuk estimasi${downtimeDays ? ` (downtime ${downtimeDays} hari tidak dihitung)` : ''}.`
-            : 'Tidak ada HM claim yang valid; angka diturunkan dari umur unit + rate yang dikalibrasi menggunakan unit GPS, sehingga tetap menghasilkan estimasi.'
+            : 'Dihitung dari tanggal referensi unit dan rate operasional terkalibrasi (bukan pembacaan meter langsung).'
     };
 }
 // ─── MAIN APP ────────────────────────────────────────────────────────────
-// Release master seed: 3,676 unique dealer unit serials from Active Machine + OSF.
 const MASTER_UNIT_SEED = [];
-const SOURCE_AUDIT = {
-    activeRows: 3642,
-    activeUniqueSerials: 3642,
-    activeModels: 45,
-    osfRows: 3676,
-    osfUniqueSerials: 3676,
-    activeOsfMatched: 3642,
-    osfOnlyHistorical: 34,
-    modelMismatches: 0,
-    departurePresent: 3676,
-    arrivalPresent: 3491,
-    salePresent: 3221,
-    last3YearsShipmentRows: 1201,
-    arrivalBeforeDeparture: 20,
-    saleBeforeDeparture: 2,
-    saleBeforeArrival: 1,
-    sourceAsOf: "2026-09-07",
-    note: "Per business rule, OSF 出港日期 (Departure Date) is the source used for True B/L Date. The UI labels this as B/L Date (derived from OSF Departure Date) and keeps the source semantics in the estimate basis."
+const formatPolicyTierLabel = (tierRaw, blDate) => {
+    const blStr = String(blDate || "").trim();
+    const isBl2026 = /^2026(?:-|$)/.test(blStr);
+    if (isBl2026) return "Garansi B/L 2026";
+    const s = String(tierRaw || "").trim();
+    if (!s) return "—";
+    if (/contract/i.test(s)) return "Extended Coverage";
+    return s;
 };
+const SOURCE_AUDIT_NOTE = "Per business rule: Bill of Lading Date (OSF Departure Date) adalah tanggal delivery unit sampai di Indonesia dari China, sedangkan Arrival Date (OSF Arrival Date) adalah tanggal kedatangan unit ke yard dealer ITR. Garansi extended berlaku untuk unit dengan Bill of Lading Date tahun 2026.";
 class SDLGErrorBoundary extends React.Component {
     constructor(props) { super(props); this.state = { hasError: false, message: "" }; }
     static getDerivedStateFromError(error) { return { hasError: true, message: error?.message || "Unexpected UI error" }; }
@@ -5936,8 +5973,9 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
     };
 
     const matrixStatus = String(warrantyMatrix?.status || "").toUpperCase();
-    const effectiveTier = warrantyMatrix?.warranty_tier_used || "";
-    const contractEffective = warrantyMatrix?.contract_customer_effective === true;
+    const rawTier = warrantyMatrix?.warranty_tier_used || "";
+    const resolvedBlForTier = warrantyMatrix?.bill_of_lading_date || selectedClaim.bill_of_lading_date || "";
+    const effectiveTier = formatPolicyTierLabel(rawTier, resolvedBlForTier);
     const claimPolicy = warrantyMatrix?.claim_policy || null;
     const policies = Array.isArray(warrantyMatrix?.policies) ? warrantyMatrix.policies : [];
 
@@ -6158,8 +6196,6 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
                 const mWo = String((_liveForLoc && (_liveForLoc.dealer_claim_no || _liveForLoc.comment)) || (selectedClaim.dealer_claim_no || "") + " " + (selectedClaim.comment || "")).match(/\bWO\d{6,10}\b/i);
                 if (mWo) wo = mWo[0];
             }
-            if (!wo && String(selectedClaim.claim_id) === "0279-2026-SDLG-PFR") wo = "WO26044395";
-            if (!wo && String(selectedClaim.claim_id) === "0277-2026-SDLG-PFR") wo = "WO26044691";
             const isCompWord = /\b(roller|idler|track|link|shoe|bushing|pin|sprocket|cylinder|seal|hose|pump|valve|filter|engine|muffler|leak|broken|crack|fault|damage)\b/i;
             let branch = String((_liveForLoc && (_liveForLoc.branch || _liveForLoc.branch_name)) || selectedClaim.branch || selectedClaim.branch_name || "").trim();
             if (!branch) {
@@ -6167,8 +6203,6 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
                 if (dName) branch = String(dName).replace(/^ITR\s*[-–]\s*/i, "").trim();
             }
             if (isCompWord.test(branch)) branch = "";
-            if (!branch && String(selectedClaim.claim_id) === "0279-2026-SDLG-PFR") branch = "MUARA ENIM";
-            if (!branch && String(selectedClaim.claim_id) === "0277-2026-SDLG-PFR") branch = "PONTIANAK";
             let customer = String((_liveForLoc && (_liveForLoc.customer || _liveForLoc.customer_name)) || selectedClaim.customer || selectedClaim.customer_name || "").trim();
             if (isCompWord.test(customer)) customer = "";
             const locParts = [wo, branch, customer].map(s => String(s || "").trim().replace(/^[-_\s]+|[-_\s]+$/g, "")).filter(Boolean);
@@ -6179,9 +6213,9 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
         : warrantyError
             ? "Policy check failed"
             : matrixStatus === "IN_WARRANTY"
-                ? `In Warranty — ${effectiveTier || "Warranty"}`
+                ? `In Warranty — ${effectiveTier && effectiveTier !== "—" ? effectiveTier : "Warranty"}`
                 : matrixStatus === "OUT_OF_WARRANTY"
-                    ? `Out of Warranty — ${effectiveTier || "Warranty"}`
+                    ? `Out of Warranty — ${effectiveTier && effectiveTier !== "—" ? effectiveTier : "Warranty"}`
                     : matrixStatus === "UNKNOWN"
                         ? "Data Gap — policy incomplete"
                         : matrixStatus === "MIXED_POLICY"
@@ -6191,7 +6225,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
     const portalValues = {
         serviceType: "Repair",
         serviceMethod: selectedClaim.repair_method || selectedClaim.service_method || "",
-        repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || selectedClaim.failure_date),
+        repairDate: portalDate(selectedClaim.dealer_repair_date || selectedClaim.completion_date || ""),
         serialNumber: selectedClaim.serial_no || selectedClaim.canonical_serial_no || "",
         hourMeter: numberText(selectedClaim.hm_failure),
         warrantyScope: wholeMachineWarranty,
@@ -6245,11 +6279,11 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
       <div role="alert" style="background:${reviewReady && !financeNeedsReview ? "#effcf4" : "#fff7ed"};border:1px solid ${reviewReady && !financeNeedsReview ? "#86efac" : "#fdba74"};border-radius:12px;padding:13px 14px;margin-bottom:12px;font-size:12px;line-height:1.65;color:#7c2d12"><b>🛡️ Portal Readiness Check</b> · ${esc(reviewBanner)}<div style="font-size:11px;color:#64748b;margin-top:4px">Sumber: Supabase Claims + Warranty Policy Matrix. Belum ada pengiriman otomatis. Kolom kosong harus diisi manual sebelum Copy All.</div></div>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-          <div><div class="eyebrow">Warranty Engine · Supabase</div><div style="font-size:16px;font-weight:800;color:#0f172a">Warranty Policy Check</div><div style="font-size:11px;color:#64748b;margin-top:4px">Multi-category · Standard vs Contract · B/L ceiling · Failure Date + HM</div></div>
+          <div><div class="eyebrow">Warranty Engine · Supabase</div><div style="font-size:16px;font-weight:800;color:#0f172a">Warranty Policy Check</div><div style="font-size:11px;color:#64748b;margin-top:4px">Multi-category · Standard vs Garansi B/L 2026 · B/L ceiling · Failure Date + HM</div></div>
           <div style="padding:8px 11px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;font-size:12px;font-weight:900">${statusIcon(matrixStatus)} ${esc(statusLabel(matrixStatus))}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px">
-          ${[["Warranty Tier", effectiveTier || "—"],["B/L Date", portalDate(warrantyMatrix?.bill_of_lading_date) || portalDate(selectedClaim.bill_of_lading_date) || "—"],["Failure Date", portalDate(warrantyMatrix?.failure_date) || portalDate(selectedClaim.failure_date) || "—"],["Failure HM", numberText(warrantyMatrix?.hm_failure ?? selectedClaim.hm_failure) || "—"]].map(([k,v]) => `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:9px"><div style="font-size:10px;font-weight:800;color:#64748b">${esc(k)}</div><div style="font-size:12px;font-weight:800;color:#0f172a;margin-top:3px">${esc(v)}</div></div>`).join("")}
+          ${[["Warranty Tier", effectiveTier || "—"],["B/L Date (China → ID)", portalDate(warrantyMatrix?.bill_of_lading_date) || portalDate(selectedClaim.bill_of_lading_date) || "—"],["Failure Date", portalDate(warrantyMatrix?.failure_date) || portalDate(selectedClaim.failure_date) || "—"],["Failure HM", numberText(warrantyMatrix?.hm_failure ?? selectedClaim.hm_failure) || "—"]].map(([k,v]) => `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:9px"><div style="font-size:10px;font-weight:800;color:#64748b">${esc(k)}</div><div style="font-size:12px;font-weight:800;color:#0f172a;margin-top:3px">${esc(v)}</div></div>`).join("")}
         </div>
         ${warrantyError ? `<div style="margin-top:10px;color:#b91c1c;font-size:11px;font-weight:700">⚠ ${esc(warrantyError)}</div>` : ""}
         ${policies.length ? `<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #e2e8f0"><thead><tr>${["Component Category","Status","Warranty","Sales Expiry (DB)","B/L Expiry (DB)","Effective Expiry (DB)"].map(h => `<th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b;white-space:nowrap">${h}</th>`).join("")}</tr></thead><tbody>${policyRows}</tbody></table></div>` : `<div style="margin-top:10px;color:#64748b;font-size:11px">Belum ada policy matrix yang dapat ditampilkan.</div>`}
@@ -6275,7 +6309,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
       </div></div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px"><div class="eyebrow">Dealer Portal</div><div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:4px">Replacement Record Details</div><div style="font-size:11px;color:#64748b;margin-bottom:12px">${parts.length} part dari claim. Semua row source dipertahankan.</div>${parts.length ? `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>${["#","Failure Part","Replace Part","Description","Qty","Unit Price","Amount","Copy"].map(h => `<th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;color:#64748b;white-space:nowrap">${h}</th>`).join("")}</tr></thead><tbody>${partsRows}</tbody></table></div>` : `<div style="color:#94a3b8;font-size:12px">Belum ada part.</div>`}</div>
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:14px"><div class="eyebrow">Dealer Portal</div><div style="font-size:16px;font-weight:800;color:#0f172a;margin-bottom:4px">Other Cost Details</div><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">${fieldHtml("labourAmount","Labour Amount",fmt2(portalFin.labourAmount),false,false)}${fieldHtml("mileageAmount","Mileage Amount",fmt2(portalFin.mileageAmount),false,false)}${fieldHtml("otherAmount","Other Amount",fmt2(portalFin.otherAmount),false,false)}${fieldHtml("totalAmount","Total Amount Claimed",fmt2(portalFin.totalAmount),false,false)}</div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:11px;color:#64748b">Contract tier untuk B/L sebelum 01/01/2026 mengikuti continuity rule; B/L 2026+ mengikuti flag contract/CSA di data unit.</div><a href="https://crm.sdlg.com/main.aspx?appid=2097e5d7-73ca-4f97-aae3-94c5e34bea39&forceUCI=1&pagetype=entityrecord&etn=new_srv_workorder" target="_blank" rel="noreferrer" class="primary-btn" style="text-decoration:none">↗ Buka Dealer Portal</a></div>`;
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:11px;color:#64748b">Skema extended berlaku untuk unit dengan Bill of Lading Date tahun 2026 (pengiriman China → Indonesia). Arrival Date adalah tanggal tiba unit ke yard dealer ITR.</div><a href="https://crm.sdlg.com/main.aspx?appid=2097e5d7-73ca-4f97-aae3-94c5e34bea39&forceUCI=1&pagetype=entityrecord&etn=new_srv_workorder" target="_blank" rel="noreferrer" class="primary-btn" style="text-decoration:none">↗ Buka Dealer Portal</a></div>`;
 
     return React.createElement("div", { className: "page", "data-sdlg-input-helper": "1", style: { maxWidth: 1120, margin: "0 auto" } },
         React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 } },
@@ -7136,6 +7170,7 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [masterMatches, setMasterMatches] = useState(null);
     const [matchLoading, setMatchLoading] = useState(false);
     const [branchMasterList, setBranchMasterList] = useState([]);
+    const [customerMasterList, setCustomerMasterList] = useState([]);
     const [branchSearchInput, setBranchSearchInput] = useState("");
     const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
     const [branchCreating, setBranchCreating] = useState(false);
@@ -7150,6 +7185,13 @@ SDLG_REPOSITORY.listClaims = async function () {
                 }
             })
             .catch(err => console.warn("Prefetch branches error:", err?.message || err));
+        fetchAllRows("customers", "id,customer_name,is_active", "customer_name")
+            .then(rows => {
+                if (Array.isArray(rows) && rows.length) {
+                    setCustomerMasterList(rows);
+                }
+            })
+            .catch(err => console.warn("Prefetch customers error:", err?.message || err));
     }, [fetchAllRows]);
     const [masterTab, setMasterTab] = useState(() => { try { return sessionStorage.getItem("sdlg:master:tab") || "machines"; } catch (_) { return "machines"; } });
     useEffect(() => { try { sessionStorage.setItem("sdlg:master:tab", masterTab); } catch (_) {} }, [masterTab]);
@@ -7538,14 +7580,16 @@ SDLG_REPOSITORY.listClaims = async function () {
         }
 
         const blDate = u.bill_of_lading_date || u.osf_departure_date ? String(u.bill_of_lading_date || u.osf_departure_date).slice(0, 10) : null;
+        const arrivalDate = u.osf_arrival_date || u.arrival_date || u.date_of_arrival ? String(u.osf_arrival_date || u.arrival_date || u.date_of_arrival).slice(0, 10) : null;
         const saleDate = u.sale_date || u.sales_date || u.osf_sales_date ? String(u.sale_date || u.sales_date || u.osf_sales_date).slice(0, 10) : null;
         
+        const isBl2026 = Boolean(blDate && /^2026(?:-|$)/.test(blDate));
         const isContract = Boolean(
+            isBl2026 ||
             u.contract_customer === true ||
-            u.is_contract === true ||
-            (blDate && blDate < "2026-01-01")
+            u.is_contract === true
         );
-        const tier = isContract ? "Contract Customer" : "Standard";
+        const tier = isBl2026 ? "Garansi B/L 2026" : (isContract ? "Extended Coverage" : "Standard");
 
         let keyMonths = 24;
         let keyHours = 5000;
@@ -7689,14 +7733,16 @@ SDLG_REPOSITORY.listClaims = async function () {
         return {
             productFamily,
             tier,
+            isBl2026,
             isContract,
             saleDate,
             blDate,
+            arrivalDate,
             key: {
                 months: keyMonths,
-                after_saled_str: `${keyMonths}个月`,
+                after_saled_str: `${keyMonths} Bulan`,
                 bl_cap_months: keyBlCapMonths,
-                after_departure_str: `${keyBlCapMonths}个月`,
+                after_departure_str: `${keyBlCapMonths} Bulan`,
                 working_hours: keyHours,
                 sales_expiry: keySalesExpiry,
                 bl_expiry: keyBlExpiry,
@@ -7707,9 +7753,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             },
             other: {
                 months: otherMonths,
-                after_saled_str: `${otherMonths}个月`,
+                after_saled_str: `${otherMonths} Bulan`,
                 bl_cap_months: otherBlCapMonths,
-                after_departure_str: `${otherBlCapMonths}个月`,
+                after_departure_str: `${otherBlCapMonths} Bulan`,
                 working_hours: otherHours,
                 sales_expiry: otherSalesExpiry,
                 bl_expiry: otherBlExpiry,
@@ -7744,164 +7790,6 @@ SDLG_REPOSITORY.listClaims = async function () {
         return { inWarranty, outOfWarranty, preSale, contract };
     }, [masterTab, masterRows]);
 
-    const CANONICAL_SDLG_MACHINE_VLGG913FPS0600781 = {
-        id: "unit-vlg-g9138f-0600781",
-        serial_no: "VLGG913FPS0600781",
-        source_serial_no: "VLGG913FPS0600781",
-        osf_model: "G9138F-LS",
-        model: "G9138F-LS",
-        model_code: "G9138F-LS",
-        product_type: "Motor Grader",
-        order_no: "G1380W2244103E4-LS",
-        form_no: "2002618-260173",
-        zone: "印尼大区",
-        region: "印尼ITU区域",
-        dealer: "ITR",
-        country: "印尼ITU",
-        agent_level: "D",
-        agent_network: "ITR-PALEMBANG",
-        branch_id: "ITR-PALEMBANG",
-        customer_name: "LAJU PERDANA INDAH, PT",
-        customer_name_source: "LAJU PERDANA INDAH, PT",
-        customer_type: "其他",
-        customer_cellphone: "6285269034507",
-        customer_address: "SUDIRMAN PLAZA, INDOFOOD TOWER LT. 11 JL. JEND. SUDIRMAN KAV. 76-78, SETIABUDI JAKARTA SELATAN INDONESIA",
-        settlement_method: "Working hour system",
-        warranty_card_photos: ["1.jpg", "2.jpg"],
-        training_form_photos: [],
-        csa_photos: [],
-        working_condition: "Other",
-        environmental_condition: "General",
-        remarks: "Please Enter Remarks",
-        created_at: "2025-12-24",
-        creation_date: "2025-12-24",
-        bill_of_lading_date: "2025-09-30",
-        osf_departure_date: "2025-09-30",
-        date_of_arrival: "2025-10-03",
-        arrival_date: "2025-10-03",
-        sales_date: "2026-05-23",
-        sale_date: "2026-05-23",
-        osf_sales_date: "2026-05-23",
-        key_components_warranty: {
-            after_saled_months: "24个月",
-            after_departure_months: "30个月",
-            working_hours: 5000,
-            out_of_warranty_date: "2028-03-30",
-        },
-        other_parts_warranty: {
-            after_saled_months: "24个月",
-            after_departure_months: "24个月",
-            working_hours: 2000,
-            out_of_warranty_date: "2027-09-30",
-        },
-        audits: [
-            {
-                auditor: "许芳",
-                role: "服务部信息审核员",
-                verified_at: "2026-06-09 11:03:00",
-                verified_text: "服务部信息审核员许芳已审核 2026-06-09 11:03:00",
-                audit_info: "None",
-                modify_record: "None",
-                status: "已审核"
-            },
-            {
-                auditor: "自动审核",
-                role: "山东临工员工",
-                verified_at: "2026-06-09 11:03:01",
-                verified_text: "山东临工员工自动审核已审核 2026-06-09 11:03:01",
-                audit_info: "系统自动审核",
-                modify_record: "None",
-                status: "已审核"
-            }
-        ],
-        insurance: {
-            policy_number: "ASR-SDLG-2026-913801",
-            insurance_company: "PT Asuransi Sinar Mas (ITU Fleet)",
-            policy_type: "Heavy Machinery All Risks (HMAR) + TPL",
-            policy_status: "Active (Terproteksi Penuh)",
-            sum_insured: "Rp 1.580.000.000 (USD 98,500)",
-            inception_date: "2026-05-23",
-            expiry_date: "2027-05-22",
-            deductible: "Rp 15.000.000 / occurrence",
-            emergency_helpline: "021-390-2138 / claim.sdlg@sinarmas.co.id",
-            insured_entity: "PERKASA BETON ABADI, PT."
-        },
-        ax_work_orders: [
-            {
-                wo_no: "WO25036764",
-                created_date: "2025-08-13",
-                wo_type: "WAR",
-                status: "Canceled",
-                description: "—",
-                primary_resource_group: "ITR - PALEMBANG"
-            }
-        ],
-        delivery_training: {
-            training_date: "2026-05-23",
-            training_venue: "Site PT Laju Perdana Indah, Palembang",
-            sdlg_certified_trainer: "Rian Kurniawan (ITU Training Team)",
-            trainee_operators: "Bambang Sutrisno, Joko Riyadi",
-            total_training_hours: "16 Jam (Teori & Praktik Lapangan)",
-            customer_representative: "Bpk. Irwan Syahputra (Site Manager)",
-            handover_form_signed: "Yes (Sudah ditandatangani basah & stempel)",
-            training_status: "COMPLETED & CERTIFIED"
-        },
-        machine_configuration: [
-            ["Engine Model", "Weichai WP6G140E310 (Tier 3)"],
-            ["Engine Serial No.", "140E25110892", true],
-            ["Rated Power", "105 kW @ 2200 RPM (142 HP)"],
-            ["Transmission", "SDLG YD13 Electro-Hydraulic Power Shift (6F/3R)"],
-            ["Drive Axle", "SDLG Heavy Planetary Hub Reduction with No-Spin Diff"],
-            ["Hydraulic Pump", "Permco Tandem Gear Pump 21 MPa"],
-            ["Control Valve", "Husco Load-Sensing Multi-Way Valve"],
-            ["Moldboard Width", "3,660 mm (Blade Height: 610 mm)"],
-            ["Operating Weight", "12,100 kg"],
-            ["Cabin Specs", "FOPS/ROPS Certified Deluxe Cabin with HVAC Air Conditioner"],
-            ["Tire Specifications", "14.00-24 16PR Heavy Duty Industrial Tires"],
-            ["Electrical System", "24V Dual Battery (120 Ah x 2)"]
-        ],
-        stock_inspections: [
-            { date: "2025-10-15", type: "Arrival Stock Inspection", inspector: "Hendra Setiawan (Yard Inspector)", result: "PASSED", note: "Pemeriksaan kedatangan dari pelabuhan. Baterai 25.6V, anti-karat wax utuh, tekanan ban 0.35 MPa. Kondisi prima." },
-            { date: "2025-12-10", type: "Monthly Maintenance Check", inspector: "Hendra Setiawan (Yard Inspector)", result: "PASSED", note: "Pemanasan mesin 15 menit, verifikasi level oli & coolant, putaran moldboard normal, baterai recharge cycle." },
-            { date: "2026-02-20", type: "Pre-Sales Stock Readiness", inspector: "Agus Supriyanto (Palembang Tech)", result: "PASSED", note: "Uji fungsi hidrolik penuh, pembersihan unit, pemasangan decal SDLG Indonesia, siap dijadwalkan PDI." }
-        ],
-        pdi_inspection: {
-            form_no: "PDI-PLM-2026-0518",
-            date: "2026-05-18",
-            location: "Workshop ITR-PALEMBANG",
-            hm: "8.5 hrs",
-            status: "PDI PASSED",
-            check_items: [
-                "Engine Oil, Coolant & Fuel Line Pressure",
-                "Transmission Power Shift (Forward 1-6 & Reverse 1-3)",
-                "Working Hydraulic Pressure Test (21 MPa)",
-                "Service Brake & Parking Brake Emergency Hold",
-                "Moldboard Lift, Side Shift & Circle Drive Rotation",
-                "Electrical Lighting, Gauges, Horn & Reverse Siren",
-                "Cabin HVAC Air Conditioning Cooling Efficiency",
-                "Safety Guards, Decals & Fire Extinguisher Check"
-            ]
-        },
-        changelog: [
-            { time: "2026-06-09 11:03:01", user: "自动审核 (山东临工员工)", action: "System automatic audit verified warranty status and updated ledger." },
-            { time: "2026-06-09 11:03:00", user: "许芳 (服务部信息审核员)", action: "Approved warranty card registration and validated customer sales terms." },
-            { time: "2026-05-23 09:15:00", user: "Palembang Admin", action: "Assigned sales date 2026-05-23 and registered customer LAJU PERDANA INDAH, PT." },
-            { time: "2025-12-24 14:22:10", user: "Factory B/L Sync", action: "Unit PIN created via SDLG departure manifest (Form No. 2002618-260173)." }
-        ],
-        bom_level: [
-            { group: "1. Engine System (Weichai WP6G140E310)", code: "2913000101", parts: [["4110000054", "Turbocharger Assy", "1 pc"], ["4110000582", "Fuel Injection Pump", "1 pc"], ["4110000841", "Starter Motor 24V", "1 pc"], ["4110000845", "Alternator 28V 55A", "1 pc"]] },
-            { group: "2. Powertrain & Transmission (YD13)", code: "2913000201", parts: [["2913000210", "Torque Converter Sub-assy", "1 set"], ["2913000255", "Electro-Hydraulic Shift Solenoid Valve", "1 set"]] },
-            { group: "3. Drive Axle & Brake Assembly", code: "2913000301", parts: [["2913000320", "Planetary Hub Reduction Gear Set", "2 sets"], ["2913000340", "Wet Brake Caliper Disc Assy", "4 sets"]] },
-            { group: "4. Working Hydraulic System", code: "2913000401", parts: [["2913000412", "Tandem Hydraulic Gear Pump 21MPa", "1 set"], ["2913000430", "Moldboard Lift Cylinder (L/R)", "2 pcs"], ["2913000445", "Circle Turn Hydraulic Motor", "1 pc"]] },
-            { group: "5. Cabin & Electronic Controls", code: "2913000501", parts: [["2913000520", "Electronic Control Unit (ECU)", "1 pc"], ["2913000545", "Digital Color Instrument Cluster", "1 pc"]] }
-        ],
-        rectification_assignments: [
-            { tsb: "TSB-2026-SDLG-041", title: "Hydraulic Hose Routing Clip Reinforcement", priority: "Recommended", status: "COMPLETED", date: "2026-05-18", tech: "Agus Supriyanto", desc: "Pemasangan klem pelindung selang hidrolik blade untuk mencegah gesekan saat rotasi circle ekstrem. Selesai saat PDI." },
-            { tsb: "TSB-2026-SDLG-055", title: "Moldboard Blade Fastener Torque Audit", priority: "Periodic", status: "SCHEDULED", date: "250 hrs Service", tech: "ITR-PALEMBANG", desc: "Audit pengencangan ulang baut mata pisau pemotong pada 250 jam kerja pertama sesuai buletin teknis pabrik SDLG." }
-        ],
-        is_active: true
-    };
-
     const MASTER_CONFIG = {
         machines: {
             table: "machines",
@@ -7915,8 +7803,9 @@ SDLG_REPOSITORY.listClaims = async function () {
                 ["product_type", "Product Type"],
                 ["customer_name_source", "Customer"],
                 ["branch_id", "Branch / Network"],
+                ["osf_departure_date", "Bill of Lading (China → ID)"],
+                ["osf_arrival_date", "Arrival Date (Yard ITR)"],
                 ["osf_sales_date", "Sales Date"],
-                ["osf_departure_date", "B/L Departure Date"],
                 ["warranty_status", "Garansi & OOW"],
                 ["form_no", "Form No."],
             ],
@@ -8070,13 +7959,9 @@ SDLG_REPOSITORY.listClaims = async function () {
             const orderField = cfg.orderCol || cfg.fields?.[0]?.[0] || "id";
             let data = await fetchAllRows(cfg.table, selectFields, orderField);
             if (reqSeq !== masterRequestSeqRef.current) return;
-            if (kind === "machines") {
-                const rows = Array.isArray(data) ? data : [];
-                const hasCanonical = rows.some(x => String(x.serial_no || "").trim().toUpperCase() === "VLGG913FPS0600781");
-                data = hasCanonical ? rows : [CANONICAL_SDLG_MACHINE_VLGG913FPS0600781, ...rows];
-            }
-            masterDataCacheRef.current[kind] = data || [];
-            setMasterRows(data || []);
+            const rows = Array.isArray(data) ? data : [];
+            masterDataCacheRef.current[kind] = rows;
+            setMasterRows(rows);
             setMasterPage(1);
             refreshMasterCounts();
         }
@@ -8085,11 +7970,6 @@ SDLG_REPOSITORY.listClaims = async function () {
             console.warn("loadMasterData error:", e);
             const errMsg = e?.message || "Gagal mengambil data master dari server";
             setMasterLoadError(errMsg);
-            if (kind === "machines" && !masterDataCacheRef.current[kind]?.length) {
-                const fallbackData = [CANONICAL_SDLG_MACHINE_VLGG913FPS0600781];
-                setMasterRows(fallbackData);
-                setMasterPage(1);
-            }
             showToast("Gagal load master: " + errMsg);
         }
         finally {
@@ -8246,7 +8126,10 @@ SDLG_REPOSITORY.listClaims = async function () {
     const isRowAnomaly = useCallback((row, tabKey = masterTab) => {
         if (!row) return false;
         if (tabKey === "machines") {
-            return !row.branch_id || !row.osf_sales_date || !row.customer_name_source || !row.osf_departure_date;
+            const hasSales = Boolean(row.osf_sales_date || row.sale_date || row.sales_date);
+            const hasBl = Boolean(row.osf_departure_date || row.bill_of_lading_date);
+            const hasCust = Boolean(row.customer_name_source || row.customer_name || row.customer_id);
+            return !row.branch_id || !hasSales || !hasCust || !hasBl;
         }
         if (tabKey === "models") {
             return !row.product_family || !row.model_code;
@@ -8395,6 +8278,14 @@ SDLG_REPOSITORY.listClaims = async function () {
         return map;
     }, [branchMasterList]);
 
+    const customerNameMap = useMemo(() => {
+        const map = new Map();
+        (customerMasterList || []).forEach(c => {
+            if (c && c.id != null && c.customer_name) map.set(c.id, c.customer_name);
+        });
+        return map;
+    }, [customerMasterList]);
+
     const claimsByUnitIndex = useMemo(() => {
         const bySerial = new Map();
         const byTail = new Map();
@@ -8446,7 +8337,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                 if (masterWarrantyFilter === "in_warranty" && clocks.overall.status !== "FULL_WARRANTY" && clocks.overall.status !== "KEY_ONLY") return false;
                 if (masterWarrantyFilter === "out_of_warranty" && clocks.overall.status !== "OUT_OF_WARRANTY") return false;
                 if (masterWarrantyFilter === "pre_sale" && clocks.overall.status !== "PRE_SALE_YARD") return false;
-                if (masterWarrantyFilter === "contract" && !clocks.isContract) return false;
+                if (masterWarrantyFilter === "contract" && !clocks.isBl2026) return false;
             }
             if (!term) return true;
             const matchesDirect = searchKeys.some(k => String(row[k] ?? "").toLowerCase().includes(term));
@@ -8566,6 +8457,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (!nextUser && !curUserRef) return;
             const version = ++authEventVersion;
             ++profileGeneration.current;
+            ++claimsLoadGeneration.current;
             clearTimeout(profileTimer);
             // Profile requests must start after the Supabase auth callback returns.
             profileTimer = setTimeout(() => {
@@ -8578,6 +8470,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                     setAuthLoading(false);
                     return;
                 }
+                setUserRole("viewer");
+                setUserBranchId(null);
                 setUser(nextUser);
                 withTimeout(loadUserProfile(nextUser), 10000, "User access check timed out.")
                     .catch(error => {
@@ -8706,19 +8600,19 @@ SDLG_REPOSITORY.listClaims = async function () {
         if (!effectiveUser) {
             setClaims([]);
             setActionCenterRows([]);
-            setClaimsHydrated(true);
+            if (typeof setClaimsHydrated === "function") setClaimsHydrated(true);
             setLoading(false);
             return;
         }
         if (!sdlgSupabase) {
-            setClaimsHydrated(true);
+            if (typeof setClaimsHydrated === "function") setClaimsHydrated(true);
             setLoading(false);
             showToast("Konfigurasi Supabase belum diisi.");
             return;
         }
         if (typeof claimsRef === "undefined" || !claimsRef.current || claimsRef.current.length === 0) {
             setLoading(true);
-            setClaimsHydrated(false);
+            if (typeof setClaimsHydrated === "function") setClaimsHydrated(false);
         }
         setClaimsLoadError(null);
         try {
@@ -8749,7 +8643,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             if (typeof claimsRef !== "undefined") claimsRef.current = all;
             if (typeof window !== "undefined") window.__SDLG_ALL_CLAIMS__ = all;
             setClaims(all);
-            setClaimsHydrated(true);
+            if (typeof setClaimsHydrated === "function") setClaimsHydrated(true);
             setClaimsLoadError(null);
             if (actionRows?.error) throw actionRows.error;
             setActionCenterRows(actionRows?.data || []);
@@ -8765,7 +8659,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         }
         finally {
             if (current()) {
-                setClaimsHydrated(true);
+                if (typeof setClaimsHydrated === "function") setClaimsHydrated(true);
                 setLoading(false);
             }
         }
@@ -8849,7 +8743,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     canonicalized++;
                 }));
             }
-            showToast(`✅ Master Unit tersinkronisasi: ${done.toLocaleString()} unit · ${canonicalized} claim direlink`);
+            showToast(`✅ Link Master Unit diperbarui: ${activeUnits.length.toLocaleString()} unit aktif · ${canonicalized} claim direlink`);
             await loadMasterData("machines");
             await loadClaims();
         }
@@ -8860,22 +8754,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             setMasterLoading(false);
         }
     }, [isAdmin, fetchAllRows, loadMasterData, loadClaims]);
-    useEffect(() => {
-        if (!user || !isAdmin || !sdlgSupabase)
-            return;
-        let cancelled = false;
-        (async () => {
-            try {
-                const { count, error } = await sdlgSupabase.from("machines").select("id", { count: "exact", head: true });
-                if (!cancelled && !error && Number(count || 0) < MASTER_UNIT_SEED.length)
-                    await syncMasterUnits();
-            }
-            catch (e) {
-                console.warn("Master Unit coverage check failed:", e);
-            }
-        })();
-        return () => { cancelled = true; };
-    }, [user, isAdmin, syncMasterUnits]);
+    // Re-link claim serials against Supabase Master Units when admin triggers sync.
     // Restore legacy Excel Dealer Claim No. by Claim ID (non-destructive; only this missing field is populated).
     const handleLegacyDealerClaimImport = async (file) => {
         if (!file || !sdlgSupabase)
@@ -10770,8 +10649,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             setSaving(false);
         }
     };
-    useEffect(() => {
-        if (tab === "list" && detailId) loadClaimStatusHistory(detailId);
+    useEffect(() => { if (tab === "list" && detailId) loadClaimStatusHistory(detailId);
         else { ++historyRequestRef.current; setStatusHistoryDb([]); }
     }, [tab, detailId]);
     const branches = [...new Set(claims.map(c => String(c.branch || "").trim()).filter(Boolean))].sort();
@@ -11965,40 +11843,41 @@ SDLG_REPOSITORY.listClaims = async function () {
                         const u = masterDetailRow;
                         const sn = String(u.serial_no || u.source_serial_no || "—");
                         const model = String(u.osf_model || u.model || "SDLG Machine");
-                        const customer = String(u.customer_name_source || u.customer_name || "—");
-                        const branchName = branchMasterList.find(b => b.id === u.branch_id)?.branch_name || u.branch_id || "—";
+                        const resolvedCust = u.customer_name_source || u.customer_name || (u.customer_id ? customerNameMap.get(u.customer_id) : null);
+                        const customer = resolvedCust ? String(resolvedCust) : "—";
+                        const resolvedBranch = branchMasterList.find(b => b.id === u.branch_id)?.branch_name || null;
                         const isExcavator = model.toLowerCase().includes("e6") || model.toLowerCase().includes("e7") || model.toLowerCase().includes("excavator");
                         const isLoader = model.toUpperCase().startsWith("L") || model.toUpperCase().includes("95") || model.toUpperCase().includes("93") || model.toUpperCase().includes("96");
                         const productIcon = isExcavator ? "🏗️" : isLoader ? "🚜" : "⚙️";
-                        const productFamily = isExcavator ? "Excavator" : isLoader ? "Wheel Loader" : (u.product_type || "Motor Grader");
+                        const productFamily = isExcavator ? "Excavator" : isLoader ? "Wheel Loader" : (u.product_type || "Equipment");
 
-                        const isSampleG9138 = sn.includes("0600781") || model.includes("G9138");
-                        const formNo = u.form_no || (isSampleG9138 ? "2002618-260173" : (u.id ? `2002618-${String(sn).slice(-6)}` : null));
-                        const zone = u.zone || (isSampleG9138 ? "印尼大区" : null);
-                        const region = u.region || (isSampleG9138 ? "印尼ITU区域" : null);
-                        const dealer = u.dealer || (isSampleG9138 ? "ITR" : (u.dealer_code ? `${u.dealer_code} - ${u.dealer_name || ""}` : null));
-                        const country = u.country || (isSampleG9138 ? "印尼ITU" : null);
-                        const levelOfAgent = u.agent_level || (isSampleG9138 ? "D" : null);
-                        const agentNetwork = u.agent_network || (isSampleG9138 ? "ITR-PALEMBANG" : (branchName !== "—" ? `ITR-${branchName.toUpperCase()}` : null));
-                        const productModel = u.osf_model || u.model || (isSampleG9138 ? "G9138F-LS" : model);
-                        const orderNo = u.order_no || (isSampleG9138 ? "G1380W2244103E4-LS" : null);
-                        const productType = u.product_type || (isSampleG9138 ? "Motor Grader" : productFamily);
-                        const completeMachinePIN = u.serial_no || (isSampleG9138 ? "VLGG913FPS0600781" : sn);
-                        const creationDate = u.creation_date || u.created_at ? String(u.creation_date || u.created_at).slice(0, 10) : (isSampleG9138 ? "2025-12-24" : null);
-                        const billOfLadingDate = u.bill_of_lading_date || u.osf_departure_date ? String(u.bill_of_lading_date || u.osf_departure_date).slice(0, 10) : (isSampleG9138 ? "2025-09-30" : null);
-                        const dateOfArrival = u.date_of_arrival || u.arrival_date ? String(u.date_of_arrival || u.arrival_date).slice(0, 10) : (isSampleG9138 ? "2025-10-03" : null);
-                        const salesDateVal = u.sale_date || u.sales_date || u.osf_sales_date ? String(u.sale_date || u.sales_date || u.osf_sales_date).slice(0, 10) : (isSampleG9138 ? "2026-05-23" : null);
-                        const customerNameVal = u.customer_name_source || u.customer_name || (isSampleG9138 ? "LAJU PERDANA INDAH, PT" : customer);
-                        const customerType = u.customer_type || (isSampleG9138 ? "其他" : null);
-                        const customerCellphone = u.customer_cellphone || (isSampleG9138 ? "6285269034507" : null);
-                        const customerAddress = u.customer_address || (isSampleG9138 ? "SUDIRMAN PLAZA, INDOFOOD TOWER LT. 11 JL. JEND. SUDIRMAN KAV. 76-78, SETIABUDI JAKARTA SELATAN INDONESIA" : null);
-                        const settlementMethod = u.settlement_method || (isSampleG9138 ? "Working hour system" : null);
-                        const warrantyCardPhotos = (Array.isArray(u.warranty_card_photos) && u.warranty_card_photos.length > 0) ? u.warranty_card_photos : (isSampleG9138 ? ["1.jpg", "2.jpg"] : null);
+                        const formNo = u.form_no || null;
+                        const zone = u.zone || null;
+                        const region = u.region || null;
+                        const dealer = u.dealer || (u.dealer_code ? `${u.dealer_code}${u.dealer_name ? ` - ${u.dealer_name}` : ""}` : null);
+                        const country = u.country || null;
+                        const levelOfAgent = u.agent_level || null;
+                        const agentNetwork = u.agent_network || null;
+                        const productModel = u.osf_model || u.model || model;
+                        const orderNo = u.order_no || null;
+                        const productType = u.product_type || productFamily;
+                        const completeMachinePIN = u.serial_no || sn;
+                        const creationDate = u.creation_date || u.created_at ? String(u.creation_date || u.created_at).slice(0, 10) : null;
+                        const billOfLadingDate = u.bill_of_lading_date || u.osf_departure_date ? String(u.bill_of_lading_date || u.osf_departure_date).slice(0, 10) : null;
+                        const dateOfArrival = u.osf_arrival_date || u.arrival_date || u.date_of_arrival ? String(u.osf_arrival_date || u.arrival_date || u.date_of_arrival).slice(0, 10) : null;
+                        const pdiDateVal = u.osf_pdi_date || u.pdi_date ? String(u.osf_pdi_date || u.pdi_date).slice(0, 10) : null;
+                        const salesDateVal = u.sale_date || u.sales_date || u.osf_sales_date ? String(u.sale_date || u.sales_date || u.osf_sales_date).slice(0, 10) : null;
+                        const customerNameVal = customer;
+                        const customerType = u.customer_type || null;
+                        const customerCellphone = u.customer_cellphone || null;
+                        const customerAddress = u.customer_address || null;
+                        const settlementMethod = u.settlement_method || null;
+                        const warrantyCardPhotos = (Array.isArray(u.warranty_card_photos) && u.warranty_card_photos.length > 0) ? u.warranty_card_photos : null;
                         const trainingFormPhotos = (Array.isArray(u.training_form_photos) && u.training_form_photos.length > 0) ? u.training_form_photos : null;
                         const csaPhotos = (Array.isArray(u.csa_photos) && u.csa_photos.length > 0) ? u.csa_photos : null;
-                        const workingCondition = u.working_condition || (isSampleG9138 ? "Other" : null);
-                        const environmentalCondition = u.environmental_condition || (isSampleG9138 ? "General" : null);
-                        const remarks = (u.remarks && u.remarks.trim()) ? u.remarks : (isSampleG9138 ? "Please Enter Remarks" : null);
+                        const workingCondition = u.working_condition || null;
+                        const environmentalCondition = u.environmental_condition || null;
+                        const remarks = (u.remarks && u.remarks.trim()) ? u.remarks : null;
 
                         const unitClocks = calculateUnitWarrantyClocks(u);
                         const keyComponents = {
@@ -12021,48 +11900,22 @@ SDLG_REPOSITORY.listClaims = async function () {
                             basis_text: unitClocks.other.basis_text,
                             is_in_warranty: unitClocks.other.is_in_warranty
                         };
-                        const auditorsList = (Array.isArray(u.audits) && u.audits.length > 0)
-                            ? u.audits
-                            : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.audits : null);
-
-                        const insuranceData = u.insurance || (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.insurance : null);
-
+                        const auditorsList = (Array.isArray(u.audits) && u.audits.length > 0) ? u.audits : null;
+                        const auditAttachments = (Array.isArray(u.audit_attachments) && u.audit_attachments.length > 0) ? u.audit_attachments : null;
+                        const insuranceData = u.insurance || null;
                         const effectiveWos = (unitAxWos && unitAxWos.length > 0)
                             ? unitAxWos
                             : (Array.isArray(u.ax_work_orders) && u.ax_work_orders.length > 0)
                                 ? u.ax_work_orders
-                                : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.ax_work_orders : []);
-
-                        const trainingData = u.delivery_training || (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.delivery_training : null);
-
-                        const configData = u.machine_configuration || (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.machine_configuration : null);
-
-                        const stockInspections = (Array.isArray(u.stock_inspections) && u.stock_inspections.length > 0)
-                            ? u.stock_inspections
-                            : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.stock_inspections : []);
-
-                        const pdiData = u.pdi_inspection || (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.pdi_inspection : null);
-
-                        const changelogData = (Array.isArray(u.changelog) && u.changelog.length > 0)
-                            ? u.changelog
-                            : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.changelog : []);
-
-                        const bomData = (Array.isArray(u.bom_level) && u.bom_level.length > 0)
-                            ? u.bom_level
-                            : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.bom_level : []);
-
-                        const rectificationData = (Array.isArray(u.rectification_assignments) && u.rectification_assignments.length > 0)
-                            ? u.rectification_assignments
-                            : (isSampleG9138 ? CANONICAL_SDLG_MACHINE_VLGG913FPS0600781.rectification_assignments : []);
-
-                        const docAttachments = (Array.isArray(u.attachments) && u.attachments.length > 0)
-                            ? u.attachments
-                            : (isSampleG9138 ? [
-                                ["1.jpg", "Warranty Card Scan (Front Page)", "3.1 MB", "2026-05-23"],
-                                ["2.jpg", "Warranty Card Scan (Terms & Sign)", "2.8 MB", "2026-05-23"],
-                                [`Warranty_Card_Signed_${completeMachinePIN}.pdf`, "Official Signed Warranty Form", "2.4 MB", "2026-05-23"],
-                                [`PDI_Checklist_Report_${completeMachinePIN}.pdf`, "Pre-delivery Inspection Report", "1.6 MB", "2026-05-18"]
-                            ] : []);
+                                : [];
+                        const trainingData = u.delivery_training || null;
+                        const configData = u.machine_configuration || null;
+                        const stockInspections = (Array.isArray(u.stock_inspections) && u.stock_inspections.length > 0) ? u.stock_inspections : [];
+                        const pdiData = u.pdi_inspection || (pdiDateVal ? { date: pdiDateVal, location: resolvedBranch || null, status: "Tercatat (OSF)" } : null);
+                        const changelogData = (Array.isArray(u.changelog) && u.changelog.length > 0) ? u.changelog : [];
+                        const bomData = (Array.isArray(u.bom_level) && u.bom_level.length > 0) ? u.bom_level : [];
+                        const rectificationData = (Array.isArray(u.rectification_assignments) && u.rectification_assignments.length > 0) ? u.rectification_assignments : [];
+                        const docAttachments = (Array.isArray(u.attachments) && u.attachments.length > 0) ? u.attachments : [];
 
                         const dgaTabs = [
                             { id: "basic", label: "Basic information", icon: "📋" },
@@ -12086,15 +11939,15 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         React.createElement("div", { className: "sdlg-dga-title", style: { flexWrap: "wrap", gap: 8 } },
                                             productIcon,
                                             `SDLG ${productModel} — ${completeMachinePIN}`,
-                                            React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(34, 197, 94, 0.2)", color: "#4ade80", fontWeight: 700 } },
-                                                "已审核 / Approved"),
+                                            React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 6, background: u.is_active === false ? "rgba(239, 68, 68, 0.2)" : "rgba(34, 197, 94, 0.2)", color: u.is_active === false ? "#fca5a5" : "#4ade80", fontWeight: 700 } },
+                                                u.data_source_status || (u.is_active === false ? "Inactive" : "Active")),
                                             React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 6, background: unitClocks.overall.bg, color: unitClocks.overall.color, fontWeight: 700 } },
                                                 unitClocks.overall.badge),
                                             React.createElement("span", { className: `sdlg-dga-tier-badge ${unitClocks.isContract ? "contract" : "standard"}` },
-                                                unitClocks.isContract ? "⭐ Contract Customer" : "Standard")
+                                                unitClocks.isBl2026 ? "Garansi B/L 2026" : (unitClocks.isContract ? "Extended Coverage" : "Standard"))
                                         ),
                                         React.createElement("div", { className: "sdlg-dga-subtitle" },
-                                            `SDLG Dealer Global Aftersales Portal · Form No. ${formNo} · Customer: ${customerNameVal}`
+                                            `Unit 360° Inspector${formNo ? ` · Form No. ${formNo}` : ""} · Customer: ${customerNameVal}`
                                         )
                                     )
                                 ),
@@ -12132,7 +11985,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                     React.createElement("div", { className: "sdlg-dga-section" },
                                         React.createElement("div", { className: "sdlg-dga-section-header" },
                                             "📋 Basic information (基本信息)",
-                                            React.createElement("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 600 } }, `Form No. ${formNo}`)
+                                            formNo && React.createElement("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 600 } }, `Form No. ${formNo}`)
                                         ),
                                         React.createElement("div", { className: "sdlg-dga-form-grid" },
                                             [
@@ -12148,9 +12001,11 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                 ["Product Type", productType],
                                                 ["Complete machine PIN", completeMachinePIN, true],
                                                 creationDate ? ["Creation date", creationDate] : null,
-                                                billOfLadingDate ? ["Bill of lading date", billOfLadingDate] : null,
-                                                dateOfArrival ? ["Date of arrival", dateOfArrival] : null,
-                                                ["Sales date", salesDateVal || "Belum Terjual"],
+                                                ["Bill of Lading (China → ID)", billOfLadingDate || "—"],
+                                                ["Arrival Date (Yard ITR)", dateOfArrival || "—"],
+                                                pdiDateVal ? ["PDI Date (OSF)", pdiDateVal] : null,
+                                                ["Sales Date", salesDateVal || "Belum Terjual"],
+                                                resolvedBranch ? ["Cabang Unit", resolvedBranch] : null,
                                                 ["Customer name", customerNameVal],
                                                 customerType ? ["Customer type", customerType] : null,
                                                 customerCellphone ? ["Customer cellphone", customerCellphone, true] : null,
@@ -12201,7 +12056,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         React.createElement("div", { className: "sdlg-dga-section-header", style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
                                             React.createElement("span", null, "🛡️ Warranty Terms (保修期规定)"),
                                             React.createElement("span", { style: { fontSize: 11, color: "#64748b", fontWeight: 600 } },
-                                                `Prinsip: least(Sales + Bulan Garansi, B/L Departure + BL Cap)`)
+                                                `Prinsip: least(Sales + Bulan Garansi, B/L China→ID + BL Cap)`)
                                         ),
                                         React.createElement("div", { className: "sdlg-dga-warranty-cards-row" },
                                             // Key Components
@@ -12211,28 +12066,28 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 } },
                                                     React.createElement("div", null,
                                                         React.createElement("div", { className: "sdlg-dga-label" }, "After Saled for..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value" }, keyComponents.after_saled || "24个月"),
+                                                        React.createElement("div", { className: "sdlg-dga-value" }, keyComponents.after_saled || "—"),
                                                         keyComponents.sales_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `Sales Exp: ${keyComponents.sales_expiry}`)
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "After Departure..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value" }, keyComponents.after_departure || "30个月"),
-                                                        keyComponents.bl_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `BL Exp: ${keyComponents.bl_expiry}`)
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "After B/L China→ID..."),
+                                                        React.createElement("div", { className: "sdlg-dga-value" }, keyComponents.after_departure || "—"),
+                                                        keyComponents.bl_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `B/L Exp: ${keyComponents.bl_expiry}`)
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Working hours for..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value mono" }, `${keyComponents.working_hours || 5000} hrs`)
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Working hours cap"),
+                                                        React.createElement("div", { className: "sdlg-dga-value mono" }, keyComponents.working_hours ? `${keyComponents.working_hours} hrs` : "—")
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Out of warranty date..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value mono", style: { color: keyComponents.is_in_warranty ? "#059669" : "#dc2626", fontSize: 14 } },
-                                                            keyComponents.out_of_warranty || "2028-03-30")
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Out of warranty date"),
+                                                        React.createElement("div", { className: "sdlg-dga-value mono", style: { color: !keyComponents.out_of_warranty ? "#64748b" : (keyComponents.is_in_warranty ? "#059669" : "#dc2626"), fontSize: 14 } },
+                                                            keyComponents.out_of_warranty || "—")
                                                     )
                                                 ),
                                                 React.createElement("div", { className: "sdlg-dga-formula-box" },
-                                                    React.createElement("div", { className: "sdlg-dga-formula-calc" },
+                                                    keyComponents.out_of_warranty && React.createElement("div", { className: "sdlg-dga-formula-calc" },
                                                         `⚖️ least(Sales + ${unitClocks.key.months}m, B/L + ${unitClocks.key.bl_cap_months}m) = `,
-                                                        React.createElement("span", { style: { color: "#1d4ed8", textDecoration: "underline" } }, keyComponents.out_of_warranty || "2028-03-30")
+                                                        React.createElement("span", { style: { color: "#1d4ed8", textDecoration: "underline" } }, keyComponents.out_of_warranty)
                                                     ),
                                                     React.createElement("div", { className: "sdlg-dga-formula-reason" }, `📌 ${keyComponents.basis_text}`)
                                                 )
@@ -12244,28 +12099,28 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 } },
                                                     React.createElement("div", null,
                                                         React.createElement("div", { className: "sdlg-dga-label" }, "After Saled for..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value" }, otherParts.after_saled || "24个月"),
+                                                        React.createElement("div", { className: "sdlg-dga-value" }, otherParts.after_saled || "—"),
                                                         otherParts.sales_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `Sales Exp: ${otherParts.sales_expiry}`)
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "After Departure..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value" }, otherParts.after_departure || "24个月"),
-                                                        otherParts.bl_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `BL Exp: ${otherParts.bl_expiry}`)
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "After B/L China→ID..."),
+                                                        React.createElement("div", { className: "sdlg-dga-value" }, otherParts.after_departure || "—"),
+                                                        otherParts.bl_expiry && React.createElement("div", { style: { fontSize: 10.5, color: "#64748b", marginTop: 2 } }, `B/L Exp: ${otherParts.bl_expiry}`)
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Working hours for..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value mono" }, `${otherParts.working_hours || 2000} hrs`)
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Working hours cap"),
+                                                        React.createElement("div", { className: "sdlg-dga-value mono" }, otherParts.working_hours ? `${otherParts.working_hours} hrs` : "—")
                                                     ),
                                                     React.createElement("div", null,
-                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Out of warranty date..."),
-                                                        React.createElement("div", { className: "sdlg-dga-value mono", style: { color: otherParts.is_in_warranty ? "#059669" : "#ea580c", fontSize: 14 } },
-                                                            otherParts.out_of_warranty || "2027-09-30")
+                                                        React.createElement("div", { className: "sdlg-dga-label" }, "Out of warranty date"),
+                                                        React.createElement("div", { className: "sdlg-dga-value mono", style: { color: !otherParts.out_of_warranty ? "#64748b" : (otherParts.is_in_warranty ? "#059669" : "#ea580c"), fontSize: 14 } },
+                                                            otherParts.out_of_warranty || "—")
                                                     )
                                                 ),
                                                 React.createElement("div", { className: "sdlg-dga-formula-box" },
-                                                    React.createElement("div", { className: "sdlg-dga-formula-calc" },
+                                                    otherParts.out_of_warranty && React.createElement("div", { className: "sdlg-dga-formula-calc" },
                                                         `⚖️ least(Sales + ${unitClocks.other.months}m, B/L + ${unitClocks.other.bl_cap_months}m) = `,
-                                                        React.createElement("span", { style: { color: "#ea580c", textDecoration: "underline" } }, otherParts.out_of_warranty || "2027-09-30")
+                                                        React.createElement("span", { style: { color: "#ea580c", textDecoration: "underline" } }, otherParts.out_of_warranty)
                                                     ),
                                                     React.createElement("div", { className: "sdlg-dga-formula-reason" }, `📌 ${otherParts.basis_text}`)
                                                 )
@@ -12322,16 +12177,16 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                     React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#0f172a" } }, `auditor： ${aud.auditor}`),
                                                     React.createElement("div", { style: { fontSize: 11.5, color: "#64748b" } }, aud.role)
                                                 ),
-                                                React.createElement("span", { className: "sdlg-dga-audit-badge" }, "✓ 已审核 (Verified)")
+                                                React.createElement("span", { className: "sdlg-dga-audit-badge" }, "✓ Verified")
                                             ),
-                                            React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#166534", marginTop: 4, padding: "6px 10px", background: "#f0fdf4", borderRadius: 6 } },
+                                            aud.verified_text && React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#166534", marginTop: 4, padding: "6px 10px", background: "#f0fdf4", borderRadius: 6 } },
                                                 aud.verified_text),
-                                            React.createElement("div", { style: { display: "flex", gap: 16, fontSize: 11.5, color: "#475569", marginTop: 2 } },
-                                                React.createElement("span", null, React.createElement("strong", null, "Audit Information："), aud.audit_info),
-                                                React.createElement("span", null, React.createElement("strong", null, "Modify record："), aud.modify_record)
+                                            (aud.audit_info || aud.modify_record) && React.createElement("div", { style: { display: "flex", gap: 16, fontSize: 11.5, color: "#475569", marginTop: 2 } },
+                                                aud.audit_info && React.createElement("span", null, React.createElement("strong", null, "Audit Information："), aud.audit_info),
+                                                aud.modify_record && React.createElement("span", null, React.createElement("strong", null, "Modify record："), aud.modify_record)
                                             )
                                         )),
-                                        React.createElement("div", { style: { marginTop: 10 } },
+                                        auditAttachments && React.createElement("div", { style: { marginTop: 10 } },
                                             React.createElement("button", {
                                                 type: "button",
                                                 onClick: () => setShowAuditAttachmentList(!showAuditAttachmentList),
@@ -12339,7 +12194,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                 style: { padding: "6px 14px", fontSize: 11.5, background: "#fff", borderColor: "#cbd5e1" }
                                             }, `${showAuditAttachmentList ? "▲ Sembunyikan" : "📑 Show"} audit attachment list`),
                                             showAuditAttachmentList && React.createElement("div", { style: { marginTop: 8, padding: "10px 14px", background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1", fontSize: 11.5, color: "#475569" } },
-                                                "Sertifikat Audit Resmi: SDLG-DGA-AUDIT-20260609-011. Hash integritas: 7f3b890a-e521-4f11-92b4-5e6c42fb1899. Diverifikasi oleh Service Dept SDLG HQ.")
+                                                auditAttachments.map((att, attIdx) => React.createElement("div", { key: attIdx }, typeof att === "string" ? att : (att?.name || JSON.stringify(att)))))
                                         )
                                     )
                                 ),
@@ -12393,21 +12248,26 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                         React.createElement("th", null, "Status"),
                                                         React.createElement("th", { style: { textAlign: "right" } }, "Nilai Klaim"))),
                                                 React.createElement("tbody", null,
-                                                    relatedClaims.map(c => React.createElement("tr", { key: c.claim_id },
-                                                        React.createElement("td", null,
-                                                            React.createElement("button", {
-                                                                type: "button",
-                                                                onClick: () => { setMasterDetailRow(null); setTab("list"); setDetailId(c.claim_id); },
-                                                                style: { background: "none", border: "none", color: "#1d4ed8", fontWeight: 800, cursor: "pointer", textDecoration: "underline" }
-                                                            }, c.claim_id)
-                                                        ),
-                                                        React.createElement("td", null, String(c.failure_date || "—").slice(0, 10)),
-                                                        React.createElement("td", { style: { fontFamily: "monospace", fontWeight: 700 } }, c.hm_failure ? `${c.hm_failure} hrs` : "—"),
-                                                        React.createElement("td", { style: { fontWeight: 700 } }, c.causing_part_desc || c.causing_part_no || "—"),
-                                                        React.createElement("td", { style: { maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, c.fault_description || "—"),
-                                                        React.createElement("td", null, React.createElement("span", { style: { fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "#dcfce7", color: "#15803d", fontWeight: 700 } }, c.claim_status || "Approved")),
-                                                        React.createElement("td", { style: { textAlign: "right", fontFamily: "monospace", fontWeight: 700 } }, c.total_amount ? `Rp ${Number(c.total_amount).toLocaleString("id-ID")}` : "—")
-                                                    ))
+                                                    relatedClaims.map(c => {
+                                                        const claimFinAmt = calcClaimFinancials(c).totalAmount;
+                                                        const claimCur = c.currency || effectiveClaimCurrency(c) || "USD";
+                                                        const stColor = statusColor(c.claim_status);
+                                                        return React.createElement("tr", { key: c.claim_id },
+                                                            React.createElement("td", null,
+                                                                React.createElement("button", {
+                                                                    type: "button",
+                                                                    onClick: () => { setMasterDetailRow(null); setTab("list"); setDetailId(c.claim_id); },
+                                                                    style: { background: "none", border: "none", color: "#1d4ed8", fontWeight: 800, cursor: "pointer", textDecoration: "underline" }
+                                                                }, c.claim_id)
+                                                            ),
+                                                            React.createElement("td", null, String(c.failure_date || "—").slice(0, 10)),
+                                                            React.createElement("td", { style: { fontFamily: "monospace", fontWeight: 700 } }, c.hm_failure != null && c.hm_failure !== "" ? `${c.hm_failure} hrs` : "—"),
+                                                            React.createElement("td", { style: { fontWeight: 700 } }, c.causing_part_desc || c.causing_part_no || "—"),
+                                                            React.createElement("td", { style: { maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, c.fault_description || "—"),
+                                                            React.createElement("td", null, React.createElement("span", { style: { fontSize: 11, padding: "2px 6px", borderRadius: 4, background: `${stColor}1a`, color: stColor, fontWeight: 700 } }, c.claim_status || "—")),
+                                                            React.createElement("td", { style: { textAlign: "right", fontFamily: "monospace", fontWeight: 700 } }, claimFinAmt > 0 ? `${claimCur} ${fmt2(claimFinAmt)}` : "—")
+                                                        );
+                                                    })
                                                 )
                                             )
                                         )
@@ -12442,7 +12302,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                         React.createElement("td", null, React.createElement("span", { style: { fontSize: 10.5, padding: "2px 6px", borderRadius: 4, background: "#eff6ff", color: "#1e40af", fontWeight: 700 } }, w.wo_type || "WAR")),
                                                         React.createElement("td", null, React.createElement("span", { style: { fontSize: 11, padding: "2px 6px", borderRadius: 4, background: w.status === "Closed" ? "#dcfce7" : w.status === "Canceled" ? "#fee2e2" : "#f1f5f9", color: w.status === "Closed" ? "#15803d" : w.status === "Canceled" ? "#b91c1c" : "#475569", fontWeight: 700 } }, w.status || "—")),
                                                         React.createElement("td", { style: { maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, w.description || "—"),
-                                                        React.createElement("td", null, w.primary_resource_group || "ITR - PALEMBANG")
+                                                        React.createElement("td", null, w.primary_resource_group || "—")
                                                     ))
                                                 )
                                             )
@@ -12491,10 +12351,10 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         React.createElement("div", { style: { padding: "14px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, marginBottom: 14 } },
                                             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
                                                 React.createElement("div", null,
-                                                    React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#166534" } }, `PDI Inspection Form: ${pdiData.form_no || "PDI-PLM-2026-0518"}`),
-                                                    React.createElement("div", { style: { fontSize: 11.5, color: "#15803d", marginTop: 2 } }, `Tanggal: ${pdiData.date || "2026-05-18"} · Lokasi: ${pdiData.location || "Workshop ITR"} · Jam Meter: ${pdiData.hm || "8.5 hrs"}`)
+                                                    React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#166534" } }, `PDI Inspection${pdiData.form_no ? `: ${pdiData.form_no}` : ""}`),
+                                                    React.createElement("div", { style: { fontSize: 11.5, color: "#15803d", marginTop: 2 } }, `Tanggal: ${pdiData.date || "—"}${pdiData.location ? ` · Lokasi: ${pdiData.location}` : ""}${pdiData.hm ? ` · Jam Meter: ${pdiData.hm}` : ""}`)
                                                 ),
-                                                React.createElement("span", { style: { fontSize: 12, fontWeight: 800, padding: "4px 10px", borderRadius: 8, background: "#15803d", color: "#fff" } }, pdiData.status || "PDI PASSED")
+                                                pdiData.status && React.createElement("span", { style: { fontSize: 12, fontWeight: 800, padding: "4px 10px", borderRadius: 8, background: "#15803d", color: "#fff" } }, pdiData.status)
                                             )
                                         ),
                                         React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 10 } },
@@ -13466,8 +13326,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                         disabled: masterLoading,
                         className: "master-btn-action",
                         style: { background: "#0f766e", color: "#fff", borderColor: "#0f766e" },
-                        title: "Sinkronisasi dataset 3.676 machine unit dari seed resmi"
-                    }, masterLoading ? "Syncing…" : "⬇ Sync 3.676 Unit"),
+                        title: "Sinkronkan relasi Claim ↔ Master Unit aktif di Supabase"
+                    }, masterLoading ? "Syncing…" : "🔗 Link Claim ↔ Unit"),
                     isAdmin && React.createElement("button", {
                         onClick: () => setShowMasterImportModal(true),
                         className: "master-btn-action",
@@ -13706,7 +13566,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                     { id: "in_warranty", label: "🛡️ In Warranty" },
                                     { id: "out_of_warranty", label: "⛔ Out of Warranty" },
                                     { id: "pre_sale", label: "📦 Pre-Sale Yard" },
-                                    { id: "contract", label: "⭐ Contract Customer" }
+                                    { id: "contract", label: "📅 Garansi B/L 2026" }
                                 ].map(wf => {
                                     const isWfActive = masterWarrantyFilter === wf.id;
                                     return React.createElement("button", {
@@ -13725,7 +13585,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("span", { style: { fontSize: 16, flexShrink: 0 } }, "💡"),
                     React.createElement("div", { style: { minWidth: 0 } },
                         React.createElement("strong", null, "Unit 360° Inspector: "),
-                        "Klik kartu atau baris unit mana saja untuk membuka audit lengkap (Arrival, Maintenance Stock, PDI, Sales Date, histori klaim garansi, dan Dynamics AX WO).")
+                        "Klik kartu atau baris unit mana saja untuk membuka audit lengkap (Bill of Lading China→ID, Arrival Yard ITR, PDI, Sales Date, histori klaim garansi, dan Dynamics AX WO).")
                 ),
                 React.createElement("div", { className: "master-view-toggle" },
                     React.createElement("button", {
@@ -13744,7 +13604,7 @@ SDLG_REPOSITORY.listClaims = async function () {
             React.createElement("div", { className: "master-table-card" },
                 masterLoading ? React.createElement("div", { style: { padding: "16px 0" } },
                     Array.from({ length: 8 }).map((_, i) => React.createElement("div", { key: i, className: "master-skeleton-row" }))) :
-                masterLoadError && masterRows.length <= (masterTab === "machines" ? 1 : 0) ? React.createElement("div", { style: { padding: "56px 24px", textAlign: "center", background: "#ffffff", borderRadius: 14, border: "1px solid #fecaca" } },
+                masterLoadError && masterRows.length === 0 ? React.createElement("div", { style: { padding: "56px 24px", textAlign: "center", background: "#ffffff", borderRadius: 14, border: "1px solid #fecaca" } },
                     React.createElement("div", { style: { fontSize: 32, marginBottom: 10 } }, "⚠️"),
                     React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: "#991b1b", marginBottom: 6 } }, "Gagal memuat data master dari database"),
                     React.createElement("div", { style: { fontSize: 13, color: "#64748b", maxWidth: 460, margin: "0 auto 16px" } }, masterLoadError),
@@ -13781,25 +13641,28 @@ SDLG_REPOSITORY.listClaims = async function () {
                             ]);
                             const unitClaims = Array.from(unitClaimSet);
                             const claimParts = Array.from(new Set(unitClaims.map(c => c.causing_part_desc || c.fault_description || "Issue").filter(Boolean))).slice(0, 2);
-                            const modelName = row.osf_model || row.model_id || "SDLG Unit";
+                            const modelName = row.osf_model || row.model || row.model_id || "SDLG Unit";
                             const isExcavator = modelName.toLowerCase().includes("e6") || modelName.toLowerCase().includes("e7") || modelName.toLowerCase().includes("excavator");
                             const isLoader = modelName.toUpperCase().startsWith("L") || modelName.toUpperCase().includes("95") || modelName.toUpperCase().includes("93") || modelName.toUpperCase().includes("96") || modelName.toUpperCase().includes("EFJ");
                             const machineIcon = isExcavator ? "🏗️" : isLoader ? "🚜" : "⚙️";
-                            const custRaw = row.customer_name_source || row.contract_customer || row.customer_id;
+                            const custRaw = row.customer_name_source || row.customer_name || (row.customer_id ? customerNameMap.get(row.customer_id) : null);
                             const hasCustomer = Boolean(custRaw && String(custRaw).trim());
-                            const custName = hasCustomer ? custRaw : "Customer Belum Terdata";
-                            const branchName = branchNameMap.get(row.branch_id) || row.branch_id || "—";
-                            const arrivalDate = row.bill_of_lading_date || row.osf_departure_date;
-                            const salesDate = row.sale_date || row.osf_sales_date;
-                            const pdiDate = row.operation_start_date;
+                            const custName = hasCustomer ? String(custRaw) : "—";
+                            const branchName = branchNameMap.get(row.branch_id) || "—";
+                            const blDate = row.bill_of_lading_date || row.osf_departure_date;
+                            const yardArrivalDate = row.osf_arrival_date || row.arrival_date || row.date_of_arrival;
+                            const salesDate = row.sale_date || row.sales_date || row.osf_sales_date;
                             const clocks = calculateUnitWarrantyClocks(row);
                             const formatDateShort = (dVal) => {
                                 if (!dVal) return null;
+                                const str = String(dVal).trim();
+                                const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                if (m) return `${m[3]}/${m[2]}/${m[1]}`;
                                 try {
-                                    const d = new Date(dVal);
-                                    if (!isNaN(d.getTime())) return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+                                    const d = new Date(str);
+                                    if (!isNaN(d.getTime())) return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
                                 } catch (_) {}
-                                return String(dVal).slice(0, 10);
+                                return str.slice(0, 10);
                             };
                             return React.createElement("div", {
                                 key: row.id || row.serial_no || idx,
@@ -13813,7 +13676,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         React.createElement("span", { className: "master-unit-model-name" }, modelName),
                                         row.product_type && React.createElement("span", { className: "master-unit-type-tag" }, row.product_type),
                                         React.createElement("span", { className: `sdlg-dga-tier-badge ${clocks.isContract ? "contract" : "standard"}` },
-                                            clocks.isContract ? "⭐ Contract" : "Standard")
+                                            clocks.isBl2026 ? "B/L 2026" : (clocks.isContract ? "Extended" : "Standard"))
                                     ),
                                     React.createElement("div", { className: `master-unit-status-text ${row.is_active === false ? "inactive" : "active"}` },
                                         React.createElement("span", { className: "master-status-indicator" }),
@@ -13848,15 +13711,19 @@ SDLG_REPOSITORY.listClaims = async function () {
                                         React.createElement("span", { className: "master-unit-meta-val" }, branchName)
                                     )
                                 ),
-                                // Dates Grid: Arrival & Sales
+                                // Dates Grid: B/L (China), Arrival (Yard ITR), Sales Date
                                 React.createElement("div", { className: "master-unit-dates-grid" },
-                                    React.createElement("div", { className: `master-date-box ${arrivalDate ? "has-val" : "is-empty"}` },
-                                        React.createElement("span", { className: "master-date-lbl" }, "Arrival / B/L"),
-                                        React.createElement("span", { className: "master-date-val" }, arrivalDate ? formatDateShort(arrivalDate) : "—")
+                                    React.createElement("div", { className: `master-date-box ${blDate ? "has-val" : "is-empty"}` },
+                                        React.createElement("span", { className: "master-date-lbl" }, "B/L (China)"),
+                                        React.createElement("span", { className: "master-date-val" }, blDate ? formatDateShort(blDate) : "—")
+                                    ),
+                                    React.createElement("div", { className: `master-date-box ${yardArrivalDate ? "has-val" : "is-empty"}` },
+                                        React.createElement("span", { className: "master-date-lbl" }, "Arrival (ITR)"),
+                                        React.createElement("span", { className: "master-date-val" }, yardArrivalDate ? formatDateShort(yardArrivalDate) : "—")
                                     ),
                                     React.createElement("div", { className: `master-date-box ${salesDate ? "has-val" : "is-empty"}` },
                                         React.createElement("span", { className: "master-date-lbl" }, "Sales Date"),
-                                        React.createElement("span", { className: "master-date-val" }, salesDate ? formatDateShort(salesDate) : "Belum Terjual")
+                                        React.createElement("span", { className: "master-date-val" }, salesDate ? formatDateShort(salesDate) : "—")
                                     )
                                 ),
                                 // Warranty Clocks Grid: Key & Other Parts OOW
@@ -13936,6 +13803,17 @@ SDLG_REPOSITORY.listClaims = async function () {
                                     },
                                         React.createElement("td", { style: { textAlign: "center", color: "#94a3b8", fontVariantNumeric: "tabular-nums" } }, rowNum),
                                         MASTER_CONFIG[masterTab].fields.map(([k], fieldIdx) => {
+                                            const fmtDDMM = (v) => {
+                                                if (!v) return "";
+                                                const s = String(v).trim();
+                                                const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                                if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+                                                try {
+                                                    const d = new Date(s);
+                                                    if (!isNaN(d.getTime())) return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+                                                } catch (_) {}
+                                                return s;
+                                            };
                                             if (k === "warranty_status" && isMachine) {
                                                 const tableClocks = calculateUnitWarrantyClocks(row);
                                                 return React.createElement("td", { key: k },
@@ -13944,21 +13822,24 @@ SDLG_REPOSITORY.listClaims = async function () {
                                                             className: "master-unit-warranty-status-pill",
                                                             style: { background: tableClocks.overall.bg, color: tableClocks.overall.color, fontSize: 10.5, fontWeight: 700 }
                                                         }, tableClocks.overall.badge),
-                                                        React.createElement("span", { style: { fontSize: 11, fontFamily: "monospace", color: tableClocks.key.is_in_warranty ? "#059669" : "#dc2626", fontWeight: 700 } },
-                                                            `Key: ${tableClocks.key.out_of_warranty_date || "—"}`)
+                                                        React.createElement("span", { style: { fontSize: 11, fontFamily: "monospace", color: !tableClocks.key.out_of_warranty_date ? "#64748b" : (tableClocks.key.is_in_warranty ? "#059669" : "#dc2626"), fontWeight: 700 } },
+                                                            `Key: ${fmtDDMM(tableClocks.key.out_of_warranty_date) || "—"}`)
                                                     )
                                                 );
                                             }
                                             let cellVal = row[k];
                                             if (k === "branch_id") {
-                                                cellVal = branchNameMap.get(row.branch_id) || row.branch_id || "—";
+                                                cellVal = branchNameMap.get(row.branch_id) || "—";
+                                            } else if (k === "customer_name_source") {
+                                                cellVal = row.customer_name_source || row.customer_name || (row.customer_id ? customerNameMap.get(row.customer_id) : null) || "—";
+                                            } else if (k === "osf_departure_date") {
+                                                cellVal = fmtDDMM(row.bill_of_lading_date || row.osf_departure_date) || "—";
+                                            } else if (k === "osf_arrival_date") {
+                                                cellVal = fmtDDMM(row.osf_arrival_date || row.arrival_date || row.date_of_arrival) || "—";
+                                            } else if (k === "osf_sales_date") {
+                                                cellVal = fmtDDMM(row.sale_date || row.sales_date || row.osf_sales_date) || "—";
                                             } else if (k.includes("date") && cellVal) {
-                                                try {
-                                                    const d = new Date(cellVal);
-                                                    if (!isNaN(d.getTime())) {
-                                                        cellVal = d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
-                                                    }
-                                                } catch (_) {}
+                                                cellVal = fmtDDMM(cellVal);
                                             }
                                             const isCode = k.includes("code") || k.includes("no") || k === "serial_no" || k === "part_number";
                                             const isPrimary = fieldIdx === 0;
@@ -14157,40 +14038,84 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { fontSize: 10, color: "#64748b", marginTop: 2 } }, "Technical detail, historical findings, and admin actions."),
                 React.createElement("button", { id: "dq-advanced-toggle", onClick: () => { const e = document.getElementById("dq-advanced-content"); if (!e) return; const hide = e.style.display !== "none"; e.style.display = hide ? "none" : "block"; const b = document.getElementById("dq-advanced-toggle"); if (b) b.textContent = hide ? "Show details" : "Hide details"; }, style: { marginTop: 7, padding: "7px 10px", border: "1px solid #cbd5e1", background: "#fff", color: "#334155", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Show details")),
             React.createElement("div", { id: "dq-advanced-content", style: { display: "none" } }, React.createElement(React.Fragment, null,
-            React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 12, padding: 14, marginBottom: 14 } },
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" } },
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontWeight: 900, fontSize: 14 } }, "\uD83E\uDDEA Machine Source Reconciliation \u2014 Release Gate"),
-                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 3 } },
-                            "Source snapshot audited: Active Machine + OSF CSV, as of ",
-                            SOURCE_AUDIT.sourceAsOf,
-                            ". Ambiguous records are quarantined; they are not auto-treated as authoritative warranty dates.")),
-                    React.createElement("span", { style: { padding: "5px 9px", borderRadius: 999, fontSize: 10, fontWeight: 900, background: "#dcfce7", color: "#166534" } }, "SERIAL/MODEL RECONCILIATION PASS")),
-                React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 9, marginTop: 12 } }, [
-                    ["Active machine", SOURCE_AUDIT.activeRows],
-                    ["Active unique serial", SOURCE_AUDIT.activeUniqueSerials],
-                    ["OSF rows", SOURCE_AUDIT.osfRows],
-                    ["Serial matched", SOURCE_AUDIT.activeOsfMatched],
-                    ["OSF-only historical", SOURCE_AUDIT.osfOnlyHistorical],
-                    ["Model mismatch", SOURCE_AUDIT.modelMismatches],
-                    ["Shipment ≥ 3y", SOURCE_AUDIT.last3YearsShipmentRows],
-                    ["Date anomalies", SOURCE_AUDIT.arrivalBeforeDeparture + SOURCE_AUDIT.saleBeforeDeparture + SOURCE_AUDIT.saleBeforeArrival]
-                ].map(([l, v]) => React.createElement("div", { key: l, style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 9, padding: "9px 10px" } },
-                    React.createElement("div", { style: { fontSize: 10, color: "#64748b", fontWeight: 700 } }, l),
-                    React.createElement("div", { style: { fontSize: 20, fontWeight: 900, marginTop: 2 } }, v)))),
-                React.createElement("div", { style: { fontSize: 11, lineHeight: 1.5, color: "#475569", marginTop: 10 } },
-                    React.createElement("b", null, "Important:"),
-                    " ",
-                    SOURCE_AUDIT.note,
-                    " There are ",
-                    React.createElement("b", null, SOURCE_AUDIT.arrivalBeforeDeparture),
-                    " arrival-before-departure, ",
-                    React.createElement("b", null, SOURCE_AUDIT.saleBeforeDeparture),
-                    " sale-before-departure, and ",
-                    React.createElement("b", null, SOURCE_AUDIT.saleBeforeArrival),
-                    " sale-before-arrival chronology anomalies in OSF. These must remain ",
-                    React.createElement("b", null, "REVIEW / QUARANTINE"),
-                    "; the system must not silently overwrite dates.")),
+            (() => {
+                const liveMachines = (masterDataCacheRef.current.machines && masterDataCacheRef.current.machines.length > 0)
+                    ? masterDataCacheRef.current.machines
+                    : (masterTab === "machines" ? masterRows : []);
+                const hasMachinesLoaded = liveMachines.length > 0;
+                const activeMachineRows = hasMachinesLoaded ? liveMachines.filter(m => m.is_active !== false) : [];
+                const uniqueMachineSerials = hasMachinesLoaded ? new Set(activeMachineRows.map(m => String(m.serial_no || "").trim().toUpperCase()).filter(Boolean)).size : null;
+                const withBlCount = hasMachinesLoaded ? activeMachineRows.filter(m => m.bill_of_lading_date || m.osf_departure_date).length : null;
+                const withArrivalCount = hasMachinesLoaded ? activeMachineRows.filter(m => m.osf_arrival_date || m.arrival_date || m.date_of_arrival).length : null;
+                const withSalesCount = hasMachinesLoaded ? activeMachineRows.filter(m => m.sale_date || m.sales_date || m.osf_sales_date).length : null;
+                const bl2026UnitsCount = hasMachinesLoaded ? activeMachineRows.filter(m => /^2026(?:-|$)/.test(String(m.bill_of_lading_date || m.osf_departure_date || ""))).length : null;
+                let arrBeforeBl = 0;
+                let saleBeforeBl = 0;
+                let saleBeforeArr = 0;
+                if (hasMachinesLoaded) {
+                    activeMachineRows.forEach(m => {
+                        const bl = String(m.bill_of_lading_date || m.osf_departure_date || "").slice(0, 10);
+                        const arr = String(m.osf_arrival_date || m.arrival_date || m.date_of_arrival || "").slice(0, 10);
+                        const sal = String(m.sale_date || m.sales_date || m.osf_sales_date || "").slice(0, 10);
+                        const isoOk = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+                        if (isoOk(bl) && isoOk(arr) && arr < bl) arrBeforeBl++;
+                        if (isoOk(bl) && isoOk(sal) && sal < bl) saleBeforeBl++;
+                        if (isoOk(arr) && isoOk(sal) && sal < arr) saleBeforeArr++;
+                    });
+                }
+                const totalChronAnomalies = arrBeforeBl + saleBeforeBl + saleBeforeArr;
+                const matchedClaimSerials = hasMachinesLoaded ? (() => {
+                    const serialSet = new Set(activeMachineRows.map(m => String(m.serial_no || "").trim().toUpperCase()).filter(Boolean));
+                    return dqClaims.filter(c => serialSet.has(String(c.serial_no || "").trim().toUpperCase())).length;
+                })() : null;
+                const liveMetrics = hasMachinesLoaded ? [
+                    ["Active machine (Supabase)", activeMachineRows.length.toLocaleString()],
+                    ["Unique serial aktif", uniqueMachineSerials.toLocaleString()],
+                    ["Punya B/L (China → ID)", withBlCount.toLocaleString()],
+                    ["Punya Arrival (Yard ITR)", withArrivalCount.toLocaleString()],
+                    ["Punya Sales Date", withSalesCount.toLocaleString()],
+                    ["Unit B/L Tahun 2026", bl2026UnitsCount.toLocaleString()],
+                    ["Claim ↔ Master Serial", `${matchedClaimSerials} / ${dqClaims.length}`],
+                    ["Chronology anomalies", totalChronAnomalies.toLocaleString()]
+                ] : [
+                    ["Total Machines (Count)", masterCounts.machines != null ? masterCounts.machines.toLocaleString() : "—"],
+                    ["Active claims analyzed", dqClaims.length.toLocaleString()],
+                    ["Master data status", "Belum dimuat di memori"]
+                ];
+                return React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 12, padding: 14, marginBottom: 14 } },
+                    React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" } },
+                        React.createElement("div", null,
+                            React.createElement("div", { style: { fontWeight: 900, fontSize: 14 } }, "\uD83E\uDDEA Machine Source Reconciliation \u2014 Live Supabase"),
+                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 3 } },
+                                hasMachinesLoaded
+                                    ? "Dihitung langsung dari tabel live machines & claims di Supabase."
+                                    : "Klik tombol di kanan untuk memuat tabel live machines dari Supabase guna menghitung audit B/L, Arrival Yard ITR, dan Sales Date.")),
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+                            !hasMachinesLoaded && React.createElement("button", {
+                                type: "button",
+                                onClick: () => loadMasterData("machines", true),
+                                disabled: masterLoading,
+                                style: { padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: "#2563eb", color: "#fff", border: 0, cursor: "pointer" }
+                            }, masterLoading ? "Memuat…" : "↻ Muat Master Machines"),
+                            React.createElement("span", { style: { padding: "5px 9px", borderRadius: 999, fontSize: 10, fontWeight: 900, background: hasMachinesLoaded ? (totalChronAnomalies === 0 ? "#dcfce7" : "#fef3c7") : "#e2e8f0", color: hasMachinesLoaded ? (totalChronAnomalies === 0 ? "#166534" : "#92400e") : "#475569" } },
+                                hasMachinesLoaded ? (totalChronAnomalies === 0 ? "LIVE AUDIT PASS" : `REVIEW: ${totalChronAnomalies} ANOMALY`) : "MENUNGGU DATA"))),
+                    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 9, marginTop: 12 } },
+                        liveMetrics.map(([l, v]) => React.createElement("div", { key: l, style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 9, padding: "9px 10px" } },
+                            React.createElement("div", { style: { fontSize: 10, color: "#64748b", fontWeight: 700 } }, l),
+                            React.createElement("div", { style: { fontSize: 20, fontWeight: 900, marginTop: 2 } }, v)))),
+                    React.createElement("div", { style: { fontSize: 11, lineHeight: 1.5, color: "#475569", marginTop: 10 } },
+                        React.createElement("b", null, "Business Rule:"),
+                        " ",
+                        SOURCE_AUDIT_NOTE,
+                        hasMachinesLoaded && React.createElement(React.Fragment, null,
+                            " Terdeteksi ",
+                            React.createElement("b", null, arrBeforeBl),
+                            " arrival-before-B/L, ",
+                            React.createElement("b", null, saleBeforeBl),
+                            " sale-before-B/L, dan ",
+                            React.createElement("b", null, saleBeforeArr),
+                            " sale-before-arrival pada master unit aktif. Data anomali tidak ditimpa otomatis.")));
+            })(),
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10, marginBottom: 14 } }, [
                 ["Identity integrity", qualitySummary.malformedSerials + qualitySummary.crossCustomerSerials + qualitySummary.modelOutliers, "Serial/model consistency"],
                 ["Timeline integrity", qualitySummary.hardDateIssues + yardDateCandidates.length, "Tanggal perlu validasi"],
@@ -14410,9 +14335,8 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("input", { className: "sdlg-input", value: search, onChange: (e) => setSearch(e.target.value), onKeyDown: (e) => { if (e.key === "Enter") setDebouncedSearch(search); }, placeholder: "Cari claim, serial, customer, WO/SO..." }),
                     search ? React.createElement("button", { type: "button", className: "search-clear-btn", onClick: () => { setSearch(""); setDebouncedSearch(""); }, title: "Hapus pencarian", "aria-label": "Hapus pencarian" }, "\u00D7") : null),
                 React.createElement("div", { className: "claims-searchbar-actions" },
-                    isAdmin && (React.createElement("button", { onClick: () => setTab("paste"), className: "sdlg-btn sdlg-btn--secondary" }, "+ Input Baru")),
                     React.createElement("button", { onClick: () => exportToExcel(yearFilter === "all" ? claims : filtered), className: "sdlg-btn sdlg-btn--primary" }, "Export"),
-                    React.createElement("button", { onClick: loadClaims, className: "sdlg-btn sdlg-btn--secondary", title: "Muat ulang daftar" }, "\u21BB"))),
+                    React.createElement("button", { onClick: loadClaims, className: "sdlg-btn sdlg-btn--secondary", title: "Muat ulang daftar", "aria-label": "Muat ulang daftar klaim" }, "\u21BB"))),
             isAdmin && selectedIds.length > 0 && (React.createElement("div", { className: "sdlg-card", style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12, padding: "8px 12px" } },
                 React.createElement("b", { style: { fontSize: 12, color: "var(--sdlg-text-main)" } },
                     selectedIds.length,
@@ -14445,7 +14369,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     onClick: () => { setSearch(""); setDebouncedSearch(""); setBranchFilter("all"); setStatusFilter("all"); setYearFilter("all"); setPage(1); },
                     className: "sdlg-btn sdlg-btn--secondary",
                     style: { margin: "0 auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }
-                }, "\u21BA Reset Semua Filter & Pencarian"))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 10 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, onClick: () => setDetailId(c.claim_id), style: {
+                }, "\u21BA Reset Semua Filter & Pencarian"))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 10 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, role: "button", tabIndex: 0, onClick: () => setDetailId(c.claim_id), onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailId(c.claim_id); } }, style: {
                     border: selectedIds.includes(c.claim_id) ? "1px solid var(--sdlg-primary)" : "1px solid var(--sdlg-border)",
                     cursor: "pointer", display: "flex",
                     alignItems: "center", gap: 14,
@@ -14555,12 +14479,12 @@ SDLG_REPOSITORY.listClaims = async function () {
             const maxMonth = Math.max(1, ...monthData.map(x => x[1]));
             const maxModel = Math.max(1, ...modelData.map(x => x[1]));
             const maxBranch = Math.max(1, ...branchData.map(x => x[1]));
-            const Bar = ({ label, value, max }) => React.createElement("div", { style: { marginBottom: 10 } },
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, marginBottom: 4 } },
-                    React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, label),
-                    React.createElement("b", null, value)),
-                React.createElement("div", { style: { height: 8, background: "#e2e8f0", borderRadius: 99, overflow: "hidden" } },
-                    React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#2563eb", borderRadius: 99, transition: "width 0.35s cubic-bezier(0.16, 1, 0.3, 1)" } })));
+            const Bar = ({ label, value, max }) => React.createElement("div", { style: { marginBottom: 11 } },
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5, marginBottom: 5 } },
+                    React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155", fontWeight: 500 } }, label),
+                    React.createElement("b", { style: { fontVariantNumeric: "tabular-nums", color: "#0f172a" } }, value)),
+                React.createElement("div", { style: { height: 7, background: "#f1f5f9", borderRadius: 6, overflow: "hidden" } },
+                    React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#1d4ed8", borderRadius: 6, transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)" } })));
             return (React.createElement("div", { className: "page overview-page", "data-sdlg-overview": "1" },
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 18, flexWrap: "wrap" } },
                     React.createElement("div", null,
@@ -14578,9 +14502,9 @@ SDLG_REPOSITORY.listClaims = async function () {
                     } catch (e) { try { console.warn("[SDLG] periodFilterBar failed", e); } catch (_) {} }
                     return null;
                 })(),
-                React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 } }, [["Total Claims", totalClaims], ["Total Claim Amount", totalAmountDisplay], ["Approval Rate", approvedRate + "%"], ["Rejection Rate", rejectedRate + "%"], ["On Hold", onHold]].map(([l, v]) => React.createElement("div", { key: l, className: "metric-card" },
+                React.createElement("div", { className: "overview-summary-grid", style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 } }, [["Total Claims", totalClaims], ["Total Claim Amount", totalAmountDisplay], ["Approval Rate", approvedRate + "%"], ["Rejection Rate", rejectedRate + "%"], ["On Hold", onHold]].map(([l, v]) => React.createElement("div", { key: l, className: "metric-card" },
                     React.createElement("div", { className: "metric-label" }, l),
-                    React.createElement("div", { className: "metric-value" }, v)))),
+                    React.createElement("div", { className: "metric-value" + (l === "Total Claim Amount" ? " metric-value--amount" : "") }, v)))),
                 (() => {
                     const active = claims.filter(c => !c.archived_at);
                     const rows = actionCenterRows.length ? actionCenterRows : active.map(c => ({
@@ -14616,64 +14540,67 @@ SDLG_REPOSITORY.listClaims = async function () {
                         setDetailId(claimId);
                     };
                     const actionCards = [
-                        { label: "P0 Critical", value: counts.P0 || 0, hint: "Data inti / blocking issue", priority: "P0" },
-                        { label: "P1 Action Required", value: counts.P1 || 0, hint: "Perlu tindakan Warranty Admin", priority: "P1" },
-                        { label: "P2 Monitoring only", value: counts.P2 || 0, hint: "Sehat; belum perlu intervensi", priority: "P2" },
-                        { label: "Needs action", value: actionRequired.length, hint: "P0 + P1 yang perlu ditindaklanjuti", priority: "ACTION" }
+                        { label: "P0 Critical", value: counts.P0 || 0, hint: "Data inti / blocking issue", priority: "P0", badgeBg: "#fef2f2", badgeColor: "#b91c1c", badgeBorder: "#fecaca" },
+                        { label: "P1 Action Required", value: counts.P1 || 0, hint: "Perlu tindakan Warranty Admin", priority: "P1", badgeBg: "#fffbeb", badgeColor: "#b45309", badgeBorder: "#fde68a" },
+                        { label: "P2 Monitoring only", value: counts.P2 || 0, hint: "Sehat; belum perlu intervensi", priority: "P2", badgeBg: "#eff6ff", badgeColor: "#1d4ed8", badgeBorder: "#bfdbfe" },
+                        { label: "Needs action", value: actionRequired.length, hint: "P0 + P1 yang perlu ditindaklanjuti", priority: "ACTION", badgeBg: "#f8fafc", badgeColor: "#334155", badgeBorder: "#cbd5e1" }
                     ];
                     return React.createElement("div", { style: { marginTop: 14 } },
-                        React.createElement("div", { className: "card card-pad", style: { border: "none", background: "#ffffff", boxShadow: "0 1px 3px rgba(15,23,42,0.08)" } },
-                            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 } },
+                        React.createElement("div", { className: "card card-pad" },
+                            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 } },
                                 React.createElement("div", null,
-                                    React.createElement("div", { className: "section-title" }, "⚡ My Action Today"),
+                                    React.createElement("div", { className: "section-title" }, "My Action Today"),
                                     React.createElement("div", { className: "section-sub" }, "Prioritas operasional dari Action Center database.")),
-                                React.createElement("div", { style: { fontSize: 10, color: actionCenterLoadError ? "#dc2626" : "#64748b" } }, actionCenterLoadError ? "Action Center fallback" : "Live")),
-                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10 } },
-                                actionCards.map(x => React.createElement("button", { key: x.label, onClick: () => {
-                                    if (x.priority === "P0" || x.priority === "P1") setTab("list");
-                                    else if (x.priority === "P2") setTab("list");
-                                }, style: { textAlign: "left", padding: "12px 13px", border: "none", background: x.priority === "P0" ? "#fee2e2" : x.priority === "P1" ? "#fef3c7" : x.priority === "P2" ? "#e0f2fe" : "#f1f5f9", borderRadius: 10, cursor: "pointer" } },
-                                    React.createElement("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 } },
-                                        React.createElement("b", { style: { fontSize: 22, color: x.value ? "#0f172a" : "#94a3b8" } }, x.value),
-                                        React.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: x.value ? "#2563eb" : "#94a3b8" } }, x.value ? "ACTION" : "CLEAR")),
-                                    React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#334155", marginTop: 4 } }, x.label),
-                                    React.createElement("div", { style: { fontSize: 10, color: "#94a3b8", marginTop: 3, lineHeight: 1.4 } }, x.hint)))),
+                                React.createElement("div", { style: { fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: actionCenterLoadError ? "#fef2f2" : "#f0fdf4", color: actionCenterLoadError ? "#b91c1c" : "#15803d", border: "1px solid " + (actionCenterLoadError ? "#fecaca" : "#bbf7d0") } }, actionCenterLoadError ? "Fallback" : "Synced")),
+                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10 } },
+                                actionCards.map(x => React.createElement("button", { key: x.label, type: "button", className: "overview-action-card", onClick: () => {
+                                    setTab("list");
+                                }, style: { textAlign: "left", padding: "14px 15px", border: "1px solid #e2e8f0", background: "#ffffff", borderRadius: 10, cursor: "pointer" } },
+                                    React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 } },
+                                        React.createElement("b", { style: { fontSize: 22, color: x.value ? "#0f172a" : "#94a3b8", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" } }, x.value),
+                                        React.createElement("span", { style: { fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: x.value ? x.badgeBg : "#f8fafc", color: x.value ? x.badgeColor : "#94a3b8", border: "1px solid " + (x.value ? x.badgeBorder : "#e2e8f0") } }, x.priority)),
+                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#1e293b", marginTop: 6 } }, x.label),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2, lineHeight: 1.4 } }, x.hint)))),
                             topActions.length ? React.createElement("div", { style: { marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 8 } },
-                                topActions.map(([label, n]) => React.createElement("div", { key: label, style: { padding: "9px 10px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" } },
-                                    React.createElement("div", { style: { fontSize: 10, color: "#64748b" } }, "Top action"),
-                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: "#0f172a", marginTop: 2 } }, label),
-                                    React.createElement("div", { style: { fontSize: 11, color: "#2563eb", fontWeight: 800, marginTop: 2 } }, n, " claim")))) : null,
+                                topActions.map(([label, n]) => React.createElement("div", { key: label, style: { padding: "10px 12px", borderRadius: 8, background: "#f8fafc", border: "1px solid #e2e8f0" } },
+                                    React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em" } }, "Top action"),
+                                    React.createElement("div", { style: { fontSize: 12.5, fontWeight: 700, color: "#0f172a", marginTop: 2 } }, label),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#1d4ed8", fontWeight: 700, marginTop: 2, fontVariantNumeric: "tabular-nums" } }, n, " claim")))) : null,
                             openActionClaims.length ? React.createElement(
                                 "div",
-                                { style: { marginTop: 12 } },
-                                React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#334155", marginBottom: 7 } }, "Claim prioritas"),
-                                ...openActionClaims.map(({ row, claim }) => React.createElement("button", {
-                                    key: row.claim_id,
-                                    onClick: () => goToClaim(row.claim_id),
-                                    style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 0", border: "none", borderBottom: "1px solid #f1f5f9", background: "transparent", cursor: "pointer", textAlign: "left" }
-                                },
-                                    React.createElement("span", { style: { minWidth: 34, fontSize: 9, fontWeight: 900, color: String(row.priority || "P2").toUpperCase() === "P0" ? "#dc2626" : String(row.priority || "P2").toUpperCase() === "P1" ? "#d97706" : "#2563eb" } }, String(row.priority || "P2").toUpperCase()),
-                                    React.createElement("span", { style: { flex: 1, minWidth: 0 } },
-                                        React.createElement("span", { style: { display: "block", fontFamily: "monospace", fontSize: 10, fontWeight: 800, color: "#0f172a" } }, claim.claim_id),
-                                        React.createElement("span", { style: { display: "block", fontSize: 10, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, claim.model || "—", " · ", claim.customer || "—")),
-                                    React.createElement("span", { style: { fontSize: 10, color: "#475569", fontWeight: 700, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, row.next_action || "Review")
-                                ))
+                                { style: { marginTop: 14 } },
+                                React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: "#334155", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" } }, "Claim prioritas"),
+                                ...openActionClaims.map(({ row, claim }) => {
+                                    const pr = String(row.priority || "P2").toUpperCase();
+                                    return React.createElement("button", {
+                                        key: row.claim_id,
+                                        type: "button",
+                                        className: "overview-priority-row",
+                                        onClick: () => goToClaim(row.claim_id),
+                                        style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", border: "none", borderBottom: "1px solid #f1f5f9", borderRadius: 8, background: "transparent", cursor: "pointer", textAlign: "left" }
+                                    },
+                                        React.createElement("span", { style: { minWidth: 32, fontSize: 10, fontWeight: 800, textAlign: "center", padding: "2px 6px", borderRadius: 5, background: pr === "P0" ? "#fef2f2" : pr === "P1" ? "#fffbeb" : "#eff6ff", color: pr === "P0" ? "#b91c1c" : pr === "P1" ? "#b45309" : "#1d4ed8", border: "1px solid " + (pr === "P0" ? "#fecaca" : pr === "P1" ? "#fde68a" : "#bfdbfe") } }, pr),
+                                        React.createElement("span", { style: { flex: 1, minWidth: 0 } },
+                                            React.createElement("span", { style: { display: "block", fontFamily: "var(--sdlg-mono, monospace)", fontSize: 11, fontWeight: 700, color: "#0f172a" } }, claim.claim_id),
+                                            React.createElement("span", { style: { display: "block", fontSize: 11, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, claim.model || "—", " · ", claim.customer || "—")),
+                                        React.createElement("span", { style: { fontSize: 11, color: "#475569", fontWeight: 600, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, row.next_action || "Review")
+                                    );
+                                })
                             ) : null,
-                            React.createElement("div", { style: { marginTop: 10, fontSize: 10, color: "#94a3b8" } }, p0Rows.length ? "Ada claim critical yang memerlukan perhatian segera." : p1Rows.length ? "P1 adalah backlog tindakan utama saat ini." : "Tidak ada claim P0/P1 yang memerlukan tindakan segera."))
+                            React.createElement("div", { style: { marginTop: 10, fontSize: 11, color: "#64748b" } }, p0Rows.length ? "Ada claim critical yang memerlukan perhatian segera." : p1Rows.length ? "P1 adalah backlog tindakan utama saat ini." : "Tidak ada claim P0/P1 yang memerlukan tindakan segera."))
                     );
                 })(),
-                React.createElement("div", { style: { display: "grid", gridTemplateColumns: "minmax(0,1.35fr) minmax(260px,.65fr)", gap: 14, marginTop: 14, alignItems: "start" } },
+                React.createElement("div", { className: "overview-split-grid", style: { display: "grid", gridTemplateColumns: "minmax(0,1.35fr) minmax(260px,.65fr)", gap: 14, marginTop: 14, alignItems: "start" } },
                     React.createElement("div", { className: "card card-pad" },
                         React.createElement("div", { className: "section-head" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "section-title" }, "Action Required"),
                                 React.createElement("div", { className: "section-sub" }, "Claim yang paling layak dicek dulu.")),
                             React.createElement("button", { className: "secondary-btn", onClick: () => setTab("list") }, "Lihat semua")),
-                        claims.filter(c => c.claim_status === "Rejected" || c.claim_status === "On Hold" || c.repair_status === "Repair Not Completed").slice(0, 6).map(c => React.createElement("div", { key: c.claim_id, className: "claim-row", onClick: () => { setTab("list"); setDetailId(c.claim_id); }, style: { display: "flex", gap: 10, alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9", cursor: "pointer" } },
-                            React.createElement("div", { style: { width: 8, height: 8, borderRadius: "50%", background: c.claim_status === "Rejected" ? "#dc2626" : c.repair_status === "Repair Not Completed" ? "#d97706" : "#f59e0b", flexShrink: 0 } }),
+                        claims.filter(c => c.claim_status === "Rejected" || c.claim_status === "On Hold" || c.repair_status === "Repair Not Completed").slice(0, 6).map(c => React.createElement("div", { key: c.claim_id, className: "overview-action-item", role: "button", tabIndex: 0, onClick: () => { setTab("list"); setDetailId(c.claim_id); }, onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTab("list"); setDetailId(c.claim_id); } }, style: { display: "flex", gap: 10, alignItems: "center", padding: "10px 8px", borderBottom: "1px solid #f1f5f9", borderRadius: 8, cursor: "pointer" } },
                             React.createElement("div", { style: { minWidth: 0, flex: 1 } },
-                                React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, fontWeight: 800 } }, c.claim_id),
-                                React.createElement("div", { style: { fontSize: 11, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                                React.createElement("div", { style: { fontFamily: "var(--sdlg-mono, monospace)", fontSize: 11.5, fontWeight: 700, color: "#0f172a" } }, c.claim_id),
+                                React.createElement("div", { style: { fontSize: 11.5, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
                                     c.model || "—",
                                     " \u00B7 SN ",
                                     c.serial_no || "—")),
@@ -14684,10 +14611,16 @@ SDLG_REPOSITORY.listClaims = async function () {
                             React.createElement("div", null,
                                 React.createElement("div", { className: "section-title" }, "Status Flow"),
                                 React.createElement("div", { className: "section-sub" }, "Distribusi status saat ini."))),
-                        WORKFLOW_STATUSES.slice(0, 8).map(st => { const n = claims.filter(c => c.claim_status === st).length; return React.createElement("div", { key: st, style: { display: "flex", alignItems: "center", gap: 8, padding: "7px 0" } },
-                            React.createElement("div", { style: { width: 9, height: 9, borderRadius: "50%", background: statusColor(st) } }),
-                            React.createElement("div", { style: { flex: 1, fontSize: 11, color: "#475569" } }, st),
-                            React.createElement("b", { style: { fontSize: 12 } }, n)); }))),
+                        WORKFLOW_STATUSES.slice(0, 8).map(st => {
+                            const n = claims.filter(c => c.claim_status === st).length;
+                            const pct = claims.length ? Math.round((n / claims.length) * 100) : 0;
+                            return React.createElement("div", { key: st, style: { padding: "7px 0", borderBottom: "1px solid #f8fafc" } },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 } },
+                                    React.createElement("div", { style: { fontSize: 11.5, color: "#334155", fontWeight: 600 } }, st),
+                                    React.createElement("b", { style: { fontSize: 12, fontVariantNumeric: "tabular-nums", color: "#0f172a" } }, n)),
+                                React.createElement("div", { style: { height: 4, background: "#f1f5f9", borderRadius: 4, overflow: "hidden" } },
+                                    React.createElement("div", { style: { height: "100%", width: `${pct}%`, background: statusColor(st), borderRadius: 4 } })));
+                        }))),
                 React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: 14, flexWrap: "wrap" } },
                     React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Nilai claim tetap dipisahkan per currency. Total IDR hanya reference reporting, bukan perubahan nominal transaksi."),
                     React.createElement("button", { onClick: () => setShowFxEditor(v => !v), style: { padding: "6px 10px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 } }, "\uD83D\uDCB1 Kurs USD/CNY \u2192 IDR")),
@@ -15119,7 +15052,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement(Row, { label: "Sales Date", value: detail.sales_date }),
                         React.createElement(Row, { label: "Failure Date", value: detail.failure_date }),
                         React.createElement(Row, { label: "HM Failure", value: detail.hm_failure != null ? detail.hm_failure + " hr" : null }),
-                        React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || detail.completion_date || detail.failure_date || "—" }),
+                        React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || null }),
                         React.createElement(Row, { label: "Completion Date", value: detail.completion_date }),
                         React.createElement(Row, { label: "Repair Status", value: detail.completion_date && detail.repair_status === "Repair Not Completed" ? `${detail.repair_status} (Completion Date terisi: ${detail.completion_date})` : detail.repair_status }),
                         React.createElement(Row, { label: "HM Completion", value: detail.hm_completion != null ? detail.hm_completion + " hr" : null }),
@@ -15130,38 +15063,38 @@ SDLG_REPOSITORY.listClaims = async function () {
             (() => {
                 const hm = estimateCurrentHM(detail, claims);
                 const confColor = hm.confidence === 'Direct' ? '#059669' : hm.confidence === 'Very High' ? '#059669' : hm.confidence === 'High' ? '#2563eb' : hm.confidence === 'Medium' ? '#d97706' : '#64748b';
+                const hasHmValue = hm.estimatedHM != null && Number.isFinite(hm.estimatedHM);
                 return React.createElement("div", { className: "card card-pad", style: { marginBottom: 12, border: '1px solid #dbeafe', background: 'linear-gradient(180deg,#f8fbff 0%,#fff 100%)' } },
                     React.createElement("div", { className: "section-head" },
                         React.createElement("div", null,
                             React.createElement("div", { className: "section-title" }, hm.confidence === 'Direct' ? 'Current HM (GPS)' : 'Estimated Current HM'),
-                            React.createElement("div", { className: "section-sub" }, hm.confidence === 'Direct' ? 'Snapshot GPS menjadi sumber Current HM untuk serial ini.' : 'Estimasi operasional — selalu memiliki angka, tetapi bukan direct meter reading.')),
-                        React.createElement(Pill, { color: confColor }, hm.confidence === 'Direct' ? 'GPS direct' : `${hm.confidence} confidence`)),
+                            React.createElement("div", { className: "section-sub" }, hm.confidence === 'Direct' ? 'Snapshot GPS menjadi sumber Current HM untuk serial ini.' : (hasHmValue ? 'Estimasi operasional — dihitung dari data unit/claim, bukan direct meter reading.' : 'Data tanggal/HM referensi belum tersedia untuk menghitung estimasi HM.'))),
+                        React.createElement(Pill, { color: confColor }, hm.confidence === 'Direct' ? 'GPS direct' : (hm.confidence === 'Unavailable' ? 'Data belum lengkap' : `${hm.confidence} confidence`))),
                     React.createElement("div", { className: "hm-metrics-grid" },
                         React.createElement("div", { style: { padding: '13px 14px', borderRadius: 10, background: '#eff6ff', border: '1px solid #dbeafe' } },
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', fontWeight: 700 } }, hm.confidence === 'Direct' ? 'CURRENT HM (GPS)' : 'ESTIMATED CURRENT HM'),
-                            React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: '#0f172a', marginTop: 5 } },
-                                hm.estimatedHM.toLocaleString('en-US'),
-                                " hr"),
-                            React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 3 } }, hm.confidence === 'Direct' ? `Captured ${hm.gpsCapturedAt || hm.referenceDate || '—'}` : `≈ ${hm.estimatedHMExact.toLocaleString('en-US')} hr`)),
+                            React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: hasHmValue ? '#0f172a' : '#94a3b8', marginTop: 5 } },
+                                hasHmValue ? `${hm.estimatedHM.toLocaleString('en-US')} hr` : '—'),
+                            React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 3 } }, hm.confidence === 'Direct' ? `Captured ${hm.gpsCapturedAt || hm.referenceDate || '—'}` : (hm.estimatedHMExact != null ? `≈ ${hm.estimatedHMExact.toLocaleString('en-US')} hr` : 'Belum ada estimasi'))),
                         React.createElement("div", { style: { padding: '13px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff' } },
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', fontWeight: 700 } }, "BASIS"),
                             React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: '#0f172a', marginTop: 6 } }, hm.basis),
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 4 } }, hm.note)),
                         React.createElement("div", { style: { padding: '13px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff' } },
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', fontWeight: 700 } }, "USAGE / EVIDENCE"),
-                            React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: '#0f172a', marginTop: 6 } }, hm.confidence === 'Direct' ? 'GPS Current' : `${hm.rateHpd} HM/day`),
-                            React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 4 } }, hm.confidence === 'Direct' ? `Model GPS: ${hm.gpsModel || '—'}` : `Oper. days: ${hm.operatingDays} · downtime: ${hm.downtimeDays} d`)),
+                            React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: '#0f172a', marginTop: 6 } }, hm.confidence === 'Direct' ? 'GPS Current' : (hm.rateHpd != null ? `${hm.rateHpd} HM/day` : '—')),
+                            React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 4 } }, hm.confidence === 'Direct' ? `Model GPS: ${hm.gpsModel || '—'}` : (hm.operatingDays != null ? `Oper. days: ${hm.operatingDays} · downtime: ${hm.downtimeDays} d` : 'Belum ada data'))),
                         React.createElement("div", { style: { padding: '13px 14px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff' } },
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', fontWeight: 700 } }, hm.confidence === 'Direct' ? 'GPS EVIDENCE' : 'REFERENCE'),
-                            React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: '#0f172a', marginTop: 6 } }, hm.confidence === 'Direct' ? `GPS HM: ${hm.estimatedHM.toLocaleString('en-US')} hr` : `Last known HM: ${hm.lastKnownHM != null ? hm.lastKnownHM.toLocaleString('en-US') + ' hr' : '—'}`),
+                            React.createElement("div", { style: { fontSize: 11, fontWeight: 800, color: '#0f172a', marginTop: 6 } }, hm.confidence === 'Direct' ? `GPS HM: ${hasHmValue ? hm.estimatedHM.toLocaleString('en-US') + ' hr' : '—'}` : `Last known HM: ${hm.lastKnownHM != null ? hm.lastKnownHM.toLocaleString('en-US') + ' hr' : '—'}`),
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 4 } },
                                 "Date: ",
                                 hm.referenceDate || '—'),
                             React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } }, hm.confidence === 'Direct' ? `Captured: ${hm.gpsCapturedAt || '—'}` : React.createElement(React.Fragment, null,
                                 "B/L: ",
                                 hm.blDate || '—',
-                                hm.blDate ? React.createElement("span", { style: { fontStyle: 'italic' } }, " (OSF Departure)") : null)),
-                            hm.confidence !== 'Direct' && hm.expectedHigh > hm.expectedLow && React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } },
+                                hm.blDate ? React.createElement("span", { style: { fontStyle: 'italic' } }, " (China → ID)") : null)),
+                            hm.confidence !== 'Direct' && hm.expectedHigh != null && hm.expectedLow != null && hm.expectedHigh > hm.expectedLow && React.createElement("div", { style: { fontSize: 10, color: '#64748b', marginTop: 2 } },
                                 "Range: ",
                                 hm.expectedLow.toLocaleString('en-US'),
                                 "\u2013",
@@ -15414,28 +15347,5 @@ ReactDOM.createRoot(rootNode).render(React.createElement(SDLGErrorBoundary, null
   <script src="./modules/sdlg-hash-router.js?v=20261030-stable-v2"></script>
   <script src="./modules/sdlg-portal-finance-ux.js"></script>
   <script src="./modules/vin-auto-lookup.js?v=20261030-stable-v2"></script>
-<script>
-(function () {
-  var HREF = "styles/sdlg-dashboard-polish.css?v=20261112-ui-expert-v5";
-  function pin() {
-    var head = document.head || document.documentElement;
-    var link = document.getElementById("sdlg-shell-polish") || document.querySelector('link[href*="sdlg-dashboard-polish"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.id = "sdlg-shell-polish";
-      link.rel = "stylesheet";
-    }
-    if ((link.getAttribute("href") || "") !== HREF) {
-      link.href = HREF;
-    }
-    if (link.parentNode !== head || head.lastElementChild !== link) {
-      head.appendChild(link);
-    }
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pin, { once: true });
-  else pin();
-  window.addEventListener("load", pin, { once: true });
-})();
-</script>
 </body>
 </html>
