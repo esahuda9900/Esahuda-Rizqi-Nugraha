@@ -1,17 +1,17 @@
-# SESSION_STATE — 2026-11-15
+# SESSION_STATE — 2026-11-16
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
 - Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
 - Latest deploys via static.yml successful as of last check. No open issues.
-- Claims count: 575 (stable from previous 575, 2 archived).
+- Claims count: 575 (stable from previous 575, archived via archived_at).
 
-## Current health (2026-11-15 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 575. No critical data anomalies (2 archived).
+## Current health (2026-11-16 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 575. No critical data anomalies.
 - Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
 - Performance advisors: known RLS InitPlan on machines, unused indexes, multiple permissive policies (non-critical).
 - Health advisors: clean (no issues).
-- Logs: no matching error/timeout/fail entries in recent 24h window. No critical errors.
+- Logs: minor postgrest timeout events (Warp server error: Thread killed by timeout manager) persist as non-critical. Backup auth fail on schedule. No other critical errors.
 - Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
 
 ## Task Queue status
