@@ -41,27 +41,6 @@ const mimeTypes = {
   '.ico': 'image/x-icon',
 };
 
-const previewDist = path.resolve(root, 'apps', 'web', 'dist');
-let isBuilding = false;
-
-function ensurePreviewBuilt() {
-  if (fs.existsSync(path.resolve(previewDist, 'index.html'))) {
-    return;
-  }
-  if (isBuilding) return;
-  isBuilding = true;
-  console.log('Building React preview app (apps/web) in background...');
-  const { exec } = require('node:child_process');
-  exec('npm --prefix apps/web run build', (err) => {
-    isBuilding = false;
-    if (err) {
-      console.error('Failed to build apps/web:', err);
-    } else {
-      console.log('React preview app (apps/web) build ready.');
-    }
-  });
-}
-
 function safePath(urlPath) {
   try {
     const pathname = decodeURIComponent((urlPath || '/').split('?')[0]);
@@ -133,47 +112,6 @@ const server = http.createServer((request, response) => {
     return;
   }
 
-  // Redirect /preview to /preview/
-  if (pathname === '/preview' || pathname === '/Esahuda-Rizqi-Nugraha/preview') {
-    response.writeHead(302, { Location: '/preview/' });
-    response.end();
-    return;
-  }
-
-  // Handle React preview SPA
-  const isPreview = pathname.startsWith('/preview/') || pathname.startsWith('/Esahuda-Rizqi-Nugraha/preview/');
-  if (isPreview) {
-    if (!fs.existsSync(previewDist) || !fs.existsSync(path.resolve(previewDist, 'index.html'))) {
-      ensurePreviewBuilt();
-      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      response.end(`<!doctype html><html><head><meta http-equiv="refresh" content="2"><title>Loading Preview...</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px;"><h2>Menyiapkan React Preview...</h2><p style="color:#64748b;">Halaman akan dimuat otomatis dalam beberapa detik.</p></body></html>`);
-      return;
-    }
-
-    const subPath = pathname.replace(/^(\/Esahuda-Rizqi-Nugraha)?\/preview/, '') || '/';
-    const cleanSub = subPath === '/' ? '/index.html' : subPath;
-    let target = path.resolve(previewDist, `.${cleanSub}`);
-
-    if (!target.startsWith(previewDist + path.sep) || !fs.existsSync(target) || !fs.statSync(target).isFile()) {
-      target = path.resolve(previewDist, 'index.html');
-    }
-
-    if (fs.existsSync(target) && fs.statSync(target).isFile()) {
-      streamFile(target, response, isHead);
-      return;
-    }
-  }
-
-  // Handle preview assets if requested directly
-  if (pathname.startsWith('/assets/') || pathname.startsWith('/Esahuda-Rizqi-Nugraha/assets/')) {
-    const cleanAsset = pathname.replace(/^(\/Esahuda-Rizqi-Nugraha)?/, '');
-    const assetTarget = path.resolve(previewDist, `.${cleanAsset}`);
-    if (assetTarget.startsWith(previewDist + path.sep) && fs.existsSync(assetTarget) && fs.statSync(assetTarget).isFile()) {
-      streamFile(assetTarget, response, isHead);
-      return;
-    }
-  }
-
   // Handle legacy production files
   const filePath = safePath(rawUrl);
   if (!filePath) {
@@ -201,10 +139,8 @@ server.on('error', (err) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Static preview server listening on http://${host}:${port}`);
+  console.log(`Static legacy portal server listening on http://${host}:${port}`);
 });
-
-ensurePreviewBuilt();
 
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);

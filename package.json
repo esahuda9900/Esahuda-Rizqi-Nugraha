@@ -2,10 +2,7 @@
   "name": "sdlg-warranty-backup",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "apps/web"
-  ],
-  "description": "Static SDLG warranty claim frontend with a Node-based production build pipeline.",
+  "description": "Static SDLG warranty claim frontend with a Node-based production build and verification pipeline.",
   "type": "commonjs",
   "engines": {
     "node": ">=22.0.0"
@@ -13,8 +10,8 @@
   "scripts": {
     "dev": "node scripts/serve-static.js",
     "start": "node scripts/serve-static.js",
-    "build": "npm --prefix apps/web run build",
-    "lint": "npm --prefix apps/web run typecheck",
+    "build": "node scripts/verify-production.js && node scripts/verify-module-syntax.js && node scripts/verify-public-release.js",
+    "lint": "node scripts/verify-module-syntax.js",
     "verify": "node scripts/verify-production.js && node scripts/verify-parser-contract.js && node scripts/verify-953h-machine-resolution.js && node scripts/verify-warranty-contract.js && node scripts/verify-dual-warranty-routing.js && node scripts/verify-source-lock.js && node scripts/verify-claim-id-year-contract.js && node scripts/verify-public-release.js && node scripts/verify-warranty-component-mapping.js && node scripts/verify-warranty-policy-engine.js",
     "browser:smoke": "node scripts/browser-smoke.js",
     "browser:e2e-auth": "node scripts/browser-e2e-auth.js",
@@ -25,8 +22,6 @@
     "deploy": "npx --yes wrangler@4.136.3 deploy"
   },
   "devDependencies": {
-    "playwright": "^1.63.0",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "playwright": "^1.63.0"
   }
 }

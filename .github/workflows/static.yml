@@ -28,7 +28,6 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Setup Node
-        if: hashFiles('apps/web/package.json') != ''
         uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -52,41 +51,6 @@ jobs:
           rsync -a --exclude '_archive' modules/ _site/modules/
           if [ -d styles ]; then rsync -a --exclude '_archive' styles/ _site/styles/; fi
           touch _site/.nojekyll
-
-          # Build clean Vite app → /preview ONLY (does NOT replace production root)
-          if [ -f apps/web/package.json ]; then
-            echo "Building apps/web preview SPA…"
-            cd apps/web
-            npm install --no-audit --no-fund
-            export VITE_BASE=/Esahuda-Rizqi-Nugraha/preview/
-            # Hard block accidental root base
-            if [ "$VITE_BASE" = "/" ] || [ "$VITE_BASE" = "/Esahuda-Rizqi-Nugraha/" ]; then
-              echo "FORBIDDEN: VITE_BASE must stay under /preview/ until AUTHORIZE CUTOVER"
-              exit 1
-            fi
-            npx vite build
-            mkdir -p ../../_site/preview
-            cp -R dist/. ../../_site/preview/
-            cp dist/index.html ../../_site/preview/404.html
-            cd ../..
-            test -s _site/preview/index.html
-            # Never allow dist to overwrite production index
-            if cmp -s apps/web/dist/index.html _site/index.html 2>/dev/null; then
-              echo "FORBIDDEN CUTOVER: SPA dist identical to production index"
-              exit 1
-            fi
-            echo "Preview SPA ready at /preview/"
-          elif [ -d preview ]; then
-            mkdir -p _site/preview
-            cp -R preview/. _site/preview/
-            echo "Included checked-in preview/ folder."
-          fi
-
-          # Root 404.html — SPA deep-link fallback only (does not replace legacy index)
-          if [ -f scripts/pages-preview-404.html ]; then
-            cp scripts/pages-preview-404.html _site/404.html
-            echo "Installed root SPA 404 fallback."
-          fi
 
           python3 scripts/pages_prepare_index.py
 

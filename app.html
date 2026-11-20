@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-theme="light">
 <head>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='14' font-family='system-ui' font-weight='700'%3ES%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f172a'/%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%23f59e0b'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='%230f172a' font-size='15' font-family='system-ui' font-weight='900'%3ES%3C/text%3E%3C/svg%3E" />
   <base href="./">
   <meta charset="UTF-8" />
   <script>window.__SDLG_REACT_INPUT_SINGLE_OWNER__ = true;</script>
@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="styles/sdlg-modern-refresh.css?v=20261112-ui-expert-v5" />
   <link rel="stylesheet" href="styles/sdlg-responsive.css" />
   <link rel="stylesheet" href="styles/sdlg-ux-polish-v3.css" />
-  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261113-ui-expert-v6" />
+  <link rel="stylesheet" href="styles/sdlg-claims-ui-fix.css?v=20261120-claim-card-v9" />
   <link rel="stylesheet" href="styles/sdlg-overview-v1.css?v=20261030-action-today-v1" />
   
   <!-- React runtime: blocking CDN fallback. The application bundle uses the global React UMD API. -->
@@ -3323,13 +3323,14 @@ input[type="checkbox"],input[type="radio"]{
 </style>
   <!-- SDLGHashRouter handles application routes at runtime. -->
 <link rel="stylesheet" id="sdlg-shell-polish" href="styles/sdlg-dashboard-polish.css?v=20261113-ui-expert-v6">
+<link rel="stylesheet" id="sdlg-industrial-theme" href="styles/sdlg-industrial-theme.css?v=20261120-amber-navy-v1">
 <style id="sdlg-light-only">
   /* HARD LIGHT-ONLY — dark theme removed 2026-10-30 */
   :root, html, body { color-scheme: light !important; }
   .sdlg-preboot{max-width:1180px;margin:0 auto;padding:20px 18px 40px;font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;color:#0f172a}
-  .sdlg-preboot-bar{height:58px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .sdlg-preboot-bar{height:58px;background:#0f172a;border:1px solid rgba(245,158,11,.38);color:#f8fafc;border-radius:14px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;margin-bottom:20px;box-shadow:0 8px 20px rgba(15,23,42,.12)}
   .sdlg-preboot-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:14px}
-  .sdlg-preboot-mark{width:30px;height:30px;border-radius:8px;background:#1d4ed8;color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px}
+  .sdlg-preboot-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;display:grid;place-items:center;font-weight:900;font-size:14px}
   .sdlg-preboot-shimmer{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:sdlgPreboot 1.4s ease-in-out infinite;border-radius:10px}
   .sdlg-preboot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
   @media(max-width:720px){.sdlg-preboot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -3853,6 +3854,85 @@ const percentile = (arr, p) => {
         return null;
     const i = (a.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
     return lo === hi ? a[lo] : a[lo] + (a[hi] - a[lo]) * (i - lo);
+};
+const classifyToastTone = (msg) => {
+    const s = String(msg || "");
+    if (/❌|\bgagal\b|\berror\b|\bditolak\b|\bharus\b|\bdibatalkan\b|\binvalid\b|tidak dapat/i.test(s)) return "error";
+    if (/⚠️|\bperingatan\b|\boffline\b|belum bisa|\bperiksa\b|\bperhatian\b/i.test(s)) return "warn";
+    if (/✅|💾|♻️|📋|\btersimpan\b|\bberhasil\b|\bdipulihkan\b|\bdisinkronkan\b|\bdiupdate\b|\bdisalin\b|\bdibuat\b|\bselesai\b|\bdiarsipkan\b/i.test(s)) return "success";
+    return "info";
+};
+const computeDailyWorkspacePulse = (claimsList, actionRows, currentUser) => {
+    const nowDate = new Date();
+    let wibHour = 9;
+    let wibDateDisplay = "";
+    try {
+        const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Jakarta",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            hour12: false
+        }).formatToParts(nowDate);
+        const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+        wibHour = Number(map.hour ?? 9);
+        wibDateDisplay = `${map.day}/${map.month}/${map.year} WIB`;
+    } catch (_) {
+        wibDateDisplay = "WIB";
+    }
+    const greeting = wibHour < 11 ? "Selamat Pagi" : wibHour < 15 ? "Selamat Siang" : wibHour < 18 ? "Selamat Sore" : "Selamat Malam";
+    const emailRaw = String(currentUser?.email || "").trim();
+    const rawName = emailRaw.includes("@") ? emailRaw.split("@")[0] : emailRaw;
+    const displayName = rawName
+        ? rawName.replace(/[._-]+/g, " ").replace(/\b\w/g, ch => ch.toUpperCase()).trim()
+        : "Tim Warranty";
+
+    const active = Array.isArray(claimsList) ? claimsList.filter(c => !c?.archived_at) : [];
+    let assessedCount = 0;
+    let compliantCount = 0;
+    let openOver10 = 0;
+    let auditCount = 0;
+    const branchCounts = {};
+    for (let i = 0; i < active.length; i++) {
+        const c = active[i];
+        if (c.claim_status === "SDLG Audit") auditCount++;
+        const br = String(c.branch || "").trim();
+        if (br) branchCounts[br] = (branchCounts[br] || 0) + 1;
+        const ag = claimAging(c);
+        if (ag && ag.repairToSubmitOrToday != null) {
+            assessedCount++;
+            if (ag.repairToSubmitOrToday <= SDLG_POLICY.claimSubmitDays) compliantCount++;
+            else if (!ag.submit) openOver10++;
+        }
+    }
+    const slaPct = assessedCount ? Math.round((compliantCount / assessedCount) * 100) : 100;
+    const slaTone = slaPct >= 80 ? "is-good" : slaPct >= 55 ? "is-mid" : "is-low";
+    const actionReq = (Array.isArray(actionRows) ? actionRows : []).filter(r => r && r.action_required === true);
+    const urgentRows = actionReq.filter(r => {
+        const pr = String(r.priority || "").toUpperCase();
+        return pr === "P0" || pr === "P1";
+    });
+    const urgentCount = urgentRows.length || active.filter(c => c.claim_status === "Rejected" || c.claim_status === "On Hold").length;
+    const topPriorityClaimId = urgentRows[0]?.claim_id || actionReq[0]?.claim_id || active.find(c => c.claim_status === "Rejected" || c.claim_status === "On Hold")?.claim_id || null;
+    const topBranchEntry = Object.entries(branchCounts).sort((a, b) => b[1] - a[1])[0] || null;
+
+    return {
+        greeting,
+        displayName,
+        wibDateDisplay,
+        activeCount: active.length,
+        assessedCount,
+        compliantCount,
+        slaPct,
+        slaTone,
+        openOver10,
+        auditCount,
+        urgentCount,
+        topPriorityClaimId,
+        topBranch: topBranchEntry ? topBranchEntry[0] : "—",
+        topBranchCount: topBranchEntry ? topBranchEntry[1] : 0
+    };
 };
 const statusColor = (s) => ({
     Draft: "#f59e0b", "Submitted to Warranty Admin": "#f97316", "Submitted to SDLG": "#3b82f6", "Claimed to SDLG": "#3b82f6",
@@ -5163,12 +5243,92 @@ async function parseWithAI(rawText) {
 // Nomor claim dibuat atomik oleh RPC create_sdlg_claim(jsonb). Tidak ada nomor yang
 // "terpakai" bila transaksi insert gagal/rollback.
 // ─── UI ATOMS ────────────────────────────────────────────────────────────
-const Row = ({ label, value, mono }) => {
-    if (value == null || value === "" || value === "null")
+const Row = ({
+    label, value, mono, suffix,
+    canEdit, fieldKey, fieldType, selectOptions, datalistId,
+    isEditing, editDraft, editBusy, editError,
+    onStartEdit, onChangeDraft, onSaveEdit, onCancelEdit, onConfirmYardFailure, onCopy
+}) => {
+    const emptyVal = value == null || value === "" || value === "null";
+    if (emptyVal && !canEdit && !isEditing)
         return null;
-    return (React.createElement("div", { style: { display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f1f5f9", alignItems: "flex-start" } },
-        React.createElement("div", { style: { width: 180, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "#94a3b8", paddingTop: 1 } }, label),
-        React.createElement("div", { style: { flex: 1, fontSize: 13, color: "#1e293b", fontFamily: mono ? "monospace" : "inherit", whiteSpace: "pre-wrap", wordBreak: "break-word" } }, String(value))));
+    const rawStr = emptyVal ? "" : String(value);
+    const displayStr = emptyVal ? "" : (suffix ? `${rawStr}${suffix}` : rawStr);
+    if (isEditing) {
+        return (React.createElement("div", { className: "sdlg-info-row sdlg-info-row--editing" },
+            React.createElement("div", { className: "sdlg-info-label" }, label),
+            React.createElement("div", { className: "sdlg-info-value-wrap" },
+                React.createElement("div", { className: "sdlg-info-inline-editor" },
+                    React.createElement("div", { className: "sdlg-info-inline-controls" },
+                        fieldType === "select" && Array.isArray(selectOptions)
+                            ? React.createElement("select", {
+                                className: "sdlg-info-inline-input",
+                                value: editDraft ?? "",
+                                disabled: editBusy,
+                                autoFocus: true,
+                                onChange: e => onChangeDraft && onChangeDraft(e.target.value),
+                                onKeyDown: e => {
+                                    if (e.key === "Escape") { e.preventDefault(); onCancelEdit && onCancelEdit(); }
+                                }
+                            }, selectOptions.map(opt => React.createElement("option", { key: opt, value: opt }, opt)))
+                            : React.createElement("input", {
+                                type: fieldType || "text",
+                                step: fieldType === "number" ? "any" : undefined,
+                                list: datalistId || undefined,
+                                className: "sdlg-info-inline-input",
+                                style: mono ? { fontFamily: "monospace" } : undefined,
+                                value: editDraft ?? "",
+                                disabled: editBusy,
+                                autoFocus: true,
+                                placeholder: `Isi ${label}...`,
+                                onChange: e => onChangeDraft && onChangeDraft(e.target.value),
+                                onKeyDown: e => {
+                                    if (e.key === "Enter") { e.preventDefault(); onSaveEdit && onSaveEdit(false); }
+                                    else if (e.key === "Escape") { e.preventDefault(); onCancelEdit && onCancelEdit(); }
+                                }
+                            }),
+                        React.createElement("button", {
+                            type: "button",
+                            disabled: editBusy,
+                            onClick: () => onSaveEdit && onSaveEdit(false),
+                            style: { padding: "6px 11px", borderRadius: 7, border: 0, background: "#059669", color: "#fff", fontSize: 12, fontWeight: 700, cursor: editBusy ? "wait" : "pointer" }
+                        }, editBusy ? "Menyimpan..." : "✓ Simpan"),
+                        React.createElement("button", {
+                            type: "button",
+                            disabled: editBusy,
+                            onClick: () => onCancelEdit && onCancelEdit(),
+                            style: { padding: "6px 9px", borderRadius: 7, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontSize: 12, fontWeight: 600, cursor: "pointer" }
+                        }, "✕")),
+                    editError && React.createElement("div", { style: { fontSize: 11, color: "#b91c1c", fontWeight: 600, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+                        React.createElement("span", null, editError),
+                        onConfirmYardFailure && /Failure Date sebelum Sales Date/i.test(String(editError)) && React.createElement("button", {
+                            type: "button",
+                            disabled: editBusy,
+                            onClick: () => onConfirmYardFailure(),
+                            style: { padding: "3px 8px", borderRadius: 6, border: "1px solid #c4b5fd", background: "#f5f3ff", color: "#6d28d9", fontSize: 10.5, fontWeight: 800, cursor: "pointer" }
+                        }, "✅ Simpan sebagai Yard Failure"))))));
+    }
+    return (React.createElement("div", { className: "sdlg-info-row" },
+        React.createElement("div", { className: "sdlg-info-label" }, label),
+        React.createElement("div", { className: "sdlg-info-value-wrap" },
+            React.createElement("div", {
+                className: `sdlg-info-value ${mono && !emptyVal ? "is-mono" : ""} ${emptyVal ? "is-empty" : ""}`,
+                title: canEdit ? "Klik ✎ untuk edit langsung ke Supabase" : undefined,
+                onDoubleClick: () => { if (canEdit && onStartEdit) onStartEdit(); }
+            }, emptyVal ? "— (kosong)" : displayStr),
+            (canEdit || (!emptyVal && onCopy)) && React.createElement("div", { className: "sdlg-info-row-actions" },
+                !emptyVal && onCopy && React.createElement("button", {
+                    type: "button",
+                    className: "sdlg-info-icon-btn",
+                    title: `Salin ${label}`,
+                    onClick: () => onCopy(rawStr, label)
+                }, "📋"),
+                canEdit && onStartEdit && React.createElement("button", {
+                    type: "button",
+                    className: "sdlg-info-icon-btn",
+                    title: `Edit ${label} langsung ke Supabase`,
+                    onClick: () => onStartEdit()
+                }, emptyVal ? "+ Isi" : "✎")))));
 };
 const renderSourceProvenance = (provenance) => {
     if (!provenance || typeof provenance !== "object") return null;
@@ -5184,13 +5344,13 @@ const renderSourceProvenance = (provenance) => {
 const Pill = ({ color, children, size }) => {
     let variant = "neutral";
     const cStr = String(color || "").toLowerCase();
-    if (cStr.includes("success") || cStr === "#16a34a" || cStr === "#059669" || cStr === "#0d7a3f" || cStr === "#166534" || cStr === "#22c55e" || cStr === "approved" || cStr === "completed" || cStr === "green" || cStr === "on target" || cStr === "pass" || cStr === "ready") {
+    if (cStr.includes("success") || cStr === "#16a34a" || cStr === "#10b981" || cStr === "#0f766e" || cStr === "#059669" || cStr === "#0d7a3f" || cStr === "#166534" || cStr === "#22c55e" || cStr === "approved" || cStr === "paid" || cStr === "completed" || cStr === "green" || cStr === "on target" || cStr === "pass" || cStr === "ready") {
         variant = "success";
-    } else if (cStr.includes("warning") || cStr === "#d97706" || cStr === "#b86e00" || cStr === "on hold" || cStr === "review" || cStr === "loading" || cStr === "warn") {
+    } else if (cStr.includes("warning") || cStr === "#d97706" || cStr === "#f59e0b" || cStr === "#f97316" || cStr === "#b86e00" || cStr === "draft" || cStr === "on hold" || cStr === "review" || cStr === "loading" || cStr === "warn") {
         variant = "warning";
-    } else if (cStr.includes("danger") || cStr === "#dc2626" || cStr === "#b3261e" || cStr === "rejected" || cStr === "error" || cStr === "not verified" || cStr === "no source proof") {
+    } else if (cStr.includes("danger") || cStr === "#dc2626" || cStr === "#ef4444" || cStr === "#b3261e" || cStr === "rejected" || cStr === "error" || cStr === "not verified" || cStr === "no source proof") {
         variant = "danger";
-    } else if (cStr.includes("primary") || cStr === "#1e40af" || cStr === "#1e4ed8" || cStr === "#2563eb" || cStr === "#3b82f6" || cStr === "submitted to sdlg" || cStr === "claimed to sdlg" || cStr === "current" || cStr === "db verified") {
+    } else if (cStr.includes("primary") || cStr === "#1e40af" || cStr === "#1d4ed8" || cStr === "#1e4ed8" || cStr === "#2563eb" || cStr === "#3b82f6" || cStr === "#6366f1" || cStr === "#0891b2" || cStr === "submitted to sdlg" || cStr === "claimed to sdlg" || cStr === "sdlg audit" || cStr === "billing" || cStr === "current" || cStr === "db verified") {
         variant = "primary";
     }
     const className = "sdlg-badge sdlg-badge--" + variant;
@@ -5944,11 +6104,11 @@ const PolicyDecisionCard = ({ claim }) => {
     );
 };
 
-function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, onNotify }) {
+function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, onNotify, claimsLoading }) {
     const selectedClaim = (claims || []).find(c => String(c.claim_id) === String(selectedClaimId)) || null;
     if (typeof window !== "undefined") {
         window.__SDLG_ALL_CLAIMS__ = claims;
-        if (selectedClaim) window.__SDLG_LIVE_CLAIM__ = selectedClaim;
+        window.__SDLG_LIVE_CLAIM__ = selectedClaim || null;
     }
     const [warrantyMatrix, setWarrantyMatrix] = useState(null);
     const [warrantyLoading, setWarrantyLoading] = useState(false);
@@ -5974,7 +6134,7 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
 
     const matrixStatus = String(warrantyMatrix?.status || "").toUpperCase();
     const rawTier = warrantyMatrix?.warranty_tier_used || "";
-    const resolvedBlForTier = warrantyMatrix?.bill_of_lading_date || selectedClaim.bill_of_lading_date || "";
+    const resolvedBlForTier = warrantyMatrix?.bill_of_lading_date || selectedClaim?.bill_of_lading_date || "";
     const effectiveTier = formatPolicyTierLabel(rawTier, resolvedBlForTier);
     const claimPolicy = warrantyMatrix?.claim_policy || null;
     const policies = Array.isArray(warrantyMatrix?.policies) ? warrantyMatrix.policies : [];
@@ -6138,10 +6298,21 @@ function SDLGPortalInputPage({ claims, selectedClaimId, onSelectClaim, onBack, o
             size: Math.min(Math.max(filteredClaims.length, 1), 12),
             style: { width: "100%", padding: "8px 10px", border: "1px solid #cbd5e1", borderRadius: 9, fontSize: 12, background: "#fff" }
         }, React.createElement("option", { value: "" }, q ? `— ${filteredClaims.length} hasil —` : "— Pilih claim —"), options);
+        const hasRequestedId = Boolean(String(selectedClaimId || "").trim());
+        const isHydratingRequested = hasRequestedId && Boolean(claimsLoading);
+        const isMissingRequested = hasRequestedId && !claimsLoading && (claims || []).length > 0;
+        const statusNotice = isHydratingRequested
+            ? React.createElement("div", { style: { marginBottom: 10, padding: "10px 12px", borderRadius: 9, background: "#eff6ff", border: "1px solid #bfdbfe", fontSize: 12, color: "#1e3a8a", fontWeight: 600 } },
+                `Memuat data klaim ${selectedClaimId} dari database…`)
+            : isMissingRequested
+                ? React.createElement("div", { style: { marginBottom: 10, padding: "10px 12px", borderRadius: 9, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 12, color: "#92400e", fontWeight: 600 } },
+                    `Klaim ${selectedClaimId} belum ditemukan di daftar aktif. Silakan pilih klaim di bawah ini.`)
+                : null;
         const card = React.createElement("div", { className: "card card-pad" },
             React.createElement("div", { className: "eyebrow" }, "SDLG Dealer Portal"),
             React.createElement("div", { className: "page-title" }, "SDLG Input Helper"),
             React.createElement("div", { className: "page-sub", style: { marginBottom: 12 } }, "Cari lalu pilih claim. Pencarian mencakup Claim ID, Serial, Model, dan Customer."),
+            statusNotice,
             searchBox,
             selector,
             React.createElement("div", { style: { marginTop: 8, fontSize: 10, color: "#64748b" } }, q ? `${filteredClaims.length} claim cocok` : `Menampilkan 60 claim terbaru dari ${activeClaims.length}`));
@@ -7086,6 +7257,20 @@ SDLG_REPOSITORY.listClaims = async function () {
     const [showFxEditor, setShowFxEditor] = useState(false);
     const [showAccountModal, setShowAccountModal] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [settingsTab, setSettingsTab] = useState("workspace"); // workspace | supabase | backup
+    const [inlineEditField, setInlineEditField] = useState(null);
+    const [dbConsoleCounts, setDbConsoleCounts] = useState(null);
+    const [dbConsoleBusy, setDbConsoleBusy] = useState(false);
+    const [dbPatchClaimId, setDbPatchClaimId] = useState("");
+    const [dbPatchRow, setDbPatchRow] = useState(null);
+    const [dbPatchLoading, setDbPatchLoading] = useState(false);
+    const [dbPatchField, setDbPatchField] = useState("dealer_claim_no");
+    const [dbPatchValue, setDbPatchValue] = useState("");
+    const [dbPatchBusy, setDbPatchBusy] = useState(false);
+    const [batchPasteText, setBatchPasteText] = useState("");
+    const [batchPreview, setBatchPreview] = useState(null);
+    const [batchRunning, setBatchRunning] = useState(false);
+    const [batchReport, setBatchReport] = useState(null);
     const [accountModalTab, setAccountModalTab] = useState("profile"); // profile | users | audit
     const [dbUsers, setDbUsers] = useState([]);
     const [dbUsersLoading, setDbUsersLoading] = useState(false);
@@ -7111,6 +7296,7 @@ SDLG_REPOSITORY.listClaims = async function () {
         // active route changes, rather than showing claim A's form on claim B.
         setEditing(false);
         setEditForm({});
+        setInlineEditField(null);
         setStatusReasonModal(null);
         setStatusHistoryDb([]);
         ++historyRequestRef.current;
@@ -10414,9 +10600,375 @@ SDLG_REPOSITORY.listClaims = async function () {
             setSyncingFinancials(false);
         }
     };
+    const handleRestoreArchived = async (claimId) => {
+        if (!claimId || !isAdmin) return;
+        if (!navigator.onLine) {
+            showToast("❌ Tidak ada koneksi internet. Gagal memulihkan arsip.");
+            return;
+        }
+        try {
+            const nowIso = new Date().toISOString();
+            const { data, error } = await sdlgSupabase
+                .from("claims")
+                .update({ archived_at: null, last_updated: nowIso })
+                .eq("claim_id", claimId)
+                .select("*")
+                .maybeSingle();
+            if (error) throw error;
+            if (data) {
+                setClaims(prev => {
+                    const norm = SDLG_DATA_MODEL.normalizeClaim(data) || data;
+                    return prev.some(c => c.claim_id === claimId)
+                        ? prev.map(c => c.claim_id === claimId ? norm : c)
+                        : [norm, ...prev];
+                });
+            }
+            showToast(`✅ Klaim ${claimId} dipulihkan dari arsip.`);
+            await loadClaims();
+        } catch (e) {
+            showToast("❌ Gagal memulihkan arsip: " + (e?.message || e));
+        }
+    };
+    const openInlineFieldEdit = (meta, currentValue) => {
+        if (!detail || !isAdmin) return;
+        const type = meta.type || "text";
+        const initialVal = type === "date"
+            ? (normalizeDateInput(currentValue) || (currentValue || ""))
+            : (currentValue ?? "");
+        setInlineEditField({
+            key: meta.key,
+            label: meta.label,
+            type,
+            value: String(initialVal),
+            busy: false,
+            error: ""
+        });
+    };
+    const saveInlineFieldEdit = async (overrideYardFailure = false) => {
+        if (!detail || !inlineEditField || inlineEditField.busy) return;
+        if (!isAdmin) {
+            showToast("🔒 Hanya role Admin / Warranty Admin yang bisa mengubah data.");
+            return;
+        }
+        if (!navigator.onLine) {
+            setInlineEditField(prev => prev ? { ...prev, error: "Koneksi internet terputus." } : prev);
+            return;
+        }
+        const { key, label, type, value } = inlineEditField;
+        const trimmed = String(value ?? "").trim();
+        let nextVal = null;
+        if (type === "date") {
+            if (trimmed !== "") {
+                const iso = normalizeDateInput(trimmed);
+                if (!iso) {
+                    setInlineEditField(prev => prev ? { ...prev, error: `Format ${label} tidak valid (gunakan YYYY-MM-DD atau DD/MM/YYYY).` } : prev);
+                    return;
+                }
+                nextVal = iso;
+            }
+        } else if (type === "number") {
+            if (trimmed !== "") {
+                const num = Number(trimmed);
+                if (!Number.isFinite(num) || num < 0) {
+                    setInlineEditField(prev => prev ? { ...prev, error: `${label} harus berupa angka valid (>= 0).` } : prev);
+                    return;
+                }
+                nextVal = num;
+            }
+        } else {
+            nextVal = trimmed ? trimmed : null;
+        }
+        if ((key === "model" || key === "serial_no" || key === "failure_date") && !nextVal) {
+            setInlineEditField(prev => prev ? { ...prev, error: `${label} wajib diisi dan tidak boleh dikosongkan.` } : prev);
+            return;
+        }
+        const simulated = {
+            model: key === "model" ? nextVal : detail.model,
+            serialNo: key === "serial_no" ? nextVal : detail.serial_no,
+            salesDate: key === "sales_date" ? nextVal : detail.sales_date,
+            failureDate: key === "failure_date" ? nextVal : detail.failure_date,
+            dealerRepairDate: key === "dealer_repair_date" ? nextVal : detail.dealer_repair_date,
+            completionDate: key === "completion_date" ? nextVal : detail.completion_date,
+            dealerClaimDate: key === "dealer_claim_date" ? nextVal : detail.dealer_claim_date,
+            customerApprovalDate: detail.customer_approval_date,
+            parts: detail.parts || [],
+            yardFailureConfirmed: overrideYardFailure || isClaimYardConfirmed(detail),
+            yard_failure_confirmed: overrideYardFailure || isClaimYardConfirmed(detail),
+        };
+        const issues = validateParsed(simulated, "");
+        if (issues.length) {
+            setInlineEditField(prev => prev ? { ...prev, error: issues.join(" • ") } : prev);
+            return;
+        }
+        setInlineEditField(prev => prev ? { ...prev, busy: true, error: "" } : prev);
+        try {
+            const nowIso = new Date().toISOString();
+            const patch = { [key]: nextVal, last_updated: nowIso };
+            if (key === "completion_date" && nextVal && (!detail.repair_status || detail.repair_status === "Repair Not Completed")) {
+                patch.repair_status = "Repair Completed";
+            }
+            if (overrideYardFailure) {
+                patch.yard_failure_confirmed = true;
+                patch.date_exception = "YARD_FAILURE";
+            }
+            const { data, error } = await sdlgSupabase
+                .from("claims")
+                .update(patch)
+                .eq("claim_id", detail.claim_id)
+                .select("*")
+                .maybeSingle();
+            if (error) throw error;
+            const merged = data ? (SDLG_DATA_MODEL.normalizeClaim(data) || data) : { ...detail, ...patch };
+            setClaims(prev => prev.map(c => c.claim_id === detail.claim_id ? merged : c));
+            setInlineEditField(null);
+            showToast(`✅ ${label} berhasil disimpan ke Supabase`);
+            loadClaims().catch(() => {});
+        } catch (e) {
+            const errText = e?.message || String(e || "Gagal menyimpan ke Supabase");
+            setInlineEditField(prev => prev ? { ...prev, busy: false, error: errText } : prev);
+            showToast("❌ Gagal update " + label + ": " + errText);
+        }
+    };
+    const CONSOLE_PATCH_FIELDS = [
+        ["customer", "Customer", "text"],
+        ["distributor", "Distributor", "text"],
+        ["dealer_name", "Dealer Name", "text"],
+        ["dealer_code", "Dealer Code", "text"],
+        ["dealer_wo_so", "WO/SO", "text"],
+        ["branch", "Branch", "text"],
+        ["app_code", "App. Code", "text"],
+        ["model", "Model", "text"],
+        ["serial_no", "Serial No.", "text"],
+        ["sales_date", "Sales Date", "date"],
+        ["failure_date", "Failure Date", "date"],
+        ["hm_failure", "HM Failure", "number"],
+        ["dealer_repair_date", "Repair Date", "date"],
+        ["completion_date", "Completion Date", "date"],
+        ["repair_status", "Repair Status", "text"],
+        ["hm_completion", "HM Completion", "number"],
+        ["distributor_no", "Distributor No.", "text"],
+        ["dealer_claim_no", "Dealer Claim No.", "text"],
+        ["dealer_claim_date", "Claim Date", "date"],
+        ["indent_no", "Indent No.", "text"],
+        ["claim_status", "Claim Status", "text"],
+        ["sdlg_submission_no", "SDLG Submission No.", "text"],
+        ["invoice_no", "Invoice No.", "text"],
+        ["comment", "Comment", "text"]
+    ];
+    const loadSupabaseTableStats = async () => {
+        if (!sdlgSupabase) return;
+        setDbConsoleBusy(true);
+        try {
+            const specs = [
+                { key: "claims_active", label: "Claims Aktif", table: "claims", filter: q => q.is("archived_at", null) },
+                { key: "claims_archived", label: "Claims Arsip", table: "claims", filter: q => q.not("archived_at", "is", null) },
+                { key: "status_history", label: "Status History", table: "claim_status_history" },
+                { key: "machines", label: "Master Units", table: "machines" },
+                { key: "customers", label: "Master Customers", table: "customers" },
+                { key: "branches", label: "Master Branches", table: "branches" },
+                { key: "dealers", label: "Master Dealers", table: "dealers" },
+                { key: "models", label: "Master Models", table: "models" },
+                { key: "parts_master", label: "Master Parts", table: "parts_master" },
+                { key: "ax_wo", label: "AX Work Orders", table: "ax_warranty_work_orders" },
+                { key: "policy_rules", label: "Policy Rules", table: "policy_rule_config" },
+                { key: "user_roles", label: "User Roles", table: "app_user_roles" }
+            ];
+            const results = await Promise.all(specs.map(async s => {
+                try {
+                    let q = sdlgSupabase.from(s.table).select("*", { count: "exact", head: true });
+                    if (s.filter) q = s.filter(q);
+                    const { count, error } = await q;
+                    return { ...s, count: error ? null : (count ?? 0), error: error ? error.message : null };
+                } catch (err) {
+                    return { ...s, count: null, error: err?.message || "Blocked" };
+                }
+            }));
+            setDbConsoleCounts(results);
+        } finally {
+            setDbConsoleBusy(false);
+        }
+    };
+    const inspectClaimFromSupabase = async (rawId) => {
+        const id = String(rawId || dbPatchClaimId || "").trim();
+        if (!id || !sdlgSupabase) return;
+        setDbPatchLoading(true);
+        try {
+            const { data, error } = await sdlgSupabase
+                .from("claims")
+                .select("*")
+                .ilike("claim_id", id)
+                .limit(1)
+                .maybeSingle();
+            if (error) throw error;
+            if (!data) {
+                setDbPatchRow(null);
+                showToast(`⚠️ Klaim "${id}" tidak ditemukan di Supabase.`);
+                return;
+            }
+            setDbPatchRow(data);
+            setDbPatchClaimId(data.claim_id);
+            setDbPatchValue(data[dbPatchField] ?? "");
+        } catch (e) {
+            showToast("❌ Gagal membaca klaim: " + (e?.message || e));
+        } finally {
+            setDbPatchLoading(false);
+        }
+    };
+    const applyQuickDbPatch = async () => {
+        if (!isAdmin) { showToast("🔒 Butuh role Admin / Warranty Admin."); return; }
+        if (!dbPatchRow?.claim_id) { showToast("⚠️ Pilih / muat klaim terlebih dahulu."); return; }
+        if (!navigator.onLine) { showToast("❌ Offline."); return; }
+        const meta = CONSOLE_PATCH_FIELDS.find(([k]) => k === dbPatchField);
+        const type = meta ? meta[2] : "text";
+        const trimmed = String(dbPatchValue ?? "").trim();
+        let val = null;
+        if (type === "date") {
+            if (trimmed !== "") {
+                const iso = normalizeDateInput(trimmed);
+                if (!iso) { showToast("❌ Format tanggal tidak valid (YYYY-MM-DD atau DD/MM/YYYY)."); return; }
+                val = iso;
+            }
+        } else if (type === "number") {
+            if (trimmed !== "") {
+                const n = Number(trimmed);
+                if (!Number.isFinite(n)) { showToast("❌ Nilai angka tidak valid."); return; }
+                val = n;
+            }
+        } else {
+            val = trimmed || null;
+        }
+        setDbPatchBusy(true);
+        try {
+            const patch = { [dbPatchField]: val, last_updated: new Date().toISOString() };
+            const { data, error } = await sdlgSupabase
+                .from("claims")
+                .update(patch)
+                .eq("claim_id", dbPatchRow.claim_id)
+                .select("*")
+                .maybeSingle();
+            if (error) throw error;
+            const updated = data || { ...dbPatchRow, ...patch };
+            setDbPatchRow(updated);
+            const norm = SDLG_DATA_MODEL.normalizeClaim(updated) || updated;
+            setClaims(prev => prev.some(c => c.claim_id === updated.claim_id) ? prev.map(c => c.claim_id === updated.claim_id ? norm : c) : [norm, ...prev]);
+            showToast(`✅ ${dbPatchField} pada ${updated.claim_id} tersimpan ke Supabase.`);
+        } catch (e) {
+            showToast("❌ Gagal update Supabase: " + (e?.message || e));
+        } finally {
+            setDbPatchBusy(false);
+        }
+    };
+    const parseBatchClaimUpdates = (text) => {
+        const lines = String(text || "").split(/\r?\n/).map(l => l.trimEnd()).filter(Boolean);
+        if (lines.length < 2) {
+            showToast("⚠️ Minimal 2 baris: baris header (harus ada claim_id) + minimal 1 baris data.");
+            return;
+        }
+        const sep = lines[0].includes("\t") ? "\t" : (lines[0].includes(";") ? ";" : ",");
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
+        const idIdx = headers.indexOf("claim_id");
+        if (idIdx < 0) {
+            showToast("❌ Kolom pertama/header wajib memiliki nama kolom 'claim_id'.");
+            return;
+        }
+        const allowedMap = new Map(CONSOLE_PATCH_FIELDS.map(([k, lbl, t]) => [k, { key: k, label: lbl, type: t }]));
+        const cols = headers.map((h, i) => ({ idx: i, name: h, meta: allowedMap.get(h) || null })).filter(c => c.idx !== idIdx && c.meta);
+        if (!cols.length) {
+            showToast("❌ Tidak ada kolom INFO yang dikenali selain claim_id.");
+            return;
+        }
+        const claimsById = new Map(claims.map(c => [String(c.claim_id).trim().toUpperCase(), c]));
+        const ops = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cells = lines[i].split(sep);
+            const cid = String(cells[idIdx] || "").trim();
+            if (!cid) continue;
+            const existing = claimsById.get(cid.toUpperCase());
+            const patch = {};
+            const diffs = [];
+            for (const col of cols) {
+                const rawCell = String(cells[col.idx] ?? "").trim();
+                if (!rawCell) continue; // Rule: never overwrite with empty cell
+                let parsedVal = rawCell;
+                if (col.meta.type === "date") {
+                    const iso = normalizeDateInput(rawCell);
+                    if (!iso) { diffs.push({ col: col.name, error: `Tanggal invalid: ${rawCell}` }); continue; }
+                    parsedVal = iso;
+                } else if (col.meta.type === "number") {
+                    const n = Number(rawCell.replace(/,/g, ""));
+                    if (!Number.isFinite(n)) { diffs.push({ col: col.name, error: `Angka invalid: ${rawCell}` }); continue; }
+                    parsedVal = n;
+                }
+                const prevVal = existing ? (existing[col.name] ?? "") : "";
+                if (String(prevVal) !== String(parsedVal)) {
+                    patch[col.name] = parsedVal;
+                    diffs.push({ col: col.name, from: String(prevVal || "—"), to: String(parsedVal) });
+                }
+            }
+            ops.push({ claimId: existing ? existing.claim_id : cid, found: !!existing, patch, diffs });
+        }
+        setBatchPreview({ cols: cols.map(c => c.name), ops });
+        setBatchReport(null);
+    };
+    const executeBatchClaimUpdates = async () => {
+        if (!isAdmin || !batchPreview?.ops?.length || batchRunning) return;
+        const actionable = batchPreview.ops.filter(o => Object.keys(o.patch).length > 0);
+        if (!actionable.length) { showToast("Tidak ada perubahan field yang perlu disimpan."); return; }
+        setBatchRunning(true);
+        let ok = 0, fail = 0;
+        const errors = [];
+        try {
+            const nowIso = new Date().toISOString();
+            for (const op of actionable) {
+                try {
+                    const { error } = await sdlgSupabase
+                        .from("claims")
+                        .update({ ...op.patch, last_updated: nowIso })
+                        .eq("claim_id", op.claimId);
+                    if (error) throw error;
+                    ok++;
+                } catch (e) {
+                    fail++;
+                    errors.push(`${op.claimId}: ${e?.message || e}`);
+                }
+            }
+            setBatchReport({ ok, fail, errors });
+            showToast(`✅ Batch update selesai: ${ok} klaim diupdate${fail ? `, ${fail} gagal` : ""}.`);
+            await loadClaims();
+        } finally {
+            setBatchRunning(false);
+        }
+    };
+    const downloadFullJsonBackup = () => {
+        try {
+            const snapshot = {
+                exported_at_wib: new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
+                exported_at_iso: new Date().toISOString(),
+                project: "frqvelcreczmnofldrga",
+                fx_rates: { usd_idr: usdIdrRate, cny_idr: cnyIdrRate },
+                total_claims: claims.length,
+                claims,
+                branches: branchMasterList,
+                customers: customerMasterList
+            };
+            const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `sdlg-supabase-backup-${today()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`✅ Snapshot JSON (${claims.length} klaim) berhasil diunduh.`);
+        } catch (e) {
+            showToast("❌ Gagal membuat backup JSON: " + (e?.message || e));
+        }
+    };
     const startEdit = () => {
         if (!detail)
             return;
+        setInlineEditField(null);
         const fin = calcClaimFinancials(detail);
         const hrsVal = numOrNull(detail.labour_hrs);
         const lRateVal = numOrNull(detail.labour_rate);
@@ -10426,19 +10978,24 @@ SDLG_REPOSITORY.listClaims = async function () {
         const mRateVal = numOrNull(detail.mileage_rate);
         const mStoredVal = numOrNull(detail.mileage_amount);
         const mileageManual = mStoredVal != null && mStoredVal > 0 && (!(kmVal > 0 && mRateVal > 0) || Math.abs(mStoredVal - roundMoney(kmVal * mRateVal)) > 0.01);
+        const isoOrRaw = (v) => normalizeDateInput(v) || (v || "");
         setEditForm({
             model: detail.model || "",
             serial_no: detail.serial_no || "",
             indent_no: detail.indent_no || "",
             customer: detail.customer || "",
+            distributor: detail.distributor || "",
+            dealer_name: detail.dealer_name || "",
             dealer_code: detail.dealer_code || "",
             branch: detail.branch || "",
+            app_code: detail.app_code || "",
             dealer_wo_so: detail.dealer_wo_so || "",
-            sales_date: detail.sales_date || "",
-            failure_date: detail.failure_date || "",
-            dealer_repair_date: detail.dealer_repair_date || "",
-            completion_date: detail.completion_date || "",
-            dealer_claim_date: detail.dealer_claim_date || "",
+            distributor_no: detail.distributor_no || "",
+            sales_date: isoOrRaw(detail.sales_date),
+            failure_date: isoOrRaw(detail.failure_date),
+            dealer_repair_date: isoOrRaw(detail.dealer_repair_date),
+            completion_date: isoOrRaw(detail.completion_date),
+            dealer_claim_date: isoOrRaw(detail.dealer_claim_date),
             dealer_claim_no: detail.dealer_claim_no || "",
             hm_failure: detail.hm_failure ?? "",
             hm_completion: detail.hm_completion ?? "",
@@ -10451,17 +11008,17 @@ SDLG_REPOSITORY.listClaims = async function () {
             technical_personnel: detail.technical_personnel || "",
             engine_serial_no: detail.engine_serial_no || "",
             failure_part_location: detail.failure_part_location || "",
-            customer_approval_date: detail.customer_approval_date || "",
+            customer_approval_date: isoOrRaw(detail.customer_approval_date),
             comment: detail.comment || "",
             claim_status: detail.claim_status || "Draft",
-            status_date: detail.status_date || detail.input_date || "",
+            status_date: isoOrRaw(detail.status_date || detail.input_date),
             sdlg_submission_no: detail.sdlg_submission_no || "",
-            sdlg_audit_date: detail.sdlg_audit_date || "",
-            sdlg_approval_date: detail.sdlg_approval_date || "",
-            billing_date: detail.billing_date || "",
+            sdlg_audit_date: isoOrRaw(detail.sdlg_audit_date),
+            sdlg_approval_date: isoOrRaw(detail.sdlg_approval_date),
+            billing_date: isoOrRaw(detail.billing_date),
             invoice_no: detail.invoice_no || "",
-            invoice_date: detail.invoice_date || "",
-            payment_date: detail.payment_date || "",
+            invoice_date: isoOrRaw(detail.invoice_date),
+            payment_date: isoOrRaw(detail.payment_date),
             payment_amount: detail.payment_amount ?? "",
             rejection_reason: detail.rejection_reason || "",
             yard_failure_confirmed: isClaimYardConfirmed(detail),
@@ -10560,6 +11117,13 @@ SDLG_REPOSITORY.listClaims = async function () {
             // Manual edit must also preserve the exact value typed by the user.
             const normalizedDealerCode = cleanText(editForm.dealer_code);
             const normalizedBranch = cleanText(editForm.branch);
+            const explicitDealerName = cleanText(editForm.dealer_name);
+            const fallbackDealerName = normalizedDealerCode === BUSINESS_RULES.currentDealerCode ? BUSINESS_RULES.currentDealerName : (normalizedDealerCode === BUSINESS_RULES.legacyDealerCode ? BUSINESS_RULES.legacyDealerName : null);
+            const toIsoOrNull = (v) => {
+                const raw = cleanText(v);
+                if (!raw) return null;
+                return (typeof normalizeDateInput === "function" ? normalizeDateInput(raw) : null) || raw;
+            };
             // Business rule: once Dealer Claim Date is present, a still-Draft claim is considered submitted to SDLG.
             const autoTransitions = autoWorkflowFromFields(detail.claim_status || "Draft", editForm);
             const autoSubmitToSDLG = autoTransitions.length > 0;
@@ -10569,25 +11133,39 @@ SDLG_REPOSITORY.listClaims = async function () {
             const payload = {
                 ...editForm,
                 model: cleanText(editForm.model),
-                dealer_code: normalizedDealerCode,
-                dealer_name: normalizedDealerCode === BUSINESS_RULES.currentDealerCode ? BUSINESS_RULES.currentDealerName : (normalizedDealerCode === BUSINESS_RULES.legacyDealerCode ? BUSINESS_RULES.legacyDealerName : (editForm.dealer_name || null)),
+                serial_no: cleanText(editForm.serial_no) || null,
+                indent_no: cleanText(editForm.indent_no) || null,
+                customer: cleanText(editForm.customer) || null,
+                distributor: cleanText(editForm.distributor) || null,
+                dealer_code: normalizedDealerCode || null,
+                dealer_name: explicitDealerName || fallbackDealerName,
                 branch: normalizedBranch || null,
+                app_code: cleanText(editForm.app_code) || null,
+                dealer_wo_so: cleanText(editForm.dealer_wo_so) || null,
+                distributor_no: cleanText(editForm.distributor_no) || null,
+                dealer_claim_no: cleanText(editForm.dealer_claim_no) || null,
+                sales_date: toIsoOrNull(editForm.sales_date),
+                failure_date: toIsoOrNull(editForm.failure_date),
+                dealer_repair_date: toIsoOrNull(editForm.dealer_repair_date),
+                completion_date: toIsoOrNull(editForm.completion_date),
+                dealer_claim_date: toIsoOrNull(editForm.dealer_claim_date),
+                customer_approval_date: toIsoOrNull(editForm.customer_approval_date),
                 parts: normalizedParts,
                 parts_total: partsTotal,
                 labour_amount: labourAmount,
                 mileage_amount: mileageAmount,
                 total_amount: totalAmount,
-                status_date: autoTransitions.length ? finalAutoDate : (editForm.status_date || null),
+                status_date: autoTransitions.length ? finalAutoDate : (toIsoOrNull(editForm.status_date) || null),
                 claim_status: autoTransitions.length ? finalAutoStatus : (editForm.claim_status || detail.claim_status || "Draft"),
-                sdlg_submission_no: editForm.sdlg_submission_no || null,
-                sdlg_audit_date: editForm.sdlg_audit_date || null,
-                sdlg_approval_date: editForm.sdlg_approval_date || null,
-                billing_date: editForm.billing_date || null,
-                invoice_no: editForm.invoice_no || null,
-                invoice_date: editForm.invoice_date || null,
-                payment_date: editForm.payment_date || null,
+                sdlg_submission_no: cleanText(editForm.sdlg_submission_no) || null,
+                sdlg_audit_date: toIsoOrNull(editForm.sdlg_audit_date),
+                sdlg_approval_date: toIsoOrNull(editForm.sdlg_approval_date),
+                billing_date: toIsoOrNull(editForm.billing_date),
+                invoice_no: cleanText(editForm.invoice_no) || null,
+                invoice_date: toIsoOrNull(editForm.invoice_date),
+                payment_date: toIsoOrNull(editForm.payment_date),
                 payment_amount: editForm.payment_amount === "" || editForm.payment_amount == null ? null : Number(editForm.payment_amount),
-                rejection_reason: editForm.rejection_reason || null,
+                rejection_reason: cleanText(editForm.rejection_reason) || null,
                 yard_failure_confirmed: !!editForm.yard_failure_confirmed,
                 date_exception: editForm.yard_failure_confirmed
                     ? (String(editForm.date_exception || detail?.date_exception || "").trim().toUpperCase().startsWith("PRE_SALE_FAILURE:")
@@ -10610,11 +11188,6 @@ SDLG_REPOSITORY.listClaims = async function () {
             };
             delete payload._labourAmountManual;
             delete payload._mileageAmountManual;
-            // remove empty strings for dates
-            ["sales_date", "failure_date", "dealer_repair_date", "completion_date", "dealer_claim_date", "customer_approval_date"].forEach(k => {
-                if (payload[k] === "")
-                    payload[k] = null;
-            });
             // Database trigger owns the atomic catch-up for every pre-submission state
             // once Dealer Claim Date is present; the final operational state is SDLG Audit.
             const preSubmissionStatus = ["Draft","Ready to Claim","Submitted to Warranty Admin","Submitted to SDLG","Claimed to SDLG"].includes(detail.claim_status);
@@ -10624,6 +11197,42 @@ SDLG_REPOSITORY.listClaims = async function () {
                 claim: payload,
                 statusHistory: catchupByDealerClaimDate ? [] : (autoTransitions || [])
             });
+            // Sync extended INFO fields (distributor, dealer_name, app_code, distributor_no, dealer_claim_no, etc.)
+            // in case the remote update_sdlg_claim RPC omits newer INFO columns, and sync React state immediately.
+            if (typeof sdlgSupabase !== "undefined" && sdlgSupabase && typeof sdlgSupabase.from === "function") {
+                try {
+                    const { data: savedRow } = await sdlgSupabase
+                        .from("claims")
+                        .select("*")
+                        .eq("claim_id", detail.claim_id)
+                        .maybeSingle();
+                    const infoSyncKeys = ["customer", "distributor", "dealer_name", "dealer_code", "dealer_wo_so", "branch", "app_code", "model", "serial_no", "sales_date", "failure_date", "hm_failure", "dealer_repair_date", "completion_date", "repair_status", "hm_completion", "distributor_no", "dealer_claim_no", "dealer_claim_date", "indent_no"];
+                    const extraPatch = {};
+                    if (savedRow) {
+                        for (const k of infoSyncKeys) {
+                            const wanted = payload[k] ?? null;
+                            const actual = savedRow[k] ?? null;
+                            if (String(wanted ?? "") !== String(actual ?? "")) {
+                                extraPatch[k] = wanted;
+                            }
+                        }
+                    }
+                    let finalRow = savedRow;
+                    if (Object.keys(extraPatch).length > 0) {
+                        const { data: patchedRow, error: patchErr } = await sdlgSupabase
+                            .from("claims")
+                            .update({ ...extraPatch, last_updated: new Date().toISOString() })
+                            .eq("claim_id", detail.claim_id)
+                            .select("*")
+                            .maybeSingle();
+                        if (!patchErr && patchedRow) finalRow = patchedRow;
+                    }
+                    if (finalRow && typeof setClaims === "function" && typeof SDLG_DATA_MODEL !== "undefined") {
+                        const norm = SDLG_DATA_MODEL.normalizeClaim(finalRow) || finalRow;
+                        setClaims(prev => prev.map(c => c.claim_id === detail.claim_id ? norm : c));
+                    }
+                } catch (_) {}
+            }
             showToast(autoTransitions.length ? `✅ Data diupdate · workflow otomatis sampai ${finalAutoStatus}` : "✅ Data berhasil diupdate");
             setEditing(false);
             try {
@@ -11550,15 +12159,22 @@ SDLG_REPOSITORY.listClaims = async function () {
                         }, userRole === "warranty_admin" ? "Warranty Admin" : userRole === "admin" ? "Admin" : userRole === "branch_user" ? "Branch User" : "Viewer")),
                     React.createElement("button", {
                         type: "button",
+                        className: "sdlg-db-btn",
+                        onClick: () => { setSettingsTab("supabase"); setShowSettingsModal(true); if (!dbConsoleCounts) loadSupabaseTableStats(); },
+                        title: "Buka Supabase Web Console (Cek DB, Patch Field & Batch Update)",
+                        style: { display: "inline-flex", alignItems: "center", gap: 4, padding: "6px 10px", border: "1px solid rgba(251, 191, 36, 0.42)", background: "rgba(245, 158, 11, 0.16)", borderRadius: 8, fontSize: 11.5, fontWeight: 700, color: "#fde68a", cursor: "pointer", whiteSpace: "nowrap" }
+                    }, "🗄️ DB"),
+                    React.createElement("button", {
+                        type: "button",
                         className: "icon-btn",
                         "aria-label": "Pengaturan Sistem & Workspace",
-                        title: "Pengaturan Sistem & Workspace",
+                        title: "Pengaturan Workspace & Supabase Console",
                         onClick: () => setShowSettingsModal(true)
                     }, React.createElement("svg", { viewBox: "0 0 24 24", width: 15, height: 15, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
                         React.createElement("circle", { cx: 12, cy: 12, r: 3 }),
                         React.createElement("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" })
                     )),
-                    React.createElement("button", { type: "button", onClick: handleLogout, style: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#475569", cursor: "pointer" } },
+                    React.createElement("button", { type: "button", className: "sdlg-logout-btn", onClick: handleLogout, style: { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px", border: "1px solid rgba(255,255,255,0.16)", background: "rgba(255,255,255,0.08)", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#e2e8f0", cursor: "pointer" } },
                         React.createElement("svg", { viewBox: "0 0 24 24", width: 13, height: 13, fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" },
                             React.createElement("path", { d: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }),
                             React.createElement("polyline", { points: "16 17 21 12 16 7" }),
@@ -11778,11 +12394,19 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { style: { padding: "12px 18px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: 8 } },
                     React.createElement("button", { onClick: () => setParseReviewOpen(false), style: { padding: "9px 13px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer" } }, "Batal"),
                     React.createElement("button", { onClick: applyParseReview, style: { padding: "9px 16px", border: 0, background: "#2563eb", color: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 800 } }, "\u2705 Terapkan Koreksi"))))),
-        toast && (React.createElement("div", { className: "sdlg-toast", role: "status", "aria-live": "polite", "aria-atomic": "true", style: {
-                position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-                background: "#0f172a", color: "#fff", padding: "10px 20px", borderRadius: 10,
-                fontSize: 13, fontWeight: 600, zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,.3)",
-            } }, toast)),
+        toast && (() => {
+            const tone = classifyToastTone(toast);
+            const badgeIcon = tone === "success"
+                ? React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, fill: "none", stroke: "currentColor", strokeWidth: 2.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, React.createElement("polyline", { points: "20 6 9 17 4 12" }))
+                : tone === "warn"
+                ? React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, fill: "none", stroke: "currentColor", strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, React.createElement("path", { d: "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" }), React.createElement("line", { x1: 12, y1: 9, x2: 12, y2: 13 }), React.createElement("line", { x1: 12, y1: 17, x2: 12.01, y2: 17 }))
+                : tone === "error"
+                ? React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, fill: "none", stroke: "currentColor", strokeWidth: 2.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, React.createElement("circle", { cx: 12, cy: 12, r: 9 }), React.createElement("line", { x1: 15, y1: 9, x2: 9, y2: 15 }), React.createElement("line", { x1: 9, y1: 9, x2: 15, y2: 15 }))
+                : React.createElement("svg", { viewBox: "0 0 24 24", width: 14, height: 14, fill: "none", stroke: "currentColor", strokeWidth: 2.4, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" }, React.createElement("circle", { cx: 12, cy: 12, r: 9 }), React.createElement("line", { x1: 12, y1: 16, x2: 12, y2: 12 }), React.createElement("line", { x1: 12, y1: 8, x2: 12.01, y2: 8 }));
+            return React.createElement("div", { className: `sdlg-toast sdlg-toast--${tone}`, role: "status", "aria-live": "polite", "aria-atomic": "true" },
+                React.createElement("span", { className: "sdlg-toast-badge", "aria-hidden": "true" }, badgeIcon),
+                React.createElement("span", null, toast));
+        })(),
         showMasterModal && (React.createElement("div", { className: "sdlg-modal-backdrop master-drawer-backdrop", onClick: () => setShowMasterModal(false) },
             React.createElement("div", { className: "master-drawer-card", onClick: e => e.stopPropagation(), style: { maxWidth: 560 } },
                 React.createElement("div", { className: "master-drawer-head" },
@@ -12808,72 +13432,166 @@ SDLG_REPOSITORY.listClaims = async function () {
                         React.createElement("b", null, userRole)),
                     React.createElement("button", { onClick: () => setShowAccountModal(false), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#334155", cursor: "pointer" } }, "Tutup"))))),
         showSettingsModal && (React.createElement("div", { className: "sdlg-modal-backdrop", style: { position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }, onClick: () => setShowSettingsModal(false) },
-            React.createElement("div", { className: "sdlg-modal-scroll", role: "dialog", "aria-modal": "true", "aria-label": "Pengaturan Sistem dan Workspace", onClick: e => e.stopPropagation(), style: { background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)" } },
+            React.createElement("div", { className: "sdlg-modal-scroll", role: "dialog", "aria-modal": "true", "aria-label": "Pengaturan Sistem dan Supabase Console", onClick: e => e.stopPropagation(), style: { background: "#ffffff", borderRadius: 16, width: "100%", maxWidth: 880, maxHeight: "92vh", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)" } },
                 React.createElement("div", { style: { padding: "18px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#f8fafc" } },
                     React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
-                        React.createElement("div", { style: { width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #0284c7, #0ea5e9)", color: "#fff", display: "grid", placeItems: "center", fontSize: 20 } }, "⚙️"),
+                        React.createElement("div", { style: { width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg, #0284c7, #2563eb)", color: "#fff", display: "grid", placeItems: "center", fontSize: 20 } }, "🗄️"),
                         React.createElement("div", null,
-                            React.createElement("div", { style: { fontWeight: 800, fontSize: 17, color: "#0f172a" } }, "Pengaturan Sistem & Workspace"),
-                            React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 } }, "Konfigurasi kurs mata uang referensi, parameter operasional, dan diagnostik."))),
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 17, color: "#0f172a" } }, "Pengaturan Workspace & Supabase Web Console"),
+                            React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginTop: 2 } }, "Kelola kurs FX, cek status database Supabase, edit klaim/batch update, dan backup langsung dari web."))),
                     React.createElement("button", { type: "button", "aria-label": "Tutup", onClick: () => setShowSettingsModal(false), style: { width: 32, height: 32, border: "1px solid #e2e8f0", background: "#fff", borderRadius: 8, fontSize: 18, color: "#64748b", cursor: "pointer", display: "grid", placeItems: "center" } }, "×")),
+                React.createElement("div", { className: "sdlg-console-tabs" },
+                    React.createElement("button", { type: "button", className: `sdlg-console-tab ${settingsTab === "workspace" ? "active" : ""}`, onClick: () => setSettingsTab("workspace") }, "⚙️ Workspace & Kurs"),
+                    React.createElement("button", { type: "button", className: `sdlg-console-tab ${settingsTab === "supabase" ? "active" : ""}`, onClick: () => { setSettingsTab("supabase"); if (!dbConsoleCounts) loadSupabaseTableStats(); } }, "🗄️ Supabase Web Console"),
+                    React.createElement("button", { type: "button", className: `sdlg-console-tab ${settingsTab === "backup" ? "active" : ""}`, onClick: () => setSettingsTab("backup") }, "💾 Backup & Export")),
                 React.createElement("div", { style: { padding: 24, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 18 } },
-                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
-                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
-                            React.createElement("span", { style: { fontSize: 16 } }, "💱"),
-                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Kurs Mata Uang Referensi (FX Rates)"),
-                            React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 99, background: "#dbeafe", color: "#1e40af", fontWeight: 700, marginLeft: "auto" } }, "IDR Reference")),
-                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
-                            React.createElement("div", null,
-                                React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 USD ke Rupiah (IDR)"),
-                                React.createElement("div", { className: "sdlg-fx-input-group", style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
-                                    React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
-                                    React.createElement("input", { className: "sdlg-fx-input", type: "number", min: "0", step: "1", value: usdIdrRate, onChange: e => setUsdIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } }))),
-                            React.createElement("div", null,
-                                React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 CNY ke Rupiah (IDR)"),
-                                React.createElement("div", { className: "sdlg-fx-input-group", style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
-                                    React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
-                                    React.createElement("input", { className: "sdlg-fx-input", type: "number", min: "0", step: "0.01", value: cnyIdrRate, onChange: e => setCnyIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } })))),
-                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 10, lineHeight: 1.5 } }, "💡 Nilai transaksi warranty claim tetap diproses dalam mata uang asli (USD / CNY). Total Rupiah digunakan semata-mata untuk komparasi dan agregasi pelaporan lokal."),
-                        React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 12 } },
-                            React.createElement("button", {
-                                onClick: () => {
-                                    const u = Number(usdIdrRate) || 17627;
-                                    const c = Number(cnyIdrRate) || 2637.11;
-                                    setUsdIdrRate(u);
-                                    setCnyIdrRate(c);
-                                    try {
-                                        localStorage.setItem("sdlg_usd_idr_rate", String(u));
-                                        localStorage.setItem("sdlg_cny_idr_rate", String(c));
-                                    } catch (_) {}
-                                    showToast("✅ Kurs mata uang berhasil disimpan.");
-                                },
-                                style: { padding: "8px 16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }
-                            }, "Simpan Perubahan Kurs"))),
-                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
-                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
-                            React.createElement("span", { style: { fontSize: 16 } }, "🛡️"),
-                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Integritas Data & Aturan Operasional")),
-                        React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
-                            React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                    settingsTab === "workspace" && React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
+                                React.createElement("span", { style: { fontSize: 16 } }, "💱"),
+                                React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Kurs Mata Uang Referensi (FX Rates)"),
+                                React.createElement("span", { style: { fontSize: 11, padding: "2px 8px", borderRadius: 99, background: "#dbeafe", color: "#1e40af", fontWeight: 700, marginLeft: "auto" } }, "IDR Reference")),
+                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
                                 React.createElement("div", null,
-                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "SDLG Portal Machine Location Auto-Heal"),
-                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Mencegah nama sparepart/kerusakan masuk ke kolom cabang dealer.")),
-                                React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ACTIVE")),
-                            React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                                    React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 USD ke Rupiah (IDR)"),
+                                    React.createElement("div", { className: "sdlg-fx-input-group", style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
+                                        React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
+                                        React.createElement("input", { className: "sdlg-fx-input", type: "number", min: "0", step: "1", value: usdIdrRate, onChange: e => setUsdIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } }))),
                                 React.createElement("div", null,
-                                    React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "Standardisasi Format Tanggal"),
-                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Tampilan tanggal seragam DD/MM/YYYY WIB; simpanan ISO standar.")),
-                                React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ENFORCED")))),
-                    React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#f8fafc" } },
-                        React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#334155", marginBottom: 8 } }, "Diagnostik & Versi Sistem"),
-                        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 11 } },
-                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Database: "), React.createElement("b", null, "Supabase Cloud (frqvelcreczmnofldrga)")),
-                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Policy Runtime: "), React.createElement("b", { style: { color: "#166534" } }, policyRuntimeStatus === "database" ? "DB Verified (Authoritative)" : policyRuntimeStatus)),
-                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Arsitektur: "), React.createElement("b", null, "Legacy Production Monolith (v2.25)")),
-                            React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Total Klaim Aktif: "), React.createElement("b", null, `${claims.filter(c => !c.archived_at).length} klaim`))))),
-                React.createElement("div", { style: { padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "flex-end" } },
+                                    React.createElement("label", { style: { display: "block", fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 5 } }, "1 CNY ke Rupiah (IDR)"),
+                                    React.createElement("div", { className: "sdlg-fx-input-group", style: { display: "flex", alignItems: "center", border: "1px solid #cbd5e1", borderRadius: 9, overflow: "hidden", background: "#fff" } },
+                                        React.createElement("span", { style: { padding: "8px 10px", background: "#f8fafc", borderRight: "1px solid #cbd5e1", fontSize: 12, fontWeight: 700, color: "#64748b" } }, "Rp"),
+                                        React.createElement("input", { className: "sdlg-fx-input", type: "number", min: "0", step: "0.01", value: cnyIdrRate, onChange: e => setCnyIdrRate(e.target.value), style: { width: "100%", padding: "8px 10px", border: "none", outline: "none", fontSize: 13, fontWeight: 600 } })))),
+                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 10, lineHeight: 1.5 } }, "💡 Nilai transaksi warranty claim tetap diproses dalam mata uang asli (USD / CNY). Total Rupiah digunakan semata-mata untuk komparasi dan agregasi pelaporan lokal."),
+                            React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 12 } },
+                                React.createElement("button", {
+                                    onClick: () => {
+                                        const u = Number(usdIdrRate) || 17627;
+                                        const c = Number(cnyIdrRate) || 2637.11;
+                                        setUsdIdrRate(u);
+                                        setCnyIdrRate(c);
+                                        try {
+                                            localStorage.setItem("sdlg_usd_idr_rate", String(u));
+                                            localStorage.setItem("sdlg_cny_idr_rate", String(c));
+                                        } catch (_) {}
+                                        showToast("✅ Kurs mata uang berhasil disimpan.");
+                                    },
+                                    style: { padding: "8px 16px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }
+                                }, "Simpan Perubahan Kurs"))),
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
+                                React.createElement("span", { style: { fontSize: 16 } }, "🛡️"),
+                                React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Integritas Data & Aturan Operasional")),
+                            React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "SDLG Portal Machine Location Auto-Heal"),
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Mencegah nama sparepart/kerusakan masuk ke kolom cabang dealer.")),
+                                    React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ACTIVE")),
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fafc", borderRadius: 8 } },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: "#0f172a" } }, "Standardisasi Format Tanggal"),
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b" } }, "Tampilan tanggal seragam DD/MM/YYYY WIB; simpanan ISO standar.")),
+                                    React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "3px 8px", borderRadius: 99 } }, "ENFORCED")))),
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#f8fafc" } },
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 13, color: "#334155", marginBottom: 8 } }, "Diagnostik & Versi Sistem"),
+                            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 11 } },
+                                React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Database: "), React.createElement("b", null, "Supabase Cloud (frqvelcreczmnofldrga)")),
+                                React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Policy Runtime: "), React.createElement("b", { style: { color: "#166534" } }, policyRuntimeStatus === "database" ? "DB Verified (Authoritative)" : policyRuntimeStatus)),
+                                React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Deploy Auto: "), React.createElement("b", null, "GitHub Pages (main → CI → _site)")),
+                                React.createElement("div", null, React.createElement("span", { style: { color: "#64748b" } }, "Total Klaim Aktif: "), React.createElement("b", null, `${claims.filter(c => !c.archived_at).length} klaim`))))),
+                    settingsTab === "supabase" && React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { border: "1px solid #dbeafe", borderRadius: 12, padding: 16, background: "linear-gradient(180deg,#f8fbff,#fff)" } },
+                            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 } },
+                                React.createElement("div", null,
+                                    React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a" } }, "Koneksi & Statistik Tabel Supabase Live"),
+                                    React.createElement("div", { style: { fontSize: 11, color: "#64748b", marginTop: 2 } }, `Role aktif: ${userRole} · User: ${user?.email || "—"}`)),
+                                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+                                    React.createElement("button", { type: "button", onClick: async () => { await loadUserProfile(user); showToast(`🔄 Role disegarkan: ${userRole}`); }, style: { padding: "6px 11px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "🔄 Refresh Role"),
+                                    React.createElement("button", { type: "button", onClick: () => loadClaims(), style: { padding: "6px 11px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "↻ Reload Claims"),
+                                    React.createElement("button", { type: "button", disabled: dbConsoleBusy, onClick: loadSupabaseTableStats, style: { padding: "6px 12px", border: 0, background: "#2563eb", color: "#fff", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, dbConsoleBusy ? "Menghitung..." : "🔍 Hitung Ulang Tabel"))),
+                            dbConsoleCounts && React.createElement("div", { className: "sdlg-db-stat-grid" },
+                                dbConsoleCounts.map(s => React.createElement("div", { key: s.key, className: "sdlg-db-stat-card" },
+                                    React.createElement("div", { style: { fontSize: 10.5, fontWeight: 700, color: "#64748b" } }, s.label),
+                                    React.createElement("div", { style: { fontSize: 19, fontWeight: 800, color: s.error ? "#dc2626" : "#0f172a", marginTop: 3 } }, s.error ? "RLS" : String(s.count ?? 0)),
+                                    React.createElement("div", { style: { fontSize: 10, fontFamily: "monospace", color: "#94a3b8", marginTop: 2 } }, s.table))))),
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a", marginBottom: 4 } }, "🎯 Quick Claim Inspector & Direct Supabase Updater"),
+                            React.createElement("div", { style: { fontSize: 11.5, color: "#64748b", marginBottom: 12 } }, "Cari klaim apa saja (aktif maupun terarsip), cek isi mentah database, edit kolom spesifik, atau pulihkan arsip tanpa buka Dashboard Supabase."),
+                            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 } },
+                                React.createElement("input", {
+                                    type: "text",
+                                    list: "sdlg-console-claim-ids",
+                                    value: dbPatchClaimId,
+                                    onChange: e => setDbPatchClaimId(e.target.value),
+                                    placeholder: "Masukkan / pilih Claim ID (cth: 0206-2026-SDLG-PFR)",
+                                    style: { flex: "1 1 240px", padding: "8px 11px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 12.5, fontFamily: "monospace" }
+                                }),
+                                React.createElement("datalist", { id: "sdlg-console-claim-ids" },
+                                    claims.slice(0, 300).map(c => React.createElement("option", { key: c.claim_id, value: c.claim_id }, `${c.claim_id} · ${c.model || ""} · ${c.customer || ""}`))),
+                                React.createElement("button", { type: "button", disabled: dbPatchLoading || !dbPatchClaimId.trim(), onClick: () => inspectClaimFromSupabase(dbPatchClaimId), style: { padding: "8px 14px", border: 0, background: "#0f172a", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, dbPatchLoading ? "Memuat..." : "Muat dari Supabase")),
+                            dbPatchRow && React.createElement("div", { style: { padding: 12, borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0" } },
+                                React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 10 } },
+                                    React.createElement("div", { style: { fontSize: 12 } },
+                                        React.createElement("b", { style: { fontFamily: "monospace", color: "#1d4ed8" } }, dbPatchRow.claim_id),
+                                        " · ",
+                                        React.createElement("span", null, `${dbPatchRow.model || "—"} (${dbPatchRow.serial_no || "—"})`),
+                                        dbPatchRow.archived_at && React.createElement("span", { style: { marginLeft: 8, padding: "2px 7px", borderRadius: 99, background: "#fef2f2", color: "#b91c1c", fontSize: 10, fontWeight: 800 } }, "ARSIP")),
+                                    React.createElement("div", { style: { display: "flex", gap: 6 } },
+                                        React.createElement("button", { type: "button", onClick: () => { setTab("list"); setDetailId(dbPatchRow.claim_id); setShowSettingsModal(false); }, style: { padding: "5px 10px", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "Buka Detail"),
+                                        isAdmin && dbPatchRow.archived_at && React.createElement("button", { type: "button", onClick: async () => { await handleRestoreArchived(dbPatchRow.claim_id); await inspectClaimFromSupabase(dbPatchRow.claim_id); }, style: { padding: "5px 10px", border: 0, background: "#059669", color: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" } }, "♻️ Pulihkan Arsip"))),
+                                isAdmin ? React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 } },
+                                    React.createElement("select", {
+                                        value: dbPatchField,
+                                        onChange: e => { const k = e.target.value; setDbPatchField(k); setDbPatchValue(dbPatchRow[k] ?? ""); },
+                                        style: { padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 12, background: "#fff" }
+                                    }, CONSOLE_PATCH_FIELDS.map(([k, lbl]) => React.createElement("option", { key: k, value: k }, `${lbl} (${k})`))),
+                                    React.createElement("input", {
+                                        type: (CONSOLE_PATCH_FIELDS.find(([k]) => k === dbPatchField)?.[2]) || "text",
+                                        value: dbPatchValue,
+                                        onChange: e => setDbPatchValue(e.target.value),
+                                        placeholder: "Nilai baru...",
+                                        style: { flex: "1 1 200px", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 12.5, background: "#fff" }
+                                    }),
+                                    React.createElement("button", { type: "button", disabled: dbPatchBusy, onClick: applyQuickDbPatch, style: { padding: "7px 14px", border: 0, background: "#059669", color: "#fff", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, dbPatchBusy ? "Menyimpan..." : "💾 Update ke Supabase")) : React.createElement("div", { style: { fontSize: 11, color: "#b45309", marginBottom: 8 } }, "🔒 Hanya role Admin / Warranty Admin yang dapat menulis ke Supabase."),
+                                React.createElement("details", null,
+                                    React.createElement("summary", { style: { fontSize: 11, fontWeight: 700, color: "#475569", cursor: "pointer" } }, "Lihat JSON Record Mentah dari Supabase"),
+                                    React.createElement("pre", { style: { marginTop: 8, padding: 10, background: "#0f172a", color: "#e2e8f0", borderRadius: 8, fontSize: 10.5, overflow: "auto", maxHeight: 220 } }, JSON.stringify(dbPatchRow, null, 2))))),
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a", marginBottom: 4 } }, "📥 Batch Update INFO Klaim via Copy-Paste Excel / TSV"),
+                            React.createElement("div", { style: { fontSize: 11.5, color: "#64748b", marginBottom: 10 } }, "Tempel tabel dari Excel (baris 1 = nama kolom, wajib ada kolom claim_id; sel kosong tidak akan menimpa data yang sudah ada). Contoh kolom: claim_id, dealer_claim_no, distributor_no, app_code, indent_no, dealer_wo_so, branch."),
+                            React.createElement("textarea", {
+                                rows: 4,
+                                value: batchPasteText,
+                                onChange: e => { setBatchPasteText(e.target.value); setBatchPreview(null); },
+                                placeholder: "claim_id\tdealer_claim_no\tdistributor_no\tapp_code\n0206-2026-SDLG-PFR\tYNFW2608120001\t0206-2026-SDLG-PFR\t0184/26/SBY",
+                                style: { width: "100%", padding: 10, border: "1px solid #cbd5e1", borderRadius: 8, fontFamily: "monospace", fontSize: 11.5, resize: "vertical" }
+                            }),
+                            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 } },
+                                React.createElement("button", { type: "button", disabled: !batchPasteText.trim(), onClick: () => parseBatchClaimUpdates(batchPasteText), style: { padding: "7px 14px", border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, "🔍 Preview Perubahan (Dry Run)"),
+                                isAdmin && batchPreview?.ops?.some(o => Object.keys(o.patch).length > 0) && React.createElement("button", { type: "button", disabled: batchRunning, onClick: executeBatchClaimUpdates, style: { padding: "7px 14px", border: 0, background: "#059669", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" } }, batchRunning ? "Mengupdate..." : `🚀 Terapkan Update ke Supabase (${batchPreview.ops.filter(o => Object.keys(o.patch).length > 0).length} klaim)`)),
+                            batchPreview && React.createElement("div", { style: { marginTop: 12, maxHeight: 200, overflow: "auto", border: "1px solid #e2e8f0", borderRadius: 8 } },
+                                React.createElement("table", { style: { width: "100%", fontSize: 11, borderCollapse: "collapse" } },
+                                    React.createElement("thead", null, React.createElement("tr", { style: { background: "#f8fafc", textAlign: "left" } },
+                                        React.createElement("th", { style: { padding: "6px 8px", borderBottom: "1px solid #e2e8f0" } }, "Claim ID"),
+                                        React.createElement("th", { style: { padding: "6px 8px", borderBottom: "1px solid #e2e8f0" } }, "Perubahan Field"))),
+                                    React.createElement("tbody", null, batchPreview.ops.map((o, idx) => React.createElement("tr", { key: idx, style: { borderBottom: "1px solid #f1f5f9" } },
+                                        React.createElement("td", { style: { padding: "6px 8px", fontFamily: "monospace", fontWeight: 700 } }, o.claimId, !o.found && " (cek DB)"),
+                                        React.createElement("td", { style: { padding: "6px 8px" } }, o.diffs.length ? o.diffs.map((d, j) => d.error ? React.createElement("span", { key: j, style: { color: "#dc2626", marginRight: 8 } }, `${d.col}: ${d.error}`) : React.createElement("span", { key: j, style: { display: "inline-block", marginRight: 10 } }, `${d.col}: ${d.from} → `, React.createElement("b", null, d.to))) : "Tidak ada perubahan")))))),
+                            batchReport && React.createElement("div", { style: { marginTop: 10, padding: 10, borderRadius: 8, background: batchReport.fail ? "#fffbeb" : "#f0fdf4", border: `1px solid ${batchReport.fail ? "#fde68a" : "#bbf7d0"}`, fontSize: 11.5 } },
+                                `Hasil: ${batchReport.ok} berhasil, ${batchReport.fail} gagal.`,
+                                batchReport.errors.length > 0 && React.createElement("div", { style: { color: "#b91c1c", marginTop: 4 } }, batchReport.errors.join(" | "))))),
+                    settingsTab === "backup" && React.createElement(React.Fragment, null,
+                        React.createElement("div", { style: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, background: "#ffffff" } },
+                            React.createElement("div", { style: { fontWeight: 800, fontSize: 14, color: "#0f172a", marginBottom: 6 } }, "💾 Backup Database & Export Workbook"),
+                            React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginBottom: 14, lineHeight: 1.5 } }, "Unduh salinan lengkap data klaim & master langsung dari browser sebagai arsip JSON atau workbook Excel resmi."),
+                            React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
+                                React.createElement("button", { type: "button", onClick: downloadFullJsonBackup, style: { padding: "9px 16px", border: 0, background: "#0f172a", color: "#fff", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, `📦 Download Full JSON Backup (${claims.length} klaim)`),
+                                React.createElement("button", { type: "button", onClick: () => exportToExcel(claims.filter(c => !c.archived_at)), style: { padding: "9px 16px", border: "1px solid #bbf7d0", background: "#f0fdf4", color: "#15803d", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, "📊 Export Claims Excel (.xlsx)"))))),
+                React.createElement("div", { style: { padding: "12px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 } },
+                    React.createElement("span", { style: { fontSize: 11, color: "#64748b" } }, `Supabase Project: frqvelcreczmnofldrga · Role: ${userRole}`),
                     React.createElement("button", { onClick: () => setShowSettingsModal(false), style: { padding: "8px 16px", border: "1px solid #cbd5e1", background: "#ffffff", borderRadius: 8, fontSize: 12, fontWeight: 700, color: "#334155", cursor: "pointer" } }, "Tutup"))))),
-        tab === "sdlginput" && isAdmin && (React.createElement(SDLGPortalInputPage, { claims, selectedClaimId: sdlgInputClaimId, onSelectClaim: selectSdlgInputClaim, onBack: () => setTab("list"), onNotify: showToast })),
+        tab === "sdlginput" && isAdmin && (React.createElement(SDLGPortalInputPage, { claims, selectedClaimId: sdlgInputClaimId, onSelectClaim: selectSdlgInputClaim, onBack: () => setTab("list"), onNotify: showToast, claimsLoading: loading })),
         tab === "sdlginput" && !isAdmin && (React.createElement("div", { className: "page" }, React.createElement("div", { style: { maxWidth: 700, margin: "80px auto", textAlign: "center" } }, React.createElement("div", { style: { fontSize: 42 } }, "🔒"), React.createElement("div", { className: "page-title", style: { marginTop: 8 } }, "Akses terbatas"), React.createElement("div", { style: { color: "#64748b", marginTop: 5 } }, "Akun Viewer tidak dapat menyiapkan input Dealer Portal.")))),
         tab === "paste" && !isAdmin && (React.createElement("div", { style: { maxWidth: 780, margin: "0 auto", padding: "60px 16px", textAlign: "center" } },
             React.createElement("div", { style: { fontSize: 40, marginBottom: 10 } }, "\uD83D\uDD12"),
@@ -14280,16 +14998,39 @@ SDLG_REPOSITORY.listClaims = async function () {
                     React.createElement("div", { style: { marginTop: 9, padding: 9, background: "var(--sdlg-bg)", borderRadius: 8, fontSize: 10, color: "var(--sdlg-text-muted)" } }, "Untuk claim baru, App Code wajib berasal dari form/source terbaru; bukan hasil tebakan.")),
             )),
         ))),
-        tab === "list" && !detailId && (React.createElement("div", { className: "page" },
+        tab === "list" && !detailId && (() => {
+            const listPulse = computeDailyWorkspacePulse(claims, actionCenterRows, user);
+            return React.createElement("div", { className: "page" },
             React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 14, flexWrap: "wrap" } },
                 React.createElement("div", null,
                     React.createElement("div", { className: "eyebrow" }, "Claim operations"),
                     React.createElement("div", { className: "page-title" }, "Warranty Claims"),
                     React.createElement("div", { className: "page-sub" }, "Cari, filter, buka detail, lalu update status tanpa kehilangan konteks.")),
-                isAdmin && (React.createElement("button", { className: "sdlg-btn sdlg-btn--primary", onClick: () => setTab("paste") }, "+ New Claim"))),
+                isAdmin && (React.createElement("button", { className: "sdlg-btn sdlg-btn--amber", onClick: () => setTab("paste") }, "+ New Claim"))),
+            React.createElement("div", { className: "sdlg-claims-pulse" },
+                React.createElement("div", { className: "sdlg-claims-pulse-left" },
+                    React.createElement("span", { className: "sdlg-claims-pulse-greet" }, `${listPulse.greeting}, ${listPulse.displayName}`),
+                    React.createElement("span", { className: "sdlg-claims-pulse-meter" },
+                        React.createElement("span", null, `SLA ≤10 Hari:`),
+                        React.createElement("span", { className: "sdlg-claims-pulse-track" },
+                            React.createElement("span", { className: `sdlg-claims-pulse-fill ${listPulse.slaPct >= 80 ? "is-good" : ""}`, style: { width: `${listPulse.slaPct}%` } })),
+                        React.createElement("b", { style: { color: "#0f172a" } }, `${listPulse.slaPct}%`),
+                        React.createElement("span", null, `(${listPulse.compliantCount}/${listPulse.assessedCount})`))),
+                React.createElement("div", { className: "sdlg-claims-pulse-actions" },
+                    listPulse.auditCount > 0 && React.createElement("button", {
+                        type: "button",
+                        className: `sdlg-pulse-chip ${statusFilter === "SDLG Audit" ? "is-active" : ""}`,
+                        onClick: () => { setStatusFilter(prev => prev === "SDLG Audit" ? "all" : "SDLG Audit"); setPage(1); }
+                    }, "SDLG Audit", React.createElement("b", null, listPulse.auditCount)),
+                    listPulse.openOver10 > 0 && React.createElement("button", {
+                        type: "button",
+                        className: `sdlg-pulse-chip ${statusFilter === "Draft" ? "is-active" : ""}`,
+                        title: "Fokus pada klaim draft/open untuk segera diajukan",
+                        onClick: () => { setStatusFilter("Draft"); setClaimSort("date_asc"); setPage(1); }
+                    }, `Open >10 Hari (${listPulse.openOver10})`))),
             React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" } },
-                React.createElement("button", { onClick: () => setYearFilter("all"), className: "sdlg-btn " + (yearFilter === "all" ? "sdlg-btn--primary" : "sdlg-btn--secondary") }, "Semua"),
-                years.map(y => (React.createElement("button", { key: y, onClick: () => setYearFilter(y), className: "sdlg-btn " + (yearFilter === y ? "sdlg-btn--primary" : "sdlg-btn--secondary") }, y)))),
+                React.createElement("button", { onClick: () => setYearFilter("all"), className: "sdlg-btn " + (yearFilter === "all" ? "sdlg-btn--navy" : "sdlg-btn--secondary") }, "Semua"),
+                years.map(y => (React.createElement("button", { key: y, onClick: () => setYearFilter(y), className: "sdlg-btn " + (yearFilter === y ? "sdlg-btn--navy" : "sdlg-btn--secondary") }, y)))),
             React.createElement("div", { className: "claims-filter-bar", style: { display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center", background: "var(--sdlg-surface)", border: "1px solid var(--sdlg-border)", borderRadius: "var(--sdlg-radius-card)", padding: 10 } },
                 React.createElement("select", { value: branchFilter, onChange: e => setBranchFilter(e.target.value), className: "sdlg-select", style: { width: "auto" } },
                     React.createElement("option", { value: "all" }, "Semua Branch"),
@@ -14312,19 +15053,30 @@ SDLG_REPOSITORY.listClaims = async function () {
                     display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10,
                     marginBottom: 14,
                 } }, [
-                ["Klaim", summary.count, "var(--sdlg-primary)"],
-                ["USD", `USD ${summary.usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "var(--sdlg-success)"],
-                ["CNY", `CNY ${summary.cny.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, "var(--sdlg-warning)"],
-                ["Total IDR", `Rp ${summary.idrEquivalent.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, "var(--sdlg-primary)"],
-                ["Draft", summary.draft, "var(--sdlg-neutral)"],
-                ["Submitted to SDLG", summary.submittedToSDLG, "var(--sdlg-primary)"],
-                ["Rejected", summary.rejected, "var(--sdlg-danger)"],
-                ["Claimed to SDLG", summary.claimed, "var(--sdlg-primary)"],
-            ].map(([label, val, color]) => (React.createElement("div", { key: label, className: "claims-kpi", style: {
-                    margin: 0, padding: "12px 14px"
-                } },
-                React.createElement("div", { style: { fontSize: 11, color: "var(--sdlg-text-muted)", fontWeight: 600 } }, label),
-                React.createElement("div", { style: { fontSize: 18, fontWeight: 600, color, marginTop: 2 } }, val))))),
+                { label: "Klaim", val: summary.count, color: "#0f172a", finance: true, statusKey: null },
+                { label: "USD", val: `USD ${summary.usd.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, color: "#0f766e", finance: true, statusKey: null },
+                { label: "CNY", val: `CNY ${summary.cny.toLocaleString("en-US", { maximumFractionDigits: 2 })}`, color: "#b45309", finance: true, statusKey: null },
+                { label: "Total IDR", val: `Rp ${summary.idrEquivalent.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, color: "#0f172a", finance: true, statusKey: null },
+                { label: "Draft", val: summary.draft, color: "#475569", finance: false, statusKey: "Draft" },
+                { label: "Submitted to SDLG", val: summary.submittedToSDLG, color: "#1d4ed8", finance: false, statusKey: "Submitted to SDLG" },
+                { label: "Rejected", val: summary.rejected, color: "#b91c1c", finance: false, statusKey: "Rejected" },
+                { label: "Claimed to SDLG", val: summary.claimed, color: "#b45309", finance: false, statusKey: "Claimed to SDLG" },
+            ].map((item) => {
+                const isSelected = item.statusKey && statusFilter === item.statusKey;
+                const cls = `claims-kpi${item.finance ? " is-finance" : ""}${item.statusKey ? " is-clickable" : ""}${isSelected ? " is-selected" : ""}`;
+                return React.createElement("div", {
+                    key: item.label,
+                    className: cls,
+                    role: item.statusKey ? "button" : undefined,
+                    tabIndex: item.statusKey ? 0 : undefined,
+                    title: item.statusKey ? `Filter daftar berdasarkan status ${item.statusKey}` : undefined,
+                    onClick: item.statusKey ? () => { setStatusFilter(prev => prev === item.statusKey ? "all" : item.statusKey); setPage(1); } : undefined,
+                    onKeyDown: item.statusKey ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStatusFilter(prev => prev === item.statusKey ? "all" : item.statusKey); setPage(1); } } : undefined,
+                    style: { margin: 0, padding: "12px 14px" }
+                },
+                    React.createElement("div", { style: { fontSize: 11, color: isSelected ? "#b45309" : "var(--sdlg-text-muted)", fontWeight: 650 } }, item.label),
+                    React.createElement("div", { style: { fontSize: 18, fontWeight: 750, color: item.color, marginTop: 2 } }, item.val));
+            })),
             summary.unknownCurrencyClaims > 0 && React.createElement("div", { style: { gridColumn: "1 / -1", padding: "8px 10px", background: "var(--sdlg-warning-bg)", border: "1px solid var(--sdlg-warning-border)", borderRadius: "var(--sdlg-radius-input)", fontSize: 11, color: "var(--sdlg-warning)" } }, "Warning: ", summary.unknownCurrencyClaims, " claim belum punya currency/route yang dikenali."),
             React.createElement("div", { className: "search-wrap claims-searchbar", style: { marginBottom: 16 } },
                 React.createElement("div", { className: "search-box" },
@@ -14369,46 +15121,175 @@ SDLG_REPOSITORY.listClaims = async function () {
                     onClick: () => { setSearch(""); setDebouncedSearch(""); setBranchFilter("all"); setStatusFilter("all"); setYearFilter("all"); setPage(1); },
                     className: "sdlg-btn sdlg-btn--secondary",
                     style: { margin: "0 auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }
-                }, "\u21BA Reset Semua Filter & Pencarian"))) : (React.createElement("div", { className: "claims-list", style: { display: "flex", flexDirection: "column", gap: 10 } }, pagedFiltered.map((c) => (React.createElement("div", { className: "claim-row", key: c.claim_id, role: "button", tabIndex: 0, onClick: () => setDetailId(c.claim_id), onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailId(c.claim_id); } }, style: {
-                    border: selectedIds.includes(c.claim_id) ? "1px solid var(--sdlg-primary)" : "1px solid var(--sdlg-border)",
-                    cursor: "pointer", display: "flex",
-                    alignItems: "center", gap: 14,
-                    background: "var(--sdlg-surface)",
-                    borderRadius: "var(--sdlg-radius-card)",
-                    padding: "14px 18px",
-                    boxShadow: "none"
-                } },
-                isAdmin && !c.archived_at && (React.createElement("input", { type: "checkbox", checked: selectedIds.includes(c.claim_id), onChange: (e) => { e.stopPropagation(); toggleSelected(c.claim_id); }, onClick: e => e.stopPropagation(), style: { flexShrink: 0 } })),
-                React.createElement("div", { className: "claim-row-icon", style: {
-                        width: 38, height: 38, borderRadius: "10px", background: "#eff6ff", color: "#2563eb",
-                        flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center"
-                    } },
-                    React.createElement("svg", { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-                        React.createElement("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
-                        React.createElement("polyline", { points: "14 2 14 8 20 8" }),
-                        React.createElement("line", { x1: "16", y1: "13", x2: "8", y2: "13" }),
-                        React.createElement("line", { x1: "16", y1: "17", x2: "8", y2: "17" }))),
-                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" } },
-                        React.createElement("span", { style: { fontWeight: 700, fontSize: 12, fontFamily: "monospace" } }, c.claim_id),
-                        React.createElement(Pill, { color: statusColor(c.claim_status) }, c.claim_status),
-                        React.createElement(Pill, { color: claimTypeMeta(c).color }, claimTypeMeta(c).label),
-                        claimAging(c)?.submit && claimAging(c)?.repairToSubmitOrToday != null && React.createElement(Pill, { color: claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimGeneralWindowDays ? "#b3261e" : claimAging(c).repairToSubmitOrToday > SDLG_POLICY.claimSubmitDays ? "#b86e00" : "#6b7280" },
-                            claimAging(c).repairToSubmitOrToday + " hari \u00B7 " + (claimAging(c).submit ? "Repair \u2192 Claim" : "Repair \u2192 Today")),
-                        renderClaimSlaBadge(c),
-                        c.archived_at && React.createElement(Pill, { color: "#6b7280" }, "ARCHIVED")),
-                    React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: "var(--sdlg-text, #0f172a)", margin: "3px 0 2px" } },
-                        c.model,
-                        React.createElement("span", { style: { color: "var(--sdlg-text-muted, #64748b)", fontWeight: 500, fontSize: 12, marginLeft: 6 } }, "\u00B7 SN " + c.serial_no)),
-                    React.createElement("div", { style: { fontSize: 12.5, color: "var(--sdlg-text-muted, #64748b)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
-                        React.createElement("span", { style: { fontWeight: 600, color: "var(--sdlg-text, #1e293b)" } }, c.customer),
-                        c.fault_description ? " \u2014 " + c.fault_description : "")),
-                React.createElement("div", { style: { textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 } },
-                    React.createElement("div", { style: { fontWeight: 800, fontSize: 14.5, color: "var(--sdlg-text, #0f172a)", fontFamily: "monospace", fontVariantNumeric: "tabular-nums" } },
-                        React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "1.5px 5px", borderRadius: 4, marginRight: 5 } }, c.currency),
-                        fmt2(calcClaimFinancials(c).totalAmount)),
-                    React.createElement("div", { style: { fontSize: 11, color: "var(--sdlg-text-muted, #94a3b8)" } }, c.dealer_claim_date || c.input_date)),
-                React.createElement("span", { className: "claim-row-arrow", "aria-hidden": "true", style: { color: "#cbd5e1", fontSize: 18, marginLeft: 2, flexShrink: 0 } }, "\u203A")))))),
+                }, "\u21BA Reset Semua Filter & Pencarian"))) : (React.createElement("div", { className: "claims-list" }, pagedFiltered.map((c) => {
+                const aging = claimAging(c);
+                const typeMeta = claimTypeMeta(c);
+                const stColor = statusColor(c.claim_status);
+                const formatListDate = (v) => {
+                    const iso = normalizeDateInput(v);
+                    if (iso) { const [y, m, d] = iso.split("-"); return `${d}/${m}/${y}`; }
+                    const s = String(v || "").trim();
+                    return s || "\u2014";
+                };
+                const formatHmValue = (v) => {
+                    if (v == null || String(v).trim() === "") return null;
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return String(v).trim();
+                    const rounded = Math.round(n * 100) / 100;
+                    return `${rounded.toLocaleString("en-US")} hr`;
+                };
+                const renderUnitIcon = (modelRaw) => {
+                    const m = String(modelRaw || "").trim().toUpperCase().replace(/^SDLG[\s-]*/, "");
+                    const commonProps = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true" };
+                    if (/^(E|EA|ER)/.test(m)) {
+                        // Excavator silhouette
+                        return React.createElement("svg", commonProps,
+                            React.createElement("rect", { x: 4, y: 17, width: 13, height: 3.5, rx: 1.75 }),
+                            React.createElement("path", { d: "M6 17v-3.5h5V10H7.5L6 13.5" }),
+                            React.createElement("path", { d: "M11 12.5L15.5 6l4 4-1.5 3.5" }),
+                            React.createElement("path", { d: "M17.5 13.5l2.5 1.5-1.5 2-2-1z" })
+                        );
+                    }
+                    if (/^G\d/.test(m)) {
+                        // Motor Grader silhouette
+                        return React.createElement("svg", commonProps,
+                            React.createElement("circle", { cx: 6, cy: 17.5, r: 2.2 }),
+                            React.createElement("circle", { cx: 18.5, cy: 17.5, r: 2.2 }),
+                            React.createElement("path", { d: "M4 14h15l-1.5-4H13v4" }),
+                            React.createElement("path", { d: "M9.5 14l2 4.5h3" })
+                        );
+                    }
+                    if (/^(RS|RD|SR)\d/.test(m)) {
+                        // Road Roller / Compactor silhouette
+                        return React.createElement("svg", commonProps,
+                            React.createElement("circle", { cx: 17, cy: 16.5, r: 3.5 }),
+                            React.createElement("circle", { cx: 6.5, cy: 17.5, r: 2.5 }),
+                            React.createElement("path", { d: "M6 15V9.5h5v4h5.5" })
+                        );
+                    }
+                    if (/^(L|LG|9)/.test(m)) {
+                        // Wheel Loader silhouette
+                        return React.createElement("svg", commonProps,
+                            React.createElement("circle", { cx: 7, cy: 17.5, r: 2.5 }),
+                            React.createElement("circle", { cx: 15, cy: 17.5, r: 2.5 }),
+                            React.createElement("path", { d: "M4.5 15V10.5H10l1.5 4.5" }),
+                            React.createElement("path", { d: "M11.5 13.5l5.5-2.5 2.5 4.5-3.5 1.5" })
+                        );
+                    }
+                    // General heavy machinery / dump unit fallback
+                    return React.createElement("svg", commonProps,
+                        React.createElement("circle", { cx: 7, cy: 17.5, r: 2.2 }),
+                        React.createElement("circle", { cx: 17, cy: 17.5, r: 2.2 }),
+                        React.createElement("path", { d: "M3.5 15V9h9.5l3 3h4v3h-1.2" }),
+                        React.createElement("path", { d: "M9.2 15h5.6" })
+                    );
+                };
+                const hmFailText = formatHmValue(c.hm_failure);
+                const hmCompText = formatHmValue(c.hm_completion);
+                const showHmComp = Boolean(hmCompText && hmCompText !== hmFailText);
+                const failureDateText = formatListDate(c.failure_date);
+                const claimDateText = formatListDate(c.dealer_claim_date || c.input_date);
+                const sla = claimSlaBadge(c);
+                const repairAgingDays = aging?.repairToSubmitOrToday;
+                const fallbackAgingDays = aging?.failureToSubmitOrToday;
+                let agingValueText = "\u2014";
+                let agingSubText = "";
+                let agingTone = "is-empty";
+                let agingTitle = "Belum ada tanggal repair/failure untuk menghitung aging";
+                if (repairAgingDays != null) {
+                    agingValueText = `${repairAgingDays} hari`;
+                    agingSubText = aging.submit ? "Repair \u2192 Claim" : (sla ? sla.label : "Repair \u2192 Hari ini");
+                    agingTone = (repairAgingDays > SDLG_POLICY.claimGeneralWindowDays || sla?.critical)
+                        ? "is-critical"
+                        : (repairAgingDays > SDLG_POLICY.claimSubmitDays || (sla && agingDaysWarn(sla)))
+                            ? "is-warn"
+                            : "is-ok";
+                    agingTitle = `${repairAgingDays} hari (${aging.submit ? "Repair ke Claim" : "Repair ke Hari ini"}) \u00B7 target 10 hari, batas 90 hari`;
+                } else if (fallbackAgingDays != null) {
+                    agingValueText = `${fallbackAgingDays} hari`;
+                    agingSubText = "Sejak Tgl Rusak";
+                    agingTone = fallbackAgingDays > SDLG_POLICY.claimGeneralWindowDays ? "is-critical" : fallbackAgingDays > SDLG_POLICY.claimSubmitDays ? "is-warn" : "is-neutral";
+                    agingTitle = `${fallbackAgingDays} hari sejak Failure Date`;
+                }
+                function agingDaysWarn(s) {
+                    return s && (s.days >= 7 || s.critical);
+                }
+                const hasCheck = Boolean(isAdmin && !c.archived_at);
+                const isSelected = selectedIds.includes(c.claim_id);
+                const isYard = typeMeta?.label === "Yard Failure";
+                return (React.createElement("div", {
+                    className: `claim-row sdlg-claim-card${hasCheck ? " has-check" : ""}${isSelected ? " is-selected" : ""}${c.archived_at ? " is-archived" : ""}`,
+                    key: c.claim_id,
+                    role: "button",
+                    tabIndex: 0,
+                    onClick: () => setDetailId(c.claim_id),
+                    onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailId(c.claim_id); } }
+                },
+                    hasCheck && React.createElement("div", { className: "sdlg-claim-check", onClick: e => e.stopPropagation() },
+                        React.createElement("input", {
+                            type: "checkbox",
+                            "aria-label": `Pilih klaim ${c.claim_id}`,
+                            checked: isSelected,
+                            onChange: (e) => { e.stopPropagation(); toggleSelected(c.claim_id); }
+                        })
+                    ),
+                    React.createElement("div", {
+                        className: "sdlg-claim-icon",
+                        title: c.model || "Unit Alat Berat",
+                        style: { color: stColor, background: `${stColor}14`, borderColor: `${stColor}38` }
+                    }, renderUnitIcon(c.model)),
+                    React.createElement("div", { className: "sdlg-claim-main" },
+                        React.createElement("div", { className: "sdlg-claim-head" },
+                            React.createElement("span", { className: "sdlg-claim-id" }, c.claim_id),
+                            React.createElement("span", {
+                                className: "sdlg-claim-status",
+                                style: { color: stColor, background: `${stColor}14`, borderColor: `${stColor}38` }
+                            },
+                                React.createElement("span", { className: "sdlg-claim-status-dot", style: { background: stColor }, "aria-hidden": "true" }),
+                                c.claim_status || "Draft"
+                            ),
+                            c.branch && React.createElement("span", { className: "sdlg-claim-branch" }, c.branch),
+                            isYard && React.createElement("span", { className: "sdlg-claim-yard" }, "Yard Failure"),
+                            c.archived_at && React.createElement("span", { className: "sdlg-claim-archived" }, "ARCHIVED")
+                        ),
+                        React.createElement("div", { className: "sdlg-claim-unit" },
+                            React.createElement("span", { className: "sdlg-claim-model" }, c.model || "\u2014"),
+                            c.serial_no && React.createElement("span", { className: "sdlg-claim-sn" }, `SN ${c.serial_no}`)
+                        ),
+                        React.createElement("div", {
+                            className: "sdlg-claim-desc",
+                            title: [c.customer, c.fault_description].filter(Boolean).join(" \u2014 ")
+                        },
+                            React.createElement("span", { className: "sdlg-claim-customer" }, c.customer || "\u2014"),
+                            c.fault_description && React.createElement("span", { className: "sdlg-claim-fault" }, ` \u2014 ${c.fault_description}`)
+                        )
+                    ),
+                    React.createElement("div", { className: "sdlg-claim-telemetry" },
+                        React.createElement("div", { className: "sdlg-claim-metric sdlg-claim-metric--hm" },
+                            React.createElement("span", { className: "sdlg-claim-metric-label" }, "HM Rusak"),
+                            React.createElement("span", { className: `sdlg-claim-metric-val${hmFailText ? "" : " is-empty"}` }, hmFailText || "\u2014"),
+                            showHmComp && React.createElement("span", { className: "sdlg-claim-metric-sub" }, `Selesai ${hmCompText}`)
+                        ),
+                        React.createElement("div", { className: "sdlg-claim-metric sdlg-claim-metric--date" },
+                            React.createElement("span", { className: "sdlg-claim-metric-label" }, "Tgl Rusak"),
+                            React.createElement("span", { className: `sdlg-claim-metric-val${failureDateText === "\u2014" ? " is-empty" : ""}` }, failureDateText)
+                        ),
+                        React.createElement("div", { className: `sdlg-claim-metric sdlg-claim-metric--aging ${agingTone}`, title: agingTitle },
+                            React.createElement("span", { className: "sdlg-claim-metric-label" }, "Aging"),
+                            React.createElement("span", { className: "sdlg-claim-metric-val sdlg-claim-aging-val" }, agingValueText),
+                            agingSubText && React.createElement("span", { className: "sdlg-claim-metric-sub sdlg-claim-aging-sub" }, agingSubText)
+                        )
+                    ),
+                    React.createElement("div", { className: "sdlg-claim-fin" },
+                        React.createElement("div", { className: "sdlg-claim-amount" },
+                            React.createElement("span", { className: "sdlg-claim-currency" }, c.currency || "USD"),
+                            React.createElement("span", { className: "sdlg-claim-amount-val" }, fmt2(calcClaimFinancials(c).totalAmount))
+                        ),
+                        React.createElement("div", { className: "sdlg-claim-date" }, `Claim ${claimDateText}`)
+                    ),
+                    React.createElement("span", { className: "claim-row-arrow sdlg-claim-arrow", "aria-hidden": "true" }, "\u203A")
+                ));
+            }))),
             !loading && filtered.length > PAGE_SIZE && (React.createElement("div", { style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 16 } },
                 React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === 1, onClick: () => { setPage(Math.max(1, safePage - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, "\u2190 Prev"),
                 React.createElement("span", { style: { fontSize: 12, color: "var(--sdlg-text-muted)" } },
@@ -14419,7 +15300,7 @@ SDLG_REPOSITORY.listClaims = async function () {
                     " \u00B7 ",
                     filtered.length,
                     " records"),
-                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === totalPages, onClick: () => { setPage(Math.min(totalPages, safePage + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, "Next \u2192"))))),
+                React.createElement("button", { className: "sdlg-btn sdlg-btn--secondary", disabled: safePage === totalPages, onClick: () => { setPage(Math.min(totalPages, safePage + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); } }, "Next \u2192")))); })(),
         tab === "dashboard" && (() => {
             /* __SDLG_ANALYTICS_FILTER_V1__ */
             const scopeClaims = (window.SDLGBossAnalytics && window.SDLGBossAnalytics.filterByPeriod)
@@ -14479,19 +15360,71 @@ SDLG_REPOSITORY.listClaims = async function () {
             const maxMonth = Math.max(1, ...monthData.map(x => x[1]));
             const maxModel = Math.max(1, ...modelData.map(x => x[1]));
             const maxBranch = Math.max(1, ...branchData.map(x => x[1]));
-            const Bar = ({ label, value, max }) => React.createElement("div", { style: { marginBottom: 11 } },
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12.5, marginBottom: 5 } },
-                    React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#334155", fontWeight: 500 } }, label),
-                    React.createElement("b", { style: { fontVariantNumeric: "tabular-nums", color: "#0f172a" } }, value)),
-                React.createElement("div", { style: { height: 7, background: "#f1f5f9", borderRadius: 6, overflow: "hidden" } },
-                    React.createElement("div", { style: { height: "100%", width: `${(value / max) * 100}%`, background: "#1d4ed8", borderRadius: 6, transition: "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)" } })));
+            const overviewPulse = computeDailyWorkspacePulse(scopeClaims, actionCenterRows, user);
+            const Bar = ({ label, value, max, rank = null, total = 0, amber = false }) => {
+                const sharePct = total > 0 ? Math.round((value / total) * 100) : null;
+                return React.createElement("div", { className: "sdlg-chart-bar-wrap" },
+                    React.createElement("div", { className: "sdlg-chart-bar-head" },
+                        React.createElement("span", { className: "sdlg-chart-bar-label" },
+                            rank != null && React.createElement("span", { className: `sdlg-chart-rank ${rank === 1 ? "is-top" : ""}` }, `#${rank}`),
+                            React.createElement("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, label)),
+                        React.createElement("span", { className: "sdlg-chart-bar-val" },
+                            sharePct != null && React.createElement("span", { className: "sdlg-chart-bar-share" }, `${sharePct}%`),
+                            React.createElement("b", null, value))),
+                    React.createElement("div", { className: "sdlg-chart-bar-track" },
+                        React.createElement("div", { className: `sdlg-chart-bar-fill ${amber ? "is-amber" : ""}`, style: { width: `${(value / max) * 100}%` } })));
+            };
             return (React.createElement("div", { className: "page overview-page", "data-sdlg-overview": "1" },
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 18, flexWrap: "wrap" } },
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "end", gap: 12, marginBottom: 16, flexWrap: "wrap" } },
                     React.createElement("div", null,
                         React.createElement("div", { className: "eyebrow" }, "Master dashboard \u00B7 Operations + overview"),
                         React.createElement("div", { className: "page-title" }, "Warranty Command Center"),
-                        React.createElement("div", { className: "page-sub" }, "Pantau claim, aging, dan item yang butuh tindakan.")),
+                        React.createElement("div", { className: "page-sub" }, "Pantau progres SLA harian, antrean prioritas, dan performa branch.")),
                     React.createElement("button", { className: "secondary-btn", onClick: loadClaims, style: { padding: "8px 12px", border: "1px solid #cbd5e1", background: "#fff", borderRadius: 8, cursor: "pointer", fontWeight: 600 } }, "\u21BB Refresh")),
+                React.createElement("div", { className: "sdlg-daily-focus" },
+                    React.createElement("div", { className: "sdlg-daily-focus-main" },
+                        React.createElement("div", { className: "sdlg-daily-kicker" },
+                            React.createElement("span", null, "OPERASIONAL HARIAN"),
+                            React.createElement("span", { className: "sdlg-daily-date" }, overviewPulse.wibDateDisplay)),
+                        React.createElement("div", { className: "sdlg-daily-greeting" }, `${overviewPulse.greeting}, ${overviewPulse.displayName}`),
+                        React.createElement("div", { className: "sdlg-daily-sub" },
+                            overviewPulse.urgentCount > 0
+                                ? `Ada ${overviewPulse.urgentCount} klaim prioritas yang siap ditindaklanjuti hari ini. Fokuskan penutupan sebelum batas 10 hari.`
+                                : "Semua antrean P0/P1 terpantau aman hari ini. Pertahankan ketepatan SLA klaim aktif."),
+                        React.createElement("div", { className: "sdlg-daily-chips" },
+                            overviewPulse.urgentCount > 0 && React.createElement("button", {
+                                type: "button",
+                                className: "sdlg-focus-chip is-urgent",
+                                onClick: () => {
+                                    setTab("list");
+                                    if (overviewPulse.topPriorityClaimId) setDetailId(overviewPulse.topPriorityClaimId);
+                                }
+                            }, "Prioritas Urgent", React.createElement("b", null, overviewPulse.urgentCount)),
+                            overviewPulse.auditCount > 0 && React.createElement("button", {
+                                type: "button",
+                                className: "sdlg-focus-chip is-amber",
+                                onClick: () => { setStatusFilter("SDLG Audit"); setTab("list"); setDetailId(null); }
+                            }, "SDLG Audit", React.createElement("b", null, overviewPulse.auditCount)),
+                            overviewPulse.openOver10 > 0 && React.createElement("button", {
+                                type: "button",
+                                className: "sdlg-focus-chip",
+                                onClick: () => { setStatusFilter("Draft"); setClaimSort("date_asc"); setTab("list"); setDetailId(null); }
+                            }, "Open >10 Hari", React.createElement("b", null, overviewPulse.openOver10)),
+                            isAdmin && React.createElement("button", {
+                                type: "button",
+                                className: "sdlg-btn sdlg-btn--amber",
+                                style: { padding: "6px 13px", minHeight: 32, fontSize: 12 },
+                                onClick: () => setTab("paste")
+                            }, "+ New Claim"))),
+                    React.createElement("div", { className: "sdlg-sla-gauge-card" },
+                        React.createElement("div", { className: "sdlg-sla-gauge-head" },
+                            React.createElement("span", { className: "sdlg-sla-gauge-label" }, "TARGET SLA \u226410 HARI"),
+                            React.createElement("span", { className: `sdlg-sla-gauge-pct ${overviewPulse.slaTone}` }, `${overviewPulse.slaPct}%`)),
+                        React.createElement("div", { className: "sdlg-sla-track", role: "progressbar", "aria-valuenow": overviewPulse.slaPct, "aria-valuemin": 0, "aria-valuemax": 100 },
+                            React.createElement("div", { className: `sdlg-sla-fill ${overviewPulse.slaTone}`, style: { width: `${overviewPulse.slaPct}%` } })),
+                        React.createElement("div", { className: "sdlg-sla-gauge-foot" },
+                            React.createElement("span", null, React.createElement("b", null, overviewPulse.compliantCount), ` / ${overviewPulse.assessedCount} klaim on-target`),
+                            React.createElement("span", null, "Top Branch: ", React.createElement("b", null, overviewPulse.topBranch))))),
                 /* __SDLG_ANALYTICS_YEAR_BAR_V1__ */
                 /* __SDLG_ANALYTICS_PERIOD_BAR_V3__ */
                 (() => {
@@ -14502,7 +15435,14 @@ SDLG_REPOSITORY.listClaims = async function () {
                     } catch (e) { try { console.warn("[SDLG] periodFilterBar failed", e); } catch (_) {} }
                     return null;
                 })(),
-                React.createElement("div", { className: "overview-summary-grid", style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 } }, [["Total Claims", totalClaims], ["Total Claim Amount", totalAmountDisplay], ["Approval Rate", approvedRate + "%"], ["Rejection Rate", rejectedRate + "%"], ["On Hold", onHold]].map(([l, v]) => React.createElement("div", { key: l, className: "metric-card" },
+                React.createElement("div", { className: "overview-summary-grid", style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 } }, [
+                    ["Total Claims", totalClaims, "#0f172a"],
+                    ["Total Claim Amount", totalAmountDisplay, "#d97706"],
+                    ["Approval Rate", approvedRate + "%", "#0f766e"],
+                    ["Rejection Rate", rejectedRate + "%", "#b91c1c"],
+                    ["On Hold", onHold, "#64748b"]
+                ].map(([l, v, dotColor]) => React.createElement("div", { key: l, className: "metric-card" },
+                    React.createElement("div", { className: "sdlg-metric-bar-dot", style: { background: dotColor }, "aria-hidden": "true" }),
                     React.createElement("div", { className: "metric-label" }, l),
                     React.createElement("div", { className: "metric-value" + (l === "Total Claim Amount" ? " metric-value--amount" : "") }, v)))),
                 (() => {
@@ -14637,13 +15577,13 @@ SDLG_REPOSITORY.listClaims = async function () {
                             localStorage.setItem("sdlg_cny_idr_rate", String(v));
                         }
                         catch { } ; }, style: { padding: "7px 10px", border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700 } }, "Simpan Kurs")),
-                React.createElement("div", { style: { marginTop: 10, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" } },
+                React.createElement("div", { className: "sdlg-estimasi-panel" },
                    React.createElement("div", { className: "total-estimasi-box" },
     React.createElement("div", { className: "label" }, "Estimasi Total dalam Rupiah"),
     React.createElement("div", { className: "value" },
         "Rp ",
         new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(idrEquivalent || 0))),
-                    React.createElement("div", { style: { fontSize: 11, color: "#64748b", textAlign: "right" } },
+                    React.createElement("div", { className: "sdlg-estimasi-meta" },
                         "Berdasarkan ",
                         fmtCurrency("CNY", cnyTotal),
                         " \u00D7 Rp ",
@@ -14653,14 +15593,14 @@ SDLG_REPOSITORY.listClaims = async function () {
                         "Rate tampilan, bukan nilai transaksi di database.")),
                 React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 14, marginTop: 14 } },
                     React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 } },
-                        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83D\uDCC8 Claim Trend (12 bulan terakhir)"),
-                        monthData.length ? monthData.map(([k, v]) => React.createElement(Bar, { key: k, label: k, value: v, max: maxMonth })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada tanggal yang bisa dianalisis.")),
+                        React.createElement("div", { style: { fontWeight: 750, marginBottom: 12, color: "#0f172a" } }, "\uD83D\uDCC8 Claim Trend (12 bulan terakhir)"),
+                        monthData.length ? monthData.map(([k, v]) => React.createElement(Bar, { key: k, label: k, value: v, max: maxMonth, amber: true })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada tanggal yang bisa dianalisis.")),
                     React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 } },
-                        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83D\uDE9C Claims per Model"),
-                        modelData.length ? modelData.map(([k, v]) => React.createElement(Bar, { key: k, label: k, value: v, max: maxModel })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada data model.")),
+                        React.createElement("div", { style: { fontWeight: 750, marginBottom: 12, color: "#0f172a" } }, "\uD83D\uDE9C Claims per Model"),
+                        modelData.length ? modelData.map(([k, v], i) => React.createElement(Bar, { key: k, label: k, value: v, max: maxModel, rank: i + 1, total: totalClaims, amber: i === 0 })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada data model.")),
                     React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 } },
-                        React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83C\uDFE2 Claims per Branch"),
-                        branchData.length ? branchData.map(([k, v]) => React.createElement(Bar, { key: k, label: k, value: v, max: maxBranch })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada data branch.")),
+                        React.createElement("div", { style: { fontWeight: 750, marginBottom: 12, color: "#0f172a" } }, "\uD83C\uDFE2 Claims per Branch"),
+                        branchData.length ? branchData.map(([k, v], i) => React.createElement(Bar, { key: k, label: k, value: v, max: maxBranch, rank: i + 1, total: totalClaims, amber: i === 0 })) : React.createElement("div", { style: { fontSize: 13, color: "#94a3b8" } }, "Belum ada data branch.")),
                     React.createElement("div", { style: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16 } },
                         React.createElement("div", { style: { fontWeight: 700, marginBottom: 12 } }, "\uD83D\uDD27 Top Failure Parts"),
                         partData.length ? partData.map(([no, desc, count]) => React.createElement("div", { key: no, style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid #f1f5f9", gap: 14 } },
@@ -14762,7 +15702,17 @@ SDLG_REPOSITORY.listClaims = async function () {
                 }, "📋 Salin"),
                 React.createElement(Pill, { color: statusColor(detail.claim_status), size: "lg" }, detail.claim_status),
                 React.createElement(Pill, { color: claimTypeMeta(detail).color, size: "lg" }, claimTypeMeta(detail).label),
-                React.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 6 } },
+                React.createElement("div", { style: { marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } },
+                    !isAdmin && React.createElement(React.Fragment, null,
+                        React.createElement("span", {
+                            title: "Hak edit terkunci karena role akun saat ini bukan Admin / Warranty Admin",
+                            style: { fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 8, background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a" }
+                        }, `🔒 Read-only (${userRole})`),
+                        React.createElement("button", {
+                            type: "button",
+                            onClick: async () => { await loadUserProfile(user); showToast(`🔄 Role diperiksa ulang`); },
+                            style: { padding: "5px 9px", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff", color: "#334155", fontSize: 11, fontWeight: 700, cursor: "pointer" }
+                        }, "🔄 Cek Role")),
                     isAdmin && !editing && (React.createElement("button", { onClick: startEdit, className: "primary-btn" }, "\u270F\uFE0F Edit")),
                     isAdmin && (React.createElement("button", { onClick: () => { selectSdlgInputClaim(detail.claim_id); setTab("sdlginput"); setDetailId(null); setEditing(false); }, className: "secondary-btn" }, "🖥️ SDLG Input")),
                     isAdmin && editing && (React.createElement(React.Fragment, null,
@@ -14783,12 +15733,18 @@ SDLG_REPOSITORY.listClaims = async function () {
                 React.createElement("div", { className: "decision-summary-next" },
                     React.createElement("span", null, "Next action"),
                     React.createElement("b", null, detail.claim_status === "Draft" ? "Review evidence and submit" : detail.claim_status === "Rejected" ? "Review rejection reason" : "Open claim and verify next step"))),
-            detail.archived_at && React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#475569" } },
-                "\uD83D\uDDC4\uFE0F Klaim ini sudah ",
-                React.createElement("b", null, "diarsipkan"),
-                " pada ",
-                new Date(detail.archived_at).toLocaleString("id-ID"),
-                ". Data arsip lama hanya muncul sebagai legacy record."),
+            detail.archived_at && React.createElement("div", { style: { background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#475569", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
+                React.createElement("span", null,
+                    "\uD83D\uDDC4\uFE0F Klaim ini sudah ",
+                    React.createElement("b", null, "diarsipkan"),
+                    " pada ",
+                    new Date(detail.archived_at).toLocaleString("id-ID"),
+                    ". Data arsip lama hanya muncul sebagai legacy record."),
+                isAdmin && React.createElement("button", {
+                    type: "button",
+                    onClick: () => handleRestoreArchived(detail.claim_id),
+                    style: { padding: "6px 12px", borderRadius: 8, border: 0, background: "#059669", color: "#fff", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }
+                }, "♻️ Pulihkan dari Arsip")),
             React.createElement("div", { style: {
                     background: "#fff", borderRadius: 10, padding: "12px 14px",
                     border: "1px solid #e2e8f0", marginBottom: 12, display: "flex",
@@ -14874,14 +15830,14 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 style: { border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "#e2e8f0", borderRadius: 4, padding: "1px 6px", fontSize: 10, cursor: "pointer" }
                             }, "Salin SN"),
                             detail.indent_no && React.createElement("span", null, " \u00B7 ", detail.indent_no)),
-                        React.createElement("div", { style: { color: "#60a5fa", fontSize: 12, marginTop: 6, fontStyle: "italic" } },
+                        React.createElement("div", { style: { color: "#fcd34d", fontSize: 12, marginTop: 6, fontStyle: "italic" } },
                             "\"",
                             detail.fault_description,
                             "\"")),
                     (() => {
                         const heroFin = calcClaimFinancials(detail);
                         return React.createElement("div", { style: { textAlign: "right" } },
-                            React.createElement("div", { style: { fontSize: 22, fontWeight: 900, color: "#60a5fa", fontVariantNumeric: "tabular-nums" } },
+                            React.createElement("div", { style: { fontSize: 22, fontWeight: 900, color: "#fbbf24", fontVariantNumeric: "tabular-nums" } },
                                 detail.currency || "USD",
                                 " ",
                                 fmt2(heroFin.totalAmount)),
@@ -14908,10 +15864,29 @@ SDLG_REPOSITORY.listClaims = async function () {
                     ". Periksa reason/history sebelum melanjutkan.")),
             React.createElement(PolicyDecisionCard, { claim: detail }),
             React.createElement("div", { style: {
-                    background: "#fff", borderRadius: 10, padding: "14px 16px",
+                    background: "#fff", borderRadius: 12, padding: "16px 18px",
                     border: "1px solid #e2e8f0", marginBottom: 12,
                 } },
-                React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "#3b82f6", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 } }, editing ? "✏️ Edit Info" : "Info"),
+                React.createElement("datalist", { id: "sdlg-dl-branches" },
+                    [...new Set([...branches, ...branchMasterList.map(b => b.branch_name).filter(Boolean)])].sort().map(v => React.createElement("option", { key: v, value: v }))),
+                React.createElement("datalist", { id: "sdlg-dl-models" },
+                    [...new Set(claims.map(c => String(c.model || "").trim()).filter(Boolean))].sort().map(v => React.createElement("option", { key: v, value: v }))),
+                React.createElement("datalist", { id: "sdlg-dl-customers" },
+                    [...new Set([...claims.map(c => String(c.customer || "").trim()), ...customerMasterList.map(c => String(c.customer_name || "").trim())].filter(Boolean))].sort().slice(0, 400).map(v => React.createElement("option", { key: v, value: v }))),
+                React.createElement("div", { className: "sdlg-info-header-bar" },
+                    React.createElement("div", { className: "sdlg-info-header-title" },
+                        React.createElement("span", { style: { fontSize: 11.5, fontWeight: 800, color: "#2563eb", letterSpacing: 1, textTransform: "uppercase" } }, editing ? "✏️ Edit Info & Data Klaim" : "Info"),
+                        !editing && isAdmin && React.createElement("span", { style: { fontSize: 11, color: "#64748b" } }, "· Klik ✎ di baris mana saja untuk edit & simpan langsung ke Supabase")),
+                    React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } },
+                        isAdmin && !editing && React.createElement("button", {
+                            type: "button",
+                            onClick: startEdit,
+                            style: { padding: "5px 11px", borderRadius: 7, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }
+                        }, "✏️ Edit Semua Field"),
+                        isAdmin && editing && React.createElement(React.Fragment, null,
+                            React.createElement("button", { type: "button", onClick: () => setEditing(false), style: { padding: "5px 11px", borderRadius: 7, border: "1px solid #cbd5e1", background: "#fff", color: "#475569", fontSize: 11.5, fontWeight: 600, cursor: "pointer" } }, "Batal"),
+                            React.createElement("button", { type: "button", onClick: saveEdit, disabled: saving || !isOnline, style: { padding: "5px 12px", borderRadius: 7, border: 0, background: "#059669", color: "#fff", fontSize: 11.5, fontWeight: 700, cursor: "pointer" } }, saving ? "Menyimpan..." : "💾 Simpan ke Supabase")),
+                        !isAdmin && React.createElement("span", { style: { fontSize: 11, color: "#94a3b8" } }, "🔒 Edit khusus Admin / Warranty Admin"))),
                 editing ? (React.createElement(React.Fragment, null,
                     editError && React.createElement("div", { role: "alert", style: { marginBottom: 12, padding: "10px 12px", borderRadius: 9, background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" } },
                         React.createElement("span", null, editError),
@@ -14960,106 +15935,194 @@ SDLG_REPOSITORY.listClaims = async function () {
                                 }),
                                 "Confirmed Yard Failure"));
                     })(),
-                    React.createElement("div", { className: "claim-edit-grid" },
-                    [
-                        ["model", "Model"], ["serial_no", "Serial No."], ["indent_no", "Indent No."],
-                        ["customer", "Customer"], ["dealer_code", "Dealer Code"], ["branch", "Branch"],
-                        ["dealer_wo_so", "WO/SO"], ["sales_date", "Sales Date"], ["failure_date", "Failure Date"],
-                        ["dealer_repair_date", "Repair Date"], ["completion_date", "Completion Date"],
-                        ["repair_status", "Repair Status"], ["dealer_claim_date", "Claim Date"], ["hm_failure", "HM Failure"], ["hm_completion", "HM Completion"],
-                        ["parts_total", "Parts Total (Auto)"], ["labour_hrs", "Labour Hrs"], ["labour_rate", "Labour Rate"], ["labour_amount", "Labour Amount"],
-                        ["mileage_km", "Mileage Km"], ["mileage_rate", "Mileage Rate"], ["mileage_amount", "Mileage Amount"],
-                        ["other_amount", "Other Amount"], ["currency", "Currency"], ["total_amount", "Total Amount (Auto)"],
-                    ].map(([key, label]) => {
-                        const isReadOnlyFin = key === "total_amount" || (key === "parts_total" && (editForm.parts || []).length > 0);
-                        return React.createElement("div", { key: key },
-                            React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 600, marginBottom: 3 } }, label),
-                            key === "repair_status"
-                                ? React.createElement("select", {
-                                    value: editForm.repair_status || (editForm.completion_date ? "Repair Completed" : "Repair Not Completed"),
-                                    onChange: e => setEditForm({ ...editForm, repair_status: e.target.value }),
-                                    style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, background: "#fff" }
-                                }, ["Repair Completed", "Repair Not Completed"].map(opt => React.createElement("option", { key: opt, value: opt }, opt)))
-                                : React.createElement("input", {
-                                    value: editForm[key] ?? "",
-                                    readOnly: isReadOnlyFin,
-                                    className: isReadOnlyFin ? "sdlg-readonly-field" : undefined,
-                                    onChange: e => {
-                                        if (isReadOnlyFin) return;
-                                        const val = e.target.value;
-                                        setEditForm(prev => {
-                                            const next = { ...prev, [key]: val };
-                                            if (key === "completion_date") {
-                                                const iso = normalizeDateInput(val);
-                                                if (iso && (!prev.repair_status || prev.repair_status === "Repair Not Completed")) {
-                                                    next.repair_status = "Repair Completed";
-                                                }
+                    (() => {
+                        const updateEditKey = (key, val) => {
+                            setEditForm(prev => {
+                                const next = { ...prev, [key]: val };
+                                if (key === "completion_date") {
+                                    const iso = normalizeDateInput(val);
+                                    if (iso && (!prev.repair_status || prev.repair_status === "Repair Not Completed")) {
+                                        next.repair_status = "Repair Completed";
+                                    }
+                                }
+                                if (key === "labour_hrs" || key === "labour_rate") {
+                                    next._labourAmountManual = false;
+                                    const h = numOrNull(next.labour_hrs);
+                                    const r = numOrNull(next.labour_rate);
+                                    if (h != null && r != null) next.labour_amount = roundMoney(h * r);
+                                } else if (key === "labour_amount") {
+                                    next._labourAmountManual = true;
+                                } else if (key === "mileage_km" || key === "mileage_rate") {
+                                    next._mileageAmountManual = false;
+                                    const km = numOrNull(next.mileage_km);
+                                    const mr = numOrNull(next.mileage_rate);
+                                    if (km != null && mr != null) next.mileage_amount = roundMoney(km * mr);
+                                } else if (key === "mileage_amount") {
+                                    next._mileageAmountManual = true;
+                                }
+                                if (["parts_total", "labour_hrs", "labour_rate", "labour_amount", "mileage_km", "mileage_rate", "mileage_amount", "other_amount"].includes(key)) {
+                                    const liveFin = calcClaimFinancials(next, { editing: true });
+                                    next.parts_total = liveFin.partsTotal;
+                                    next.labour_amount = key === "labour_amount" ? (val === "" ? "" : val) : liveFin.labourAmount;
+                                    next.mileage_amount = key === "mileage_amount" ? (val === "" ? "" : val) : liveFin.mileageAmount;
+                                    next.total_amount = liveFin.totalAmount;
+                                }
+                                return next;
+                            });
+                            if (editError) setEditError("");
+                        };
+                        const renderEditField = ([key, label, type = "text", opts = {}]) => {
+                            const isReadOnlyFin = key === "total_amount" || (key === "parts_total" && (editForm.parts || []).length > 0);
+                            return React.createElement("div", { key: key },
+                                React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 3 } }, label),
+                                key === "repair_status"
+                                    ? React.createElement("select", {
+                                        value: editForm.repair_status || (editForm.completion_date ? "Repair Completed" : "Repair Not Completed"),
+                                        onChange: e => updateEditKey(key, e.target.value),
+                                        style: { width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, background: "#fff" }
+                                    }, ["Repair Completed", "Repair Not Completed"].map(opt => React.createElement("option", { key: opt, value: opt }, opt)))
+                                    : key === "currency"
+                                        ? React.createElement("select", {
+                                            value: editForm.currency || "CNY",
+                                            onChange: e => updateEditKey(key, e.target.value),
+                                            style: { width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, background: "#fff" }
+                                        }, ["CNY", "USD", "IDR"].map(opt => React.createElement("option", { key: opt, value: opt }, opt)))
+                                        : React.createElement("input", {
+                                            type: type,
+                                            step: type === "number" ? "any" : undefined,
+                                            list: opts.list || undefined,
+                                            value: editForm[key] ?? "",
+                                            readOnly: isReadOnlyFin,
+                                            className: isReadOnlyFin ? "sdlg-readonly-field" : undefined,
+                                            onChange: e => { if (!isReadOnlyFin) updateEditKey(key, e.target.value); },
+                                            style: {
+                                                width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7,
+                                                fontSize: 13, outline: "none", background: isReadOnlyFin ? "#f8fafc" : "#fff",
+                                                fontFamily: opts.mono ? "monospace" : "inherit"
                                             }
-                                            if (key === "labour_hrs" || key === "labour_rate") {
-                                                next._labourAmountManual = false;
-                                                const h = numOrNull(next.labour_hrs);
-                                                const r = numOrNull(next.labour_rate);
-                                                if (h != null && r != null) next.labour_amount = roundMoney(h * r);
-                                            } else if (key === "labour_amount") {
-                                                next._labourAmountManual = true;
-                                            } else if (key === "mileage_km" || key === "mileage_rate") {
-                                                next._mileageAmountManual = false;
-                                                const km = numOrNull(next.mileage_km);
-                                                const mr = numOrNull(next.mileage_rate);
-                                                if (km != null && mr != null) next.mileage_amount = roundMoney(km * mr);
-                                            } else if (key === "mileage_amount") {
-                                                next._mileageAmountManual = true;
-                                            }
-                                            if (["parts_total", "labour_hrs", "labour_rate", "labour_amount", "mileage_km", "mileage_rate", "mileage_amount", "other_amount"].includes(key)) {
-                                                const liveFin = calcClaimFinancials(next, { editing: true });
-                                                next.parts_total = liveFin.partsTotal;
-                                                next.labour_amount = key === "labour_amount" ? (val === "" ? "" : val) : liveFin.labourAmount;
-                                                next.mileage_amount = key === "mileage_amount" ? (val === "" ? "" : val) : liveFin.mileageAmount;
-                                                next.total_amount = liveFin.totalAmount;
-                                            }
-                                            return next;
-                                        });
-                                        if (editError) setEditError("");
-                                    },
-                                    style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, outline: "none" }
-                                }));
-                    }),
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Status"),
-                        React.createElement("select", { value: editForm.claim_status || "", onChange: e => setEditForm({ ...editForm, claim_status: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13 } }, WORKFLOW_STATUSES.concat(["Claimed to SDLG"]).filter((x, i, a) => a.indexOf(x) === i).map(s => React.createElement("option", { key: s, value: s }, s)))),
-                    [["status_date", "Status Date", "date"], ["sdlg_submission_no", "SDLG Submission No.", "text"], ["sdlg_audit_date", "SDLG Audit Date", "date"], ["sdlg_approval_date", "Approval Date", "date"], ["billing_date", "Billing Date", "date"], ["invoice_no", "Invoice No.", "text"], ["invoice_date", "Invoice Date", "date"], ["payment_date", "Payment Date", "date"], ["payment_amount", "Payment Amount", "number"]].map(([key, label, type]) => React.createElement("div", { key: key },
-                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, label),
-                        React.createElement("input", { type: type, value: editForm[key] ?? "", onChange: e => setEditForm({ ...editForm, [key]: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, outline: "none" } }))),
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Yard Failure Confirmation"),
-                        React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#475569" } },
-                            React.createElement("input", { type: "checkbox", checked: !!editForm.yard_failure_confirmed, onChange: e => { const checked = e.target.checked; setEditForm({ ...editForm, yard_failure_confirmed: checked }); if (checked && /Failure Date sebelum Sales Date/i.test(String(editError || ""))) setEditError(""); } }),
-                            " Confirmed unit was still in dealer yard at failure")),
-                    React.createElement("div", { style: { gridColumn: "1 / -1" } },
-                        React.createElement("div", { style: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 3 } }, "Rejection Reason"),
-                        React.createElement("textarea", { value: editForm.rejection_reason || "", onChange: e => setEditForm({ ...editForm, rejection_reason: e.target.value }), rows: 2, style: { width: "100%", padding: "7px 10px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 13, resize: "vertical" } }))))) : (React.createElement("div", { className: "claim-info-grid" },
-                    React.createElement("div", null,
-                        React.createElement(Row, { label: "Customer", value: detail.customer }),
-                        React.createElement(Row, { label: "Distributor", value: detail.distributor }),
-                        React.createElement(Row, { label: "Dealer Name", value: detail.dealer_name }),
-                        React.createElement(Row, { label: "Dealer Code", value: detail.dealer_code }),
-                        React.createElement(Row, { label: "WO/SO", value: detail.dealer_wo_so, mono: true }),
-                        React.createElement(Row, { label: "Branch", value: detail.branch }),
-                        React.createElement(Row, { label: "App. Code", value: detail.app_code }),
-                        React.createElement(Row, { label: "Model", value: detail.model }),
-                        React.createElement(Row, { label: "Serial No.", value: detail.serial_no, mono: true })),
-                    React.createElement("div", null,
-                        React.createElement(Row, { label: "Sales Date", value: detail.sales_date }),
-                        React.createElement(Row, { label: "Failure Date", value: detail.failure_date }),
-                        React.createElement(Row, { label: "HM Failure", value: detail.hm_failure != null ? detail.hm_failure + " hr" : null }),
-                        React.createElement(Row, { label: "Repair Date", value: detail.dealer_repair_date || null }),
-                        React.createElement(Row, { label: "Completion Date", value: detail.completion_date }),
-                        React.createElement(Row, { label: "Repair Status", value: detail.completion_date && detail.repair_status === "Repair Not Completed" ? `${detail.repair_status} (Completion Date terisi: ${detail.completion_date})` : detail.repair_status }),
-                        React.createElement(Row, { label: "HM Completion", value: detail.hm_completion != null ? detail.hm_completion + " hr" : null }),
-                        React.createElement(Row, { label: "Distributor No.", value: detail.distributor_no, mono: true }),
-                        React.createElement(Row, { label: "Dealer Claim No.", value: detail.dealer_claim_no, mono: true }),
-                        React.createElement(Row, { label: "Claim Date", value: detail.dealer_claim_date }),
-                        React.createElement(Row, { label: "Indent No.", value: detail.indent_no, mono: true }))))),
+                                        }));
+                        };
+                        return React.createElement(React.Fragment, null,
+                            React.createElement("div", { className: "sdlg-edit-section" },
+                                React.createElement("div", { className: "sdlg-edit-section-title" }, "1. Identitas Unit, Customer & Nomor Referensi"),
+                                React.createElement("div", { className: "claim-edit-grid" },
+                                    [
+                                        ["customer", "Customer", "text", { list: "sdlg-dl-customers" }],
+                                        ["distributor", "Distributor", "text", {}],
+                                        ["dealer_name", "Dealer Name", "text", {}],
+                                        ["dealer_code", "Dealer Code", "text", { mono: true }],
+                                        ["dealer_wo_so", "WO/SO", "text", { mono: true }],
+                                        ["branch", "Branch", "text", { list: "sdlg-dl-branches" }],
+                                        ["app_code", "App. Code", "text", { mono: true }],
+                                        ["model", "Model", "text", { list: "sdlg-dl-models" }],
+                                        ["serial_no", "Serial No.", "text", { mono: true }],
+                                        ["distributor_no", "Distributor No.", "text", { mono: true }],
+                                        ["dealer_claim_no", "Dealer Claim No.", "text", { mono: true }],
+                                        ["indent_no", "Indent No.", "text", { mono: true }]
+                                    ].map(renderEditField))),
+                            React.createElement("div", { className: "sdlg-edit-section" },
+                                React.createElement("div", { className: "sdlg-edit-section-title" }, "2. Tanggal Operasional & Hour Meter"),
+                                React.createElement("div", { className: "claim-edit-grid" },
+                                    [
+                                        ["sales_date", "Sales Date", "date"],
+                                        ["failure_date", "Failure Date", "date"],
+                                        ["hm_failure", "HM Failure (hr)", "number"],
+                                        ["dealer_repair_date", "Repair Date", "date"],
+                                        ["completion_date", "Completion Date", "date"],
+                                        ["repair_status", "Repair Status", "select"],
+                                        ["hm_completion", "HM Completion (hr)", "number"],
+                                        ["dealer_claim_date", "Claim Date", "date"]
+                                    ].map(renderEditField))),
+                            React.createElement("div", { className: "sdlg-edit-section" },
+                                React.createElement("div", { className: "sdlg-edit-section-title" }, "3. Finansial, Status & SDLG Audit / Billing"),
+                                React.createElement("div", { className: "claim-edit-grid" },
+                                    [
+                                        ["currency", "Currency", "select"],
+                                        ["parts_total", "Parts Total (Auto)", "number"],
+                                        ["labour_hrs", "Labour Hrs", "number"],
+                                        ["labour_rate", "Labour Rate", "number"],
+                                        ["labour_amount", "Labour Amount", "number"],
+                                        ["mileage_km", "Mileage Km", "number"],
+                                        ["mileage_rate", "Mileage Rate", "number"],
+                                        ["mileage_amount", "Mileage Amount", "number"],
+                                        ["other_amount", "Other Amount", "number"],
+                                        ["total_amount", "Total Amount (Auto)", "number"]
+                                    ].map(renderEditField),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 3 } }, "Status"),
+                                        React.createElement("select", { value: editForm.claim_status || "", onChange: e => setEditForm({ ...editForm, claim_status: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, background: "#fff" } }, WORKFLOW_STATUSES.concat(["Claimed to SDLG"]).filter((x, i, a) => a.indexOf(x) === i).map(s => React.createElement("option", { key: s, value: s }, s)))),
+                                    [["status_date", "Status Date", "date"], ["sdlg_submission_no", "SDLG Submission No.", "text"], ["sdlg_audit_date", "SDLG Audit Date", "date"], ["sdlg_approval_date", "Approval Date", "date"], ["billing_date", "Billing Date", "date"], ["invoice_no", "Invoice No.", "text"], ["invoice_date", "Invoice Date", "date"], ["payment_date", "Payment Date", "date"], ["payment_amount", "Payment Amount", "number"]].map(([key, label, type]) => React.createElement("div", { key: key },
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 3 } }, label),
+                                        React.createElement("input", { type: type, step: type === "number" ? "any" : undefined, value: editForm[key] ?? "", onChange: e => setEditForm({ ...editForm, [key]: e.target.value }), style: { width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, outline: "none", background: "#fff" } }))),
+                                    React.createElement("div", null,
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 3 } }, "Yard Failure Confirmation"),
+                                        React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: "#475569", paddingTop: 6 } },
+                                            React.createElement("input", { type: "checkbox", checked: !!editForm.yard_failure_confirmed, onChange: e => { const checked = e.target.checked; setEditForm({ ...editForm, yard_failure_confirmed: checked }); if (checked && /Failure Date sebelum Sales Date/i.test(String(editError || ""))) setEditError(""); } }),
+                                            " Confirmed unit was still in dealer yard at failure")),
+                                    React.createElement("div", { style: { gridColumn: "1 / -1" } },
+                                        React.createElement("div", { style: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 3 } }, "Rejection Reason"),
+                                        React.createElement("textarea", { value: editForm.rejection_reason || "", onChange: e => setEditForm({ ...editForm, rejection_reason: e.target.value }), rows: 2, style: { width: "100%", padding: "7px 10px", border: "1px solid #cbd5e1", borderRadius: 7, fontSize: 13, resize: "vertical", background: "#fff" } })))));
+                    })())) : (() => {
+                    const renderInfoRow = (meta) => {
+                        const isThisEditing = inlineEditField && inlineEditField.key === meta.key;
+                        const val = meta.displayValue !== undefined ? meta.displayValue : detail[meta.key];
+                        return React.createElement(Row, {
+                            key: meta.key,
+                            label: meta.label,
+                            value: val,
+                            suffix: meta.suffix,
+                            mono: meta.mono,
+                            canEdit: isAdmin,
+                            fieldKey: meta.key,
+                            fieldType: meta.type || "text",
+                            selectOptions: meta.options,
+                            datalistId: meta.list,
+                            isEditing: isThisEditing,
+                            editDraft: isThisEditing ? inlineEditField.value : "",
+                            editBusy: isThisEditing ? inlineEditField.busy : false,
+                            editError: isThisEditing ? inlineEditField.error : "",
+                            onStartEdit: () => openInlineFieldEdit(meta, detail[meta.key]),
+                            onChangeDraft: (v) => setInlineEditField(prev => prev ? { ...prev, value: v, error: "" } : prev),
+                            onSaveEdit: (confirmYard) => saveInlineFieldEdit(!!confirmYard),
+                            onCancelEdit: () => setInlineEditField(null),
+                            onConfirmYardFailure: () => saveInlineFieldEdit(true),
+                            onCopy: (rawStr, lbl) => copyToClipboard(rawStr, lbl)
+                        });
+                    };
+                    const leftInfoFields = [
+                        { key: "customer", label: "Customer", list: "sdlg-dl-customers" },
+                        { key: "distributor", label: "Distributor" },
+                        { key: "dealer_name", label: "Dealer Name" },
+                        { key: "dealer_code", label: "Dealer Code" },
+                        { key: "dealer_wo_so", label: "WO/SO", mono: true },
+                        { key: "branch", label: "Branch", list: "sdlg-dl-branches" },
+                        { key: "app_code", label: "App. Code" },
+                        { key: "model", label: "Model", list: "sdlg-dl-models" },
+                        { key: "serial_no", label: "Serial No.", mono: true }
+                    ];
+                    const rightInfoFields = [
+                        { key: "sales_date", label: "Sales Date", type: "date" },
+                        { key: "failure_date", label: "Failure Date", type: "date" },
+                        { key: "hm_failure", label: "HM Failure", type: "number", suffix: " hr" },
+                        { key: "dealer_repair_date", label: "Repair Date", type: "date" },
+                        { key: "completion_date", label: "Completion Date", type: "date" },
+                        {
+                            key: "repair_status",
+                            label: "Repair Status",
+                            type: "select",
+                            options: ["Repair Completed", "Repair Not Completed"],
+                            displayValue: detail.completion_date && detail.repair_status === "Repair Not Completed" ? `${detail.repair_status} (Completion Date terisi: ${detail.completion_date})` : detail.repair_status
+                        },
+                        { key: "hm_completion", label: "HM Completion", type: "number", suffix: " hr" },
+                        { key: "distributor_no", label: "Distributor No.", mono: true },
+                        { key: "dealer_claim_no", label: "Dealer Claim No.", mono: true },
+                        { key: "dealer_claim_date", label: "Claim Date", type: "date" },
+                        { key: "indent_no", label: "Indent No.", mono: true }
+                    ];
+                    return React.createElement("div", { className: "claim-info-grid" },
+                        React.createElement("div", null, leftInfoFields.map(renderInfoRow)),
+                        React.createElement("div", null, rightInfoFields.map(renderInfoRow)));
+                })()),
             (() => {
                 const hm = estimateCurrentHM(detail, claims);
                 const confColor = hm.confidence === 'Direct' ? '#059669' : hm.confidence === 'Very High' ? '#059669' : hm.confidence === 'High' ? '#2563eb' : hm.confidence === 'Medium' ? '#d97706' : '#64748b';

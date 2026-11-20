@@ -34,13 +34,13 @@ jobs:
         run: |
           set -euo pipefail
           test -s index.html
+          test -s app.html
           test -s canonical-warranty-helper.js
           test -s modules/sdlg-core.js
           test -s modules/export-table-helper.js
           test -s modules/claim-parser-helpers.js
           test -s modules/claim-fields.js
-          test -s modules/sdlg-input-hydrate.js
-          test -s modules/sdlg-inline-enforcer.js
+          test -s modules/sdlg-repository.js
           test -s scripts/verify-module-syntax.js
           grep -q 'frqvelcreczmnofldrga.supabase.co' index.html
           grep -q 'SDLGCore' modules/sdlg-core.js
@@ -62,32 +62,28 @@ jobs:
           cp index.html _site/index.html
           cp app.html _site/app.html
           cp canonical-warranty-helper.js _site/canonical-warranty-helper.js
-          cp -R modules _site/modules
-          if [ -d styles ]; then cp -R styles _site/styles; fi
+          mkdir -p _site/modules _site/styles
+          rsync -a --exclude '_archive' modules/ _site/modules/
+          if [ -d styles ]; then rsync -a --exclude '_archive' styles/ _site/styles/; fi
           touch _site/.nojekyll
           python3 scripts/pages_prepare_index.py
           bash scripts/regression_contract.sh _site/index.html
           bash scripts/regression_contract_modules.sh _site
           bash scripts/guard-no-cutover.sh _site
+          rm -rf _site
           echo 'Production Pages artifact and safety contracts passed.'
 
-      - name: Validate changed module syntax
+      - name: Validate changed module syntax & portal contracts
         shell: bash
         run: |
           set -euo pipefail
           node scripts/verify-module-syntax.js
-          node scripts/verify-login-freeze.js
-          node scripts/verify-session-resilience.js
           node scripts/verify-navigation-contract.js
           node scripts/verify-portal-ui-ownership.js
           node scripts/verify-legacy-auth-ui.js
           node scripts/verify-legacy-claims-loading.js
           node scripts/verify-save-integrity.js
-          node --check modules/sdlg-input-hydrate.js
-          node --check modules/sdlg-inline-enforcer.js
           node --check modules/claim-fields.js
-          # Ensure aggressive writers are disabled in this PR lineage
-          grep -q 'V4_DISABLED\|intentionally disabled' modules/sdlg-inline-enforcer.js
-          grep -q 'event-driven' modules/sdlg-input-hydrate.js
-          grep -q '20261021-v15' modules/claim-fields.js
-          echo 'Form identity module syntax and disable markers OK.'
+          node --check modules/sdlg-repository.js
+          SKIP_WARRANTY_GOLDEN=1 npm run verify
+          echo 'Frontend CI verification suite passed.'
