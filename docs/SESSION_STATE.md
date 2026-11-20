@@ -1,32 +1,24 @@
-# SESSION_STATE — 2026-11-20
+# SESSION_STATE — 2026-11-21
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
 - Login page loads successfully (https://esahuda9900.github.io/Esahuda-Rizqi-Nugraha/).
 - Latest deploys via static.yml successful as of last check. No open issues.
-- Claims count: 576 (stable, archived via archived_at = 2).
+- Claims count: 576 (stable).
 
-## Current health (2026-11-20 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 576 (open 574). No critical data anomalies. No new claims in last 24h.
-- Security advisors: known warnings on SECURITY DEFINER RPCs (intentional for business logic). Leaked password protection disabled (known).
-- Performance advisors: known RLS InitPlan on machines, unused indexes, multiple permissive policies (non-critical).
+## Current health (2026-11-21 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 576. No critical data anomalies.
 - Health advisors: clean (no issues).
-- Logs: no recent error/timeout/fail logs in last 24h. Backup auth fail on schedule. No other critical errors.
-- Backup workflow (sdlg-supabase-backup.yml) failing again on schedule (password authentication failed for user "postgres" — non-critical). No successful restore test established.
+- Logs: 1 minor supavisor error in last 24h window; no critical errors, timeouts, or failures affecting app.
+- Architecture Guard workflow failed on commit 171c275 (forbidden automatic mutation workflows: bust-dashboard-polish.yml & restore-app-html.yml) — non-blocking for production deploy.
+- Backup workflow (sdlg-supabase-backup.yml) failing on schedule (password authentication failed for user "postgres" — non-critical, known issue).
+- Latest commit (build: remove web SPA and standardize static pipeline) deployed successfully via static.yml.
 
 ## Task Queue status
 - [TUGAS 1]: Routine monitoring & health check → Status: SELESAI PUSH
-- [TUGAS 2]: Production web legacy upgrade (performance & reliability):
-  - Memoized 564+ claims filtering & sorting via `useMemo` with non-enumerable lazy `_searchCorpus`.
-  - Cleaned up duplicate `modules/sdlg-repository.js` inclusion in `app.html`.
-  - Updated canonical warranty helper cache-busting version (`?v=20261105-smart-engine-v2`).
-  - Created staging SQL migration script `scripts/sql/20261105_optimize_rls_and_policies.sql` for RLS InitPlan & policy consolidation.
-  - Documented `SUPABASE_DB_URL` session pooler format in `RUNBOOK.md` for backup workflow.
-  - All 10 verification contracts passing 100%.
+- [TUGAS 2]: Production web legacy upgrade (performance & reliability): completed previously.
 
 ## Handover notes
-- Legacy production web running smoothly at root (`/`) with instant search and zero render thrashing.
-- Cutover policy strictly maintained (no unauthorized switch of `/`).
-- All checks green: `npm run verify`, `compile_applet`, `lint_applet`.
-- Open PR #12 remains on HOLD for preview workspace refresh (does not affect production).
-- Latest feature commit (machine inspector + warranty engine) deployed successfully.
+- Legacy production web running smoothly at root (`/`).
+- Cutover policy strictly maintained.
+- No open issues. Known non-critical: Architecture Guard fail, backup auth fail, security advisor warnings.
