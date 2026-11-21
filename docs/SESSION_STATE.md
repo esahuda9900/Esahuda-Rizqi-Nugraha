@@ -1,4 +1,4 @@
-# SESSION_STATE — 2026-11-21
+# SESSION_STATE — 2026-11-22
 
 ## Production baseline
 - Main production remains the legacy index.html -> app.html application.
@@ -6,13 +6,13 @@
 - Latest deploys via static.yml successful as of last check. No open issues.
 - Claims count: 576 (stable).
 
-## Current health (2026-11-21 monitoring)
-- Supabase project ACTIVE_HEALTHY. Claims total 576. No critical data anomalies.
-- Health advisors: clean (no issues).
-- Logs: 1 minor supavisor error in last 24h window; no critical errors, timeouts, or failures affecting app.
-- Architecture Guard workflow failed on commit 171c275 (forbidden automatic mutation workflows: bust-dashboard-polish.yml & restore-app-html.yml) — non-blocking for production deploy.
+## Current health (2026-11-22 monitoring)
+- Supabase project ACTIVE_HEALTHY. Claims total 576 (2 archived). No critical data anomalies.
+- Health advisors: known security warnings (SECURITY DEFINER functions, leaked password protection) persist — non-critical.
+- Logs: optimistic concurrency messages only (normal); no critical errors, timeouts, or failures affecting app.
+- Architecture Guard workflow failed previously on forbidden workflows — non-blocking for production deploy.
 - Backup workflow (sdlg-supabase-backup.yml) failing on schedule (password authentication failed for user "postgres" — non-critical, known issue).
-- Latest commit (build: remove web SPA and standardize static pipeline) deployed successfully via static.yml.
+- Latest deploy (SESSION_STATE update) successful via static.yml.
 
 ## Task Queue status
 - [TUGAS 1]: Routine monitoring & health check → Status: SELESAI PUSH
